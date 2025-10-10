@@ -51,116 +51,96 @@ serve(async (req) => {
       try {
         console.log(`Searching emails for: ${company.nom}`);
 
-        // Étape 1: Company Enrichment pour trouver le domaine
-        const enrichmentUrl = `https://api.hunter.io/v2/company-enrichment?company=${encodeURIComponent(company.nom)}&api_key=${HUNTER_API_KEY}`;
-        const enrichmentResponse = await fetch(enrichmentUrl);
-        
-        if (!enrichmentResponse.ok) {
-          const errorText = await enrichmentResponse.text();
-          console.error(`Hunter.io API error (${enrichmentResponse.status}):`, errorText);
-          continue;
-        }
-        
-        const enrichmentData = await enrichmentResponse.json();
-        
-        if (enrichmentData.errors) {
-          console.error(`Hunter.io error for ${company.nom}:`, enrichmentData.errors);
-          continue;
-        }
+        // 1) Domain Search en utilisant le nom de l'entreprise (avec filtre de localisation FR si disponible)
+        const city = typeof company.ville === "string" ? company.ville.replace(/\d+/g, "").trim() : undefined;
+        const dsUrl = `https://api.hunter.io/v2/domain-search?company=${encodeURIComponent(company.nom)}&api_key=${HUNTER_API_KEY}`;
 
-        let domain = enrichmentData?.data?.domain;
+        const usePost = !!city; // Filtre location -> POST only
+        const dsResponse = await fetch(dsUrl, {
+          method: usePost ? "POST" : "GET",
+          headers: usePost ? { "Content-Type": "application/json" } : undefined,
+          body: usePost
+            ? JSON.stringify({
+                location: {
+                  include: [
+                    { city: city, country: "FR" },
+                  ],
+                },
+              })
+            : undefined,
+        });
 
-        // Si pas de domaine trouvé, essayer avec ville
-        if (!domain && company.ville) {
-          const enrichmentUrl2 = `https://api.hunter.io/v2/company-enrichment?company=${encodeURIComponent(company.nom + " " + company.ville)}&api_key=${HUNTER_API_KEY}`;
-          const enrichmentResponse2 = await fetch(enrichmentUrl2);
-          
-          if (enrichmentResponse2.ok) {
-            const enrichmentData2 = await enrichmentResponse2.json();
-            if (!enrichmentData2.errors) {
-              domain = enrichmentData2?.data?.domain;
-            }
-          }
-        }
-
-        if (!domain) {
-          console.log(`No domain found for ${company.nom}`);
+        if (!dsResponse.ok) {
+          const errTxt = await dsResponse.text();
+          console.error(`Domain Search error (${dsResponse.status}) for ${company.nom}:`, errTxt);
           continue;
         }
 
-        console.log(`Domain found: ${domain}`);
-
-        // Sauvegarder le domaine
-        await supabaseClient
-          .from("companies")
-          .update({ website_url: `https://${domain}` })
-          .eq("id", company.id);
-
-        // Étape 2: Domain Search pour trouver les emails
-        const domainSearchUrl = `https://api.hunter.io/v2/domain-search?domain=${domain}&api_key=${HUNTER_API_KEY}`;
-        const domainResponse = await fetch(domainSearchUrl);
-        
-        if (!domainResponse.ok) {
-          const errorText = await domainResponse.text();
-          console.error(`Domain search error (${domainResponse.status}):`, errorText);
-          continue;
-        }
-        
-        const domainData = await domainResponse.json();
-        
-        if (domainData.errors) {
-          console.error(`Domain search error for ${domain}:`, domainData.errors);
+        const dsData = await dsResponse.json();
+        if (dsData.errors) {
+          console.error(`Domain Search API returned errors for ${company.nom}:`, dsData.errors);
           continue;
         }
 
-        const emails = domainData?.data?.emails || [];
-        
-        if (emails.length === 0) {
-          console.log(`No emails found for ${domain}`);
+        const domain: string | undefined = dsData?.data?.domain || dsData?.meta?.params?.domain;
+        const emails = (dsData?.data?.emails || []) as Array<{ value: string }>;
+
+        if (!domain && (!emails || emails.length === 0)) {
+          console.log(`No domain/emails found for ${company.nom}`);
           continue;
         }
 
-        // Étape 3: Email Verification (optionnel, pour les premiers emails)
-        const verifiedEmails = [];
+        // Sauvegarder domaine si présent
+        if (domain) {
+          await supabaseClient
+            .from("companies")
+            .update({ website_url: `https://${domain}` })
+            .eq("id", company.id);
+          console.log(`Domain found for ${company.nom}: ${domain}`);
+        }
+
+        if (!emails || emails.length === 0) {
+          console.log(`No emails found for ${company.nom}${domain ? ` (${domain})` : ""}`);
+          continue;
+        }
+
+        // 2) Vérifier les 3 premiers emails (optionnel) puis stocker tous
+        const verifiedEmails: string[] = [];
         for (let i = 0; i < Math.min(emails.length, 3); i++) {
-          const email = emails[i];
+          const email = emails[i]?.value;
+          if (!email) continue;
           try {
-            const verifyUrl = `https://api.hunter.io/v2/email-verifier?email=${email.value}&api_key=${HUNTER_API_KEY}`;
-            const verifyResponse = await fetch(verifyUrl);
-            
-            if (verifyResponse.ok) {
-              const verifyData = await verifyResponse.json();
+            const verifyUrl = `https://api.hunter.io/v2/email-verifier?email=${encodeURIComponent(email)}&api_key=${HUNTER_API_KEY}`;
+            const verifyRes = await fetch(verifyUrl);
+            if (verifyRes.ok) {
+              const verifyData = await verifyRes.json();
               if (!verifyData.errors && (verifyData?.data?.status === "valid" || verifyData?.data?.status === "accept_all")) {
-                verifiedEmails.push(email.value);
+                verifiedEmails.push(email);
               } else {
-                // Email pas valide, on l'ajoute quand même
-                verifiedEmails.push(email.value);
+                verifiedEmails.push(email);
               }
             } else {
-              // Si la vérification échoue, on garde l'email quand même
-              verifiedEmails.push(email.value);
+              verifiedEmails.push(email);
             }
-          } catch (error) {
-            console.log(`Could not verify ${email.value}:`, error);
-            verifiedEmails.push(email.value);
+          } catch (e) {
+            console.log(`Verification failed for ${email}:`, e);
+            verifiedEmails.push(email);
           }
         }
 
-        // Ajouter le reste des emails sans vérification
         for (let i = 3; i < emails.length; i++) {
-          verifiedEmails.push(emails[i].value);
+          const e = emails[i]?.value;
+          if (e) verifiedEmails.push(e);
         }
 
         if (verifiedEmails.length > 0) {
-          // Sauvegarder les emails
           await supabaseClient
             .from("companies")
             .update({ emails: verifiedEmails })
             .eq("id", company.id);
-
           totalEmailsFound += verifiedEmails.length;
           companiesUpdated++;
-          console.log(`Found ${verifiedEmails.length} emails for ${company.nom}`);
+          console.log(`Stored ${verifiedEmails.length} emails for ${company.nom}`);
         }
 
         // Délai pour respecter les rate limits de Hunter.io
