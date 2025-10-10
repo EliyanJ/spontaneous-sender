@@ -1,1 +1,7 @@
 project_id = "fxnnnhmhshmhcttmucwf"
+
+[functions.send-campaign-emails]
+verify_jwt = true
+
+[functions.find-company-emails]
+verify_jwt = true
