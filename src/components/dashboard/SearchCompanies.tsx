@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Search, Loader2, Save } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { ACTIVITY_SECTORS } from "@/lib/activity-sectors";
 
 interface Company {
   siren: string;
@@ -24,41 +25,69 @@ interface Company {
 export const SearchCompanies = () => {
   const [loading, setLoading] = useState(false);
   const [companies, setCompanies] = useState<Company[]>([]);
-  const [codeApe, setCodeApe] = useState("");
+  const [sector, setSector] = useState("");
   const [ville, setVille] = useState("");
   const [trancheEffectif, setTrancheEffectif] = useState("");
-  const [minResults, setMinResults] = useState("300");
+  const [minResults, setMinResults] = useState("20");
+  const [blacklistedSirens, setBlacklistedSirens] = useState<string[]>([]);
+
+  useEffect(() => {
+    const fetchBlacklist = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data } = await supabase
+        .from("user_company_blacklist")
+        .select("company_siren");
+      
+      if (data) {
+        setBlacklistedSirens(data.map(b => b.company_siren));
+      }
+    };
+    fetchBlacklist();
+  }, []);
 
   const handleSearch = async () => {
-    if (!codeApe && !ville) {
+    if (!sector && !ville) {
       toast.error("Veuillez renseigner au moins un critère de recherche");
+      return;
+    }
+
+    const minResultsNum = parseInt(minResults) || 20;
+    if (minResultsNum < 1 || minResultsNum > 50) {
+      toast.error("Le nombre de résultats doit être entre 1 et 50");
       return;
     }
 
     setLoading(true);
     try {
       const params = new URLSearchParams();
-      if (codeApe) params.append("activite_principale", codeApe);
+      
+      // Gérer les codes APE du secteur sélectionné
+      if (sector) {
+        const selectedSector = ACTIVITY_SECTORS.find(s => s.label === sector);
+        if (selectedSector && selectedSector.codes.length > 0) {
+          // On utilise le premier code APE du secteur pour la recherche
+          params.append("activite_principale", selectedSector.codes[0]);
+        }
+      }
+      
       if (ville) {
-        // Support both city name and postal code
         if (/^\d+$/.test(ville)) {
           params.append("code_postal", ville);
         } else {
-          // Use textual search for city names
           params.append("q", ville);
         }
       }
+      
       if (trancheEffectif) params.append("tranche_effectif_salarie", trancheEffectif);
-      params.append("per_page", "25"); // Max autorisé par l'API
-      // Exclusion des auto-entrepreneurs gérée côté client (filtre local sur nature_juridique !== '1000')
+      params.append("per_page", "25");
       
-      const minResultsNum = parseInt(minResults) || 300;
-      const fetchLimit = Math.ceil(minResultsNum * 6); // x6 multiplier
-      
+      const fetchLimit = Math.ceil(minResultsNum * 8);
       let allResults: Company[] = [];
       let page = 1;
       
-      while (allResults.length < fetchLimit) {
+      while (allResults.length < fetchLimit && page <= 20) {
         params.set("page", page.toString());
         const response = await fetch(
           `https://recherche-entreprises.api.gouv.fr/search?${params.toString()}`
@@ -70,7 +99,6 @@ export const SearchCompanies = () => {
         }
         
         const data = await response.json();
-        
         if (!data.results || data.results.length === 0) break;
         
         const formatted = data.results.map((r: any) => ({
@@ -89,16 +117,47 @@ export const SearchCompanies = () => {
         allResults = [...allResults, ...formatted];
         page++;
         
-        if (data.total_results < page * 100) break;
-        
+        if (data.total_results < page * 25) break;
         await new Promise(resolve => setTimeout(resolve, 300));
       }
       
-      // Randomize and limit
-      const shuffled = allResults.sort(() => Math.random() - 0.5);
-      setCompanies(shuffled.slice(0, minResultsNum));
+      // Filtrage strict géographique
+      let filtered = allResults;
+      if (ville) {
+        if (/^\d+$/.test(ville)) {
+          // Filtre strict sur le code postal
+          filtered = filtered.filter(c => c.code_postal === ville);
+        } else {
+          // Filtre strict sur le nom de ville (insensible à la casse)
+          const villeNormalized = ville.toLowerCase().trim();
+          filtered = filtered.filter(c => 
+            c.ville.toLowerCase().trim() === villeNormalized
+          );
+        }
+      }
       
-      toast.success(`${shuffled.slice(0, minResultsNum).length} entreprises trouvées`);
+      // Exclure les auto-entrepreneurs
+      filtered = filtered.filter(c => c.nature_juridique !== "1000");
+      
+      // Exclure les entreprises blacklistées
+      filtered = filtered.filter(c => !blacklistedSirens.includes(c.siren));
+      
+      // Filtrer par secteur (tous les codes APE du secteur)
+      if (sector) {
+        const selectedSector = ACTIVITY_SECTORS.find(s => s.label === sector);
+        if (selectedSector) {
+          filtered = filtered.filter(c => 
+            selectedSector.codes.includes(c.code_ape)
+          );
+        }
+      }
+      
+      // Mélanger et limiter
+      const shuffled = filtered.sort(() => Math.random() - 0.5);
+      const final = shuffled.slice(0, minResultsNum);
+      
+      setCompanies(final);
+      toast.success(`${final.length} entreprise(s) trouvée(s)`);
     } catch (error) {
       toast.error("Erreur lors de la recherche");
       console.error(error);
@@ -143,15 +202,22 @@ export const SearchCompanies = () => {
         <CardContent className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
-              <Label>Code APE (ex: 62.01Z)</Label>
-              <Input
-                placeholder="62.01Z"
-                value={codeApe}
-                onChange={(e) => setCodeApe(e.target.value)}
-              />
+              <Label>Secteur d'activité</Label>
+              <Select value={sector} onValueChange={setSector}>
+                <SelectTrigger className="bg-background">
+                  <SelectValue placeholder="Choisir un secteur" />
+                </SelectTrigger>
+                <SelectContent className="bg-background z-50">
+                  {ACTIVITY_SECTORS.map((s) => (
+                    <SelectItem key={s.label} value={s.label}>
+                      {s.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-2">
-              <Label>Ville ou Code Postal</Label>
+              <Label>Ville ou Code Postal (filtrage strict)</Label>
               <Input
                 placeholder="Paris, 75001..."
                 value={ville}
@@ -183,10 +249,12 @@ export const SearchCompanies = () => {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>Résultats minimum souhaités</Label>
+              <Label>Nombre de résultats (1-50)</Label>
               <Input
                 type="number"
-                placeholder="300"
+                min="1"
+                max="50"
+                placeholder="20"
                 value={minResults}
                 onChange={(e) => setMinResults(e.target.value)}
               />

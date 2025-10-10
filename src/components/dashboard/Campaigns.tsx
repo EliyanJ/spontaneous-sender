@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Mail, Trash2 } from "lucide-react";
+import { Plus, Mail, Trash2, Send, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -24,6 +24,7 @@ export const Campaigns = () => {
   const [name, setName] = useState("");
   const [subject, setSubject] = useState("");
   const [bodyTemplate, setBodyTemplate] = useState("");
+  const [sendingCampaignId, setSendingCampaignId] = useState<string | null>(null);
 
   const fetchCampaigns = async () => {
     const { data, error } = await supabase
@@ -78,6 +79,25 @@ export const Campaigns = () => {
       toast.success("Campagne supprimée");
     } catch (error) {
       toast.error("Erreur lors de la suppression");
+    }
+  };
+
+  const sendCampaign = async (campaignId: string) => {
+    try {
+      setSendingCampaignId(campaignId);
+      
+      const { data, error } = await supabase.functions.invoke("send-campaign-emails", {
+        body: { campaignId }
+      });
+
+      if (error) throw error;
+
+      toast.success(`Envoi de la campagne lancé ! ${data.message}`);
+      fetchCampaigns();
+    } catch (error: any) {
+      toast.error(error.message || "Erreur lors de l'envoi");
+    } finally {
+      setSendingCampaignId(null);
     }
   };
 
@@ -160,13 +180,31 @@ export const Campaigns = () => {
                       </p>
                     </div>
                   </div>
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={() => deleteCampaign(campaign.id)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="default"
+                      size="sm"
+                      onClick={() => sendCampaign(campaign.id)}
+                      disabled={sendingCampaignId === campaign.id}
+                    >
+                      {sendingCampaignId === campaign.id ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        </>
+                      ) : (
+                        <>
+                          <Send className="h-4 w-4" />
+                        </>
+                      )}
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => deleteCampaign(campaign.id)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               ))
             )}
