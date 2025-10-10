@@ -50,7 +50,7 @@ export const SearchCompanies = () => {
       }
       if (trancheEffectif) params.append("tranche_effectif_salarie", trancheEffectif);
       params.append("per_page", "25"); // Max autorisé par l'API
-      params.append("nature_juridique", "EXCL:1000"); // Exclure auto-entrepreneurs
+      // Exclusion des auto-entrepreneurs gérée côté client (filtre local sur nature_juridique !== '1000')
       
       const minResultsNum = parseInt(minResults) || 300;
       const fetchLimit = Math.ceil(minResultsNum * 6); // x6 multiplier
