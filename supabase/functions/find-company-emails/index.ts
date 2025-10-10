@@ -6,6 +6,63 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Helpers for domain guessing and fetch timing
+const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const STOP_WORDS = new Set([
+  "paris","studio","groupe","holding","sas","sasu","sarl","sa","eurl","ei","eirl","snc","sci","scea","earl","asso","association","societe",
+  "the","and","de","du","des","la","le","les","d","l"
+]);
+
+function normalizeName(name: string): string {
+  return name
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+}
+
+function guessDomainsFromName(name: string): string[] {
+  let n = normalizeName(name);
+  n = n.replace(/\(.*?\)/g, ' ');
+  const tokens = n.split(/[^a-z0-9]+/).filter(Boolean).filter(t => !STOP_WORDS.has(t));
+  if (tokens.length === 0) return [];
+  const base = tokens[0];
+  const joined = tokens.join('');
+  const firstTwoHyphen = tokens.slice(0, 2).join('-');
+  const plusStudio = base.includes('studio') ? base : `${base}studio`;
+  const combos = Array.from(new Set([base, joined, firstTwoHyphen, plusStudio])).filter(Boolean) as string[];
+  const tlds = ['.fr', '.com', '.io', '.org', '.net'];
+  const candidates: string[] = [];
+  for (const c of combos) {
+    for (const t of tlds) candidates.push(`${c}${t}`);
+  }
+  return Array.from(new Set(candidates)).slice(0, 12);
+}
+
+async function resolveDomain(candidate: string): Promise<string | null> {
+  const tryFetch = async (url: string) => {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 3000);
+    try {
+      const res = await fetch(url, { redirect: 'follow', signal: controller.signal } as RequestInit);
+      return res;
+    } catch (_e) {
+      return null;
+    } finally {
+      clearTimeout(timer);
+    }
+  };
+
+  let res = await tryFetch(`https://${candidate}`);
+  if (!res || !(res.status >= 200 && res.status < 400)) {
+    res = await tryFetch(`http://${candidate}`);
+  }
+  if (res && res.status >= 200 && res.status < 400) {
+    return res.url;
+  }
+  return null;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -73,21 +130,32 @@ serve(async (req) => {
         if (!dsResponse.ok) {
           const errTxt = await dsResponse.text();
           console.error(`Domain Search error (${dsResponse.status}) for ${company.nom}:`, errTxt);
-          continue;
         }
 
-        const dsData = await dsResponse.json();
-        if (dsData.errors) {
+        const dsData = dsResponse.ok ? await dsResponse.json() : undefined;
+        if (dsData?.errors) {
           console.error(`Domain Search API returned errors for ${company.nom}:`, dsData.errors);
-          continue;
         }
 
-        const domain: string | undefined = dsData?.data?.domain || dsData?.meta?.params?.domain;
-        const emails = (dsData?.data?.emails || []) as Array<{ value: string }>;
+        let domain: string | undefined = dsData?.data?.domain || dsData?.meta?.params?.domain;
+        let emails = (dsData?.data?.emails || []) as Array<{ value: string }>;
 
-        if (!domain && (!emails || emails.length === 0)) {
-          console.log(`No domain/emails found for ${company.nom}`);
-          continue;
+        // Fallback heuristique: deviner le domaine si non trouvé par Hunter
+        if (!domain) {
+          const candidates = guessDomainsFromName(company.nom);
+          for (const cand of candidates) {
+            const resolved = await resolveDomain(cand);
+            if (resolved) {
+              try {
+                domain = new URL(resolved).hostname;
+              } catch (_) {
+                domain = cand;
+              }
+              console.log(`Heuristic domain for ${company.nom}: ${domain} (from ${cand})`);
+              break;
+            }
+            await delay(200);
+          }
         }
 
         // Sauvegarder domaine si présent
@@ -97,6 +165,29 @@ serve(async (req) => {
             .update({ website_url: `https://${domain}` })
             .eq("id", company.id);
           console.log(`Domain found for ${company.nom}: ${domain}`);
+        }
+
+        // Si pas d'emails, tenter une 2e passe Hunter avec le domaine
+        if (domain && (!emails || emails.length === 0)) {
+          const byDomainUrl = `https://api.hunter.io/v2/domain-search?domain=${encodeURIComponent(domain)}&api_key=${HUNTER_API_KEY}`;
+          const byDomainRes = await fetch(byDomainUrl);
+          if (byDomainRes.ok) {
+            const byDomainData = await byDomainRes.json();
+            if (!byDomainData.errors) {
+              emails = (byDomainData?.data?.emails || []) as Array<{ value: string }>;
+              console.log(`Domain-search by domain returned ${emails.length} emails for ${domain}`);
+            } else {
+              console.error(`Domain-search by domain errors for ${domain}:`, byDomainData.errors);
+            }
+          } else {
+            const t = await byDomainRes.text();
+            console.error(`Domain-search by domain HTTP ${byDomainRes.status} for ${domain}:`, t);
+          }
+        }
+
+        if (!domain && (!emails || emails.length === 0)) {
+          console.log(`No domain/emails found for ${company.nom}`);
+          continue;
         }
 
         if (!emails || emails.length === 0) {
