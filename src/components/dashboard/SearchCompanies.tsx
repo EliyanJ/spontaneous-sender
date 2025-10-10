@@ -48,7 +48,7 @@ export const SearchCompanies = () => {
         }
       }
       if (trancheEffectif) params.append("tranche_effectif_salarie", trancheEffectif);
-      params.append("per_page", "100");
+      params.append("per_page", "25"); // Max autorisé par l'API
       params.append("nature_juridique", "EXCL:1000"); // Exclure auto-entrepreneurs
       
       const minResultsNum = parseInt(minResults) || 300;
@@ -63,7 +63,10 @@ export const SearchCompanies = () => {
           `https://recherche-entreprises.api.gouv.fr/search?${params.toString()}`
         );
         
-        if (!response.ok) throw new Error("Erreur API");
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.erreur || "Erreur API");
+        }
         
         const data = await response.json();
         
