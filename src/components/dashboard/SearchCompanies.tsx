@@ -39,7 +39,14 @@ export const SearchCompanies = () => {
     try {
       const params = new URLSearchParams();
       if (codeApe) params.append("activite_principale", codeApe);
-      if (ville) params.append("code_commune", ville);
+      if (ville) {
+        // Support both city name and postal code
+        if (/^\d+$/.test(ville)) {
+          params.append("code_postal", ville);
+        } else {
+          params.append("commune", ville);
+        }
+      }
       if (trancheEffectif) params.append("tranche_effectif_salarie", trancheEffectif);
       params.append("per_page", "100");
       params.append("nature_juridique", "EXCL:1000"); // Exclure auto-entrepreneurs
