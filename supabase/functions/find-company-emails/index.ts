@@ -54,7 +54,19 @@ serve(async (req) => {
         // Étape 1: Company Enrichment pour trouver le domaine
         const enrichmentUrl = `https://api.hunter.io/v2/company-enrichment?company=${encodeURIComponent(company.nom)}&api_key=${HUNTER_API_KEY}`;
         const enrichmentResponse = await fetch(enrichmentUrl);
+        
+        if (!enrichmentResponse.ok) {
+          const errorText = await enrichmentResponse.text();
+          console.error(`Hunter.io API error (${enrichmentResponse.status}):`, errorText);
+          continue;
+        }
+        
         const enrichmentData = await enrichmentResponse.json();
+        
+        if (enrichmentData.errors) {
+          console.error(`Hunter.io error for ${company.nom}:`, enrichmentData.errors);
+          continue;
+        }
 
         let domain = enrichmentData?.data?.domain;
 
@@ -62,8 +74,13 @@ serve(async (req) => {
         if (!domain && company.ville) {
           const enrichmentUrl2 = `https://api.hunter.io/v2/company-enrichment?company=${encodeURIComponent(company.nom + " " + company.ville)}&api_key=${HUNTER_API_KEY}`;
           const enrichmentResponse2 = await fetch(enrichmentUrl2);
-          const enrichmentData2 = await enrichmentResponse2.json();
-          domain = enrichmentData2?.data?.domain;
+          
+          if (enrichmentResponse2.ok) {
+            const enrichmentData2 = await enrichmentResponse2.json();
+            if (!enrichmentData2.errors) {
+              domain = enrichmentData2?.data?.domain;
+            }
+          }
         }
 
         if (!domain) {
@@ -82,7 +99,19 @@ serve(async (req) => {
         // Étape 2: Domain Search pour trouver les emails
         const domainSearchUrl = `https://api.hunter.io/v2/domain-search?domain=${domain}&api_key=${HUNTER_API_KEY}`;
         const domainResponse = await fetch(domainSearchUrl);
+        
+        if (!domainResponse.ok) {
+          const errorText = await domainResponse.text();
+          console.error(`Domain search error (${domainResponse.status}):`, errorText);
+          continue;
+        }
+        
         const domainData = await domainResponse.json();
+        
+        if (domainData.errors) {
+          console.error(`Domain search error for ${domain}:`, domainData.errors);
+          continue;
+        }
 
         const emails = domainData?.data?.emails || [];
         
@@ -98,14 +127,21 @@ serve(async (req) => {
           try {
             const verifyUrl = `https://api.hunter.io/v2/email-verifier?email=${email.value}&api_key=${HUNTER_API_KEY}`;
             const verifyResponse = await fetch(verifyUrl);
-            const verifyData = await verifyResponse.json();
-
-            if (verifyData?.data?.status === "valid" || verifyData?.data?.status === "accept_all") {
+            
+            if (verifyResponse.ok) {
+              const verifyData = await verifyResponse.json();
+              if (!verifyData.errors && (verifyData?.data?.status === "valid" || verifyData?.data?.status === "accept_all")) {
+                verifiedEmails.push(email.value);
+              } else {
+                // Email pas valide, on l'ajoute quand même
+                verifiedEmails.push(email.value);
+              }
+            } else {
+              // Si la vérification échoue, on garde l'email quand même
               verifiedEmails.push(email.value);
             }
           } catch (error) {
             console.log(`Could not verify ${email.value}:`, error);
-            // Si la vérification échoue, on garde l'email quand même
             verifiedEmails.push(email.value);
           }
         }
