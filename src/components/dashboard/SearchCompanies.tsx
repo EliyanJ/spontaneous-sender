@@ -44,7 +44,8 @@ export const SearchCompanies = () => {
         if (/^\d+$/.test(ville)) {
           params.append("code_postal", ville);
         } else {
-          params.append("commune", ville);
+          // Use textual search for city names
+          params.append("q", ville);
         }
       }
       if (trancheEffectif) params.append("tranche_effectif_salarie", trancheEffectif);
