@@ -12,8 +12,10 @@ async function findOfficialWebsite(companyName: string): Promise<{ url: string; 
   const apiKey = Deno.env.get('GOOGLE_CUSTOM_SEARCH_API_KEY');
   const cx = Deno.env.get('GOOGLE_SEARCH_ENGINE_ID');
   
+  console.log(`Google API Key present: ${!!apiKey}, Search Engine ID present: ${!!cx}`);
+  
   if (!apiKey || !cx) {
-    console.log('Missing Google Custom Search API credentials');
+    console.error('Missing Google Custom Search API credentials');
     return null;
   }
 
@@ -34,20 +36,43 @@ async function findOfficialWebsite(companyName: string): Promise<{ url: string; 
   for (const query of queries) {
     try {
       const url = `https://www.googleapis.com/customsearch/v1?key=${apiKey}&cx=${cx}&q=${encodeURIComponent(query)}&num=5`;
+      console.log(`Searching Google for: "${query}"`);
+      
       const response = await fetch(url);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`Google API error (${response.status}): ${errorText}`);
+        continue;
+      }
+      
       const data = await response.json();
+      
+      console.log(`Google API response for "${query}": ${data.items ? data.items.length : 0} results`);
+      
+      if (data.error) {
+        console.error(`Google API returned error:`, JSON.stringify(data.error));
+        continue;
+      }
 
       if (data.items && data.items.length > 0) {
+        console.log(`First 3 results: ${data.items.slice(0, 3).map((item: any) => item.link).join(', ')}`);
+        
         for (const item of data.items) {
           const itemUrl = item.link;
           const isExcluded = excludedDomains.some(domain => itemUrl.includes(domain));
           
-          if (!isExcluded) {
-            const domain = extractDomain(itemUrl);
-            console.log(`Found official website for ${companyName}: ${itemUrl} (domain: ${domain})`);
-            return { url: itemUrl, domain };
+          if (isExcluded) {
+            console.log(`Excluded domain: ${itemUrl}`);
+            continue;
           }
+          
+          const domain = extractDomain(itemUrl);
+          console.log(`✓ Found official website for ${companyName}: ${itemUrl} (domain: ${domain})`);
+          return { url: itemUrl, domain };
         }
+        
+        console.log(`All ${data.items.length} results were excluded domains`);
       }
       
       await delay(200); // Rate limiting
@@ -56,6 +81,7 @@ async function findOfficialWebsite(companyName: string): Promise<{ url: string; 
     }
   }
 
+  console.log(`No valid website found for ${companyName} after trying all queries`);
   return null;
 }
 
