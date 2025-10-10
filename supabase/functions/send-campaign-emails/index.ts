@@ -77,24 +77,12 @@ serve(async (req) => {
       throw new Error("Toutes les entreprises ont déjà été contactées");
     }
 
-    // Configuration SMTP Gmail
-    const smtpClient = new SMTPClient({
-      connection: {
-        hostname: Deno.env.get("SMTP_HOST") || "smtp.gmail.com",
-        port: parseInt(Deno.env.get("SMTP_PORT") || "587"),
-        tls: true,
-        auth: {
-          username: Deno.env.get("SMTP_USER") || "",
-          password: Deno.env.get("SMTP_PASSWORD") || "",
-        },
-      },
-    });
-
     const emailsPerDay = campaign.emails_per_day || 40;
     const delayBetweenEmails = (campaign.delay_between_emails || 45) * 60 * 1000; // Convert to ms
 
     let sentCount = 0;
     let failedCount = 0;
+    let smtpClient: SMTPClient | null = null;
 
     // Mettre à jour le statut de la campagne
     await supabaseClient
@@ -105,83 +93,117 @@ serve(async (req) => {
       })
       .eq("id", campaignId);
 
-    // Envoyer les emails (limité au nombre par jour)
-    for (let i = 0; i < Math.min(targetCompanies.length, emailsPerDay); i++) {
-      const company = targetCompanies[i];
-      
-      // Personnaliser l'email
-      let emailBody = campaign.body_template;
-      emailBody = emailBody.replace(/{nom_entreprise}/g, company.nom);
-      if (profile?.full_name) {
-        const [prenom, ...nomParts] = profile.full_name.split(" ");
-        emailBody = emailBody.replace(/{prenom}/g, prenom);
-        emailBody = emailBody.replace(/{nom}/g, nomParts.join(" "));
+    try {
+      // Vérifier si on a des emails à envoyer
+      const companiesWithEmails = targetCompanies.filter(c => {
+        const emails = c.emails as string[] || [];
+        return emails.length > 0;
+      });
+
+      if (companiesWithEmails.length === 0) {
+        throw new Error("Aucune entreprise n'a d'email. Veuillez d'abord rechercher les emails des entreprises.");
       }
 
-      try {
-        // Récupérer les emails de l'entreprise
-        const emails = company.emails as string[] || [];
+      // Créer le client SMTP uniquement si on a des emails à envoyer
+      smtpClient = new SMTPClient({
+        connection: {
+          hostname: Deno.env.get("SMTP_HOST") || "smtp.gmail.com",
+          port: parseInt(Deno.env.get("SMTP_PORT") || "587"),
+          tls: true,
+          auth: {
+            username: Deno.env.get("SMTP_USER") || "",
+            password: Deno.env.get("SMTP_PASSWORD") || "",
+          },
+        },
+      });
+
+      // Envoyer les emails (limité au nombre par jour)
+      for (let i = 0; i < Math.min(targetCompanies.length, emailsPerDay); i++) {
+        const company = targetCompanies[i];
         
-        if (emails.length === 0) {
-          console.log(`Aucun email pour ${company.nom}`);
+        // Personnaliser l'email
+        let emailBody = campaign.body_template;
+        emailBody = emailBody.replace(/{nom_entreprise}/g, company.nom);
+        if (profile?.full_name) {
+          const [prenom, ...nomParts] = profile.full_name.split(" ");
+          emailBody = emailBody.replace(/{prenom}/g, prenom);
+          emailBody = emailBody.replace(/{nom}/g, nomParts.join(" "));
+        }
+
+        try {
+          // Récupérer les emails de l'entreprise
+          const emails = company.emails as string[] || [];
+          
+          if (emails.length === 0) {
+            console.log(`Aucun email pour ${company.nom}`);
+            failedCount++;
+            
+            await supabaseClient.from("email_logs").insert({
+              campaign_id: campaignId,
+              company_id: company.id,
+              recipient_email: "no-email",
+              status: "failed",
+              error_message: "Aucun email disponible",
+            });
+            
+            continue;
+          }
+
+          // Envoyer à tous les emails de l'entreprise
+          for (const recipientEmail of emails) {
+            await smtpClient!.send({
+              from: Deno.env.get("SMTP_USER") || "",
+              to: recipientEmail,
+              subject: campaign.subject,
+              content: emailBody,
+              html: emailBody.replace(/\n/g, "<br>"),
+            });
+
+            console.log(`Email envoyé à ${recipientEmail} (${company.nom})`);
+
+            // Logger l'envoi
+            await supabaseClient.from("email_logs").insert({
+              campaign_id: campaignId,
+              company_id: company.id,
+              recipient_email: recipientEmail,
+              status: "sent",
+              sent_at: new Date().toISOString(),
+            });
+          }
+
+          sentCount++;
+
+          // Ajouter à la blacklist
+          await supabaseClient.from("user_company_blacklist").insert({
+            user_id: user.id,
+            company_siren: company.siren,
+          });
+
+          // Attendre avant l'envoi suivant
+          if (i < Math.min(targetCompanies.length, emailsPerDay) - 1) {
+            await new Promise(resolve => setTimeout(resolve, delayBetweenEmails));
+          }
+        } catch (error) {
+          console.error(`Erreur envoi email ${company.nom}:`, error);
           failedCount++;
-          
+
           await supabaseClient.from("email_logs").insert({
             campaign_id: campaignId,
             company_id: company.id,
-            recipient_email: "no-email",
+            recipient_email: company.emails?.[0] || "unknown",
             status: "failed",
-            error_message: "Aucun email disponible",
-          });
-          
-          continue;
-        }
-
-        // Envoyer à tous les emails de l'entreprise
-        for (const recipientEmail of emails) {
-          await smtpClient.send({
-            from: Deno.env.get("SMTP_USER") || "",
-            to: recipientEmail,
-            subject: campaign.subject,
-            content: emailBody,
-            html: emailBody.replace(/\n/g, "<br>"),
-          });
-
-          console.log(`Email envoyé à ${recipientEmail} (${company.nom})`);
-
-          // Logger l'envoi
-          await supabaseClient.from("email_logs").insert({
-            campaign_id: campaignId,
-            company_id: company.id,
-            recipient_email: recipientEmail,
-            status: "sent",
-            sent_at: new Date().toISOString(),
+            error_message: String(error),
           });
         }
-
-        sentCount++;
-
-        // Ajouter à la blacklist
-        await supabaseClient.from("user_company_blacklist").insert({
-          user_id: user.id,
-          company_siren: company.siren,
-        });
-
-        // Attendre avant l'envoi suivant
-        if (i < Math.min(targetCompanies.length, emailsPerDay) - 1) {
-          await new Promise(resolve => setTimeout(resolve, delayBetweenEmails));
+      }
+    } finally {
+      // Fermer le client SMTP seulement s'il a été créé
+      if (smtpClient) {
+        try {
+          await smtpClient.close();
+        } catch (error) {
+          console.error("Erreur lors de la fermeture du client SMTP:", error);
         }
-      } catch (error) {
-        console.error(`Erreur envoi email ${company.nom}:`, error);
-        failedCount++;
-
-        await supabaseClient.from("email_logs").insert({
-          campaign_id: campaignId,
-          company_id: company.id,
-          recipient_email: company.emails?.[0] || "unknown",
-          status: "failed",
-          error_message: String(error),
-        });
       }
     }
 
@@ -194,8 +216,6 @@ serve(async (req) => {
         failed_emails: campaign.failed_emails + failedCount,
       })
       .eq("id", campaignId);
-
-    await smtpClient.close();
 
     return new Response(
       JSON.stringify({
