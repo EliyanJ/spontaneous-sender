@@ -99,6 +99,72 @@ function extractDomain(url: string): string {
   }
 }
 
+// ---- Heuristic fallback when Google Search fails ----
+const STOP_WORDS = new Set([
+  'paris','studio','groupe','holding','sas','sasu','sarl','sa','eurl','ei','eirl','snc','sci','scea','earl','asso','association','societe',
+  'the','and','de','du','des','la','le','les','d','l'
+]);
+
+function normalizeName(name: string): string {
+  return name
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\(.*?\)/g, ' ');
+}
+
+function guessDomainsFromName(name: string): string[] {
+  const n = normalizeName(name);
+  const tokens = n.split(/[^a-z0-9]+/).filter(Boolean).filter(t => !STOP_WORDS.has(t));
+  if (tokens.length === 0) return [];
+  const base = tokens[0];
+  const joined = tokens.join('');
+  const hyphenTwo = tokens.slice(0, 2).join('-');
+  const candidatesBase = Array.from(new Set([base, joined, hyphenTwo]));
+  const tlds = ['.fr', '.com', '.io', '.org', '.net', '.eu', '.co'];
+  const candidates: string[] = [];
+  for (const c of candidatesBase) {
+    for (const t of tlds) candidates.push(`${c}${t}`);
+  }
+  return Array.from(new Set(candidates)).slice(0, 20);
+}
+
+async function resolveDomain(candidate: string): Promise<string | null> {
+  const tryFetch = async (url: string) => {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 4000);
+    try {
+      const res = await fetch(url, { redirect: 'follow', signal: controller.signal } as RequestInit);
+      return res.ok || (res.status >= 200 && res.status < 400) ? res.url : null;
+    } catch {
+      return null;
+    } finally {
+      clearTimeout(timer);
+    }
+  };
+  return (await tryFetch(`https://${candidate}`)) 
+      || (await tryFetch(`http://${candidate}`));
+}
+
+async function findHeuristicDomain(companyName: string): Promise<string | null> {
+  const candidates = guessDomainsFromName(companyName);
+  for (const cand of candidates) {
+    const resolvedUrl = await resolveDomain(cand);
+    if (resolvedUrl) {
+      try {
+        const host = new URL(resolvedUrl).hostname.replace(/^www\./, '');
+        console.log(`Heuristic domain for ${companyName}: ${host} (from ${cand})`);
+        return host;
+      } catch {
+        console.log(`Heuristic raw candidate used for ${companyName}: ${cand}`);
+        return cand;
+      }
+    }
+    await delay(150);
+  }
+  return null;
+}
+
 // ============ PHASE 2: SCRAPING DES EMAILS ============
 
 const FRENCH_PAGES = {
@@ -436,11 +502,18 @@ serve(async (req) => {
       try {
         console.log(`\n=== Processing: ${company.nom} ===`);
         
-        // PHASE 1: Find website
-        const websiteData = await findOfficialWebsite(company.nom);
+// PHASE 1: Find website
+        let websiteData = await findOfficialWebsite(company.nom);
         if (!websiteData) {
-          console.log(`No website found for ${company.nom}`);
-          continue;
+          // Heuristic fallback if Google fails
+          const heuristicDomain = await findHeuristicDomain(company.nom);
+          if (heuristicDomain) {
+            websiteData = { url: `https://${heuristicDomain}`, domain: heuristicDomain };
+            console.log(`Using heuristic website for ${company.nom}: ${websiteData.url}`);
+          } else {
+            console.log(`No website found for ${company.nom} after Google + heuristic`);
+            continue;
+          }
         }
         
         // PHASE 2: Scrape emails
