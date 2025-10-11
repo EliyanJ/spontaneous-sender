@@ -144,18 +144,20 @@ CAS 4 : Emails personnels (prenom.nom@) → Les inclure UNIQUEMENT si accompagn�
   console.log(`🤖 Appel à l'IA pour : ${companyName}`);
 
   try {
-    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
         'x-api-key': `${ANTHROPIC_API_KEY}`,
+        'anthropic-version': '2023-06-01',
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
+        model: 'claude-3-7-sonnet-20250219',
+        system: systemPrompt,
         messages: [
-          { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt }
         ],
+        max_tokens: 2000
       }),
     });
 
@@ -166,9 +168,9 @@ CAS 4 : Emails personnels (prenom.nom@) → Les inclure UNIQUEMENT si accompagn�
     }
 
     const data = await response.json();
-    const aiResponseText = data.choices?.[0]?.message?.content;
+    const aiResponseText = Array.isArray(data.content) ? data.content[0]?.text : undefined;
     
-    if (!aiResponseText) {
+    if (!aiResponseText || typeof aiResponseText !== 'string') {
       throw new Error('Pas de réponse de l\'IA');
     }
 

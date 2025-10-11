@@ -15,7 +15,7 @@ const Index = () => {
       <header className="border-b bg-card">
         <div className="container mx-auto flex items-center justify-between p-4">
           <div>
-            <h1 className="text-2xl font-bold">Prospection Entreprises</h1>
+            <h1 className="font-display text-2xl font-bold">Prospection Entreprises</h1>
             <p className="text-sm text-muted-foreground">API recherche-entreprises.api.gouv.fr</p>
           </div>
           <div className="flex items-center gap-4">
@@ -29,6 +29,10 @@ const Index = () => {
       </header>
       
       <main className="container mx-auto p-6">
+        <section className="mb-6 rounded-xl border bg-gradient-to-r from-primary/5 to-accent/10 p-6">
+          <h2 className="font-display text-3xl font-bold">Accélérez votre prospection</h2>
+          <p className="mt-2 text-sm text-muted-foreground">Recherchez, enregistrez et trouvez les emails de contact des entreprises ciblées.</p>
+        </section>
         <Tabs defaultValue="search" className="space-y-6">
           <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="search" className="flex items-center gap-2">

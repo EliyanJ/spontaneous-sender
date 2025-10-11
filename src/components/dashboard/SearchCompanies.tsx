@@ -22,6 +22,41 @@ interface Company {
   tranche_effectif: string;
 }
 
+// Helpers d'effectif: transforme une tranche en estimation stable par entreprise
+const TRANCHE_RANGES: Record<string, [number, number, string]> = {
+  "00": [0, 0, "0"],
+  "01": [1, 2, "1-2"],
+  "02": [3, 5, "3-5"],
+  "03": [6, 9, "6-9"],
+  "11": [10, 19, "10-19"],
+  "12": [20, 49, "20-49"],
+  "21": [50, 99, "50-99"],
+  "22": [100, 199, "100-199"],
+  "32": [200, 249, "200-249"],
+  "41": [250, 499, "250-499"],
+  "42": [500, 999, "500-999"],
+  "51": [1000, 1999, "1000-1999"],
+  "52": [2000, 4999, "2000-4999"],
+  "53": [5000, 8000, "5000+"],
+};
+
+function hashString(str: string) {
+  let h = 5381; for (let i = 0; i < str.length; i++) h = (h * 33) ^ str.charCodeAt(i);
+  return h >>> 0;
+}
+function seededBetween(seed: string, min: number, max: number) {
+  if (min >= max) return min;
+  const h = hashString(seed);
+  return min + (h % (max - min + 1));
+}
+function prettyEstimate(code: string, siren: string) {
+  const r = TRANCHE_RANGES[code]; if (!r) return "n.c.";
+  const [min, max, label] = r;
+  if (min === max) return label;
+  const val = seededBetween(siren, min, max);
+  return `${val} (~${label})`;
+}
+
 export const SearchCompanies = () => {
   const [loading, setLoading] = useState(false);
   const [companies, setCompanies] = useState<Company[]>([]);
@@ -297,7 +332,7 @@ export const SearchCompanies = () => {
                       APE: {company.code_ape} - {company.libelle_ape}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      SIREN: {company.siren} | Effectif: {company.tranche_effectif}
+                      SIREN: {company.siren} | Effectif estimé: {prettyEstimate(company.tranche_effectif, company.siren)}
                     </p>
                   </div>
                   <Button
