@@ -6,450 +6,199 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// ============ PHASE 1: RECHERCHE DU SITE WEB OFFICIEL ============
+const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
 
-async function findOfficialWebsite(companyName: string): Promise<{ url: string; domain: string } | null> {
-  const apiKey = Deno.env.get('GOOGLE_CUSTOM_SEARCH_API_KEY');
-  const cx = Deno.env.get('GOOGLE_SEARCH_ENGINE_ID');
-  
-  console.log(`Google API Key present: ${!!apiKey}, Search Engine ID present: ${!!cx}`);
-  
-  if (!apiKey || !cx) {
-    console.error('Missing Google Custom Search API credentials');
-    return null;
-  }
+// ============ RECHERCHE D'EMAILS VIA IA ============
 
-  const queries = [
-    `${companyName} site officiel`,
-    `${companyName} official website`,
-    `${companyName} france`,
-    `${companyName} entreprise`,
-    `${companyName} company`
-  ];
-
-  const excludedDomains = [
-    'linkedin.com', 'facebook.com', 'twitter.com', 'instagram.com',
-    'wikipedia.org', 'pagesjaunes.fr', 'societe.com', 'kompass.com',
-    'verif.com', 'infogreffe.fr'
-  ];
-
-  for (const query of queries) {
-    try {
-      const url = `https://www.googleapis.com/customsearch/v1?key=${apiKey}&cx=${cx}&q=${encodeURIComponent(query)}&num=5`;
-      console.log(`Searching Google for: "${query}"`);
-      
-      const response = await fetch(url);
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error(`Google API error (${response.status}): ${errorText}`);
-        continue;
-      }
-      
-      const data = await response.json();
-      
-      console.log(`Google API response for "${query}": ${data.items ? data.items.length : 0} results`);
-      
-      if (data.error) {
-        console.error(`Google API returned error:`, JSON.stringify(data.error));
-        continue;
-      }
-
-      if (data.items && data.items.length > 0) {
-        console.log(`First 3 results: ${data.items.slice(0, 3).map((item: any) => item.link).join(', ')}`);
-        
-        for (const item of data.items) {
-          const itemUrl = item.link;
-          const isExcluded = excludedDomains.some(domain => itemUrl.includes(domain));
-          
-          if (isExcluded) {
-            console.log(`Excluded domain: ${itemUrl}`);
-            continue;
-          }
-          
-          const domain = extractDomain(itemUrl);
-          console.log(`✓ Found official website for ${companyName}: ${itemUrl} (domain: ${domain})`);
-          return { url: itemUrl, domain };
-        }
-        
-        console.log(`All ${data.items.length} results were excluded domains`);
-      }
-      
-      await delay(200); // Rate limiting
-    } catch (error) {
-      console.error(`Error searching with query "${query}":`, error);
-    }
-  }
-
-  console.log(`No valid website found for ${companyName} after trying all queries`);
-  return null;
-}
-
-function extractDomain(url: string): string {
-  try {
-    const urlObj = new URL(url);
-    let hostname = urlObj.hostname;
-    
-    // Remove www.
-    hostname = hostname.replace(/^www\./, '');
-    
-    return hostname;
-  } catch {
-    return '';
-  }
-}
-
-// ---- Heuristic fallback when Google Search fails ----
-const STOP_WORDS = new Set([
-  'paris','studio','groupe','holding','sas','sasu','sarl','sa','eurl','ei','eirl','snc','sci','scea','earl','asso','association','societe',
-  'the','and','de','du','des','la','le','les','d','l'
-]);
-
-function normalizeName(name: string): string {
-  return name
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/\(.*?\)/g, ' ');
-}
-
-function guessDomainsFromName(name: string): string[] {
-  const n = normalizeName(name);
-  const tokens = n.split(/[^a-z0-9]+/).filter(Boolean).filter(t => !STOP_WORDS.has(t));
-  if (tokens.length === 0) return [];
-  const base = tokens[0];
-  const joined = tokens.join('');
-  const hyphenTwo = tokens.slice(0, 2).join('-');
-  const candidatesBase = Array.from(new Set([base, joined, hyphenTwo]));
-  const tlds = ['.fr', '.com', '.io', '.org', '.net', '.eu', '.co'];
-  const candidates: string[] = [];
-  for (const c of candidatesBase) {
-    for (const t of tlds) candidates.push(`${c}${t}`);
-  }
-  return Array.from(new Set(candidates)).slice(0, 20);
-}
-
-async function resolveDomain(candidate: string): Promise<string | null> {
-  const tryFetch = async (url: string) => {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 4000);
-    try {
-      const res = await fetch(url, { redirect: 'follow', signal: controller.signal } as RequestInit);
-      return res.ok || (res.status >= 200 && res.status < 400) ? res.url : null;
-    } catch {
-      return null;
-    } finally {
-      clearTimeout(timer);
-    }
+interface AIEmailResponse {
+  entreprise: string;
+  site_web: string | null;
+  domaine?: string;
+  emails: {
+    contact_general: string[];
+    rh: string[];
+    direction: string[];
+    autres: string[];
   };
-  return (await tryFetch(`https://${candidate}`)) 
-      || (await tryFetch(`http://${candidate}`));
+  details?: Array<{
+    email: string;
+    type: string;
+    source: string;
+    contexte: string;
+  }>;
+  stats?: {
+    pages_consultees: number;
+    emails_trouves: number;
+  };
+  status: string;
+  message?: string;
+  erreur?: string;
 }
 
-async function findHeuristicDomain(companyName: string): Promise<string | null> {
-  const candidates = guessDomainsFromName(companyName);
-  for (const cand of candidates) {
-    const resolvedUrl = await resolveDomain(cand);
-    if (resolvedUrl) {
-      try {
-        const host = new URL(resolvedUrl).hostname.replace(/^www\./, '');
-        console.log(`Heuristic domain for ${companyName}: ${host} (from ${cand})`);
-        return host;
-      } catch {
-        console.log(`Heuristic raw candidate used for ${companyName}: ${cand}`);
-        return cand;
-      }
+async function findEmailsWithAI(companyName: string): Promise<AIEmailResponse> {
+  const systemPrompt = `MISSION
+Tu es un assistant spécialisé dans la recherche d'informations de contact d'entreprises. À partir du nom commercial d'une entreprise, tu dois trouver son site web officiel et extraire tous les emails de contact pertinents (contact général, RH, direction).
+
+PROCESSUS EN 2 ÉTAPES
+ÉTAPE 1 : RECHERCHE DU SITE WEB OFFICIEL
+Objectif : Trouver l'URL du site web officiel de l'entreprise.
+Instructions :
+- Effectue une recherche web pour trouver le site officiel de l'entreprise
+- Vérifie que c'est bien le site corporate de l'entreprise (pas un réseau social, pas un annuaire)
+- Exclus automatiquement : LinkedIn, Facebook, Twitter, Instagram, Wikipedia, Annuaires (PagesJaunes, societe.com, Verif.com, Kompass, Infogreffe), Sites d'avis (Trustpilot, Google Reviews)
+
+ÉTAPE 2 : EXTRACTION DES EMAILS DE CONTACT
+Objectif : Une fois le site trouvé, extraire tous les emails pertinents en visitant les pages clés.
+Pages à consulter (dans l'ordre de priorité) :
+🇫🇷 Si site français (.fr, .be, .ch) :
+- Page contact : /contact, /nous-contacter, /contactez-nous
+- Page RH : /recrutement, /carrieres, /rejoignez-nous, /jobs, /rh
+- Page équipe : /equipe, /notre-equipe, /direction, /a-propos
+- Mentions légales : /mentions-legales
+- Footer de la homepage
+
+🇬🇧 Si site international (.com, .io, .co.uk) :
+- Page contact : /contact, /contact-us, /get-in-touch
+- Page RH : /careers, /jobs, /join-us, /recruitment, /hr
+- Page équipe : /team, /about-us, /leadership, /management
+- Footer de la homepage
+
+Instructions d'extraction :
+- Visite chaque page mentionnée (ignore les erreurs 404, continue avec les autres)
+- Cherche TOUS les emails présents sur ces pages
+- Filtre automatiquement : EXCLURE noreply@, no-reply@, donotreply@. VÉRIFIER que le domaine de l'email correspond au site (ou domaine proche)
+- Catégorise chaque email trouvé :
+  * TYPE "contact_general" si l'email contient : contact@, info@, hello@, bonjour@, accueil@, support@, service@ OU trouvé sur page /contact ou dans footer
+  * TYPE "rh" si l'email contient : rh@, recrutement@, careers@, jobs@, hr@, recruitment@, emploi@ OU trouvé sur page /recrutement, /careers, /jobs
+  * TYPE "direction" si l'email contient : direction@, ceo@, dg@, president@ OU format prenom.nom@ avec mention de titre
+  * TYPE "autre" si aucun des critères ci-dessus
+
+FORMAT DE RÉPONSE FINAL
+Réponds UNIQUEMENT avec ce JSON (rien d'autre) :
+{
+  "entreprise": "Nom Commercial",
+  "site_web": "https://entreprise.fr",
+  "domaine": "entreprise.fr",
+  "emails": {
+    "contact_general": ["contact@entreprise.fr"],
+    "rh": ["recrutement@entreprise.fr"],
+    "direction": ["ceo@entreprise.fr"],
+    "autres": []
+  },
+  "details": [
+    {
+      "email": "contact@entreprise.fr",
+      "type": "contact_general",
+      "source": "Page /contact",
+      "contexte": "Pour toute question"
     }
-    await delay(150);
-  }
-  return null;
+  ],
+  "stats": {
+    "pages_consultees": 8,
+    "emails_trouves": 5
+  },
+  "status": "success"
 }
 
-// ============ PHASE 2: SCRAPING DES EMAILS ============
-
-const FRENCH_PAGES = {
-  contact: ['/contact', '/nous-contacter', '/contactez-nous', '/coordonnees', '/mentions-legales'],
-  rh: ['/recrutement', '/carrieres', '/rejoignez-nous', '/jobs', '/emplois', '/rh', '/ressources-humaines', '/postuler'],
-  equipe: ['/a-propos', '/apropos', '/qui-sommes-nous', '/notre-equipe', '/equipe', '/direction', '/management', '/leadership']
-};
-
-const ENGLISH_PAGES = {
-  contact: ['/contact', '/contact-us', '/get-in-touch', '/support'],
-  rh: ['/careers', '/jobs', '/recruitment', '/join-us', '/join', '/work-with-us', '/hr', '/opportunities', '/hiring'],
-  equipe: ['/about', '/about-us', '/who-we-are', '/our-team', '/team', '/management', '/leadership', '/executive-team']
-};
-
-interface EmailData {
-  email: string;
-  type: 'contact_general' | 'rh' | 'direction' | 'autre';
-  source: 'scraping' | 'hunter_io';
-  page?: string;
-  context?: string;
-  poste?: string;
-  nom?: string;
-  confidence?: number;
+Si aucun email trouvé :
+{
+  "entreprise": "Nom Commercial",
+  "site_web": "https://entreprise.fr",
+  "domaine": "entreprise.fr",
+  "emails": {
+    "contact_general": [],
+    "rh": [],
+    "direction": [],
+    "autres": []
+  },
+  "message": "Site trouvé mais aucun email public détecté. L'entreprise utilise probablement un formulaire de contact.",
+  "status": "no_emails_found"
 }
 
-async function scrapePagesForEmails(domain: string): Promise<EmailData[]> {
-  const allEmails: EmailData[] = [];
-  const seenEmails = new Set<string>();
-  
-  // Combine all pages to test
-  const pagesToTest: Array<{ path: string; type: string }> = [];
-  
-  // French pages
-  FRENCH_PAGES.contact.forEach(path => pagesToTest.push({ path, type: 'contact' }));
-  FRENCH_PAGES.rh.forEach(path => pagesToTest.push({ path, type: 'rh' }));
-  FRENCH_PAGES.equipe.forEach(path => pagesToTest.push({ path, type: 'equipe' }));
-  
-  // English pages
-  ENGLISH_PAGES.contact.forEach(path => pagesToTest.push({ path, type: 'contact' }));
-  ENGLISH_PAGES.rh.forEach(path => pagesToTest.push({ path, type: 'rh' }));
-  ENGLISH_PAGES.equipe.forEach(path => pagesToTest.push({ path, type: 'equipe' }));
-  
-  // Homepage footer
-  pagesToTest.push({ path: '/', type: 'footer' });
-
-  console.log(`Starting to scrape ${pagesToTest.length} pages for ${domain}`);
-
-  // Scrape pages in batches of 10
-  const BATCH_SIZE = 10;
-  for (let i = 0; i < pagesToTest.length; i += BATCH_SIZE) {
-    const batch = pagesToTest.slice(i, i + BATCH_SIZE);
-    
-    const promises = batch.map(async ({ path, type }) => {
-      try {
-        const url = `https://${domain}${path}`;
-        const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 10000); // 10s timeout
-        
-        const response = await fetch(url, {
-          signal: controller.signal,
-          headers: {
-            'User-Agent': 'LovableAI-ContactFinder/1.0 (+https://lovable.app/contact)'
-          }
-        });
-        
-        clearTimeout(timeout);
-        
-        if (!response.ok) {
-          return null;
-        }
-        
-        const html = await response.text();
-        const emails = extractEmailsFromHTML(html, domain, type, path);
-        
-        return emails;
-      } catch (error) {
-        // Silently fail for 404s and timeouts
-        return null;
-      }
-    });
-    
-    const results = await Promise.all(promises);
-    
-    results.forEach(emails => {
-      if (emails) {
-        emails.forEach(emailData => {
-          if (!seenEmails.has(emailData.email)) {
-            seenEmails.add(emailData.email);
-            allEmails.push(emailData);
-          }
-        });
-      }
-    });
-    
-    await delay(1000); // Rate limiting between batches
-  }
-
-  console.log(`Scraping complete: found ${allEmails.length} unique emails`);
-  return allEmails;
+Si site introuvable :
+{
+  "entreprise": "Nom Commercial",
+  "site_web": null,
+  "erreur": "Site web officiel introuvable",
+  "status": "site_not_found"
 }
 
-function extractEmailsFromHTML(html: string, domain: string, pageType: string, pagePath: string): EmailData[] {
-  const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
-  const emails: EmailData[] = [];
-  const matches = html.match(emailRegex) || [];
-  
-  const excludePatterns = ['noreply@', 'no-reply@', 'donotreply@', 'bounce@', 'mailer@', 'daemon@', 'postmaster@'];
-  
-  matches.forEach(email => {
-    email = email.toLowerCase();
-    
-    // Filter out excluded patterns
-    if (excludePatterns.some(pattern => email.startsWith(pattern))) {
-      return;
-    }
-    
-    // Verify domain matches (or is very close)
-    const emailDomain = email.split('@')[1];
-    if (!emailDomain.includes(domain.split('.')[0])) {
-      return;
-    }
-    
-    // Categorize email
-    const type = categorizeEmail(email, pageType, html);
-    
-    emails.push({
-      email,
-      type,
-      source: 'scraping',
-      page: pagePath
-    });
-  });
-  
-  return emails;
-}
+RÈGLES IMPORTANTES :
+✅ Chercher méthodiquement sur toutes les pages importantes
+✅ Vérifier que les emails correspondent bien au domaine du site
+✅ Catégoriser intelligemment selon le contexte
+✅ Retourner TOUS les emails pertinents trouvés
+❌ Ne JAMAIS inventer ou deviner des emails
+❌ Ne pas retourner des emails de domaines différents
+❌ Ne pas inclure les réseaux sociaux comme "site web"
+❌ Ne pas retourner les emails noreply@
 
-function categorizeEmail(email: string, pageType: string, context: string): 'contact_general' | 'rh' | 'direction' | 'autre' {
-  const emailLower = email.toLowerCase();
-  
-  // Contact general patterns
-  const contactPatterns = ['contact@', 'info@', 'hello@', 'bonjour@', 'accueil@', 'support@', 'service@'];
-  if (contactPatterns.some(p => emailLower.includes(p)) || pageType === 'contact' || pageType === 'footer') {
-    return 'contact_general';
-  }
-  
-  // RH patterns
-  const rhPatterns = ['rh@', 'recrutement@', 'careers@', 'jobs@', 'recruitment@', 'hr@', 'emploi@', 'candidature@', 'talent@'];
-  if (rhPatterns.some(p => emailLower.includes(p)) || pageType === 'rh') {
-    return 'rh';
-  }
-  
-  // Direction patterns
-  const directionPatterns = ['direction@', 'ceo@', 'dg@', 'president@', 'pdg@', 'founder@', 'management@'];
-  if (directionPatterns.some(p => emailLower.includes(p))) {
-    return 'direction';
-  }
-  
-  return 'autre';
-}
+GESTION DES CAS PARTICULIERS
+CAS 1 : Entreprise avec plusieurs sites → Privilégier le site corporate/institutionnel principal
+CAS 2 : Site multilingue → Consulter les pages en français ET en anglais si disponibles
+CAS 3 : Formulaire de contact uniquement → Mentionner dans le message qu'aucun email public n'est disponible
+CAS 4 : Emails personnels (prenom.nom@) → Les inclure UNIQUEMENT si accompagnés d'un titre/poste (CEO, RH, etc.)`;
 
-// ============ PHASE 3: HUNTER.IO EN COMPLÉMENT ============
+  const userPrompt = `Trouve le site web et les emails de contact pour l'entreprise : "${companyName}"`;
 
-async function supplementWithHunterIO(domain: string, scrapedEmails: EmailData[]): Promise<EmailData[]> {
-  // Only use Hunter.io if we have < 3 emails from scraping
-  if (scrapedEmails.length >= 3) {
-    console.log(`Sufficient emails found (${scrapedEmails.length}), skipping Hunter.io`);
-    return [];
-  }
-  
-  const apiKey = Deno.env.get('HUNTER_API_KEY');
-  if (!apiKey) {
-    console.log('Hunter.io API key not configured');
-    return [];
-  }
-  
+  console.log(`🤖 Appel à l'IA pour : ${companyName}`);
+
   try {
-    const url = `https://api.hunter.io/v2/domain-search?domain=${domain}&api_key=${apiKey}&limit=50`;
-    const response = await fetch(url);
+    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'google/gemini-2.5-flash',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt }
+        ],
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`❌ Erreur API IA (${response.status}):`, errorText);
+      throw new Error(`API IA error: ${response.status}`);
+    }
+
     const data = await response.json();
+    const aiResponseText = data.choices?.[0]?.message?.content;
     
-    if (!data.data || !data.data.emails) {
-      return [];
+    if (!aiResponseText) {
+      throw new Error('Pas de réponse de l\'IA');
     }
+
+    console.log(`✅ Réponse IA reçue pour ${companyName}`);
     
-    const hunterEmails: EmailData[] = [];
-    
-    data.data.emails.forEach((item: any) => {
-      // Filter by confidence
-      if (item.confidence < 50) return;
-      
-      // Accept all generic emails
-      if (item.type === 'generic') {
-        const type = categorizeEmail(item.value, '', '');
-        hunterEmails.push({
-          email: item.value,
-          type,
-          source: 'hunter_io',
-          confidence: item.confidence
-        });
-        return;
-      }
-      
-      // For personal emails, filter by position
-      if (item.type === 'personal' && item.position) {
-        const positionLower = item.position.toLowerCase();
-        
-        const directionKeywords = ['ceo', 'chief executive', 'president', 'président', 'pdg', 'founder', 'fondateur', 'managing director', 'directeur général', 'owner'];
-        const rhKeywords = ['hr', 'human resources', 'ressources humaines', 'recruitment', 'recrutement', 'talent', 'recruiter', 'recruteur'];
-        
-        const isDirection = directionKeywords.some(kw => positionLower.includes(kw));
-        const isRH = rhKeywords.some(kw => positionLower.includes(kw));
-        
-        if (isDirection || isRH) {
-          hunterEmails.push({
-            email: item.value,
-            type: isDirection ? 'direction' : 'rh',
-            source: 'hunter_io',
-            poste: item.position,
-            nom: `${item.first_name || ''} ${item.last_name || ''}`.trim(),
-            confidence: item.confidence
-          });
-        }
-      }
-    });
-    
-    console.log(`Hunter.io found ${hunterEmails.length} additional emails`);
-    return hunterEmails;
-  } catch (error) {
-    console.error('Error calling Hunter.io:', error);
-    return [];
+    // Parser le JSON de la réponse
+    const jsonMatch = aiResponseText.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      console.error('❌ Pas de JSON trouvé dans la réponse:', aiResponseText);
+      throw new Error('Format de réponse invalide');
+    }
+
+    const result: AIEmailResponse = JSON.parse(jsonMatch[0]);
+    return result;
+
+  } catch (error: any) {
+    console.error(`❌ Erreur lors de la recherche IA pour ${companyName}:`, error);
+    return {
+      entreprise: companyName,
+      site_web: null,
+      emails: {
+        contact_general: [],
+        rh: [],
+        direction: [],
+        autres: []
+      },
+      status: 'error',
+      erreur: error?.message || 'Erreur inconnue'
+    };
   }
-}
-
-// ============ PHASE 4: CONSOLIDATION ============
-
-function consolidateEmails(scrapedEmails: EmailData[], hunterEmails: EmailData[]): any {
-  // Merge and deduplicate
-  const emailMap = new Map<string, EmailData>();
-  
-  // Add scraped emails first (they have priority)
-  scrapedEmails.forEach(email => {
-    emailMap.set(email.email, email);
-  });
-  
-  // Add Hunter.io emails if not already present
-  hunterEmails.forEach(email => {
-    if (!emailMap.has(email.email)) {
-      emailMap.set(email.email, email);
-    } else {
-      // Merge metadata if email already exists
-      const existing = emailMap.get(email.email)!;
-      existing.poste = email.poste || existing.poste;
-      existing.nom = email.nom || existing.nom;
-      existing.confidence = email.confidence || existing.confidence;
-      existing.source = 'scraping_et_hunter' as any;
-    }
-  });
-  
-  const allEmails = Array.from(emailMap.values());
-  
-  // Group by type
-  const grouped = {
-    contact_general: allEmails.filter(e => e.type === 'contact_general').slice(0, 5),
-    rh: allEmails.filter(e => e.type === 'rh').slice(0, 5),
-    direction: allEmails.filter(e => e.type === 'direction').slice(0, 3),
-    autres: allEmails.filter(e => e.type === 'autre').slice(0, 3)
-  };
-  
-  return {
-    emails: {
-      contact_general: grouped.contact_general.map(e => e.email),
-      rh: grouped.rh.map(e => e.email),
-      direction: grouped.direction.map(e => e.email),
-      autres: grouped.autres.map(e => e.email)
-    },
-    details_emails: allEmails.map(e => ({
-      email: e.email,
-      type: e.type,
-      source: e.source,
-      page: e.page,
-      poste: e.poste,
-      nom: e.nom,
-      confidence: e.confidence
-    }))
-  };
 }
 
 // ============ MAIN HANDLER ============
@@ -494,90 +243,89 @@ serve(async (req) => {
       );
     }
 
-    console.log(`Processing ${companies.length} companies`);
-    let processed = 0;
-    let updated = 0;
+    console.log(`🎯 Traitement de ${companies.length} entreprises`);
+    let processedCount = 0;
+    let failedCount = 0;
 
     for (const company of companies) {
       try {
-        console.log(`\n=== Processing: ${company.nom} ===`);
+        console.log(`\n=== Traitement: ${company.nom} ===`);
         
-// PHASE 1: Find website
-        let websiteData = await findOfficialWebsite(company.nom);
-        if (!websiteData) {
-          // Heuristic fallback if Google fails
-          const heuristicDomain = await findHeuristicDomain(company.nom);
-          if (heuristicDomain) {
-            websiteData = { url: `https://${heuristicDomain}`, domain: heuristicDomain };
-            console.log(`Using heuristic website for ${company.nom}: ${websiteData.url}`);
-          } else {
-            console.log(`No website found for ${company.nom} after Google + heuristic`);
-            continue;
-          }
-        }
+        // Recherche via IA
+        const aiResult = await findEmailsWithAI(company.nom);
         
-        // PHASE 2: Scrape emails
-        const scrapedEmails = await scrapePagesForEmails(websiteData.domain);
-        
-        // PHASE 3: Hunter.io supplement
-        const hunterEmails = await supplementWithHunterIO(websiteData.domain, scrapedEmails);
-        
-        // PHASE 4: Consolidate
-        const result = consolidateEmails(scrapedEmails, hunterEmails);
-        
-        // Flatten all emails for storage
-        const allEmailsList = [
-          ...result.emails.contact_general,
-          ...result.emails.rh,
-          ...result.emails.direction,
-          ...result.emails.autres
-        ];
-        
-        if (allEmailsList.length > 0) {
-          // Update company with website and emails
+        if (aiResult.status === 'success' && aiResult.site_web) {
+          // Préparer les données pour la DB
+          const emailsForDB = {
+            contact_general: aiResult.emails.contact_general || [],
+            rh: aiResult.emails.rh || [],
+            direction: aiResult.emails.direction || [],
+            autres: aiResult.emails.autres || []
+          };
+
+          // Stocker dans la base de données
           const { error: updateError } = await supabase
             .from('companies')
             .update({
-              website_url: websiteData.url,
-              emails: allEmailsList
+              website_url: aiResult.site_web,
+              emails: emailsForDB,
+              updated_at: new Date().toISOString(),
             })
             .eq('id', company.id);
 
           if (updateError) {
-            console.error(`Error updating ${company.nom}:`, updateError);
+            console.error(`❌ Échec mise à jour ${company.nom}:`, updateError);
+            failedCount++;
           } else {
-            console.log(`✓ Stored ${allEmailsList.length} emails for ${company.nom}`);
-            updated++;
+            const totalEmails = Object.values(emailsForDB).reduce((sum: number, arr) => sum + arr.length, 0);
+            console.log(`✅ ${company.nom}: ${totalEmails} emails trouvés`);
+            if (aiResult.stats) {
+              console.log(`   📊 ${aiResult.stats.pages_consultees} pages consultées`);
+            }
+            processedCount++;
           }
         } else {
-          // Just store the website even if no emails found
-          await supabase
-            .from('companies')
-            .update({ website_url: websiteData.url })
-            .eq('id', company.id);
+          console.log(`⚠️ ${company.nom}: ${aiResult.erreur || aiResult.message || 'Site non trouvé'}`);
           
-          console.log(`✓ Stored website for ${company.nom} (no emails found)`);
+          // Stocker quand même pour éviter de re-traiter
+          const { error: updateError } = await supabase
+            .from('companies')
+            .update({
+              website_url: aiResult.site_web,
+              emails: {
+                contact_general: [],
+                rh: [],
+                direction: [],
+                autres: []
+              },
+              updated_at: new Date().toISOString(),
+            })
+            .eq('id', company.id);
+            
+          if (!updateError) processedCount++;
         }
         
-        processed++;
-        await delay(1000); // Rate limiting
+        // Délai entre les appels pour éviter le rate limiting
+        await delay(2000);
         
-      } catch (error) {
-        console.error(`Error processing ${company.nom}:`, error);
+      } catch (error: any) {
+        console.error(`❌ Erreur traitement ${company.nom}:`, error);
+        failedCount++;
       }
     }
 
     return new Response(
       JSON.stringify({
-        message: 'Email search completed',
-        processed,
-        updated
+        message: 'Recherche d\'emails terminée',
+        processed: processedCount,
+        failed: failedCount,
+        total: companies.length
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
   } catch (error: any) {
-    console.error('Error in find-company-emails:', error);
+    console.error('❌ Erreur dans find-company-emails:', error);
     return new Response(
       JSON.stringify({ error: error.message }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
