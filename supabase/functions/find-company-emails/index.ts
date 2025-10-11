@@ -6,7 +6,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+const ANTHROPIC_API_KEY = Deno.env.get('ANTHROPIC_API_KEY');
 
 // ============ RECHERCHE D'EMAILS VIA IA ============
 
@@ -147,7 +147,7 @@ CAS 4 : Emails personnels (prenom.nom@) → Les inclure UNIQUEMENT si accompagn�
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+        'x-api-key': `${ANTHROPIC_API_KEY}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -246,6 +246,7 @@ serve(async (req) => {
     console.log(`🎯 Traitement de ${companies.length} entreprises`);
     let processedCount = 0;
     let failedCount = 0;
+    let totalEmailsFound = 0;
 
     for (const company of companies) {
       try {
@@ -256,19 +257,19 @@ serve(async (req) => {
         
         if (aiResult.status === 'success' && aiResult.site_web) {
           // Préparer les données pour la DB
-          const emailsForDB = {
-            contact_general: aiResult.emails.contact_general || [],
-            rh: aiResult.emails.rh || [],
-            direction: aiResult.emails.direction || [],
-            autres: aiResult.emails.autres || []
-          };
+          const flatEmails = Array.from(new Set([
+            ...(aiResult.emails.contact_general || []),
+            ...(aiResult.emails.rh || []),
+            ...(aiResult.emails.direction || []),
+            ...(aiResult.emails.autres || []),
+          ]));
 
           // Stocker dans la base de données
           const { error: updateError } = await supabase
             .from('companies')
             .update({
               website_url: aiResult.site_web,
-              emails: emailsForDB,
+              emails: flatEmails,
               updated_at: new Date().toISOString(),
             })
             .eq('id', company.id);
@@ -277,11 +278,12 @@ serve(async (req) => {
             console.error(`❌ Échec mise à jour ${company.nom}:`, updateError);
             failedCount++;
           } else {
-            const totalEmails = Object.values(emailsForDB).reduce((sum: number, arr) => sum + arr.length, 0);
+            const totalEmails = flatEmails.length;
             console.log(`✅ ${company.nom}: ${totalEmails} emails trouvés`);
             if (aiResult.stats) {
               console.log(`   📊 ${aiResult.stats.pages_consultees} pages consultées`);
             }
+            totalEmailsFound += totalEmails;
             processedCount++;
           }
         } else {
@@ -292,12 +294,7 @@ serve(async (req) => {
             .from('companies')
             .update({
               website_url: aiResult.site_web,
-              emails: {
-                contact_general: [],
-                rh: [],
-                direction: [],
-                autres: []
-              },
+              emails: [],
               updated_at: new Date().toISOString(),
             })
             .eq('id', company.id);
@@ -319,7 +316,9 @@ serve(async (req) => {
         message: 'Recherche d\'emails terminée',
         processed: processedCount,
         failed: failedCount,
-        total: companies.length
+        total: companies.length,
+        companiesUpdated: processedCount,
+        totalEmailsFound
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
