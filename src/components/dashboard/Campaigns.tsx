@@ -4,9 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Mail, Trash2, Send, Loader2 } from "lucide-react";
+import { Plus, Mail, Trash2, Edit } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { CampaignEditor } from "./CampaignEditor";
 
 interface Campaign {
   id: string;
@@ -21,10 +22,10 @@ interface Campaign {
 export const Campaigns = () => {
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [showForm, setShowForm] = useState(false);
+  const [selectedCampaignId, setSelectedCampaignId] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [subject, setSubject] = useState("");
   const [bodyTemplate, setBodyTemplate] = useState("");
-  const [sendingCampaignId, setSendingCampaignId] = useState<string | null>(null);
 
   const fetchCampaigns = async () => {
     const { data, error } = await supabase
@@ -82,28 +83,18 @@ export const Campaigns = () => {
     }
   };
 
-  const sendCampaign = async (campaignId: string) => {
-    try {
-      setSendingCampaignId(campaignId);
-      
-      const { data, error } = await supabase.functions.invoke("send-campaign-emails", {
-        body: { campaignId }
-      });
-
-      if (error) throw error;
-
-      toast.success(`Envoi de la campagne lancé ! ${data.message}`);
-      fetchCampaigns();
-    } catch (error: any) {
-      toast.error(error.message || "Erreur lors de l'envoi");
-    } finally {
-      setSendingCampaignId(null);
-    }
-  };
-
   useEffect(() => {
     fetchCampaigns();
   }, []);
+
+  if (selectedCampaignId) {
+    return (
+      <CampaignEditor
+        campaignId={selectedCampaignId}
+        onBack={() => setSelectedCampaignId(null)}
+      />
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -169,7 +160,8 @@ export const Campaigns = () => {
               campaigns.map((campaign) => (
                 <div
                   key={campaign.id}
-                  className="group flex items-center justify-between rounded-xl border border-border/50 bg-card p-4 transition-all hover:border-primary/50 hover:shadow-md"
+                  className="group flex items-center justify-between rounded-xl border border-border/50 bg-card p-4 transition-all hover:border-primary/50 hover:shadow-md cursor-pointer"
+                  onClick={() => setSelectedCampaignId(campaign.id)}
                 >
                   <div className="flex items-center gap-4 flex-1">
                     <div className="p-3 rounded-lg bg-primary/10">
@@ -198,27 +190,23 @@ export const Campaigns = () => {
                   </div>
                   <div className="flex gap-2 ml-4">
                     <Button
-                      variant="default"
-                      size="sm"
-                      onClick={() => sendCampaign(campaign.id)}
-                      disabled={sendingCampaignId === campaign.id}
+                      variant="ghost"
+                      size="icon"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedCampaignId(campaign.id);
+                      }}
+                      className="opacity-0 group-hover:opacity-100 transition-opacity"
                     >
-                      {sendingCampaignId === campaign.id ? (
-                        <>
-                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                          Envoi...
-                        </>
-                      ) : (
-                        <>
-                          <Send className="h-4 w-4 mr-2" />
-                          Envoyer
-                        </>
-                      )}
+                      <Edit className="h-4 w-4" />
                     </Button>
                     <Button
                       variant="destructive"
                       size="sm"
-                      onClick={() => deleteCampaign(campaign.id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        deleteCampaign(campaign.id);
+                      }}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
