@@ -6,6 +6,7 @@ import { SearchCompanies } from "@/components/dashboard/SearchCompanies";
 import { SavedCompanies } from "@/components/dashboard/SavedCompanies";
 import { Campaigns } from "@/components/dashboard/Campaigns";
 import { Blacklist } from "@/components/dashboard/Blacklist";
+import { Statistics } from "@/components/dashboard/Statistics";
 import { AppSidebar } from "@/components/AppSidebar";
 import { SidebarProvider } from "@/components/ui/sidebar";
 
@@ -21,6 +22,8 @@ const Index = () => {
         return <SavedCompanies />;
       case "campaigns":
         return <Campaigns />;
+      case "statistics":
+        return <Statistics />;
       case "blacklist":
         return <Blacklist />;
       default:
