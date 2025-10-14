@@ -5,7 +5,7 @@ import { ArrowRight, Building2, Mail, Search, Zap } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import mountainsBg from "@/assets/mountains-bg.jpg";
-import logo from "@/assets/logo.png";
+import logo from "@/assets/logo-transparent.png";
 
 const Landing = () => {
   const [authOpen, setAuthOpen] = useState(false);
