@@ -4,7 +4,7 @@ import { AuthDialog } from "@/components/AuthDialog";
 import { ArrowRight, Building2, Mail, Search, Zap } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import heroBg from "@/assets/hero-bg.jpg";
+import mountainsBg from "@/assets/mountains-bg.jpg";
 
 const Landing = () => {
   const [authOpen, setAuthOpen] = useState(false);
@@ -19,12 +19,13 @@ const Landing = () => {
 
   return (
     <div className="relative min-h-screen overflow-hidden">
-      {/* Background gradient with overlay image */}
-      <div className="absolute inset-0 bg-gradient-to-br from-blue-400/80 via-indigo-500/70 to-purple-500/80"></div>
+      {/* Background image with mountains */}
       <div 
-        className="absolute inset-0 opacity-40 bg-cover bg-center bg-no-repeat"
-        style={{ backgroundImage: `url(${heroBg})` }}
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+        style={{ backgroundImage: `url(${mountainsBg})` }}
       ></div>
+      {/* Gradient overlay with vivid colors */}
+      <div className="absolute inset-0 bg-gradient-to-br from-blue-600/85 via-indigo-600/80 to-purple-600/85"></div>
       <div className="relative z-10">
       {/* Header */}
       <header className="container mx-auto flex items-center justify-between px-6 py-6">
