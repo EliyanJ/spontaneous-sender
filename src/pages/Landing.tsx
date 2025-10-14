@@ -25,12 +25,25 @@ const Landing = () => {
 
   return (
     <div className="relative min-h-screen overflow-hidden">
-      {/* Soft sky blue gradient like Cluely */}
-      <div className="absolute inset-0 bg-gradient-to-b from-[#5B9FD8] via-[#E8F4FD] to-[#A8D5F2]"></div>
-      {/* Mountains image overlay with low opacity */}
+      {/* Top section - Sky blue gradient */}
+      <div className="absolute inset-0 bg-gradient-to-b from-[#5B9FD8] via-[#E8F4FD] to-transparent" style={{ height: '50%' }}></div>
+      
+      {/* Bottom section - Purple/Pink gradient */}
+      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#E8D5FD] to-[#F8E8FF]" style={{ top: '50%' }}></div>
+      
+      {/* Mountains image overlay with low opacity on top */}
       <div 
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-15"
-        style={{ backgroundImage: `url(${mountainsBg})` }}
+        className="absolute opacity-10"
+        style={{ 
+          backgroundImage: `url(${mountainsBg})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
+          top: 0,
+          left: 0,
+          right: 0,
+          height: '60%'
+        }}
       ></div>
       <div className="relative z-10">
       {/* Header */}
@@ -59,10 +72,10 @@ const Landing = () => {
       {/* Hero Section */}
       <main className="container mx-auto px-6 py-20 text-center">
         <div className="mx-auto max-w-4xl space-y-8">
-          <h1 className="font-display text-5xl font-bold leading-tight text-gray-900 md:text-7xl animate-fade-in">
-            Votre assistant IA
+          <h1 className="font-display text-5xl font-bold leading-tight md:text-7xl animate-fade-in">
+            <span className="bg-gradient-to-r from-gray-900 via-blue-900 to-purple-900 bg-clip-text text-transparent">Votre assistant IA</span>
             <br />
-            <span className="text-blue-600">pour la prospection</span>
+            <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">pour la prospection</span>
           </h1>
           
           <p className="mx-auto max-w-2xl text-lg text-gray-700 md:text-xl animate-fade-in" style={{ animationDelay: '0.2s' }}>
@@ -82,34 +95,43 @@ const Landing = () => {
 
           {/* Features Grid */}
           <div id="features" className="grid gap-6 pt-20 md:grid-cols-3">
-            <div className="rounded-2xl bg-white/80 backdrop-blur-sm p-8 text-gray-900 shadow-lg transition hover:shadow-xl animate-fade-in hover:scale-105 duration-300" style={{ animationDelay: '0.6s' }}>
-              <div className="mb-4 inline-block rounded-full bg-blue-100 p-3">
-                <Search className="h-6 w-6 text-blue-600" />
+            <div className="group relative rounded-3xl p-[2px] animate-fade-in transition-all duration-500 hover:scale-105" style={{ animationDelay: '0.6s' }}>
+              <div className="absolute inset-0 rounded-3xl bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 opacity-75 blur-sm group-hover:opacity-100 transition-opacity"></div>
+              <div className="relative rounded-3xl bg-white/90 backdrop-blur-sm p-8">
+                <div className="mb-4 inline-block rounded-2xl bg-gradient-to-br from-blue-500 to-purple-500 p-4">
+                  <Search className="h-6 w-6 text-white" />
+                </div>
+                <h3 className="mb-2 text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Recherche intelligente</h3>
+                <p className="text-gray-600 leading-relaxed">
+                  Filtrez par secteur, taille, localisation et trouvez vos prospects idéaux
+                </p>
               </div>
-              <h3 className="mb-2 text-xl font-semibold">Recherche intelligente</h3>
-              <p className="text-gray-600">
-                Filtrez par secteur, taille, localisation et trouvez vos prospects idéaux
-              </p>
             </div>
 
-            <div className="rounded-2xl bg-white/80 backdrop-blur-sm p-8 text-gray-900 shadow-lg transition hover:shadow-xl animate-fade-in hover:scale-105 duration-300" style={{ animationDelay: '0.8s' }}>
-              <div className="mb-4 inline-block rounded-full bg-blue-100 p-3">
-                <Mail className="h-6 w-6 text-blue-600" />
+            <div className="group relative rounded-3xl p-[2px] animate-fade-in transition-all duration-500 hover:scale-105" style={{ animationDelay: '0.8s' }}>
+              <div className="absolute inset-0 rounded-3xl bg-gradient-to-r from-purple-400 via-pink-400 to-blue-400 opacity-75 blur-sm group-hover:opacity-100 transition-opacity"></div>
+              <div className="relative rounded-3xl bg-white/90 backdrop-blur-sm p-8">
+                <div className="mb-4 inline-block rounded-2xl bg-gradient-to-br from-purple-500 to-pink-500 p-4">
+                  <Mail className="h-6 w-6 text-white" />
+                </div>
+                <h3 className="mb-2 text-xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">Emails automatiques</h3>
+                <p className="text-gray-600 leading-relaxed">
+                  L'IA scanne les sites web et trouve automatiquement les emails de contact
+                </p>
               </div>
-              <h3 className="mb-2 text-xl font-semibold">Emails automatiques</h3>
-              <p className="text-gray-600">
-                L'IA scanne les sites web et trouve automatiquement les emails de contact
-              </p>
             </div>
 
-            <div className="rounded-2xl bg-white/80 backdrop-blur-sm p-8 text-gray-900 shadow-lg transition hover:shadow-xl animate-fade-in hover:scale-105 duration-300" style={{ animationDelay: '1s' }}>
-              <div className="mb-4 inline-block rounded-full bg-blue-100 p-3">
-                <Zap className="h-6 w-6 text-blue-600" />
+            <div className="group relative rounded-3xl p-[2px] animate-fade-in transition-all duration-500 hover:scale-105" style={{ animationDelay: '1s' }}>
+              <div className="absolute inset-0 rounded-3xl bg-gradient-to-r from-pink-400 via-blue-400 to-purple-400 opacity-75 blur-sm group-hover:opacity-100 transition-opacity"></div>
+              <div className="relative rounded-3xl bg-white/90 backdrop-blur-sm p-8">
+                <div className="mb-4 inline-block rounded-2xl bg-gradient-to-br from-pink-500 to-blue-500 p-4">
+                  <Zap className="h-6 w-6 text-white" />
+                </div>
+                <h3 className="mb-2 text-xl font-bold bg-gradient-to-r from-pink-600 to-blue-600 bg-clip-text text-transparent">Campagnes rapides</h3>
+                <p className="text-gray-600 leading-relaxed">
+                  Lancez vos campagnes d'emailing directement depuis la plateforme
+                </p>
               </div>
-              <h3 className="mb-2 text-xl font-semibold">Campagnes rapides</h3>
-              <p className="text-gray-600">
-                Lancez vos campagnes d'emailing directement depuis la plateforme
-              </p>
             </div>
           </div>
         </div>
@@ -118,46 +140,46 @@ const Landing = () => {
       {/* Detailed Features Section */}
       <section className="container mx-auto px-6 py-20">
         <div className="grid gap-12 md:grid-cols-2">
-          <div className="animate-fade-in" style={{ animationDelay: '1.2s' }}>
-            <div className="rounded-2xl bg-white/70 backdrop-blur-sm p-8 shadow-lg">
-              <h2 className="mb-4 text-3xl font-bold text-gray-900">Recherche avancée d'entreprises</h2>
-              <p className="mb-6 text-gray-700">
+          <div className="animate-fade-in group" style={{ animationDelay: '1.2s' }}>
+            <div className="glass-card-dark rounded-3xl p-8 transition-all duration-500 hover:bg-white/15">
+              <h2 className="mb-4 text-3xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">Recherche avancée d'entreprises</h2>
+              <p className="mb-6 text-gray-800 leading-relaxed">
                 Avant chaque prospection, notre IA analyse les entreprises correspondant à vos critères et vous fournit un contexte détaillé sur leurs activités et besoins.
               </p>
               <ul className="space-y-3">
                 <li className="flex items-start gap-3">
-                  <Check className="mt-1 h-5 w-5 text-blue-600" />
+                  <Check className="mt-1 h-5 w-5 text-purple-600" />
                   <span className="text-gray-700">Filtrage par secteur d'activité et taille</span>
                 </li>
                 <li className="flex items-start gap-3">
-                  <Check className="mt-1 h-5 w-5 text-blue-600" />
+                  <Check className="mt-1 h-5 w-5 text-purple-600" />
                   <span className="text-gray-700">Localisation géographique précise</span>
                 </li>
                 <li className="flex items-start gap-3">
-                  <Check className="mt-1 h-5 w-5 text-blue-600" />
+                  <Check className="mt-1 h-5 w-5 text-purple-600" />
                   <span className="text-gray-700">Export et sauvegarde des listes</span>
                 </li>
               </ul>
             </div>
           </div>
 
-          <div className="animate-fade-in" style={{ animationDelay: '1.4s' }}>
-            <div className="rounded-2xl bg-white/70 backdrop-blur-sm p-8 shadow-lg">
-              <h2 className="mb-4 text-3xl font-bold text-gray-900">Extraction automatique d'emails</h2>
-              <p className="mb-6 text-gray-700">
+          <div className="animate-fade-in group" style={{ animationDelay: '1.4s' }}>
+            <div className="glass-card-dark rounded-3xl p-8 transition-all duration-500 hover:bg-white/15">
+              <h2 className="mb-4 text-3xl font-bold bg-gradient-to-r from-pink-600 via-purple-600 to-blue-600 bg-clip-text text-transparent">Extraction automatique d'emails</h2>
+              <p className="mb-6 text-gray-800 leading-relaxed">
                 Notre IA scanne automatiquement les sites web des entreprises et génère des emails de suivi basés sur vos besoins et le contexte de chaque prospect.
               </p>
               <ul className="space-y-3">
                 <li className="flex items-start gap-3">
-                  <Check className="mt-1 h-5 w-5 text-blue-600" />
+                  <Check className="mt-1 h-5 w-5 text-pink-600" />
                   <span className="text-gray-700">Emails RH et contacts décisionnaires</span>
                 </li>
                 <li className="flex items-start gap-3">
-                  <Check className="mt-1 h-5 w-5 text-blue-600" />
+                  <Check className="mt-1 h-5 w-5 text-pink-600" />
                   <span className="text-gray-700">Pages carrières et formulaires de contact</span>
                 </li>
                 <li className="flex items-start gap-3">
-                  <Check className="mt-1 h-5 w-5 text-blue-600" />
+                  <Check className="mt-1 h-5 w-5 text-pink-600" />
                   <span className="text-gray-700">Vérification de validité des emails</span>
                 </li>
               </ul>
