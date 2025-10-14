@@ -97,10 +97,10 @@ export const Blacklist = () => {
   }, []);
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Ban className="h-5 w-5" />
+    <Card className="border-0 shadow-md">
+      <CardHeader className="bg-gradient-to-r from-muted/50 to-background pb-4">
+        <CardTitle className="flex items-center gap-2 text-2xl">
+          <Ban className="h-6 w-6 text-destructive" />
           Blacklist
         </CardTitle>
         <CardDescription>

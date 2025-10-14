@@ -94,11 +94,11 @@ export const SavedCompanies = () => {
   }
 
   return (
-    <Card>
-      <CardHeader>
+    <Card className="border-0 shadow-md">
+      <CardHeader className="bg-gradient-to-r from-muted/50 to-background pb-4">
         <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2">
-            <Building2 className="h-5 w-5" />
+          <CardTitle className="flex items-center gap-2 text-2xl">
+            <Building2 className="h-6 w-6 text-primary" />
             Entreprises sauvegardées ({companies.length})
           </CardTitle>
           {companies.length > 0 && (
@@ -128,34 +128,36 @@ export const SavedCompanies = () => {
             Aucune entreprise sauvegardée
           </p>
         ) : (
-          <div className="space-y-2 max-h-[600px] overflow-y-auto">
+          <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2">
             {companies.map((company) => (
               <div
                 key={company.id}
-                className="flex items-center justify-between rounded-lg border p-4"
+                className="group relative flex items-center justify-between rounded-xl border border-border/50 bg-card p-4 transition-all hover:border-primary/50 hover:shadow-md"
               >
-                <div className="flex-1">
-                  <h3 className="font-semibold">{company.nom}</h3>
+                <div className="flex-1 space-y-1">
+                  <h3 className="font-semibold text-lg group-hover:text-primary transition-colors">
+                    {company.nom}
+                  </h3>
                   <p className="text-sm text-muted-foreground">
-                    {company.adresse}, {company.code_postal} {company.ville}
+                    📍 {company.adresse}, {company.code_postal} {company.ville}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    APE: {company.code_ape} - {company.libelle_ape}
+                    🏢 APE: {company.code_ape} - {company.libelle_ape}
                   </p>
-                  <p className="text-xs text-muted-foreground">
-                    SIREN: {company.siren}
+                  <p className="text-xs text-muted-foreground font-mono">
+                    🔢 SIREN: {company.siren}
                   </p>
                   {company.website_url && (
-                    <p className="text-xs text-muted-foreground flex items-center gap-1">
+                    <p className="text-sm text-primary font-medium">
                       🌐 {company.website_url}
                     </p>
                   )}
                   {company.emails && company.emails.length > 0 && (
-                    <div className="mt-2 flex items-start gap-1">
-                      <Mail className="h-3 w-3 mt-0.5 text-green-600" />
-                      <div className="flex flex-col gap-0.5">
+                    <div className="mt-2 flex items-start gap-2 p-2 bg-green-50 dark:bg-green-950/20 rounded-lg">
+                      <Mail className="h-4 w-4 mt-0.5 text-green-600" />
+                      <div className="flex flex-col gap-1">
                         {company.emails.map((email, idx) => (
-                          <span key={idx} className="text-xs text-green-600 font-medium">
+                          <span key={idx} className="text-sm text-green-600 font-medium">
                             {email}
                           </span>
                         ))}
@@ -167,6 +169,7 @@ export const SavedCompanies = () => {
                   variant="destructive"
                   size="sm"
                   onClick={() => deleteCompany(company.id)}
+                  className="ml-4"
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>

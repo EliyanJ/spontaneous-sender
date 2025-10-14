@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Loader2, Save } from "lucide-react";
+import { Search, Loader2, Save, Building2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { ACTIVITY_SECTORS } from "@/lib/activity-sectors";
@@ -177,6 +177,10 @@ export const SearchCompanies = () => {
       // Exclure les entreprises blacklistées
       filtered = filtered.filter(c => !blacklistedSirens.includes(c.siren));
       
+      // Filtrer pour n'avoir que les entreprises avec minimum 20 salariés
+      const minEffectifTranches = ["12", "21", "22", "32", "41", "42", "51", "52", "53"];
+      filtered = filtered.filter(c => minEffectifTranches.includes(c.tranche_effectif));
+      
       // Filtrer par secteur (tous les codes APE du secteur)
       if (sector) {
         const selectedSector = ACTIVITY_SECTORS.find(s => s.label === sector);
@@ -229,10 +233,10 @@ export const SearchCompanies = () => {
 
   return (
     <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Rechercher des entreprises</CardTitle>
-          <CardDescription>Utilisez les filtres pour trouver vos prospects</CardDescription>
+      <Card className="border-0 shadow-md">
+        <CardHeader className="bg-gradient-to-r from-muted/50 to-background pb-4">
+          <CardTitle className="text-2xl">Rechercher des entreprises</CardTitle>
+          <CardDescription>Utilisez les filtres pour cibler vos prospects (20 salariés minimum)</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2">
@@ -260,17 +264,12 @@ export const SearchCompanies = () => {
               />
             </div>
             <div className="space-y-2">
-              <Label>Tranche d'effectif</Label>
+              <Label>Tranche d'effectif (minimum 20 salariés)</Label>
               <Select value={trancheEffectif} onValueChange={setTrancheEffectif}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Tous" />
+                  <SelectValue placeholder="Toutes les tranches (20+)" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="00">0 salarié</SelectItem>
-                  <SelectItem value="01">1 ou 2 salariés</SelectItem>
-                  <SelectItem value="02">3 à 5 salariés</SelectItem>
-                  <SelectItem value="03">6 à 9 salariés</SelectItem>
-                  <SelectItem value="11">10 à 19 salariés</SelectItem>
                   <SelectItem value="12">20 à 49 salariés</SelectItem>
                   <SelectItem value="21">50 à 99 salariés</SelectItem>
                   <SelectItem value="22">100 à 199 salariés</SelectItem>
@@ -312,35 +311,45 @@ export const SearchCompanies = () => {
       </Card>
 
       {companies.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Résultats ({companies.length})</CardTitle>
+        <Card className="border-0 shadow-md">
+          <CardHeader className="bg-gradient-to-r from-muted/50 to-background pb-4">
+            <CardTitle className="text-xl flex items-center gap-2">
+              <Building2 className="h-5 w-5 text-primary" />
+              Résultats de recherche ({companies.length})
+            </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="space-y-2 max-h-[600px] overflow-y-auto">
+          <CardContent className="pt-6">
+            <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2">
               {companies.map((company) => (
                 <div
                   key={company.siret}
-                  className="flex items-center justify-between rounded-lg border p-4"
+                  className="group relative flex items-center justify-between rounded-xl border border-border/50 bg-card p-4 transition-all hover:border-primary/50 hover:shadow-md"
                 >
-                  <div className="flex-1">
-                    <h3 className="font-semibold">{company.nom}</h3>
+                  <div className="flex-1 space-y-1">
+                    <h3 className="font-semibold text-lg group-hover:text-primary transition-colors">
+                      {company.nom}
+                    </h3>
                     <p className="text-sm text-muted-foreground">
-                      {company.adresse}, {company.code_postal} {company.ville}
+                      📍 {company.adresse}, {company.code_postal} {company.ville}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      APE: {company.code_ape} - {company.libelle_ape}
+                      🏢 APE: {company.code_ape} - {company.libelle_ape}
                     </p>
-                    <p className="text-xs text-muted-foreground">
-                      SIREN: {company.siren} | Effectif estimé: {prettyEstimate(company.tranche_effectif, company.siren)}
+                    <p className="text-xs text-muted-foreground font-mono">
+                      🔢 SIREN: {company.siren}
+                    </p>
+                    <p className="text-sm font-medium text-primary">
+                      👥 Effectif estimé: {prettyEstimate(company.tranche_effectif, company.siren)}
                     </p>
                   </div>
                   <Button
-                    variant="outline"
+                    variant="default"
                     size="sm"
                     onClick={() => saveCompany(company)}
+                    className="ml-4"
                   >
-                    <Save className="h-4 w-4" />
+                    <Save className="h-4 w-4 mr-2" />
+                    Sauvegarder
                   </Button>
                 </div>
               ))}

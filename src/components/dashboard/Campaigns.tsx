@@ -107,12 +107,15 @@ export const Campaigns = () => {
 
   return (
     <div className="space-y-6">
-      <Card>
-        <CardHeader>
+      <Card className="border-0 shadow-md">
+        <CardHeader className="bg-gradient-to-r from-muted/50 to-background pb-4">
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle>Campagnes d'emailing</CardTitle>
-              <CardDescription>Gérez vos campagnes de prospection</CardDescription>
+              <CardTitle className="text-2xl flex items-center gap-2">
+                <Mail className="h-6 w-6 text-primary" />
+                Campagnes d'emailing
+              </CardTitle>
+              <CardDescription>Gérez vos campagnes de prospection par email</CardDescription>
             </div>
             <Button onClick={() => setShowForm(!showForm)}>
               <Plus className="mr-2 h-4 w-4" />
@@ -166,21 +169,34 @@ export const Campaigns = () => {
               campaigns.map((campaign) => (
                 <div
                   key={campaign.id}
-                  className="flex items-center justify-between rounded-lg border p-4"
+                  className="group flex items-center justify-between rounded-xl border border-border/50 bg-card p-4 transition-all hover:border-primary/50 hover:shadow-md"
                 >
-                  <div className="flex items-center gap-4">
-                    <Mail className="h-5 w-5 text-muted-foreground" />
-                    <div>
-                      <h3 className="font-semibold">{campaign.name}</h3>
+                  <div className="flex items-center gap-4 flex-1">
+                    <div className="p-3 rounded-lg bg-primary/10">
+                      <Mail className="h-6 w-6 text-primary" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-lg group-hover:text-primary transition-colors">
+                        {campaign.name}
+                      </h3>
                       <p className="text-sm text-muted-foreground">
-                        {campaign.subject}
+                        📧 {campaign.subject}
                       </p>
-                      <p className="text-xs text-muted-foreground">
-                        {campaign.sent_emails}/{campaign.total_emails} envoyés • {campaign.status}
-                      </p>
+                      <div className="flex items-center gap-4 mt-1">
+                        <p className="text-xs text-muted-foreground">
+                          ✉️ {campaign.sent_emails}/{campaign.total_emails} envoyés
+                        </p>
+                        <span className={`text-xs px-2 py-0.5 rounded-full ${
+                          campaign.status === 'draft' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400' :
+                          campaign.status === 'sending' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400' :
+                          'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
+                        }`}>
+                          {campaign.status}
+                        </span>
+                      </div>
                     </div>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 ml-4">
                     <Button
                       variant="default"
                       size="sm"
@@ -189,11 +205,13 @@ export const Campaigns = () => {
                     >
                       {sendingCampaignId === campaign.id ? (
                         <>
-                          <Loader2 className="h-4 w-4 animate-spin" />
+                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                          Envoi...
                         </>
                       ) : (
                         <>
-                          <Send className="h-4 w-4" />
+                          <Send className="h-4 w-4 mr-2" />
+                          Envoyer
                         </>
                       )}
                     </Button>
