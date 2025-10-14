@@ -1,4 +1,4 @@
-import { Search, Building2, Mail, Ban, BarChart3 } from "lucide-react";
+import { Search, Building2, Mail, Ban, BarChart3, Bell, HelpCircle } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -7,7 +7,9 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarFooter,
 } from "@/components/ui/sidebar";
+import { Button } from "@/components/ui/button";
 
 const menuItems = [
   { title: "Recherche", icon: Search, value: "search" },
@@ -33,13 +35,13 @@ export function AppSidebar({ activeTab, onTabChange }: AppSidebarProps) {
         
         <SidebarGroup>
           <SidebarGroupContent>
-            <SidebarMenu>
+            <SidebarMenu className="space-y-2 px-3">
               {menuItems.map((item) => (
                 <SidebarMenuItem key={item.value}>
                   <SidebarMenuButton
                     onClick={() => onTabChange(item.value)}
                     isActive={activeTab === item.value}
-                    className="w-full"
+                    className="w-full py-3"
                   >
                     <item.icon className="h-4 w-4" />
                     <span>{item.title}</span>
@@ -50,6 +52,25 @@ export function AppSidebar({ activeTab, onTabChange }: AppSidebarProps) {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
+      
+      <SidebarFooter className="border-t p-4 space-y-2">
+        <Button 
+          variant="ghost" 
+          className="w-full justify-start"
+          onClick={() => onTabChange("notifications")}
+        >
+          <Bell className="mr-2 h-4 w-4" />
+          Notifications
+        </Button>
+        <Button 
+          variant="ghost" 
+          className="w-full justify-start"
+          onClick={() => onTabChange("support")}
+        >
+          <HelpCircle className="mr-2 h-4 w-4" />
+          Support
+        </Button>
+      </SidebarFooter>
     </Sidebar>
   );
 }
