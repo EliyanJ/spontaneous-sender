@@ -4,6 +4,7 @@ import { AuthDialog } from "@/components/AuthDialog";
 import { ArrowRight, Building2, Mail, Search, Zap } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import heroBg from "@/assets/hero-bg.jpg";
 
 const Landing = () => {
   const [authOpen, setAuthOpen] = useState(false);
@@ -17,7 +18,14 @@ const Landing = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-500 via-blue-600 to-purple-600">
+    <div className="relative min-h-screen overflow-hidden">
+      {/* Background gradient with overlay image */}
+      <div className="absolute inset-0 bg-gradient-to-br from-blue-400/80 via-indigo-500/70 to-purple-500/80"></div>
+      <div 
+        className="absolute inset-0 opacity-40 bg-cover bg-center bg-no-repeat"
+        style={{ backgroundImage: `url(${heroBg})` }}
+      ></div>
+      <div className="relative z-10">
       {/* Header */}
       <header className="container mx-auto flex items-center justify-between px-6 py-6">
         <div className="flex items-center gap-2">
@@ -102,6 +110,7 @@ const Landing = () => {
       </main>
 
       <AuthDialog open={authOpen} onOpenChange={setAuthOpen} />
+      </div>
     </div>
   );
 };
