@@ -19,13 +19,13 @@ const Landing = () => {
 
   return (
     <div className="relative min-h-screen overflow-hidden">
-      {/* Background image with mountains */}
+      {/* Sky blue gradient background */}
+      <div className="absolute inset-0 bg-gradient-to-br from-sky-400 via-blue-500 to-cyan-500"></div>
+      {/* Mountains image overlay with low opacity */}
       <div 
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-20"
         style={{ backgroundImage: `url(${mountainsBg})` }}
       ></div>
-      {/* Gradient overlay with vivid colors */}
-      <div className="absolute inset-0 bg-gradient-to-br from-blue-600/85 via-indigo-600/80 to-purple-600/85"></div>
       <div className="relative z-10">
       {/* Header */}
       <header className="container mx-auto flex items-center justify-between px-6 py-6">
