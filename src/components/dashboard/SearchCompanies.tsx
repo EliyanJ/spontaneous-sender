@@ -231,6 +231,51 @@ export const SearchCompanies = () => {
     }
   };
 
+  const saveAllCompanies = async () => {
+    if (companies.length === 0) {
+      toast.error("Aucun résultat à sauvegarder");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const companiesToInsert = companies.map(company => ({
+        user_id: user.id,
+        siren: company.siren,
+        siret: company.siret,
+        nom: company.nom,
+        adresse: company.adresse,
+        code_postal: company.code_postal,
+        ville: company.ville,
+        code_ape: company.code_ape,
+        libelle_ape: company.libelle_ape,
+        nature_juridique: company.nature_juridique,
+        tranche_effectif: company.tranche_effectif,
+      }));
+
+      const { error } = await supabase.from("companies").insert(companiesToInsert);
+
+      if (error) throw error;
+      
+      toast.success(`${companies.length} entreprises sauvegardées avec succès`);
+      setCompanies([]); // Vider les résultats après sauvegarde
+    } catch (error: any) {
+      // Si certaines entreprises existent déjà, on ignore l'erreur
+      if (error.code === '23505') {
+        toast.success("Entreprises sauvegardées (doublons ignorés)");
+        setCompanies([]);
+      } else {
+        toast.error("Erreur lors de la sauvegarde");
+        console.error(error);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <Card className="border-0 shadow-md">
@@ -313,10 +358,33 @@ export const SearchCompanies = () => {
       {companies.length > 0 && (
         <Card className="border-0 shadow-md">
           <CardHeader className="bg-gradient-to-r from-muted/50 to-background pb-4">
-            <CardTitle className="text-xl flex items-center gap-2">
-              <Building2 className="h-5 w-5 text-primary" />
-              Résultats de recherche ({companies.length})
-            </CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-xl flex items-center gap-2">
+                <Building2 className="h-5 w-5 text-primary" />
+                Résultats de recherche ({companies.length})
+              </CardTitle>
+              <Button 
+                onClick={saveAllCompanies} 
+                disabled={loading}
+                size="lg"
+                className="shadow-lg"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Sauvegarde...
+                  </>
+                ) : (
+                  <>
+                    <Save className="mr-2 h-4 w-4" />
+                    Sauvegarder tous les résultats
+                  </>
+                )}
+              </Button>
+            </div>
+            <CardDescription className="mt-2">
+              Cliquez sur "Sauvegarder tous les résultats" pour ajouter toutes ces entreprises à votre base
+            </CardDescription>
           </CardHeader>
           <CardContent className="pt-6">
             <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2">
