@@ -5,7 +5,6 @@ import { ArrowRight, Building2, Mail, Search, Zap } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import mountainsBg from "@/assets/mountains-bg.jpg";
-import logo from "@/assets/logo-transparent.png";
 
 const Landing = () => {
   const [authOpen, setAuthOpen] = useState(false);
@@ -31,7 +30,7 @@ const Landing = () => {
       {/* Header */}
       <header className="container mx-auto flex items-center justify-between px-6 py-6">
         <div className="flex items-center gap-3">
-          <img src={logo} alt="Logo" className="h-12 w-12" />
+          <span className="font-display text-2xl font-bold text-gray-900">ProspectAI</span>
         </div>
         <nav className="hidden items-center gap-8 md:flex">
           <a href="#features" className="text-sm text-gray-800 transition hover:text-blue-600">
@@ -44,7 +43,7 @@ const Landing = () => {
             variant="default" 
             size="sm"
             onClick={() => setAuthOpen(true)}
-            className="bg-blue-600 text-white hover:bg-blue-700"
+            className="rounded-full bg-blue-600 text-white hover:bg-blue-700 shadow-lg hover:shadow-xl transition-all duration-300"
           >
             Se connecter
           </Button>
@@ -54,21 +53,21 @@ const Landing = () => {
       {/* Hero Section */}
       <main className="container mx-auto px-6 py-20 text-center">
         <div className="mx-auto max-w-4xl space-y-8">
-          <h1 className="font-display text-5xl font-bold leading-tight text-gray-900 md:text-7xl">
+          <h1 className="font-display text-5xl font-bold leading-tight text-gray-900 md:text-7xl animate-fade-in">
             Votre assistant IA
             <br />
             <span className="text-blue-600">pour la prospection</span>
           </h1>
           
-          <p className="mx-auto max-w-2xl text-lg text-gray-700 md:text-xl">
+          <p className="mx-auto max-w-2xl text-lg text-gray-700 md:text-xl animate-fade-in" style={{ animationDelay: '0.2s' }}>
             Trouvez les entreprises qui correspondent à vos critères, découvrez automatiquement les emails de contact, et lancez vos campagnes de prospection en quelques clics.
           </p>
 
-          <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
+          <div className="flex flex-col items-center justify-center gap-4 sm:flex-row animate-fade-in" style={{ animationDelay: '0.4s' }}>
             <Button 
               size="lg" 
               onClick={() => setAuthOpen(true)}
-              className="bg-blue-600 text-white hover:bg-blue-700 font-semibold text-base px-8 h-12"
+              className="rounded-full bg-blue-600 text-white hover:bg-blue-700 font-semibold text-base px-8 h-12 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
             >
               Commencer gratuitement
               <ArrowRight className="ml-2 h-5 w-5" />
@@ -77,7 +76,7 @@ const Landing = () => {
 
           {/* Features Grid */}
           <div id="features" className="grid gap-6 pt-20 md:grid-cols-3">
-            <div className="rounded-2xl bg-white/80 backdrop-blur-sm p-8 text-gray-900 shadow-lg transition hover:shadow-xl">
+            <div className="rounded-2xl bg-white/80 backdrop-blur-sm p-8 text-gray-900 shadow-lg transition hover:shadow-xl animate-fade-in hover:scale-105 duration-300" style={{ animationDelay: '0.6s' }}>
               <div className="mb-4 inline-block rounded-full bg-blue-100 p-3">
                 <Search className="h-6 w-6 text-blue-600" />
               </div>
@@ -87,7 +86,7 @@ const Landing = () => {
               </p>
             </div>
 
-            <div className="rounded-2xl bg-white/80 backdrop-blur-sm p-8 text-gray-900 shadow-lg transition hover:shadow-xl">
+            <div className="rounded-2xl bg-white/80 backdrop-blur-sm p-8 text-gray-900 shadow-lg transition hover:shadow-xl animate-fade-in hover:scale-105 duration-300" style={{ animationDelay: '0.8s' }}>
               <div className="mb-4 inline-block rounded-full bg-blue-100 p-3">
                 <Mail className="h-6 w-6 text-blue-600" />
               </div>
@@ -97,7 +96,7 @@ const Landing = () => {
               </p>
             </div>
 
-            <div className="rounded-2xl bg-white/80 backdrop-blur-sm p-8 text-gray-900 shadow-lg transition hover:shadow-xl">
+            <div className="rounded-2xl bg-white/80 backdrop-blur-sm p-8 text-gray-900 shadow-lg transition hover:shadow-xl animate-fade-in hover:scale-105 duration-300" style={{ animationDelay: '1s' }}>
               <div className="mb-4 inline-block rounded-full bg-blue-100 p-3">
                 <Zap className="h-6 w-6 text-blue-600" />
               </div>
