@@ -44,7 +44,10 @@ async function searchWeb(query: string): Promise<SearchResult[]> {
     );
 
     if (!response.ok) {
-      console.error(`❌ Brave Search API error: ${response.status}`);
+      const errorText = await response.text();
+      console.error(`❌ Brave Search API error ${response.status}:`, errorText);
+      console.error(`❌ Query was: "${query}"`);
+      console.error(`❌ API Key configured: ${BRAVE_SEARCH_API_KEY ? 'YES (length: ' + BRAVE_SEARCH_API_KEY.length + ')' : 'NO'}`);
       return [];
     }
 
@@ -421,7 +424,7 @@ serve(async (req) => {
       );
     }
 
-    console.log(`🎯 Traitement de ${companies.length} entreprises`);
+    console.log(`🎯 Traitement de ${companies.length} entreprises pour l'utilisateur ${user.id}`);
     let processedCount = 0;
     let failedCount = 0;
     let totalEmailsFound = 0;
@@ -481,9 +484,13 @@ serve(async (req) => {
     console.log(`   ❌ Échecs: ${failedCount}`);
     console.log(`   📧 Emails trouvés: ${totalEmailsFound}`);
 
+    const message = processedCount === 0 && failedCount > 0 
+      ? `⚠️ Échec: Aucune entreprise traitée. Vérifiez que la clé API Brave Search est configurée correctement.`
+      : `✅ ${totalEmailsFound} emails trouvés pour ${processedCount} entreprises sur ${companies.length}`;
+
     return new Response(
       JSON.stringify({
-        message: 'Recherche terminée',
+        message,
         processed: processedCount,
         failed: failedCount,
         total: companies.length,
