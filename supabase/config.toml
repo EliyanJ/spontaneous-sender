@@ -5,3 +5,9 @@ verify_jwt = true
 
 [functions.find-company-emails]
 verify_jwt = true
+
+[functions.search-companies]
+verify_jwt = true
+
+[functions.scrape-websites]
+verify_jwt = true

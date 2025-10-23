@@ -13,13 +13,21 @@ interface Company {
   siren: string;
   siret: string;
   nom: string;
+  nom_commercial?: string;
   adresse: string;
   code_postal: string;
   ville: string;
   code_ape: string;
   libelle_ape: string;
   nature_juridique: string;
-  tranche_effectif: string;
+  effectif_code: string;
+  date_creation?: string;
+  categorie_entreprise?: string;
+  nombre_etablissements?: number;
+  dirigeant_nom?: string;
+  dirigeant_prenoms?: string;
+  dirigeant_fonction?: string;
+  website_url?: string | null;
 }
 
 // Helpers d'effectif: transforme une tranche en estimation stable par entreprise
@@ -62,25 +70,9 @@ export const SearchCompanies = () => {
   const [companies, setCompanies] = useState<Company[]>([]);
   const [sector, setSector] = useState("");
   const [ville, setVille] = useState("");
-  const [trancheEffectif, setTrancheEffectif] = useState("");
   const [minResults, setMinResults] = useState("20");
-  const [blacklistedSirens, setBlacklistedSirens] = useState<string[]>([]);
+  const [scrapeWebsites, setScrapeWebsites] = useState(false);
 
-  useEffect(() => {
-    const fetchBlacklist = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const { data } = await supabase
-        .from("user_company_blacklist")
-        .select("company_siren");
-      
-      if (data) {
-        setBlacklistedSirens(data.map(b => b.company_siren));
-      }
-    };
-    fetchBlacklist();
-  }, []);
 
   const handleSearch = async () => {
     if (!sector && !ville) {
@@ -89,117 +81,75 @@ export const SearchCompanies = () => {
     }
 
     const minResultsNum = parseInt(minResults) || 20;
-    if (minResultsNum < 1 || minResultsNum > 50) {
-      toast.error("Le nombre de résultats doit être entre 1 et 50");
+    if (minResultsNum < 1 || minResultsNum > 100) {
+      toast.error("Le nombre de résultats doit être entre 1 et 100");
       return;
     }
 
     setLoading(true);
     try {
-      const params = new URLSearchParams();
-      
-      // Gérer les codes APE du secteur sélectionné
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error("Vous devez être connecté");
+        return;
+      }
+
+      // Appel à l'Edge Function de recherche
+      const searchPayload: any = {
+        nombre: minResultsNum,
+        userId: user.id,
+      };
+
+      // Code APE du secteur
       if (sector) {
         const selectedSector = ACTIVITY_SECTORS.find(s => s.label === sector);
         if (selectedSector && selectedSector.codes.length > 0) {
-          // On utilise le premier code APE du secteur pour la recherche
-          params.append("activite_principale", selectedSector.codes[0]);
+          searchPayload.codeApe = selectedSector.codes[0];
         }
       }
-      
+
+      // Localisation
       if (ville) {
-        if (/^\d+$/.test(ville)) {
-          params.append("code_postal", ville);
-        } else {
-          params.append("q", ville);
-        }
+        searchPayload.location = ville;
       }
-      
-      if (trancheEffectif) params.append("tranche_effectif_salarie", trancheEffectif);
-      params.append("per_page", "25");
-      
-      const fetchLimit = Math.ceil(minResultsNum * 8);
-      let allResults: Company[] = [];
-      let page = 1;
-      
-      while (allResults.length < fetchLimit && page <= 20) {
-        params.set("page", page.toString());
-        const response = await fetch(
-          `https://recherche-entreprises.api.gouv.fr/search?${params.toString()}`
+
+      console.log('Recherche avec:', searchPayload);
+      toast.info("Recherche en cours avec randomisation...");
+
+      const { data: searchData, error: searchError } = await supabase.functions.invoke(
+        'search-companies',
+        { body: searchPayload }
+      );
+
+      if (searchError) throw searchError;
+      if (!searchData.success) throw new Error(searchData.error);
+
+      let results = searchData.data || [];
+      console.log(`${results.length} entreprises trouvées`);
+
+      // Scraping des sites web si demandé
+      if (scrapeWebsites && results.length > 0) {
+        toast.info("Recherche des sites web...");
+        
+        const { data: scrapeData, error: scrapeError } = await supabase.functions.invoke(
+          'scrape-websites',
+          { body: { companies: results } }
         );
-        
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.erreur || "Erreur API");
-        }
-        
-        const data = await response.json();
-        if (!data.results || data.results.length === 0) break;
-        
-        const formatted = data.results.map((r: any) => ({
-          siren: r.siren,
-          siret: r.siege?.siret || r.siren,
-          nom: r.nom_complet || r.nom_raison_sociale,
-          adresse: r.siege?.adresse || "",
-          code_postal: r.siege?.code_postal || "",
-          ville: r.siege?.libelle_commune || "",
-          code_ape: r.activite_principale || "",
-          libelle_ape: r.libelle_activite_principale || "",
-          nature_juridique: r.nature_juridique || "",
-          tranche_effectif: r.tranche_effectif_salarie || "",
-        }));
-        
-        allResults = [...allResults, ...formatted];
-        page++;
-        
-        if (data.total_results < page * 25) break;
-        await new Promise(resolve => setTimeout(resolve, 300));
-      }
-      
-      // Filtrage strict géographique
-      let filtered = allResults;
-      if (ville) {
-        if (/^\d+$/.test(ville)) {
-          // Filtre strict sur le code postal
-          filtered = filtered.filter(c => c.code_postal === ville);
-        } else {
-          // Filtre strict sur le nom de ville (insensible à la casse)
-          const villeNormalized = ville.toLowerCase().trim();
-          filtered = filtered.filter(c => 
-            c.ville.toLowerCase().trim() === villeNormalized
+
+        if (!scrapeError && scrapeData.success) {
+          results = scrapeData.data;
+          toast.success(
+            `Sites web trouvés: ${scrapeData.stats.found}/${scrapeData.stats.total}`
           );
         }
       }
-      
-      // Exclure les auto-entrepreneurs
-      filtered = filtered.filter(c => c.nature_juridique !== "1000");
-      
-      // Exclure les entreprises blacklistées
-      filtered = filtered.filter(c => !blacklistedSirens.includes(c.siren));
-      
-      // Filtrer pour n'avoir que les entreprises avec minimum 20 salariés
-      const minEffectifTranches = ["12", "21", "22", "32", "41", "42", "51", "52", "53"];
-      filtered = filtered.filter(c => minEffectifTranches.includes(c.tranche_effectif));
-      
-      // Filtrer par secteur (tous les codes APE du secteur)
-      if (sector) {
-        const selectedSector = ACTIVITY_SECTORS.find(s => s.label === sector);
-        if (selectedSector) {
-          filtered = filtered.filter(c => 
-            selectedSector.codes.includes(c.code_ape)
-          );
-        }
-      }
-      
-      // Mélanger et limiter
-      const shuffled = filtered.sort(() => Math.random() - 0.5);
-      const final = shuffled.slice(0, minResultsNum);
-      
-      setCompanies(final);
-      toast.success(`${final.length} entreprise(s) trouvée(s)`);
+
+      setCompanies(results);
+      toast.success(`${results.length} entreprise(s) trouvée(s)`);
+
     } catch (error) {
+      console.error('Erreur recherche:', error);
       toast.error("Erreur lors de la recherche");
-      console.error(error);
     } finally {
       setLoading(false);
     }
@@ -221,7 +171,8 @@ export const SearchCompanies = () => {
         code_ape: company.code_ape,
         libelle_ape: company.libelle_ape,
         nature_juridique: company.nature_juridique,
-        tranche_effectif: company.tranche_effectif,
+        tranche_effectif: company.effectif_code,
+        website_url: company.website_url,
       });
 
       if (error) throw error;
@@ -253,7 +204,8 @@ export const SearchCompanies = () => {
         code_ape: company.code_ape,
         libelle_ape: company.libelle_ape,
         nature_juridique: company.nature_juridique,
-        tranche_effectif: company.tranche_effectif,
+        tranche_effectif: company.effectif_code,
+        website_url: company.website_url,
       }));
 
       const { error } = await supabase.from("companies").insert(companiesToInsert);
@@ -309,34 +261,29 @@ export const SearchCompanies = () => {
               />
             </div>
             <div className="space-y-2">
-              <Label>Tranche d'effectif (minimum 20 salariés)</Label>
-              <Select value={trancheEffectif} onValueChange={setTrancheEffectif}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Toutes les tranches (20+)" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="12">20 à 49 salariés</SelectItem>
-                  <SelectItem value="21">50 à 99 salariés</SelectItem>
-                  <SelectItem value="22">100 à 199 salariés</SelectItem>
-                  <SelectItem value="32">200 à 249 salariés</SelectItem>
-                  <SelectItem value="41">250 à 499 salariés</SelectItem>
-                  <SelectItem value="42">500 à 999 salariés</SelectItem>
-                  <SelectItem value="51">1000 à 1999 salariés</SelectItem>
-                  <SelectItem value="52">2000 à 4999 salariés</SelectItem>
-                  <SelectItem value="53">5000 salariés et plus</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>Nombre de résultats (1-50)</Label>
+              <Label>Nombre de résultats (1-100)</Label>
               <Input
                 type="number"
                 min="1"
-                max="50"
+                max="100"
                 placeholder="20"
                 value={minResults}
                 onChange={(e) => setMinResults(e.target.value)}
               />
+            </div>
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={scrapeWebsites}
+                  onChange={(e) => setScrapeWebsites(e.target.checked)}
+                  className="rounded"
+                />
+                Rechercher les sites web (avec Claude AI)
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                Active la recherche automatique des sites web via Claude. Plus lent mais plus complet.
+              </p>
             </div>
           </div>
           <Button onClick={handleSearch} disabled={loading} className="w-full">
@@ -407,8 +354,25 @@ export const SearchCompanies = () => {
                       🔢 SIREN: {company.siren}
                     </p>
                     <p className="text-sm font-medium text-primary">
-                      👥 Effectif estimé: {prettyEstimate(company.tranche_effectif, company.siren)}
+                      👥 Effectif estimé: {prettyEstimate(company.effectif_code, company.siren)}
                     </p>
+                    {company.website_url && (
+                      <p className="text-sm text-muted-foreground">
+                        🌐 <a 
+                          href={company.website_url} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-primary hover:underline"
+                        >
+                          {company.website_url}
+                        </a>
+                      </p>
+                    )}
+                    {company.dirigeant_nom && (
+                      <p className="text-xs text-muted-foreground">
+                        👤 {company.dirigeant_prenoms} {company.dirigeant_nom} - {company.dirigeant_fonction}
+                      </p>
+                    )}
                   </div>
                   <Button
                     variant="default"
