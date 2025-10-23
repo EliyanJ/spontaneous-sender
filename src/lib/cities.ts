@@ -7,11 +7,11 @@ export interface LocationResolution {
   ville?: string;
 }
 
-// Villes avec arrondissements (gestion spéciale)
+// Villes avec arrondissements (codes postaux à 5 chiffres)
 const VILLES_ARRONDISSEMENTS: Record<string, string[]> = {
-  'paris': Array.from({ length: 20 }, (_, i) => `7500${(i + 1).toString().padStart(2, '0')}`),
+  'paris': Array.from({ length: 20 }, (_, i) => `750${(i + 1).toString().padStart(2, '0')}`),
   'lyon': Array.from({ length: 9 }, (_, i) => `6900${i + 1}`),
-  'marseille': Array.from({ length: 16 }, (_, i) => `1300${(i + 1).toString().padStart(2, '0')}`),
+  'marseille': Array.from({ length: 16 }, (_, i) => `130${(i + 1).toString().padStart(2, '0')}`),
 };
 
 // Map de toutes les communes françaises (nom normalisé -> codes postaux)
