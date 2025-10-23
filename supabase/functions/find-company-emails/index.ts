@@ -138,38 +138,81 @@ function isPrimarySource(url: string, officialDomain: string | null): boolean {
 
 async function findOfficialWebsite(companyName: string, city: string): Promise<{ url: string | null, domain: string | null }> {
   console.log(`🔍 Recherche du site officiel de "${companyName}"`);
-  
-  // Recherche du site officiel
-  const searchQuery = `"${companyName}" ${city} site officiel`;
-  const results = await searchWeb(searchQuery);
-  
-  if (results.length === 0) {
+
+  // Nettoyage du nom (retirer formes juridiques et mentions pays)
+  const cleanName = (name: string) =>
+    name
+      .replace(/\b(SAS|SASU|SARL|SA|EURL|SOCIETE|SOCIÉTÉ|HOLDING|FRANCE)\b/gi, '')
+      .replace(/\(.*?\)/g, '')
+      .replace(/[^a-zA-Z0-9&\s-]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+  const base = cleanName(companyName);
+  const withAnd = base.includes('&') ? base.replace(/&/g, 'and') : base;
+
+  // Construire plusieurs requêtes pour améliorer la découverte du site officiel
+  const queries = Array.from(new Set([
+    `"${companyName}" ${city} site officiel`,
+    `"${companyName}" site officiel`,
+    `"${base}" ${city} site officiel`,
+    `"${base}" site officiel`,
+    `"${withAnd}" ${city} site officiel`,
+    `"${withAnd}" site officiel`,
+  ]));
+
+  const seen = new Set<string>();
+  const aggregated: SearchResult[] = [];
+
+  for (const q of queries) {
+    const r = await searchWeb(q);
+    for (const item of r) {
+      if (!seen.has(item.url)) {
+        seen.add(item.url);
+        aggregated.push(item);
+      }
+    }
+    // Stop tôt si on a assez de candidats
+    if (aggregated.length >= 8) break;
+  }
+
+  if (aggregated.length === 0) {
     console.log('   ❌ Aucun résultat de recherche');
     return { url: null, domain: null };
   }
 
-  // Tester les 3 premiers résultats
-  for (const result of results.slice(0, 3)) {
-    // Ignorer les agrégateurs
-    if (!isPrimarySource(result.url, null)) {
-      console.log(`   ⚠️ Ignoré (agrégateur): ${result.url}`);
-      continue;
+  // Prioriser les domaines dont l'hostname matche des tokens du nom nettoyé
+  const tokens = base.toLowerCase().split(/\s+/).filter(t => t.length > 2);
+  const score = (u: string) => {
+    try {
+      const h = new URL(u).hostname.toLowerCase();
+      let s = 0;
+      for (const t of tokens) if (h.includes(t)) s++;
+      if (h.includes('consult')) s += 0.5;
+      if (h.includes('strategy')) s += 0.5;
+      return s;
+    } catch {
+      return 0;
     }
+  };
 
-    // Vérifier que l'URL existe
+  const candidates = aggregated
+    .filter(r => isPrimarySource(r.url, null))
+    .sort((a, b) => score(b.url) - score(a.url))
+    .slice(0, 10);
+
+  // Tester les meilleurs candidats trouvés
+  for (const result of candidates) {
     console.log(`   🌐 Test: ${result.url}`);
     const content = await fetchPageContent(result.url);
     if (content && content.length > 100) {
-      // Extraire le domaine et retourner l'URL racine du site
       try {
         const urlObj = new URL(result.url);
         const domain = urlObj.hostname.replace('www.', '');
         const rootUrl = `${urlObj.protocol}//${urlObj.hostname}`;
         console.log(`   ✅ Site trouvé: ${rootUrl}`);
         return { url: rootUrl, domain };
-      } catch {
-        continue;
-      }
+      } catch {}
     } else {
       console.log(`   ❌ Site inaccessible ou vide`);
     }
