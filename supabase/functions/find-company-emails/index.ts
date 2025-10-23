@@ -107,35 +107,29 @@ async function fetchPageContent(url: string): Promise<string | null> {
 
 function isPrimarySource(url: string, officialDomain: string | null): boolean {
   const ignoredDomains = [
-    'rocketreach.co',
-    'zoominfo.com',
-    'apollo.io',
-    'leadiq.com',
-    'crunchbase.com',
-    'pitchbook.com',
-    'linkedin.com',
-    'facebook.com',
-    'twitter.com',
-    'instagram.com',
-    'societe.com',
-    'verif.com',
-    'pagesjaunes.fr',
-    'kompass.com',
-    'infogreffe.fr',
-    'trustpilot.com'
+    // Prospecting/people databases
+    'rocketreach.co', 'zoominfo.com', 'apollo.io', 'leadiq.com', 'crunchbase.com', 'pitchbook.com',
+    // Social & review sites
+    'linkedin.com', 'facebook.com', 'twitter.com', 'instagram.com', 'trustpilot.com', 'glassdoor', 'indeed',
+    // French company directories / aggregators
+    'societe.com', 'verif.com', 'pagesjaunes.fr', 'kompass.com', 'infogreffe.fr', 'pappers.fr',
+    'societeinfo.com', 'manageo.fr', 'b-reputation.com', 'corporama.com', 'rubypayeur.com',
+    'annuaire-entreprises.data.gouv.fr', 'data.gouv.fr',
+    // News / media / wiki
+    'consultancy.eu', 'wikipedia.org', 'bloomberg.com', 'reuters.com', 'lefigaro.fr', 'journaldunet.com'
   ];
 
   const urlLower = url.toLowerCase();
-  
-  // Vérifier si c'est un domaine ignoré
-  if (ignoredDomains.some(domain => urlLower.includes(domain))) {
-    return false;
-  }
 
-  // Si on a un domaine officiel, vérifier qu'on est dessus
-  if (officialDomain && !urlLower.includes(officialDomain.toLowerCase())) {
-    return false;
-  }
+  // Reject obvious non-corporate paths
+  const badPathHints = ['/news/', '/article/', '/annuaire', '/directory'];
+  if (badPathHints.some(h => urlLower.includes(h))) return false;
+  
+  // Reject if domain is in the ignore list
+  if (ignoredDomains.some(domain => urlLower.includes(domain))) return false;
+
+  // If an official domain is known, enforce it
+  if (officialDomain && !urlLower.includes(officialDomain.toLowerCase())) return false;
 
   return true;
 }
@@ -166,12 +160,13 @@ async function findOfficialWebsite(companyName: string, city: string): Promise<{
     console.log(`   🌐 Test: ${result.url}`);
     const content = await fetchPageContent(result.url);
     if (content && content.length > 100) {
-      // Extraire le domaine
+      // Extraire le domaine et retourner l'URL racine du site
       try {
         const urlObj = new URL(result.url);
         const domain = urlObj.hostname.replace('www.', '');
-        console.log(`   ✅ Site trouvé: ${result.url}`);
-        return { url: result.url, domain };
+        const rootUrl = `${urlObj.protocol}//${urlObj.hostname}`;
+        console.log(`   ✅ Site trouvé: ${rootUrl}`);
+        return { url: rootUrl, domain };
       } catch {
         continue;
       }
