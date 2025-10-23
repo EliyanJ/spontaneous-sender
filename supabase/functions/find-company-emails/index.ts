@@ -25,45 +25,67 @@ interface EmailResult {
 // ============ RECHERCHE WEB ============
 
 async function searchWeb(query: string): Promise<SearchResult[]> {
-  try {
-    if (!BRAVE_SEARCH_API_KEY) {
-      console.error('❌ BRAVE_SEARCH_API_KEY non configurée');
-      return [];
-    }
-
-    console.log(`🔍 Recherche web: "${query}"`);
-
-    const response = await fetch(
-      `https://api.search.brave.com/res/v1/web/search?q=${encodeURIComponent(query)}&count=5`,
-      {
-        headers: {
-          'Accept': 'application/json',
-          'X-Subscription-Token': BRAVE_SEARCH_API_KEY
-        }
-      }
-    );
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`❌ Brave Search API error ${response.status}:`, errorText);
-      console.error(`❌ Query was: "${query}"`);
-      console.error(`❌ API Key configured: ${BRAVE_SEARCH_API_KEY ? 'YES (length: ' + BRAVE_SEARCH_API_KEY.length + ')' : 'NO'}`);
-      return [];
-    }
-
-    const data = await response.json();
-    const results = (data.web?.results || []).map((r: any) => ({
-      url: r.url,
-      title: r.title,
-      description: r.description
-    }));
-
-    console.log(`   ✅ ${results.length} résultats trouvés`);
-    return results;
-  } catch (error) {
-    console.error('❌ Erreur recherche web:', error);
+  if (!BRAVE_SEARCH_API_KEY) {
+    console.error('❌ BRAVE_SEARCH_API_KEY non configurée');
     return [];
   }
+
+  console.log(`🔍 Recherche web: "${query}"`);
+
+  const maxAttempts = 4;
+  let delayMs = 1200;
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      const response = await fetch(
+        `https://api.search.brave.com/res/v1/web/search?q=${encodeURIComponent(query)}&count=6`,
+        {
+          headers: {
+            'Accept': 'application/json',
+            'X-Subscription-Token': BRAVE_SEARCH_API_KEY
+          }
+        }
+      );
+
+      if (response.status === 429 || response.status === 402 || response.status === 503) {
+        const errorText = await response.text();
+        console.error(`❌ Brave Search API error ${response.status} (attempt ${attempt}/${maxAttempts}):`, errorText);
+        if (attempt < maxAttempts) {
+          await delay(delayMs);
+          delayMs *= 2;
+          continue;
+        }
+        return [];
+      }
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`❌ Brave Search API error ${response.status}:`, errorText);
+        console.error(`❌ Query was: "${query}"`);
+        return [];
+      }
+
+      const data = await response.json();
+      const results = (data.web?.results || []).map((r: any) => ({
+        url: r.url,
+        title: r.title,
+        description: r.description
+      }));
+
+      console.log(`   ✅ ${results.length} résultats trouvés`);
+      return results;
+    } catch (error) {
+      console.error(`❌ Erreur recherche web (attempt ${attempt}/${maxAttempts}):`, error);
+      if (attempt < maxAttempts) {
+        await delay(delayMs);
+        delayMs *= 2;
+        continue;
+      }
+      return [];
+    }
+  }
+
+  return [];
 }
 
 // ============ FETCH PAGE CONTENT ============
@@ -95,6 +117,30 @@ async function fetchPageContent(url: string): Promise<string | null> {
       .trim();
     
     return textContent.substring(0, 15000); // Limiter à 15k caractères
+  } catch (error: any) {
+    if (error.name === 'AbortError') {
+      console.log(`⏱️ Timeout pour ${url}`);
+    }
+    return null;
+  }
+}
+
+// ============ FETCH RAW HTML (pour mailto et emails obfusqués) ============
+async function fetchRawHtml(url: string): Promise<string | null> {
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 10000);
+
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (compatible; CompanySearchBot/1.0)'
+      },
+      signal: controller.signal
+    });
+
+    clearTimeout(timeout);
+    if (!response.ok) return null;
+    return await response.text();
   } catch (error: any) {
     if (error.name === 'AbortError') {
       console.log(`⏱️ Timeout pour ${url}`);
