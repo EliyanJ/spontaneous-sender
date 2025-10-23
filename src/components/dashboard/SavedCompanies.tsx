@@ -64,7 +64,7 @@ export const SavedCompanies = () => {
 
   const findAllEmails = async () => {
     setSearchingEmails(true);
-    toast.info("Recherche des emails en cours...");
+    toast.info("Recherche sites + emails en cours...");
     
     try {
       const { data, error } = await supabase.functions.invoke("find-company-emails");
@@ -115,7 +115,7 @@ export const SavedCompanies = () => {
               ) : (
                 <>
                   <Mail className="h-4 w-4 mr-2" />
-                  Rechercher emails
+                  Rechercher sites + emails
                 </>
               )}
             </Button>

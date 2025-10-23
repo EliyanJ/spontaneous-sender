@@ -65,15 +65,12 @@ function prettyEstimate(code: string, siren: string) {
   return `${val} (~${label})`;
 }
 
-export const SearchCompanies = () => {
+export const SearchCompanies = ({ onSavedAll }: { onSavedAll?: () => void }) => {
   const [loading, setLoading] = useState(false);
   const [companies, setCompanies] = useState<Company[]>([]);
   const [sector, setSector] = useState("");
   const [ville, setVille] = useState("");
   const [minResults, setMinResults] = useState("20");
-  const [scrapeWebsites, setScrapeWebsites] = useState(false);
-
-
   const handleSearch = async () => {
     if (!sector && !ville) {
       toast.error("Veuillez renseigner au moins un critère de recherche");
@@ -127,22 +124,6 @@ export const SearchCompanies = () => {
       let results = searchData.data || [];
       console.log(`${results.length} entreprises trouvées`);
 
-      // Scraping des sites web si demandé
-      if (scrapeWebsites && results.length > 0) {
-        toast.info("Recherche des sites web...");
-        
-        const { data: scrapeData, error: scrapeError } = await supabase.functions.invoke(
-          'scrape-websites',
-          { body: { companies: results } }
-        );
-
-        if (!scrapeError && scrapeData.success) {
-          results = scrapeData.data;
-          toast.success(
-            `Sites web trouvés: ${scrapeData.stats.found}/${scrapeData.stats.total}`
-          );
-        }
-      }
 
       setCompanies(results);
       toast.success(`${results.length} entreprise(s) trouvée(s)`);
@@ -193,36 +174,51 @@ export const SearchCompanies = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const companiesToInsert = companies.map(company => ({
-        user_id: user.id,
-        siren: company.siren,
-        siret: company.siret,
-        nom: company.nom,
-        adresse: company.adresse,
-        code_postal: company.code_postal,
-        ville: company.ville,
-        code_ape: company.code_ape,
-        libelle_ape: company.libelle_ape,
-        nature_juridique: company.nature_juridique,
-        tranche_effectif: company.effectif_code,
-        website_url: company.website_url,
-      }));
+      // Récupérer les SIREN déjà sauvegardés pour éviter les doublons
+      const { data: existing, error: existingError } = await supabase
+        .from('companies')
+        .select('siren')
+        .eq('user_id', user.id);
+      if (existingError) throw existingError;
 
-      const { error } = await supabase.from("companies").insert(companiesToInsert);
-
-      if (error) throw error;
-      
-      toast.success(`${companies.length} entreprises sauvegardées avec succès`);
-      setCompanies([]); // Vider les résultats après sauvegarde
-    } catch (error: any) {
-      // Si certaines entreprises existent déjà, on ignore l'erreur
-      if (error.code === '23505') {
-        toast.success("Entreprises sauvegardées (doublons ignorés)");
-        setCompanies([]);
-      } else {
-        toast.error("Erreur lors de la sauvegarde");
-        console.error(error);
+      const existingSirens = new Set((existing || []).map((c: any) => c.siren));
+      const uniqueBySiren = new Map<string, any>();
+      for (const company of companies) {
+        if (!uniqueBySiren.has(company.siren)) uniqueBySiren.set(company.siren, company);
       }
+
+      const toInsert = Array.from(uniqueBySiren.values())
+        .filter(c => !existingSirens.has(c.siren))
+        .map(company => ({
+          user_id: user.id,
+          siren: company.siren,
+          siret: company.siret,
+          nom: company.nom,
+          adresse: company.adresse,
+          code_postal: company.code_postal,
+          ville: company.ville,
+          code_ape: company.code_ape,
+          libelle_ape: company.libelle_ape,
+          nature_juridique: company.nature_juridique,
+          tranche_effectif: company.effectif_code,
+          website_url: company.website_url ?? null,
+        }));
+
+      if (toInsert.length === 0) {
+        toast.info('Tout est déjà sauvegardé');
+        onSavedAll?.();
+        return;
+      }
+
+      const { error } = await supabase.from('companies').insert(toInsert);
+      if (error) throw error;
+
+      toast.success(`${toInsert.length} entreprise(s) sauvegardée(s)`);
+      setCompanies([]);
+      onSavedAll?.();
+    } catch (error: any) {
+      toast.error('Erreur lors de la sauvegarde');
+      console.error(error);
     } finally {
       setLoading(false);
     }
@@ -270,20 +266,6 @@ export const SearchCompanies = () => {
                 value={minResults}
                 onChange={(e) => setMinResults(e.target.value)}
               />
-            </div>
-            <div className="space-y-2">
-              <Label className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={scrapeWebsites}
-                  onChange={(e) => setScrapeWebsites(e.target.checked)}
-                  className="rounded"
-                />
-                Rechercher les sites web (avec Claude AI)
-              </Label>
-              <p className="text-xs text-muted-foreground">
-                Active la recherche automatique des sites web via Claude. Plus lent mais plus complet.
-              </p>
             </div>
           </div>
           <Button onClick={handleSearch} disabled={loading} className="w-full">

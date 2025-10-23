@@ -229,13 +229,13 @@ serve(async (req) => {
       throw new Error('Unauthorized');
     }
 
-    // Fetch companies without emails
+    // Fetch recent companies for this user (process in batches)
     const { data: companies, error: fetchError } = await supabase
       .from('companies')
       .select('*')
       .eq('user_id', user.id)
-      .is('website_url', null)
-      .limit(10);
+      .order('created_at', { ascending: false })
+      .limit(30);
 
     if (fetchError) throw fetchError;
     if (!companies || companies.length === 0) {
@@ -272,7 +272,6 @@ serve(async (req) => {
             .update({
               website_url: aiResult.site_web,
               emails: flatEmails,
-              updated_at: new Date().toISOString(),
             })
             .eq('id', company.id);
 
@@ -297,7 +296,6 @@ serve(async (req) => {
             .update({
               website_url: aiResult.site_web,
               emails: [],
-              updated_at: new Date().toISOString(),
             })
             .eq('id', company.id);
             

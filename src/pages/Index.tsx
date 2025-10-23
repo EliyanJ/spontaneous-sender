@@ -19,7 +19,7 @@ const Index = () => {
   const renderContent = () => {
     switch (activeTab) {
       case "search":
-        return <SearchCompanies />;
+        return <SearchCompanies onSavedAll={() => setActiveTab('companies')} />;
       case "companies":
         return <SavedCompanies />;
       case "campaigns":
