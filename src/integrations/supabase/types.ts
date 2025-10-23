@@ -79,6 +79,7 @@ export type Database = {
           siren: string
           siret: string
           tranche_effectif: string | null
+          updated_at: string | null
           user_id: string
           ville: string | null
           website_url: string | null
@@ -96,6 +97,7 @@ export type Database = {
           siren: string
           siret: string
           tranche_effectif?: string | null
+          updated_at?: string | null
           user_id: string
           ville?: string | null
           website_url?: string | null
@@ -113,6 +115,7 @@ export type Database = {
           siren?: string
           siret?: string
           tranche_effectif?: string | null
+          updated_at?: string | null
           user_id?: string
           ville?: string | null
           website_url?: string | null

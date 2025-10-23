@@ -72,7 +72,7 @@ export const SavedCompanies = () => {
       if (error) throw error;
 
       toast.success(
-        `${data.totalEmailsFound} emails trouvés pour ${data.companiesUpdated} entreprises`
+        `${data.totalEmailsFound} emails trouvés pour ${data.processed} entreprises`
       );
       
       // Rafraîchir la liste
