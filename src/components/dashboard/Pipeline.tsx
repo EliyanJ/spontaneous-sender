@@ -77,6 +77,15 @@ export const Pipeline = () => {
     loadCompanies();
   }, []);
 
+  // Rafraîchit le pipeline lorsque des entreprises sont ajoutées depuis la recherche
+  useEffect(() => {
+    const handler = () => {
+      loadCompanies();
+    };
+    window.addEventListener('companies:updated', handler);
+    return () => window.removeEventListener('companies:updated', handler);
+  }, []);
+
   const moveCompany = async (companyId: string, newStage: string) => {
     setUpdatingCompany(companyId);
     try {

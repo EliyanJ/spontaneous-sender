@@ -165,6 +165,9 @@ export const SearchCompanies = () => {
         prevCompanies.filter(c => c.siret !== company.siret)
       );
       
+      // Notifier les autres vues (pipeline) qu'il y a eu une mise à jour
+      window.dispatchEvent(new CustomEvent('companies:updated'));
+      
       toast.success("Entreprise sauvegardée");
     } catch (error) {
       toast.error("Erreur lors de la sauvegarde");
@@ -222,6 +225,7 @@ export const SearchCompanies = () => {
       const { error } = await supabase.from('companies').insert(toInsert);
       if (error) throw error;
 
+      window.dispatchEvent(new CustomEvent('companies:updated'));
       toast.success(`${toInsert.length} entreprise(s) sauvegardée(s)`);
       setCompanies([]);
     } catch (error: any) {
