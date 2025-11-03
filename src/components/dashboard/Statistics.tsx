@@ -1,239 +1,175 @@
-import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
-import { Loader2, TrendingUp, TrendingDown, Activity } from "lucide-react";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { BarChart3, TrendingUp, Building2, Target, CheckCircle2, XCircle } from "lucide-react";
 
-interface Company {
-  id: string;
-  nom: string;
-  ville: string;
-  pipeline_stage: string;
-  created_at: string;
-  updated_at: string;
-}
-
-interface PipelineStats {
-  total: number;
-  parPhase: Record<string, number>;
-}
-
-const PIPELINE_STAGES = [
-  { value: "nouveau", label: "📝 Nouveau", color: "border-blue-500" },
-  { value: "candidature_envoyee", label: "📧 Candidature envoyée", color: "border-purple-500" },
-  { value: "en_attente", label: "⏳ En attente", color: "border-yellow-500" },
-  { value: "relance", label: "🔄 Relance", color: "border-orange-500" },
-  { value: "entretien", label: "🎯 Entretien", color: "border-indigo-500" },
-  { value: "offre_recue", label: "🎁 Offre reçue", color: "border-green-500" },
-  { value: "refuse", label: "❌ Refusé", color: "border-red-500" },
-  { value: "accepte", label: "🎉 Accepté", color: "border-emerald-500" },
-];
-
-export const Statistics = () => {
-  const [companies, setCompanies] = useState<Company[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState<PipelineStats>({
-    total: 0,
-    parPhase: {}
-  });
-
-  const loadCompanies = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
+export function Statistics() {
+  const { data: companies } = useQuery({
+    queryKey: ["companies-stats"],
+    queryFn: async () => {
       const { data, error } = await supabase
         .from("companies")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("updated_at", { ascending: false });
-
+        .select("*");
       if (error) throw error;
-      setCompanies(data || []);
-      calculateStats(data || []);
-    } catch (error) {
-      console.error("Erreur chargement:", error);
-      toast.error("Erreur lors du chargement");
-    } finally {
-      setLoading(false);
-    }
+      return data;
+    },
+  });
+
+  const totalCompanies = companies?.length || 0;
+  
+  const parPhase = {
+    nouveau: companies?.filter(c => c.pipeline_stage === 'nouveau').length || 0,
+    candidature_envoyee: companies?.filter(c => c.pipeline_stage === 'candidature_envoyee').length || 0,
+    en_attente: companies?.filter(c => c.pipeline_stage === 'en_attente').length || 0,
+    relance: companies?.filter(c => c.pipeline_stage === 'relance').length || 0,
+    entretien: companies?.filter(c => c.pipeline_stage === 'entretien').length || 0,
+    offre_recue: companies?.filter(c => c.pipeline_stage === 'offre_recue').length || 0,
+    refuse: companies?.filter(c => c.pipeline_stage === 'refuse').length || 0,
+    accepte: companies?.filter(c => c.pipeline_stage === 'accepte').length || 0,
   };
 
-  const calculateStats = (companiesData: Company[]) => {
-    const parPhase: Record<string, number> = {};
-    PIPELINE_STAGES.forEach(stage => {
-      parPhase[stage.value] = companiesData.filter(c => c.pipeline_stage === stage.value).length;
-    });
-
-    setStats({
-      total: companiesData.length,
-      parPhase
-    });
-  };
-
-  useEffect(() => {
-    loadCompanies();
-  }, []);
-
-  const moveCompany = async (companyId: string, newStage: string) => {
-    try {
-      const { error } = await supabase
-        .from("companies")
-        .update({ pipeline_stage: newStage })
-        .eq("id", companyId);
-
-      if (error) throw error;
-
-      toast.success("Phase mise à jour");
-      loadCompanies();
-    } catch (error) {
-      console.error("Erreur:", error);
-      toast.error("Erreur lors de la mise à jour");
-    }
-  };
-
-  const getCompanyCard = (company: Company) => {
-    const currentStage = PIPELINE_STAGES.find(s => s.value === company.pipeline_stage);
-    
-    return (
-      <Card 
-        key={company.id} 
-        className={`mb-2 hover:shadow-md transition-shadow border-l-4 ${currentStage?.color}`}
-      >
-        <CardContent className="p-3">
-          <h4 className="font-semibold text-sm mb-1">{company.nom}</h4>
-          <p className="text-xs text-muted-foreground mb-2">📍 {company.ville}</p>
-          
-          <Select value={company.pipeline_stage} onValueChange={(value) => moveCompany(company.id, value)}>
-            <SelectTrigger className="h-8 text-xs">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {PIPELINE_STAGES.map((stage) => (
-                <SelectItem key={stage.value} value={stage.value}>
-                  {stage.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </CardContent>
-      </Card>
-    );
-  };
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-96">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-
-  const enCours = (stats.parPhase.candidature_envoyee || 0) + 
-                  (stats.parPhase.en_attente || 0) + 
-                  (stats.parPhase.relance || 0) + 
-                  (stats.parPhase.entretien || 0);
+  const enCours = parPhase.candidature_envoyee + parPhase.en_attente + parPhase.relance + parPhase.entretien;
+  const tauxSucces = totalCompanies > 0 ? ((parPhase.accepte / totalCompanies) * 100).toFixed(1) : 0;
+  const tauxRefus = totalCompanies > 0 ? ((parPhase.refuse / totalCompanies) * 100).toFixed(1) : 0;
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-      {/* Colonne Statistiques */}
-      <div className="lg:col-span-1 space-y-4">
-        <Card className="border-0 shadow-md">
-          <CardHeader className="bg-gradient-to-r from-muted/50 to-background pb-3">
-            <CardTitle className="text-lg">📊 Statistiques</CardTitle>
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-3xl font-bold tracking-tight">Statistiques</h2>
+        <p className="text-muted-foreground">Vue d'ensemble de vos candidatures</p>
+      </div>
+
+      {/* Statistiques principales */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Entreprises</CardTitle>
+            <Building2 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent className="space-y-4 pt-4">
-            <div className="space-y-2">
-              <p className="text-xs text-muted-foreground">Total Entreprises</p>
-              <div className="flex items-baseline gap-2">
-                <p className="text-3xl font-bold text-primary">{stats.total}</p>
-                <Activity className="h-4 w-4 text-primary" />
-              </div>
-            </div>
+          <CardContent>
+            <div className="text-2xl font-bold">{totalCompanies}</div>
+            <p className="text-xs text-muted-foreground">
+              Dans votre pipeline
+            </p>
+          </CardContent>
+        </Card>
 
-            <div className="space-y-2">
-              <p className="text-xs text-muted-foreground">En cours</p>
-              <div className="flex items-baseline gap-2">
-                <p className="text-3xl font-bold text-blue-500">{enCours}</p>
-                <TrendingUp className="h-4 w-4 text-blue-500" />
-              </div>
-            </div>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">En cours</CardTitle>
+            <Target className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{enCours}</div>
+            <p className="text-xs text-muted-foreground">
+              Candidatures actives
+            </p>
+          </CardContent>
+        </Card>
 
-            <div className="space-y-2">
-              <p className="text-xs text-muted-foreground">Taux de succès</p>
-              <div className="flex items-baseline gap-2">
-                <p className="text-3xl font-bold text-green-500">
-                  {stats.total > 0 
-                    ? Math.round(((stats.parPhase.accepte || 0) / stats.total) * 100) 
-                    : 0}%
-                </p>
-                <TrendingUp className="h-4 w-4 text-green-500" />
-              </div>
-            </div>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Taux de Succès</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-600">{tauxSucces}%</div>
+            <p className="text-xs text-muted-foreground">
+              {parPhase.accepte} acceptées
+            </p>
+          </CardContent>
+        </Card>
 
-            <div className="space-y-2">
-              <p className="text-xs text-muted-foreground">Taux de refus</p>
-              <div className="flex items-baseline gap-2">
-                <p className="text-3xl font-bold text-red-500">
-                  {stats.total > 0 
-                    ? Math.round(((stats.parPhase.refuse || 0) / stats.total) * 100) 
-                    : 0}%
-                </p>
-                <TrendingDown className="h-4 w-4 text-red-500" />
-              </div>
-            </div>
-
-            <div className="pt-4 border-t space-y-3">
-              <p className="text-sm font-semibold">Par phase</p>
-              {PIPELINE_STAGES.map((stage) => (
-                <div key={stage.value} className="flex items-center justify-between">
-                  <span className="text-xs">{stage.label}</span>
-                  <span className="text-sm font-bold">{stats.parPhase[stage.value] || 0}</span>
-                </div>
-              ))}
-            </div>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Taux de Refus</CardTitle>
+            <BarChart3 className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-red-600">{tauxRefus}%</div>
+            <p className="text-xs text-muted-foreground">
+              {parPhase.refuse} refusées
+            </p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Colonne Pipeline */}
-      <div className="lg:col-span-3">
-        <Card className="border-0 shadow-md">
-          <CardHeader className="bg-gradient-to-r from-muted/50 to-background">
-            <CardTitle className="text-2xl">🎯 Pipeline CRM</CardTitle>
+      {/* Répartition par phase */}
+      <div className="grid gap-4 md:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle>Répartition par Phase</CardTitle>
+            <CardDescription>Distribution des entreprises dans votre pipeline</CardDescription>
           </CardHeader>
-          <CardContent className="p-6">
-            <div className="space-y-6">
-              {PIPELINE_STAGES.map((stage) => {
-                const companiesInStage = companies.filter(c => c.pipeline_stage === stage.value);
-                
-                return (
-                  <div key={stage.value}>
-                    <div className="flex items-center justify-between mb-3">
-                      <h3 className="font-semibold text-lg">{stage.label}</h3>
-                      <span className="text-sm font-bold text-muted-foreground">
-                        {companiesInStage.length} entreprise{companiesInStage.length > 1 ? 's' : ''}
-                      </span>
-                    </div>
-                    
-                    {companiesInStage.length === 0 ? (
-                      <div className="text-center py-4 bg-muted/30 rounded-lg">
-                        <p className="text-sm text-muted-foreground">Aucune entreprise</p>
-                      </div>
-                    ) : (
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-                        {companiesInStage.map(company => getCompanyCard(company))}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-blue-500"></div>
+                <span className="text-sm font-medium">📝 Nouveau</span>
+              </div>
+              <span className="text-2xl font-bold">{parPhase.nouveau}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-purple-500"></div>
+                <span className="text-sm font-medium">📧 Candidature envoyée</span>
+              </div>
+              <span className="text-2xl font-bold">{parPhase.candidature_envoyee}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
+                <span className="text-sm font-medium">⏳ En attente</span>
+              </div>
+              <span className="text-2xl font-bold">{parPhase.en_attente}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-orange-500"></div>
+                <span className="text-sm font-medium">🔄 Relance</span>
+              </div>
+              <span className="text-2xl font-bold">{parPhase.relance}</span>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Résultats</CardTitle>
+            <CardDescription>État final des candidatures</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-indigo-500"></div>
+                <span className="text-sm font-medium">🎯 Entretien</span>
+              </div>
+              <span className="text-2xl font-bold">{parPhase.entretien}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                <span className="text-sm font-medium">🎁 Offre reçue</span>
+              </div>
+              <span className="text-2xl font-bold">{parPhase.offre_recue}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                <span className="text-sm font-medium">🎉 Accepté</span>
+              </div>
+              <span className="text-2xl font-bold text-emerald-600">{parPhase.accepte}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <XCircle className="h-4 w-4 text-red-500" />
+                <span className="text-sm font-medium">❌ Refusé</span>
+              </div>
+              <span className="text-2xl font-bold text-red-600">{parPhase.refuse}</span>
             </div>
           </CardContent>
         </Card>
       </div>
     </div>
   );
-};
+}

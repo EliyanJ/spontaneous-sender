@@ -5,6 +5,7 @@ import { LogOut } from "lucide-react";
 import { SearchCompanies } from "@/components/dashboard/SearchCompanies";
 import { Blacklist } from "@/components/dashboard/Blacklist";
 import { Statistics } from "@/components/dashboard/Statistics";
+import { Pipeline } from "@/components/dashboard/Pipeline";
 import { Notifications } from "@/components/dashboard/Notifications";
 import { Support } from "@/components/dashboard/Support";
 import { AppSidebar } from "@/components/AppSidebar";
@@ -18,6 +19,8 @@ const Index = () => {
     switch (activeTab) {
       case "search":
         return <SearchCompanies />;
+      case "pipeline":
+        return <Pipeline />;
       case "statistics":
         return <Statistics />;
       case "blacklist":
