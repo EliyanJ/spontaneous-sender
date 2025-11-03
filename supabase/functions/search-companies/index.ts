@@ -257,7 +257,9 @@ serve(async (req) => {
         code_ape: typeof c.activite_principale === 'object' 
           ? c.activite_principale?.code 
           : c.activite_principale || '',
-        libelle_ape: c.libelle_activite_principale || '',
+        libelle_ape: typeof c.activite_principale === 'object'
+          ? c.activite_principale?.libelle || c.libelle_activite_principale || ''
+          : c.libelle_activite_principale || '',
         effectif_code: c.tranche_effectif_salarie || '',
         date_creation: c.date_creation || '',
         nature_juridique: typeof c.nature_juridique_entreprise === 'object'
