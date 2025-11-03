@@ -15,24 +15,6 @@ const Index = () => {
   const { user, signOut } = useAuth();
   const [activeTab, setActiveTab] = useState("search");
 
-  const renderContent = () => {
-    switch (activeTab) {
-      case "search":
-        return <SearchCompanies />;
-      case "pipeline":
-        return <Pipeline />;
-      case "statistics":
-        return <Statistics />;
-      case "blacklist":
-        return <Blacklist />;
-      case "notifications":
-        return <Notifications />;
-      case "support":
-        return <Support />;
-      default:
-        return <SearchCompanies />;
-    }
-  };
 
   return (
     <SidebarProvider>
@@ -56,7 +38,24 @@ const Index = () => {
           </header>
           
           <main className="flex-1 p-6">
-            {renderContent()}
+            <div className={activeTab === "search" ? "block" : "hidden"}>
+              <SearchCompanies />
+            </div>
+            <div className={activeTab === "pipeline" ? "block" : "hidden"}>
+              <Pipeline />
+            </div>
+            <div className={activeTab === "statistics" ? "block" : "hidden"}>
+              <Statistics />
+            </div>
+            <div className={activeTab === "blacklist" ? "block" : "hidden"}>
+              <Blacklist />
+            </div>
+            <div className={activeTab === "notifications" ? "block" : "hidden"}>
+              <Notifications />
+            </div>
+            <div className={activeTab === "support" ? "block" : "hidden"}>
+              <Support />
+            </div>
           </main>
         </div>
       </div>
