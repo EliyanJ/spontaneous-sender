@@ -130,109 +130,41 @@ export const Pipeline = () => {
     );
   }
 
-  const enCours = (stats.parPhase.candidature_envoyee || 0) + 
-                  (stats.parPhase.en_attente || 0) + 
-                  (stats.parPhase.relance || 0) + 
-                  (stats.parPhase.entretien || 0);
-
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-      {/* Colonne Statistiques */}
-      <div className="lg:col-span-1 space-y-4">
-        <Card className="border-0 shadow-md">
-          <CardHeader className="bg-gradient-to-r from-muted/50 to-background pb-3">
-            <CardTitle className="text-lg">📊 Résumé</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4 pt-4">
-            <div className="space-y-2">
-              <p className="text-xs text-muted-foreground">Total Entreprises</p>
-              <div className="flex items-baseline gap-2">
-                <p className="text-3xl font-bold text-primary">{stats.total}</p>
-                <Activity className="h-4 w-4 text-primary" />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <p className="text-xs text-muted-foreground">En cours</p>
-              <div className="flex items-baseline gap-2">
-                <p className="text-3xl font-bold text-blue-500">{enCours}</p>
-                <TrendingUp className="h-4 w-4 text-blue-500" />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <p className="text-xs text-muted-foreground">Taux de succès</p>
-              <div className="flex items-baseline gap-2">
-                <p className="text-3xl font-bold text-green-500">
-                  {stats.total > 0 
-                    ? Math.round(((stats.parPhase.accepte || 0) / stats.total) * 100) 
-                    : 0}%
-                </p>
-                <TrendingUp className="h-4 w-4 text-green-500" />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <p className="text-xs text-muted-foreground">Taux de refus</p>
-              <div className="flex items-baseline gap-2">
-                <p className="text-3xl font-bold text-red-500">
-                  {stats.total > 0 
-                    ? Math.round(((stats.parPhase.refuse || 0) / stats.total) * 100) 
-                    : 0}%
-                </p>
-                <TrendingDown className="h-4 w-4 text-red-500" />
-              </div>
-            </div>
-
-            <div className="pt-4 border-t space-y-3">
-              <p className="text-sm font-semibold">Par phase</p>
-              {PIPELINE_STAGES.map((stage) => (
-                <div key={stage.value} className="flex items-center justify-between">
-                  <span className="text-xs">{stage.label}</span>
-                  <span className="text-sm font-bold">{stats.parPhase[stage.value] || 0}</span>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Colonne Pipeline */}
-      <div className="lg:col-span-3">
-        <Card className="border-0 shadow-md">
-          <CardHeader className="bg-gradient-to-r from-muted/50 to-background">
-            <CardTitle className="text-2xl">🎯 Pipeline CRM</CardTitle>
-          </CardHeader>
-          <CardContent className="p-6">
-            <div className="space-y-6">
-              {PIPELINE_STAGES.map((stage) => {
-                const companiesInStage = companies.filter(c => c.pipeline_stage === stage.value);
-                
-                return (
-                  <div key={stage.value}>
-                    <div className="flex items-center justify-between mb-3">
-                      <h3 className="font-semibold text-lg">{stage.label}</h3>
-                      <span className="text-sm font-bold text-muted-foreground">
-                        {companiesInStage.length} entreprise{companiesInStage.length > 1 ? 's' : ''}
-                      </span>
-                    </div>
-                    
-                    {companiesInStage.length === 0 ? (
-                      <div className="text-center py-4 bg-muted/30 rounded-lg">
-                        <p className="text-sm text-muted-foreground">Aucune entreprise</p>
-                      </div>
-                    ) : (
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-                        {companiesInStage.map(company => getCompanyCard(company))}
-                      </div>
-                    )}
+    <div className="space-y-6">
+      <Card className="border-0 shadow-md">
+        <CardHeader className="bg-gradient-to-r from-muted/50 to-background">
+          <CardTitle className="text-2xl">🎯 Pipeline CRM</CardTitle>
+        </CardHeader>
+        <CardContent className="p-6">
+          <div className="space-y-6">
+            {PIPELINE_STAGES.map((stage) => {
+              const companiesInStage = companies.filter(c => c.pipeline_stage === stage.value);
+              
+              return (
+                <div key={stage.value}>
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="font-semibold text-lg">{stage.label}</h3>
+                    <span className="text-sm font-bold text-muted-foreground">
+                      {companiesInStage.length} entreprise{companiesInStage.length > 1 ? 's' : ''}
+                    </span>
                   </div>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+                  
+                  {companiesInStage.length === 0 ? (
+                    <div className="text-center py-4 bg-muted/30 rounded-lg">
+                      <p className="text-sm text-muted-foreground">Aucune entreprise</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {companiesInStage.map(company => getCompanyCard(company))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };
