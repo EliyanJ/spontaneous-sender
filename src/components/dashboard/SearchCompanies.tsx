@@ -97,8 +97,8 @@ export const SearchCompanies = ({ onSavedAll }: { onSavedAll?: () => void }) => 
         userId: user.id,
       };
 
-      // Code APE du secteur
-      if (sector) {
+      // Code APE du secteur (si "Tous les secteurs" n'est pas sélectionné)
+      if (sector && sector !== "all") {
         const selectedSector = ACTIVITY_SECTORS.find(s => s.label === sector);
         if (selectedSector && selectedSector.codes.length > 0) {
           searchPayload.codeApe = selectedSector.codes[0];
@@ -240,6 +240,9 @@ export const SearchCompanies = ({ onSavedAll }: { onSavedAll?: () => void }) => 
                   <SelectValue placeholder="Choisir un secteur" />
                 </SelectTrigger>
                 <SelectContent className="bg-background z-50">
+                  <SelectItem value="all">
+                    Tous les secteurs
+                  </SelectItem>
                   {ACTIVITY_SECTORS.map((s) => (
                     <SelectItem key={s.label} value={s.label}>
                       {s.label}
