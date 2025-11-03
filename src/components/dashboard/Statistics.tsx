@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart3, TrendingUp, Building2, Target, CheckCircle2, XCircle } from "lucide-react";
+import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 
 export function Statistics() {
   const { data: companies } = useQuery({
@@ -31,6 +32,27 @@ export function Statistics() {
   const enCours = parPhase.candidature_envoyee + parPhase.en_attente + parPhase.relance + parPhase.entretien;
   const tauxSucces = totalCompanies > 0 ? ((parPhase.accepte / totalCompanies) * 100).toFixed(1) : 0;
   const tauxRefus = totalCompanies > 0 ? ((parPhase.refuse / totalCompanies) * 100).toFixed(1) : 0;
+
+  // Données pour le graphique en barres
+  const barChartData = [
+    { name: "Nouveau", value: parPhase.nouveau, fill: "#3b82f6" },
+    { name: "Candidature", value: parPhase.candidature_envoyee, fill: "#a855f7" },
+    { name: "En attente", value: parPhase.en_attente, fill: "#eab308" },
+    { name: "Relance", value: parPhase.relance, fill: "#f97316" },
+    { name: "Entretien", value: parPhase.entretien, fill: "#6366f1" },
+    { name: "Offre reçue", value: parPhase.offre_recue, fill: "#22c55e" },
+    { name: "Refusé", value: parPhase.refuse, fill: "#ef4444" },
+    { name: "Accepté", value: parPhase.accepte, fill: "#10b981" },
+  ];
+
+  // Données pour le graphique camembert
+  const pieChartData = [
+    { name: "Accepté", value: parPhase.accepte, color: "#10b981" },
+    { name: "Refusé", value: parPhase.refuse, color: "#ef4444" },
+    { name: "En cours", value: enCours, color: "#3b82f6" },
+    { name: "Nouveau", value: parPhase.nouveau, color: "#94a3b8" },
+    { name: "Offre reçue", value: parPhase.offre_recue, color: "#22c55e" },
+  ].filter(item => item.value > 0);
 
   return (
     <div className="space-y-6">
@@ -94,82 +116,111 @@ export function Statistics() {
         </Card>
       </div>
 
-      {/* Répartition par phase */}
-      <div className="grid gap-4 md:grid-cols-2">
-        <Card>
+      {/* Graphiques */}
+      <div className="grid gap-6 md:grid-cols-2">
+        {/* Graphique en barres */}
+        <Card className="border-0 shadow-lg">
           <CardHeader>
-            <CardTitle>Répartition par Phase</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <BarChart3 className="h-5 w-5 text-primary" />
+              Répartition par Phase
+            </CardTitle>
             <CardDescription>Distribution des entreprises dans votre pipeline</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-blue-500"></div>
-                <span className="text-sm font-medium">📝 Nouveau</span>
-              </div>
-              <span className="text-2xl font-bold">{parPhase.nouveau}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-purple-500"></div>
-                <span className="text-sm font-medium">📧 Candidature envoyée</span>
-              </div>
-              <span className="text-2xl font-bold">{parPhase.candidature_envoyee}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
-                <span className="text-sm font-medium">⏳ En attente</span>
-              </div>
-              <span className="text-2xl font-bold">{parPhase.en_attente}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-orange-500"></div>
-                <span className="text-sm font-medium">🔄 Relance</span>
-              </div>
-              <span className="text-2xl font-bold">{parPhase.relance}</span>
-            </div>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={barChartData}>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                <XAxis 
+                  dataKey="name" 
+                  className="text-xs"
+                  angle={-45}
+                  textAnchor="end"
+                  height={80}
+                />
+                <YAxis className="text-xs" />
+                <Tooltip 
+                  contentStyle={{ 
+                    backgroundColor: 'hsl(var(--card))', 
+                    border: '1px solid hsl(var(--border))',
+                    borderRadius: '8px'
+                  }}
+                />
+                <Bar dataKey="value" radius={[8, 8, 0, 0]}>
+                  {barChartData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.fill} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
           </CardContent>
         </Card>
 
-        <Card>
+        {/* Graphique camembert */}
+        <Card className="border-0 shadow-lg">
           <CardHeader>
-            <CardTitle>Résultats</CardTitle>
-            <CardDescription>État final des candidatures</CardDescription>
+            <CardTitle className="flex items-center gap-2">
+              <Target className="h-5 w-5 text-primary" />
+              Vue d'ensemble
+            </CardTitle>
+            <CardDescription>Statut global de vos candidatures</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-indigo-500"></div>
-                <span className="text-sm font-medium">🎯 Entretien</span>
-              </div>
-              <span className="text-2xl font-bold">{parPhase.entretien}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-green-500"></div>
-                <span className="text-sm font-medium">🎁 Offre reçue</span>
-              </div>
-              <span className="text-2xl font-bold">{parPhase.offre_recue}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-                <span className="text-sm font-medium">🎉 Accepté</span>
-              </div>
-              <span className="text-2xl font-bold text-emerald-600">{parPhase.accepte}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <XCircle className="h-4 w-4 text-red-500" />
-                <span className="text-sm font-medium">❌ Refusé</span>
-              </div>
-              <span className="text-2xl font-bold text-red-600">{parPhase.refuse}</span>
-            </div>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie
+                  data={pieChartData}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                  outerRadius={80}
+                  fill="#8884d8"
+                  dataKey="value"
+                >
+                  {pieChartData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip 
+                  contentStyle={{ 
+                    backgroundColor: 'hsl(var(--card))', 
+                    border: '1px solid hsl(var(--border))',
+                    borderRadius: '8px'
+                  }}
+                />
+              </PieChart>
+            </ResponsiveContainer>
           </CardContent>
         </Card>
       </div>
+
+      {/* Détails par phase */}
+      <Card className="border-0 shadow-lg">
+        <CardHeader>
+          <CardTitle>Détails par Phase</CardTitle>
+          <CardDescription>Vue détaillée de toutes les phases du pipeline</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {barChartData.map((phase) => (
+              <div 
+                key={phase.name} 
+                className="p-4 rounded-lg border border-border hover:shadow-md transition-shadow"
+                style={{ borderLeftWidth: '4px', borderLeftColor: phase.fill }}
+              >
+                <p className="text-sm text-muted-foreground mb-1">{phase.name}</p>
+                <p className="text-3xl font-bold" style={{ color: phase.fill }}>
+                  {phase.value}
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {totalCompanies > 0 ? `${((phase.value / totalCompanies) * 100).toFixed(1)}%` : '0%'}
+                </p>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
