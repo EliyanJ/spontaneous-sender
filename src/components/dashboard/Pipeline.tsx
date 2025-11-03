@@ -134,7 +134,7 @@ export const Pipeline = () => {
     <div className="space-y-6">
       <Card className="border-0 shadow-md">
         <CardHeader className="bg-gradient-to-r from-muted/50 to-background">
-          <CardTitle className="text-2xl">🎯 Pipeline CRM</CardTitle>
+          <CardTitle className="text-2xl">📊 Tracking candidature</CardTitle>
         </CardHeader>
         <CardContent className="p-6">
           <div className="space-y-6">
