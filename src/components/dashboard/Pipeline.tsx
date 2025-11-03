@@ -33,6 +33,7 @@ const PIPELINE_STAGES = [
 export const Pipeline = () => {
   const [companies, setCompanies] = useState<Company[]>([]);
   const [loading, setLoading] = useState(true);
+  const [updatingCompany, setUpdatingCompany] = useState<string | null>(null);
   const [stats, setStats] = useState<PipelineStats>({
     total: 0,
     parPhase: {}
@@ -77,6 +78,7 @@ export const Pipeline = () => {
   }, []);
 
   const moveCompany = async (companyId: string, newStage: string) => {
+    setUpdatingCompany(companyId);
     try {
       const { error } = await supabase
         .from("companies")
@@ -86,26 +88,36 @@ export const Pipeline = () => {
       if (error) throw error;
 
       toast.success("Phase mise à jour");
-      loadCompanies();
+      await loadCompanies();
     } catch (error) {
       console.error("Erreur:", error);
       toast.error("Erreur lors de la mise à jour");
+    } finally {
+      setUpdatingCompany(null);
     }
   };
 
   const getCompanyCard = (company: Company) => {
     const currentStage = PIPELINE_STAGES.find(s => s.value === company.pipeline_stage);
+    const isUpdating = updatingCompany === company.id;
     
     return (
       <Card 
         key={company.id} 
-        className={`mb-2 hover:shadow-md transition-shadow border-l-4 ${currentStage?.color}`}
+        className={`mb-2 hover:shadow-md transition-shadow border-l-4 ${currentStage?.color} ${isUpdating ? 'opacity-60' : ''}`}
       >
         <CardContent className="p-3">
-          <h4 className="font-semibold text-sm mb-1">{company.nom}</h4>
+          <div className="flex items-center justify-between mb-1">
+            <h4 className="font-semibold text-sm">{company.nom}</h4>
+            {isUpdating && <Loader2 className="h-4 w-4 animate-spin text-primary" />}
+          </div>
           <p className="text-xs text-muted-foreground mb-2">📍 {company.ville}</p>
           
-          <Select value={company.pipeline_stage} onValueChange={(value) => moveCompany(company.id, value)}>
+          <Select 
+            value={company.pipeline_stage} 
+            onValueChange={(value) => moveCompany(company.id, value)}
+            disabled={isUpdating}
+          >
             <SelectTrigger className="h-8 text-xs">
               <SelectValue />
             </SelectTrigger>

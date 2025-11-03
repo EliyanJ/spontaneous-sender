@@ -67,6 +67,7 @@ function prettyEstimate(code: string, siren: string) {
 
 export const SearchCompanies = () => {
   const [loading, setLoading] = useState(false);
+  const [savingCompany, setSavingCompany] = useState<string | null>(null);
   const [companies, setCompanies] = useState<Company[]>([]);
   const [sector, setSector] = useState("");
   const [ville, setVille] = useState("");
@@ -137,6 +138,7 @@ export const SearchCompanies = () => {
   };
 
   const saveCompany = async (company: Company) => {
+    setSavingCompany(company.siret);
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
@@ -157,9 +159,17 @@ export const SearchCompanies = () => {
       });
 
       if (error) throw error;
+      
+      // Retirer l'entreprise de la liste après sauvegarde réussie
+      setCompanies(prevCompanies => 
+        prevCompanies.filter(c => c.siret !== company.siret)
+      );
+      
       toast.success("Entreprise sauvegardée");
     } catch (error) {
       toast.error("Erreur lors de la sauvegarde");
+    } finally {
+      setSavingCompany(null);
     }
   };
 
@@ -356,9 +366,19 @@ export const SearchCompanies = () => {
                     size="sm"
                     onClick={() => saveCompany(company)}
                     className="ml-4"
+                    disabled={savingCompany === company.siret}
                   >
-                    <Save className="h-4 w-4 mr-2" />
-                    Sauvegarder
+                    {savingCompany === company.siret ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Sauvegarde...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="h-4 w-4 mr-2" />
+                        Sauvegarder
+                      </>
+                    )}
                   </Button>
                 </div>
               ))}
