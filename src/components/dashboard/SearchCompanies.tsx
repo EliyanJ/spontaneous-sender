@@ -65,7 +65,7 @@ function prettyEstimate(code: string, siren: string) {
   return `${val} (~${label})`;
 }
 
-export const SearchCompanies = ({ onSavedAll }: { onSavedAll?: () => void }) => {
+export const SearchCompanies = () => {
   const [loading, setLoading] = useState(false);
   const [companies, setCompanies] = useState<Company[]>([]);
   const [sector, setSector] = useState("");
@@ -206,7 +206,6 @@ export const SearchCompanies = ({ onSavedAll }: { onSavedAll?: () => void }) => 
 
       if (toInsert.length === 0) {
         toast.info('Tout est déjà sauvegardé');
-        onSavedAll?.();
         return;
       }
 
@@ -215,7 +214,6 @@ export const SearchCompanies = ({ onSavedAll }: { onSavedAll?: () => void }) => 
 
       toast.success(`${toInsert.length} entreprise(s) sauvegardée(s)`);
       setCompanies([]);
-      onSavedAll?.();
     } catch (error: any) {
       toast.error('Erreur lors de la sauvegarde');
       console.error(error);

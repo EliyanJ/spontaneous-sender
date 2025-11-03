@@ -3,8 +3,6 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { LogOut } from "lucide-react";
 import { SearchCompanies } from "@/components/dashboard/SearchCompanies";
-import { SavedCompanies } from "@/components/dashboard/SavedCompanies";
-import { Campaigns } from "@/components/dashboard/Campaigns";
 import { Blacklist } from "@/components/dashboard/Blacklist";
 import { Statistics } from "@/components/dashboard/Statistics";
 import { Notifications } from "@/components/dashboard/Notifications";
@@ -19,11 +17,7 @@ const Index = () => {
   const renderContent = () => {
     switch (activeTab) {
       case "search":
-        return <SearchCompanies onSavedAll={() => setActiveTab('companies')} />;
-      case "companies":
-        return <SavedCompanies />;
-      case "campaigns":
-        return <Campaigns />;
+        return <SearchCompanies />;
       case "statistics":
         return <Statistics />;
       case "blacklist":

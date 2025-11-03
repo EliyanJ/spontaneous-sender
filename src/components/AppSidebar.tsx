@@ -1,4 +1,4 @@
-import { Search, Building2, Mail, Ban, BarChart3, Bell, HelpCircle } from "lucide-react";
+import { Search, Ban, BarChart3, Bell, HelpCircle } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -13,8 +13,6 @@ import { Button } from "@/components/ui/button";
 
 const menuItems = [
   { title: "Recherche", icon: Search, value: "search" },
-  { title: "Entreprises", icon: Building2, value: "companies" },
-  { title: "Campagnes", icon: Mail, value: "campaigns" },
   { title: "Statistiques", icon: BarChart3, value: "statistics" },
   { title: "Blacklist", icon: Ban, value: "blacklist" },
 ];
