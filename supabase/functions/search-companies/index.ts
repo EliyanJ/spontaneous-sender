@@ -219,44 +219,57 @@ serve(async (req) => {
     let filtered = allCompanies.filter(c => !blacklistedSirens.includes(c.siren));
     console.log(`Après blacklist: ${filtered.length} entreprises`);
 
-    // Filtrage STRICT de la localisation côté edge function
-    if (location && params.code_postal) {
-      const allowedPostalCodes = params.code_postal.split(',').map((cp: string) => cp.trim());
-      filtered = filtered.filter(c => {
-        const siegePostal = c.siege?.code_postal || '';
-        return allowedPostalCodes.includes(siegePostal);
-      });
-      console.log(`Après filtrage strict localisation (${allowedPostalCodes.length} codes postaux): ${filtered.length} entreprises`);
-    }
-
     // Randomisation finale (Fisher-Yates)
     filtered = shuffleArray(filtered);
     const final = filtered.slice(0, nombre);
 
-    // Formatage
-    const formatted = final.map(c => ({
-      siren: c.siren,
-      siret: c.siege?.siret || c.siren,
-      nom: c.nom_complet || c.nom_raison_sociale || '',
-      nom_commercial: c.siege?.nom_commercial || '',
-      adresse: c.siege?.adresse || '',
-      code_postal: c.siege?.code_postal || '',
-      ville: c.siege?.libelle_commune || '',
-      code_ape: typeof c.activite_principale === 'object' 
-        ? c.activite_principale?.code 
-        : c.activite_principale || '',
-      libelle_ape: c.libelle_activite_principale || '',
-      effectif_code: c.tranche_effectif_salarie || '',
-      date_creation: c.date_creation || '',
-      nature_juridique: typeof c.nature_juridique_entreprise === 'object'
-        ? c.nature_juridique_entreprise?.code
-        : c.nature_juridique_entreprise || '',
-      categorie_entreprise: c.categorie_entreprise || '',
-      nombre_etablissements: c.nombre_etablissements || 0,
-      dirigeant_nom: c.dirigeants?.[0]?.nom || '',
-      dirigeant_prenoms: c.dirigeants?.[0]?.prenoms || '',
-      dirigeant_fonction: c.dirigeants?.[0]?.qualite || '',
-    }));
+    // Formatage avec recherche de l'établissement dans la localisation demandée
+    const formatted = final.map(c => {
+      let etablissement = c.siege;
+      
+      // Si on a filtré par localisation, chercher l'établissement correspondant
+      if (location && params.code_postal) {
+        const allowedPostalCodes = params.code_postal.split(',').map((cp: string) => cp.trim());
+        
+        // Chercher dans matching_etablissements un établissement avec le bon code postal
+        if (c.matching_etablissements && Array.isArray(c.matching_etablissements)) {
+          const matching = c.matching_etablissements.find((etab: any) => 
+            allowedPostalCodes.includes(etab.code_postal)
+          );
+          if (matching) etablissement = matching;
+        }
+        
+        // Sinon vérifier si le siège correspond
+        if (!allowedPostalCodes.includes(etablissement?.code_postal || '')) {
+          // Si le siège ne correspond pas, on skip cette entreprise
+          return null;
+        }
+      }
+      
+      return {
+        siren: c.siren,
+        siret: etablissement?.siret || c.siren,
+        nom: c.nom_complet || c.nom_raison_sociale || '',
+        nom_commercial: etablissement?.nom_commercial || '',
+        adresse: etablissement?.adresse || '',
+        code_postal: etablissement?.code_postal || '',
+        ville: etablissement?.libelle_commune || '',
+        code_ape: typeof c.activite_principale === 'object' 
+          ? c.activite_principale?.code 
+          : c.activite_principale || '',
+        libelle_ape: c.libelle_activite_principale || '',
+        effectif_code: c.tranche_effectif_salarie || '',
+        date_creation: c.date_creation || '',
+        nature_juridique: typeof c.nature_juridique_entreprise === 'object'
+          ? c.nature_juridique_entreprise?.code
+          : c.nature_juridique_entreprise || '',
+        categorie_entreprise: c.categorie_entreprise || '',
+        nombre_etablissements: c.nombre_etablissements || 0,
+        dirigeant_nom: c.dirigeants?.[0]?.nom || '',
+        dirigeant_prenoms: c.dirigeants?.[0]?.prenoms || '',
+        dirigeant_fonction: c.dirigeants?.[0]?.qualite || '',
+      };
+    }).filter(c => c !== null);
 
     console.log(`Résultat final: ${formatted.length} entreprises`);
 

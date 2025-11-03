@@ -333,7 +333,7 @@ export const SearchCompanies = ({ onSavedAll }: { onSavedAll?: () => void }) => 
                       📍 {company.adresse}, {company.code_postal} {company.ville}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      🏢 APE: {company.code_ape} - {company.libelle_ape}
+                      🏢 Secteur: {company.libelle_ape}
                     </p>
                     <p className="text-xs text-muted-foreground font-mono">
                       🔢 SIREN: {company.siren}
