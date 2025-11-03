@@ -1,265 +1,248 @@
-import { useQuery } from "@tanstack/react-query";
+import { useState, useEffect } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { BarChart3, TrendingUp, Mail, Building2, CheckCircle2, XCircle, Clock, Target } from "lucide-react";
+import { toast } from "sonner";
+import { 
+  Building2, 
+  FileText, 
+  Clock, 
+  RefreshCcw, 
+  Calendar,
+  CheckCircle,
+  XCircle,
+  Gift,
+  Loader2
+} from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
-export function Statistics() {
-  const { data: campaigns } = useQuery({
-    queryKey: ["campaigns-stats"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("campaigns")
-        .select("*");
-      if (error) throw error;
-      return data;
-    },
+interface Company {
+  id: string;
+  nom: string;
+  ville: string;
+  pipeline_stage: string;
+  created_at: string;
+  updated_at: string;
+}
+
+interface PipelineStats {
+  total: number;
+  parPhase: Record<string, number>;
+}
+
+const PIPELINE_STAGES = [
+  { value: "nouveau", label: "📝 Nouveau", icon: Building2, color: "bg-blue-500" },
+  { value: "candidature_envoyee", label: "📧 Candidature envoyée", icon: FileText, color: "bg-purple-500" },
+  { value: "en_attente", label: "⏳ En attente", icon: Clock, color: "bg-yellow-500" },
+  { value: "relance", label: "🔄 Relance", icon: RefreshCcw, color: "bg-orange-500" },
+  { value: "entretien", label: "🎯 Entretien", icon: Calendar, color: "bg-indigo-500" },
+  { value: "offre_recue", label: "🎁 Offre reçue", icon: Gift, color: "bg-green-500" },
+  { value: "refuse", label: "❌ Refusé", icon: XCircle, color: "bg-red-500" },
+  { value: "accepte", label: "🎉 Accepté", icon: CheckCircle, color: "bg-emerald-500" },
+];
+
+export const Statistics = () => {
+  const [companies, setCompanies] = useState<Company[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState<PipelineStats>({
+    total: 0,
+    parPhase: {}
   });
 
-  const { data: companies } = useQuery({
-    queryKey: ["companies-stats"],
-    queryFn: async () => {
+  const loadCompanies = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
       const { data, error } = await supabase
         .from("companies")
-        .select("*");
+        .select("*")
+        .eq("user_id", user.id)
+        .order("updated_at", { ascending: false });
+
       if (error) throw error;
-      return data;
-    },
-  });
+      setCompanies(data || []);
+      calculateStats(data || []);
+    } catch (error) {
+      console.error("Erreur chargement:", error);
+      toast.error("Erreur lors du chargement");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const { data: emailLogs } = useQuery({
-    queryKey: ["email-logs-stats"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("email_logs")
-        .select("*");
+  const calculateStats = (companiesData: Company[]) => {
+    const parPhase: Record<string, number> = {};
+    PIPELINE_STAGES.forEach(stage => {
+      parPhase[stage.value] = companiesData.filter(c => c.pipeline_stage === stage.value).length;
+    });
+
+    setStats({
+      total: companiesData.length,
+      parPhase
+    });
+  };
+
+  useEffect(() => {
+    loadCompanies();
+  }, []);
+
+  const moveCompany = async (companyId: string, newStage: string) => {
+    try {
+      const { error } = await supabase
+        .from("companies")
+        .update({ pipeline_stage: newStage })
+        .eq("id", companyId);
+
       if (error) throw error;
-      return data;
-    },
-  });
 
-  const { data: blacklist } = useQuery({
-    queryKey: ["blacklist-stats"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("user_company_blacklist")
-        .select("*");
-      if (error) throw error;
-      return data;
-    },
-  });
+      toast.success("Phase mise à jour");
+      loadCompanies();
+    } catch (error) {
+      console.error("Erreur:", error);
+      toast.error("Erreur lors de la mise à jour");
+    }
+  };
 
-  // Calculs des statistiques
-  const totalCampaigns = campaigns?.length || 0;
-  const activeCampaigns = campaigns?.filter(c => c.status === "running").length || 0;
-  const completedCampaigns = campaigns?.filter(c => c.status === "completed").length || 0;
-  const draftCampaigns = campaigns?.filter(c => c.status === "draft").length || 0;
+  const getCompanyCard = (company: Company) => (
+    <Card 
+      key={company.id} 
+      className="mb-3 hover:shadow-md transition-shadow border-l-4"
+      style={{ borderLeftColor: PIPELINE_STAGES.find(s => s.value === company.pipeline_stage)?.color.replace('bg-', '') }}
+    >
+      <CardContent className="p-4">
+        <h4 className="font-semibold text-sm mb-2">{company.nom}</h4>
+        <p className="text-xs text-muted-foreground mb-3">📍 {company.ville}</p>
+        
+        <div className="flex gap-1 flex-wrap">
+          {PIPELINE_STAGES.map((stage) => (
+            company.pipeline_stage !== stage.value && (
+              <Button
+                key={stage.value}
+                size="sm"
+                variant="outline"
+                className="h-7 text-xs"
+                onClick={() => moveCompany(company.id, stage.value)}
+              >
+                {stage.label.split(' ')[0]}
+              </Button>
+            )
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  );
 
-  const totalEmailsSent = campaigns?.reduce((sum, c) => sum + (c.sent_emails || 0), 0) || 0;
-  const totalEmailsFailed = campaigns?.reduce((sum, c) => sum + (c.failed_emails || 0), 0) || 0;
-  const totalEmailsPlanned = campaigns?.reduce((sum, c) => sum + (c.total_emails || 0), 0) || 0;
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
-  const totalCompanies = companies?.length || 0;
-  const companiesWithEmails = companies?.filter(c => {
-    const emails = c.emails as any[];
-    return emails && Array.isArray(emails) && emails.length > 0;
-  }).length || 0;
-
-  const totalBlacklisted = blacklist?.length || 0;
-
-  const successRate = totalEmailsSent > 0 
-    ? ((totalEmailsSent - totalEmailsFailed) / totalEmailsSent * 100).toFixed(1)
-    : 0;
-
-  const emailsPending = totalEmailsPlanned - totalEmailsSent - totalEmailsFailed;
+  const enCours = (stats.parPhase.candidature_envoyee || 0) + 
+                  (stats.parPhase.en_attente || 0) + 
+                  (stats.parPhase.relance || 0) + 
+                  (stats.parPhase.entretien || 0);
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-3xl font-bold tracking-tight">Statistiques</h2>
-        <p className="text-muted-foreground">Vue d'ensemble de vos campagnes et performances</p>
-      </div>
-
-      {/* Statistiques principales */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Campagnes</CardTitle>
-            <BarChart3 className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{totalCampaigns}</div>
-            <p className="text-xs text-muted-foreground">
-              {activeCampaigns} actives, {completedCampaigns} terminées
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Emails Envoyés</CardTitle>
-            <Mail className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{totalEmailsSent}</div>
-            <p className="text-xs text-muted-foreground">
-              Sur {totalEmailsPlanned} prévus
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Taux de Réussite</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{successRate}%</div>
-            <p className="text-xs text-muted-foreground">
-              {totalEmailsFailed} échecs
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Entreprises</CardTitle>
-            <Building2 className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{totalCompanies}</div>
-            <p className="text-xs text-muted-foreground">
-              {companiesWithEmails} avec emails trouvés
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Détails des campagnes */}
-      <div className="grid gap-4 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Statut des Campagnes</CardTitle>
-            <CardDescription>Répartition par statut</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Clock className="h-4 w-4 text-yellow-500" />
-                <span className="text-sm font-medium">Brouillons</span>
-              </div>
-              <span className="text-2xl font-bold">{draftCampaigns}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Target className="h-4 w-4 text-blue-500" />
-                <span className="text-sm font-medium">En cours</span>
-              </div>
-              <span className="text-2xl font-bold">{activeCampaigns}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="h-4 w-4 text-green-500" />
-                <span className="text-sm font-medium">Terminées</span>
-              </div>
-              <span className="text-2xl font-bold">{completedCampaigns}</span>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Performance des Emails</CardTitle>
-            <CardDescription>Détails d'envoi</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="h-4 w-4 text-green-500" />
-                <span className="text-sm font-medium">Envoyés avec succès</span>
-              </div>
-              <span className="text-2xl font-bold">{totalEmailsSent - totalEmailsFailed}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <XCircle className="h-4 w-4 text-red-500" />
-                <span className="text-sm font-medium">Échecs</span>
-              </div>
-              <span className="text-2xl font-bold">{totalEmailsFailed}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Clock className="h-4 w-4 text-orange-500" />
-                <span className="text-sm font-medium">En attente</span>
-              </div>
-              <span className="text-2xl font-bold">{emailsPending}</span>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Détails supplémentaires */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Autres Métriques</CardTitle>
-          <CardDescription>Informations complémentaires</CardDescription>
+      {/* Pipeline Kanban */}
+      <Card className="border-0 shadow-md">
+        <CardHeader className="bg-gradient-to-r from-muted/50 to-background">
+          <CardTitle className="text-2xl">Pipeline CRM</CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="grid gap-4 md:grid-cols-3">
-            <div className="space-y-2">
-              <p className="text-sm font-medium text-muted-foreground">Entreprises Blacklistées</p>
-              <p className="text-3xl font-bold">{totalBlacklisted}</p>
-            </div>
-            <div className="space-y-2">
-              <p className="text-sm font-medium text-muted-foreground">Taux de Collecte d'Emails</p>
-              <p className="text-3xl font-bold">
-                {totalCompanies > 0 ? ((companiesWithEmails / totalCompanies) * 100).toFixed(1) : 0}%
-              </p>
-            </div>
-            <div className="space-y-2">
-              <p className="text-sm font-medium text-muted-foreground">Moyenne Emails/Campagne</p>
-              <p className="text-3xl font-bold">
-                {totalCampaigns > 0 ? Math.round(totalEmailsSent / totalCampaigns) : 0}
-              </p>
-            </div>
+        <CardContent className="p-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {PIPELINE_STAGES.map((stage) => {
+              const Icon = stage.icon;
+              const companiesInStage = companies.filter(c => c.pipeline_stage === stage.value);
+              
+              return (
+                <div key={stage.value} className="flex flex-col">
+                  <div className={`${stage.color} text-white p-3 rounded-t-lg flex items-center justify-between`}>
+                    <div className="flex items-center gap-2">
+                      <Icon className="h-4 w-4" />
+                      <span className="font-semibold text-sm">{stage.label}</span>
+                    </div>
+                    <Badge variant="secondary" className="bg-white/20 text-white">
+                      {companiesInStage.length}
+                    </Badge>
+                  </div>
+                  
+                  <div className="bg-muted/30 p-3 rounded-b-lg min-h-[400px] max-h-[500px] overflow-y-auto">
+                    {companiesInStage.length === 0 ? (
+                      <p className="text-center text-sm text-muted-foreground mt-4">
+                        Aucune entreprise
+                      </p>
+                    ) : (
+                      companiesInStage.map(company => getCompanyCard(company))
+                    )}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </CardContent>
       </Card>
 
-      {/* Liste des dernières campagnes */}
-      {campaigns && campaigns.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Dernières Campagnes</CardTitle>
-            <CardDescription>Vos 5 campagnes les plus récentes</CardDescription>
+      {/* Statistiques */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card className="border-0 shadow-md">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Total Entreprises
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              {campaigns.slice(0, 5).map((campaign) => (
-                <div
-                  key={campaign.id}
-                  className="flex items-center justify-between border-b pb-3 last:border-0"
-                >
-                  <div className="flex-1">
-                    <p className="font-medium">{campaign.name}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {campaign.sent_emails}/{campaign.total_emails} emails
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className={`px-2 py-1 text-xs rounded-full ${
-                      campaign.status === 'draft' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400' :
-                      campaign.status === 'running' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400' :
-                      'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
-                    }`}>
-                      {campaign.status}
-                    </span>
-                  </div>
-                </div>
-              ))}
+            <div className="text-3xl font-bold text-primary">{stats.total}</div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-0 shadow-md">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              En cours
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-blue-500">
+              {enCours}
             </div>
           </CardContent>
         </Card>
-      )}
+
+        <Card className="border-0 shadow-md">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Taux de succès
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-green-500">
+              {stats.total > 0 
+                ? Math.round(((stats.parPhase.accepte || 0) / stats.total) * 100) 
+                : 0}%
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-0 shadow-md">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Taux de refus
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-red-500">
+              {stats.total > 0 
+                ? Math.round(((stats.parPhase.refuse || 0) / stats.total) * 100) 
+                : 0}%
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
-}
+};

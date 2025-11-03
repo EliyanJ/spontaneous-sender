@@ -76,6 +76,7 @@ export type Database = {
           libelle_ape: string | null
           nature_juridique: string | null
           nom: string
+          pipeline_stage: string | null
           siren: string
           siret: string
           tranche_effectif: string | null
@@ -94,6 +95,7 @@ export type Database = {
           libelle_ape?: string | null
           nature_juridique?: string | null
           nom: string
+          pipeline_stage?: string | null
           siren: string
           siret: string
           tranche_effectif?: string | null
@@ -112,6 +114,7 @@ export type Database = {
           libelle_ape?: string | null
           nature_juridique?: string | null
           nom?: string
+          pipeline_stage?: string | null
           siren?: string
           siret?: string
           tranche_effectif?: string | null
