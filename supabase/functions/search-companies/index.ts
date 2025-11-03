@@ -254,12 +254,14 @@ serve(async (req) => {
         adresse: etablissement?.adresse || '',
         code_postal: etablissement?.code_postal || '',
         ville: etablissement?.libelle_commune || '',
-        code_ape: typeof c.activite_principale === 'object' 
-          ? c.activite_principale?.code 
-          : c.activite_principale || '',
-        libelle_ape: typeof c.activite_principale === 'object'
-          ? c.activite_principale?.libelle || c.libelle_activite_principale || ''
-          : c.libelle_activite_principale || '',
+        code_ape: (etablissement?.activite_principale && typeof etablissement.activite_principale === 'object')
+          ? (etablissement.activite_principale.code || '')
+          : (typeof c.activite_principale === 'object' ? (c.activite_principale?.code || '') : (c.activite_principale || '')),
+        libelle_ape: (etablissement?.activite_principale && typeof etablissement.activite_principale === 'object')
+          ? (etablissement.activite_principale.libelle || etablissement.libelle_activite_principale || '')
+          : (etablissement?.libelle_activite_principale || (typeof c.activite_principale === 'object'
+            ? (c.activite_principale?.libelle || c.libelle_activite_principale || '')
+            : (c.libelle_activite_principale || ''))),
         effectif_code: c.tranche_effectif_salarie || '',
         date_creation: c.date_creation || '',
         nature_juridique: typeof c.nature_juridique_entreprise === 'object'

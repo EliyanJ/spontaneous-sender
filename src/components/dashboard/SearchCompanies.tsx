@@ -330,13 +330,10 @@ export const SearchCompanies = ({ onSavedAll }: { onSavedAll?: () => void }) => 
                       {company.nom}
                     </h3>
                     <p className="text-sm text-muted-foreground">
-                      📍 {company.adresse}, {company.code_postal} {company.ville}
+                      📍 {company.adresse || `${company.code_postal} ${company.ville}`}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      🏢 Secteur: {company.libelle_ape}
-                    </p>
-                    <p className="text-xs text-muted-foreground font-mono">
-                      🔢 SIREN: {company.siren}
+                      🏢 Secteur: {company.libelle_ape || 'Non communiqué'}
                     </p>
                     <p className="text-sm font-medium text-primary">
                       👥 Effectif estimé: {prettyEstimate(company.effectif_code, company.siren)}
