@@ -219,6 +219,16 @@ serve(async (req) => {
     let filtered = allCompanies.filter(c => !blacklistedSirens.includes(c.siren));
     console.log(`Après blacklist: ${filtered.length} entreprises`);
 
+    // Filtrage STRICT de la localisation côté edge function
+    if (location && params.code_postal) {
+      const allowedPostalCodes = params.code_postal.split(',').map((cp: string) => cp.trim());
+      filtered = filtered.filter(c => {
+        const siegePostal = c.siege?.code_postal || '';
+        return allowedPostalCodes.includes(siegePostal);
+      });
+      console.log(`Après filtrage strict localisation (${allowedPostalCodes.length} codes postaux): ${filtered.length} entreprises`);
+    }
+
     // Randomisation finale (Fisher-Yates)
     filtered = shuffleArray(filtered);
     const final = filtered.slice(0, nombre);
