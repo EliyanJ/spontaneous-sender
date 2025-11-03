@@ -1,10 +1,32 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+const requestSchema = z.object({
+  codeApe: z.string().max(10).optional(),
+  location: z.string().max(100).optional(),
+  nombre: z.number().int().min(1).max(200),
+  userId: z.string().uuid()
+});
+
+function sanitizeError(error: any): { message: string; code?: string } {
+  return {
+    message: error.message || "Unknown error",
+    code: error.code || error.name
+  };
+}
+
+function mapToUserError(error: any): string {
+  const msg = error.message?.toLowerCase() || "";
+  if (msg.includes("auth") || msg.includes("unauthorized")) return "Non autorisé";
+  if (msg.includes("api") || msg.includes("fetch")) return "Erreur lors de la recherche";
+  return "Une erreur est survenue";
+}
 
 // Configuration
 const BASE_URL = 'https://recherche-entreprises.api.gouv.fr';
@@ -76,12 +98,19 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    const { 
-      codeApe, 
-      location, 
-      nombre = 20,
-      userId 
-    } = await req.json();
+    // Valider le corps de la requête
+    const rawBody = await req.json();
+    const validationResult = requestSchema.safeParse(rawBody);
+    
+    if (!validationResult.success) {
+      console.error("[VALIDATION]", validationResult.error.issues);
+      return new Response(
+        JSON.stringify({ error: "Invalid request format" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const { codeApe, location, nombre = 20, userId } = validationResult.data;
 
     console.log('Recherche:', { codeApe, location, nombre, userId });
 
@@ -200,8 +229,9 @@ serve(async (req) => {
           }
           
           success = true;
-        } catch (error) {
-          console.error(`Erreur page ${pageNum}:`, error);
+        } catch (error: any) {
+          const safeError = sanitizeError(error);
+          console.error(`[PAGE_ERROR] ${pageNum}:`, safeError);
           retries++;
           if (retries < 3) await sleep(500);
         }
@@ -285,11 +315,12 @@ serve(async (req) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
 
-  } catch (error) {
-    console.error('Erreur search-companies:', error);
+  } catch (error: any) {
+    const safeError = sanitizeError(error);
+    console.error('[INTERNAL]', safeError);
     return new Response(JSON.stringify({
       success: false,
-      error: error instanceof Error ? error.message : 'Erreur inconnue'
+      error: mapToUserError(error)
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }

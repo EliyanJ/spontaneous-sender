@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { SMTPClient } from "https://deno.land/x/denomailer@1.6.0/mod.ts";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -9,6 +10,26 @@ const corsHeaders = {
 
 interface RequestBody {
   campaignId: string;
+}
+
+const requestSchema = z.object({
+  campaignId: z.string().uuid("Invalid campaign ID format")
+});
+
+function sanitizeError(error: any): { message: string; code?: string } {
+  return {
+    message: error.message || "Unknown error",
+    code: error.code || error.name
+  };
+}
+
+function mapToUserError(error: any): string {
+  const msg = error.message?.toLowerCase() || "";
+  if (msg.includes("campaign") || msg.includes("introuvable")) return "Campagne non trouvée";
+  if (msg.includes("auth") || msg.includes("unauthorized")) return "Non autorisé";
+  if (msg.includes("profile")) return "Profil utilisateur introuvable";
+  if (msg.includes("smtp") || msg.includes("email")) return "Erreur d'envoi d'email";
+  return "Une erreur est survenue";
 }
 
 serve(async (req) => {
@@ -31,7 +52,19 @@ serve(async (req) => {
       throw new Error("Non autorisé");
     }
 
-    const { campaignId }: RequestBody = await req.json();
+    // Valider le corps de la requête
+    const rawBody = await req.json();
+    const validationResult = requestSchema.safeParse(rawBody);
+    
+    if (!validationResult.success) {
+      console.error("[VALIDATION]", validationResult.error.issues);
+      return new Response(
+        JSON.stringify({ error: "Invalid request format" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const { campaignId }: RequestBody = validationResult.data;
 
     // Récupérer la campagne
     const { data: campaign, error: campaignError } = await supabaseClient
@@ -183,8 +216,9 @@ serve(async (req) => {
           if (i < Math.min(targetCompanies.length, emailsPerDay) - 1) {
             await new Promise(resolve => setTimeout(resolve, delayBetweenEmails));
           }
-        } catch (error) {
-          console.error(`Erreur envoi email ${company.nom}:`, error);
+        } catch (error: any) {
+          const safeError = sanitizeError(error);
+          console.error(`[EMAIL_ERROR] Company: ${company.nom}`, safeError);
           failedCount++;
 
           await supabaseClient.from("email_logs").insert({
@@ -192,7 +226,7 @@ serve(async (req) => {
             company_id: company.id,
             recipient_email: company.emails?.[0] || "unknown",
             status: "failed",
-            error_message: String(error),
+            error_message: safeError.message,
           });
         }
       }
@@ -201,8 +235,9 @@ serve(async (req) => {
       if (smtpClient) {
         try {
           await smtpClient.close();
-        } catch (error) {
-          console.error("Erreur lors de la fermeture du client SMTP:", error);
+        } catch (error: any) {
+          const safeError = sanitizeError(error);
+          console.error("[SMTP_CLOSE]", safeError);
         }
       }
     }
@@ -230,9 +265,10 @@ serve(async (req) => {
       }
     );
   } catch (error: any) {
-    console.error("Erreur:", error);
+    const safeError = sanitizeError(error);
+    console.error("[INTERNAL]", safeError);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: mapToUserError(error) }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 400,

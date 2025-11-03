@@ -1,10 +1,37 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import Anthropic from "https://esm.sh/@anthropic-ai/sdk@0.24.3";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+const companySchema = z.object({
+  id: z.string().uuid(),
+  nom: z.string().max(200),
+  ville: z.string().max(100).optional()
+});
+
+const requestSchema = z.object({
+  companies: z.array(companySchema).max(100)
+});
+
+function sanitizeError(error: any): { message: string; code?: string } {
+  return {
+    message: error.message || "Unknown error",
+    code: error.code || error.name
+  };
+}
+
+function mapToUserError(error: any): string {
+  const msg = error.message?.toLowerCase() || "";
+  if (msg.includes("auth") || msg.includes("unauthorized")) return "Non autorisé";
+  if (msg.includes("api") || msg.includes("fetch")) return "Erreur lors de la recherche";
+  if (msg.includes("anthropic")) return "Erreur du service d'intelligence artificielle";
+  return "Une erreur est survenue";
+}
 
 const ANTHROPIC_API_KEY = Deno.env.get('ANTHROPIC_API_KEY');
 const BRAVE_SEARCH_API_KEY = Deno.env.get('BRAVE_SEARCH_API_KEY');
@@ -48,8 +75,8 @@ async function searchWeb(query: string): Promise<SearchResult[]> {
       );
 
       if (response.status === 429 || response.status === 402 || response.status === 503) {
-        const errorText = await response.text();
-        console.error(`❌ Brave Search API error ${response.status} (attempt ${attempt}/${maxAttempts}):`, errorText);
+        const safeError = sanitizeError({ message: `API error ${response.status}`, code: response.status });
+        console.error(`[BRAVE_API] Attempt ${attempt}/${maxAttempts}:`, safeError);
         if (attempt < maxAttempts) {
           await delay(delayMs);
           delayMs *= 2;
@@ -59,9 +86,8 @@ async function searchWeb(query: string): Promise<SearchResult[]> {
       }
 
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error(`❌ Brave Search API error ${response.status}:`, errorText);
-        console.error(`❌ Query was: "${query}"`);
+        const safeError = sanitizeError({ message: `API error ${response.status}`, code: response.status });
+        console.error('[BRAVE_API]', safeError);
         return [];
       }
 
@@ -74,8 +100,9 @@ async function searchWeb(query: string): Promise<SearchResult[]> {
 
       console.log(`   ✅ ${results.length} résultats trouvés`);
       return results;
-    } catch (error) {
-      console.error(`❌ Erreur recherche web (attempt ${attempt}/${maxAttempts}):`, error);
+    } catch (error: any) {
+      const safeError = sanitizeError(error);
+      console.error(`[SEARCH_ERROR] Attempt ${attempt}/${maxAttempts}:`, safeError);
       if (attempt < maxAttempts) {
         await delay(delayMs);
         delayMs *= 2;
@@ -367,7 +394,8 @@ Réponds UNIQUEMENT en JSON strict (rien d'autre):
     });
 
     if (!response.ok) {
-      console.error(`   ❌ Anthropic API error: ${response.status}`);
+      const safeError = sanitizeError({ message: `Anthropic API error ${response.status}`, code: response.status });
+      console.error('[ANTHROPIC_API]', safeError);
       return {
         website: websiteUrl,
         emails: [],
@@ -387,8 +415,9 @@ Réponds UNIQUEMENT en JSON strict (rien d'autre):
         throw new Error('Pas de JSON trouvé');
       }
       parsedResponse = JSON.parse(jsonMatch[0]);
-    } catch (parseError) {
-      console.error('   ❌ Erreur parsing JSON:', parseError);
+    } catch (parseError: any) {
+      const safeError = sanitizeError(parseError);
+      console.error('[JSON_PARSE]', safeError);
       return {
         website: websiteUrl,
         emails: [],
@@ -420,8 +449,9 @@ Réponds UNIQUEMENT en JSON strict (rien d'autre):
       source: websiteUrl
     };
 
-  } catch (error) {
-    console.error('   ❌ Erreur extraction emails:', error);
+  } catch (error: any) {
+    const safeError = sanitizeError(error);
+    console.error('[EMAIL_EXTRACTION]', safeError);
     return {
       website: websiteUrl,
       emails: [],
@@ -455,8 +485,9 @@ async function findEmailsWithAI(companyName: string, city: string): Promise<Emai
     
     return result;
 
-  } catch (error) {
-    console.error(`❌ Erreur globale pour ${companyName}:`, error);
+  } catch (error: any) {
+    const safeError = sanitizeError(error);
+    console.error(`[COMPANY_ERROR] ${companyName}:`, safeError);
     return {
       website: null,
       emails: [],
@@ -478,7 +509,7 @@ serve(async (req) => {
   try {
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
-      throw new Error('Missing authorization header');
+      throw new Error('Non autorisé');
     }
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
@@ -489,7 +520,7 @@ serve(async (req) => {
 
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     if (userError || !user) {
-      throw new Error('Unauthorized');
+      throw new Error('Non autorisé');
     }
 
     // Fetch recent companies for this user
@@ -530,7 +561,8 @@ serve(async (req) => {
             .eq('id', company.id);
 
           if (updateError) {
-            console.error(`❌ Échec mise à jour ${company.nom}:`, updateError);
+            const safeError = sanitizeError(updateError);
+            console.error(`[UPDATE_ERROR] ${company.nom}:`, safeError);
             failedCount++;
           } else {
             console.log(`✅ ${company.nom}: ${result.emails.length} emails trouvés`);
@@ -558,7 +590,8 @@ serve(async (req) => {
         await delay(3000);
         
       } catch (error: any) {
-        console.error(`❌ Erreur traitement ${company.nom}:`, error);
+        const safeError = sanitizeError(error);
+        console.error(`[COMPANY_ERROR] ${company.nom}:`, safeError);
         failedCount++;
       }
     }
@@ -569,8 +602,8 @@ serve(async (req) => {
     console.log(`   📧 Emails trouvés: ${totalEmailsFound}`);
 
     const message = processedCount === 0 && failedCount > 0 
-      ? `⚠️ Échec: Aucune entreprise traitée. Vérifiez que la clé API Brave Search est configurée correctement.`
-      : `✅ ${totalEmailsFound} emails trouvés pour ${processedCount} entreprises sur ${companies.length}`;
+      ? `Erreur de traitement`
+      : `${totalEmailsFound} emails trouvés pour ${processedCount} entreprises sur ${companies.length}`;
 
     return new Response(
       JSON.stringify({
@@ -584,9 +617,10 @@ serve(async (req) => {
     );
 
   } catch (error: any) {
-    console.error('❌ Erreur dans find-company-emails:', error);
+    const safeError = sanitizeError(error);
+    console.error('[INTERNAL]', safeError);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: mapToUserError(error) }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
