@@ -113,18 +113,20 @@ serve(async (req) => {
       params.activite_principale = formatCodeApe(codeApe);
     }
 
-    // Gestion de la localisation avec randomisation
+    // Gestion de la localisation STRICTE (tous les arrondissements)
     if (location) {
       const normalized = normalizeVille(location);
       
       if (/^\d{5}$/.test(location)) {
+        // Code postal exact
         params.code_postal = location;
       } else if (VILLES_ARRONDISSEMENTS[normalized]) {
+        // Ville avec arrondissements: TOUS les arrondissements (pas aléatoire)
         const arrondissements = VILLES_ARRONDISSEMENTS[normalized];
-        const selected = selectRandomArrondissements(arrondissements, ARRONDISSEMENTS_COUNT);
-        params.code_postal = selected.join(',');
-        console.log(`Arrondissements sélectionnés: ${selected.join(', ')}`);
+        params.code_postal = arrondissements.join(',');
+        console.log(`Filtrage strict sur tous les arrondissements: ${arrondissements.length} codes postaux`);
       } else {
+        // Ville normale: recherche par nom de commune
         params.commune = location;
       }
     }
