@@ -1,4 +1,4 @@
-import { Search, Ban, BarChart3, Bell, HelpCircle, GitBranch } from "lucide-react";
+import { Search, BarChart3, Bell, HelpCircle, GitBranch } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -15,7 +15,6 @@ const menuItems = [
   { title: "Recherche", icon: Search, value: "search" },
   { title: "Pipeline", icon: GitBranch, value: "pipeline" },
   { title: "Statistiques", icon: BarChart3, value: "statistics" },
-  { title: "Blacklist", icon: Ban, value: "blacklist" },
 ];
 
 interface AppSidebarProps {
