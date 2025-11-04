@@ -98,7 +98,27 @@ serve(async (req) => {
       if (!response.ok) {
         const error = await response.text();
         console.error('API error:', error);
-        throw new Error(`API error: ${response.status}`);
+        
+        // Parse error if it's JSON
+        try {
+          const errorJson = JSON.parse(error);
+          const errorMessage = errorJson.message || `API error: ${response.status}`;
+          return new Response(JSON.stringify({ 
+            error: errorMessage,
+            details: errorJson 
+          }), {
+            status: response.status,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        } catch (e) {
+          return new Response(JSON.stringify({ 
+            error: `API error: ${response.status}`,
+            details: error
+          }), {
+            status: response.status,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
       }
 
       const data = await response.json();
@@ -131,7 +151,27 @@ serve(async (req) => {
       if (!response.ok) {
         const error = await response.text();
         console.error('API error:', error);
-        throw new Error(`API error: ${response.status}`);
+        
+        // Parse error if it's JSON
+        try {
+          const errorJson = JSON.parse(error);
+          const errorMessage = errorJson.message || `API error: ${response.status}`;
+          return new Response(JSON.stringify({ 
+            error: errorMessage,
+            details: errorJson 
+          }), {
+            status: response.status,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        } catch (e) {
+          return new Response(JSON.stringify({ 
+            error: `API error: ${response.status}`,
+            details: error
+          }), {
+            status: response.status,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
       }
 
       const data = await response.json();

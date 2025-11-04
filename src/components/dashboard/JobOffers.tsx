@@ -66,10 +66,17 @@ export const JobOffers = () => {
     try {
       const params: Record<string, string> = {
         action: 'search',
-        motsCles: searchParams.motsCles,
-        commune: searchParams.commune,
         distance: searchParams.distance,
       };
+      
+      // Only add parameters if they have values
+      if (searchParams.motsCles.trim()) {
+        params.motsCles = searchParams.motsCles.trim();
+      }
+      
+      if (searchParams.commune.trim()) {
+        params.commune = searchParams.commune.trim();
+      }
       
       // Only add typeContrat if it's not "all"
       if (searchParams.typeContrat && searchParams.typeContrat !== 'all') {
@@ -83,7 +90,9 @@ export const JobOffers = () => {
       );
 
       if (!response.ok) {
-        throw new Error('Erreur lors de la recherche');
+        const errorData = await response.json();
+        console.error('API error:', errorData);
+        throw new Error(errorData.error || 'Erreur lors de la recherche');
       }
 
       const data: SearchResponse = await response.json();
@@ -169,11 +178,11 @@ export const JobOffers = () => {
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium">Localisation</label>
+              <label className="text-sm font-medium">Localisation (code INSEE)</label>
               <div className="relative">
                 <MapPin className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Paris, Lyon..."
+                  placeholder="75056 (Paris), 69123 (Lyon)... (optionnel)"
                   className="pl-10"
                   value={searchParams.commune}
                   onChange={(e) =>
@@ -182,6 +191,9 @@ export const JobOffers = () => {
                   onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
                 />
               </div>
+              <p className="text-xs text-muted-foreground">
+                Utilisez le code INSEE de la commune (ex: 75056 pour Paris)
+              </p>
             </div>
 
             <div className="space-y-2">
