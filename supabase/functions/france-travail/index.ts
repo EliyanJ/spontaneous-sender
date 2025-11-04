@@ -76,10 +76,40 @@ serve(async (req) => {
 
       const token = await getAccessToken();
 
+      // Si on a un code postal/ville, le convertir en coordonnées GPS
+      let latitude = '';
+      let longitude = '';
+      
+      if (commune) {
+        try {
+          const geocodeUrl = `https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(commune)}&limit=1`;
+          console.log('Geocoding:', geocodeUrl);
+          
+          const geocodeResponse = await fetch(geocodeUrl);
+          if (geocodeResponse.ok) {
+            const geocodeData = await geocodeResponse.json();
+            if (geocodeData.features && geocodeData.features.length > 0) {
+              const coords = geocodeData.features[0].geometry.coordinates;
+              longitude = coords[0].toString();
+              latitude = coords[1].toString();
+              console.log('Coordinates found:', { latitude, longitude });
+            }
+          }
+        } catch (error) {
+          console.error('Geocoding error:', error);
+        }
+      }
+
       // Construire les paramètres de recherche
       const searchParams = new URLSearchParams();
       if (motsCles) searchParams.append('motsCles', motsCles);
-      if (commune) searchParams.append('commune', commune);
+      
+      // Utiliser les coordonnées GPS au lieu du code postal
+      if (latitude && longitude) {
+        searchParams.append('latitude', latitude);
+        searchParams.append('longitude', longitude);
+      }
+      
       if (typeContrat) searchParams.append('typeContrat', typeContrat);
       searchParams.append('distance', distance);
       searchParams.append('range', range);
