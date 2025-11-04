@@ -11,3 +11,6 @@ verify_jwt = true
 
 [functions.scrape-websites]
 verify_jwt = true
+
+[functions.france-travail]
+verify_jwt = false

@@ -1,4 +1,4 @@
-import { Search, BarChart3, Bell, HelpCircle, GitBranch } from "lucide-react";
+import { Search, BarChart3, Bell, HelpCircle, GitBranch, Briefcase } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 const menuItems = [
   { title: "Recherche", icon: Search, value: "search" },
   { title: "Pipeline", icon: GitBranch, value: "pipeline" },
+  { title: "Offres d'emploi", icon: Briefcase, value: "jobs" },
   { title: "Statistiques", icon: BarChart3, value: "statistics" },
 ];
 

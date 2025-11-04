@@ -3,7 +3,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { LogOut } from "lucide-react";
 import { SearchCompanies } from "@/components/dashboard/SearchCompanies";
-
+import { JobOffers } from "@/components/dashboard/JobOffers";
 import { Statistics } from "@/components/dashboard/Statistics";
 import { Pipeline } from "@/components/dashboard/Pipeline";
 import { Notifications } from "@/components/dashboard/Notifications";
@@ -43,6 +43,9 @@ const Index = () => {
             </div>
             <div className={activeTab === "pipeline" ? "block" : "hidden"}>
               <Pipeline />
+            </div>
+            <div className={activeTab === "jobs" ? "block" : "hidden"}>
+              <JobOffers />
             </div>
             <div className={activeTab === "statistics" ? "block" : "hidden"}>
               <Statistics />
