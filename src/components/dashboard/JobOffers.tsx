@@ -57,20 +57,29 @@ export const JobOffers = () => {
   const [searchParams, setSearchParams] = useState({
     motsCles: "",
     commune: "",
-    typeContrat: "",
+    typeContrat: "all",
     distance: "10",
   });
 
   const handleSearch = async () => {
     setLoading(true);
     try {
-      const params = new URLSearchParams({
+      const params: Record<string, string> = {
         action: 'search',
-        ...searchParams,
-      });
+        motsCles: searchParams.motsCles,
+        commune: searchParams.commune,
+        distance: searchParams.distance,
+      };
+      
+      // Only add typeContrat if it's not "all"
+      if (searchParams.typeContrat && searchParams.typeContrat !== 'all') {
+        params.typeContrat = searchParams.typeContrat;
+      }
 
+      const queryString = new URLSearchParams(params).toString();
+      
       const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/france-travail?${params.toString()}`
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/france-travail?${queryString}`
       );
 
       if (!response.ok) {
@@ -187,7 +196,7 @@ export const JobOffers = () => {
                   <SelectValue placeholder="Tous les contrats" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Tous les contrats</SelectItem>
+                  <SelectItem value="all">Tous les contrats</SelectItem>
                   <SelectItem value="CDI">CDI</SelectItem>
                   <SelectItem value="CDD">CDD</SelectItem>
                   <SelectItem value="MIS">Mission intérimaire</SelectItem>
