@@ -79,11 +79,12 @@ serve(async (req) => {
       // Si on a un code postal/ville, le convertir en coordonnées GPS + code INSEE
       let latitude = '';
       let longitude = '';
-      let insee = '';
+      let departement = '';
       
       if (location) {
         try {
-          const geocodeUrl = `https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(location)}&limit=1`;
+          // Géocodage avec type=municipality pour prioriser les communes
+          const geocodeUrl = `https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(location)}&type=municipality&limit=1`;
           console.log('Geocoding:', geocodeUrl);
           
           const geocodeResponse = await fetch(geocodeUrl);
@@ -94,9 +95,14 @@ serve(async (req) => {
               const coords = feature.geometry.coordinates;
               longitude = coords[0].toString();
               latitude = coords[1].toString();
-              // code INSEE (citycode)
-              insee = feature.properties?.citycode || '';
-              console.log('Geo resolved:', { latitude, longitude, insee });
+              
+              // Extraire le département depuis le code INSEE (2 premiers chiffres)
+              const citycode = feature.properties?.citycode || '';
+              if (citycode.length >= 2) {
+                departement = citycode.substring(0, 2);
+              }
+              
+              console.log('Geo resolved:', { latitude, longitude, departement, citycode });
             }
           }
         } catch (error) {
@@ -108,15 +114,25 @@ serve(async (req) => {
       const searchParams = new URLSearchParams();
       if (motsCles) searchParams.append('motsCles', motsCles);
       
-      // Utiliser les coordonnées GPS au lieu du code postal
+      // Utiliser les coordonnées GPS pour une recherche localisée
       if (latitude && longitude) {
         searchParams.append('latitude', latitude);
         searchParams.append('longitude', longitude);
       }
       
+      // Ajouter le département pour affiner les résultats
+      if (departement) {
+        searchParams.append('departement', departement);
+      }
+      
       if (typeContrat) searchParams.append('typeContrat', typeContrat);
       searchParams.append('distance', distance);
       searchParams.append('range', range);
+      
+      // Tri par distance croissante pour prioriser les offres proches
+      if (latitude && longitude) {
+        searchParams.append('sort', '1'); // 1 = tri par distance croissante
+      }
 
       const apiUrl = `https://api.francetravail.io/partenaire/offresdemploi/v2/offres/search?${searchParams.toString()}`;
       

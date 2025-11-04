@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -54,6 +54,7 @@ export const JobOffers = () => {
   const [loading, setLoading] = useState(false);
   const [offers, setOffers] = useState<JobOffer[]>([]);
   const [selectedOffer, setSelectedOffer] = useState<JobOffer | null>(null);
+  const [initialLoadDone, setInitialLoadDone] = useState(false);
   
   const [searchParams, setSearchParams] = useState({
     motsCles: "",
@@ -62,6 +63,39 @@ export const JobOffers = () => {
     typeContrat: "all",
     distance: "10",
   });
+
+  // Charger des offres par défaut au montage
+  useEffect(() => {
+    if (!initialLoadDone) {
+      loadDefaultOffers();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const loadDefaultOffers = async () => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams({
+        action: 'search',
+        distance: '50',
+        range: '0-30',
+      });
+
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/france-travail?${params.toString()}`
+      );
+
+      if (response.ok) {
+        const data: SearchResponse = await response.json();
+        setOffers(data.resultats || []);
+      }
+    } catch (error) {
+      console.error('Default load error:', error);
+    } finally {
+      setLoading(false);
+      setInitialLoadDone(true);
+    }
+  };
 
   const handleSearch = async () => {
     setLoading(true);
@@ -154,13 +188,15 @@ export const JobOffers = () => {
   };
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="font-display text-3xl font-bold mb-2">Offres d'emploi</h2>
-        <p className="text-muted-foreground">
-          Recherchez des offres d'emploi parmi les opportunités disponibles
-        </p>
-      </div>
+      <div className="space-y-6">
+        <div>
+          <h2 className="font-display text-3xl font-bold mb-2">Offres d'emploi</h2>
+          <p className="text-muted-foreground">
+            {offers.length > 0 && !loading
+              ? `${offers.length} offre${offers.length > 1 ? 's' : ''} disponible${offers.length > 1 ? 's' : ''}`
+              : "Recherchez des offres d'emploi parmi les opportunités disponibles"}
+          </p>
+        </div>
 
       {/* Formulaire de recherche */}
       <Card>
