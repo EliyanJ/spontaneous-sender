@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search, MapPin, Briefcase, Clock, ExternalLink, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { CommuneSearch } from "@/components/ui/commune-search";
 import {
   Dialog,
   DialogContent,
@@ -57,6 +58,7 @@ export const JobOffers = () => {
   const [searchParams, setSearchParams] = useState({
     motsCles: "",
     commune: "",
+    codePostal: "",
     typeContrat: "all",
     distance: "10",
   });
@@ -74,8 +76,15 @@ export const JobOffers = () => {
         params.motsCles = searchParams.motsCles.trim();
       }
       
-      if (searchParams.commune.trim()) {
-        params.commune = searchParams.commune.trim();
+      // Utiliser le code postal si disponible, sinon utiliser commune
+      if (searchParams.codePostal.trim()) {
+        params.commune = searchParams.codePostal.trim();
+      } else if (searchParams.commune.trim()) {
+        // Extraire le code postal du format "Ville (code)"
+        const match = searchParams.commune.match(/\((\d{5})\)/);
+        if (match) {
+          params.commune = match[1];
+        }
       }
       
       // Only add typeContrat if it's not "all"
@@ -178,21 +187,21 @@ export const JobOffers = () => {
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium">Localisation (code INSEE)</label>
-              <div className="relative">
-                <MapPin className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="75056 (Paris), 69123 (Lyon)... (optionnel)"
-                  className="pl-10"
-                  value={searchParams.commune}
-                  onChange={(e) =>
-                    setSearchParams({ ...searchParams, commune: e.target.value })
-                  }
-                  onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-                />
-              </div>
+              <label className="text-sm font-medium">Localisation</label>
+              <CommuneSearch
+                value={searchParams.commune}
+                onChange={(value, codePostal) => {
+                  setSearchParams({ 
+                    ...searchParams, 
+                    commune: value,
+                    codePostal: codePostal || "",
+                  });
+                }}
+                placeholder="Paris, Lyon, 75001..."
+                onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+              />
               <p className="text-xs text-muted-foreground">
-                Utilisez le code INSEE de la commune (ex: 75056 pour Paris)
+                Recherchez par ville ou code postal
               </p>
             </div>
 
