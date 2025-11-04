@@ -69,30 +69,34 @@ serve(async (req) => {
 
     if (action === 'search') {
       const motsCles = url.searchParams.get('motsCles') || '';
-      const commune = url.searchParams.get('commune') || '';
+      const location = url.searchParams.get('location') || '';
       const typeContrat = url.searchParams.get('typeContrat') || '';
       const distance = url.searchParams.get('distance') || '10';
       const range = url.searchParams.get('range') || '0-149';
 
       const token = await getAccessToken();
 
-      // Si on a un code postal/ville, le convertir en coordonnées GPS
+      // Si on a un code postal/ville, le convertir en coordonnées GPS + code INSEE
       let latitude = '';
       let longitude = '';
+      let insee = '';
       
-      if (commune) {
+      if (location) {
         try {
-          const geocodeUrl = `https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(commune)}&limit=1`;
+          const geocodeUrl = `https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(location)}&limit=1`;
           console.log('Geocoding:', geocodeUrl);
           
           const geocodeResponse = await fetch(geocodeUrl);
           if (geocodeResponse.ok) {
             const geocodeData = await geocodeResponse.json();
             if (geocodeData.features && geocodeData.features.length > 0) {
-              const coords = geocodeData.features[0].geometry.coordinates;
+              const feature = geocodeData.features[0];
+              const coords = feature.geometry.coordinates;
               longitude = coords[0].toString();
               latitude = coords[1].toString();
-              console.log('Coordinates found:', { latitude, longitude });
+              // code INSEE (citycode)
+              insee = feature.properties?.citycode || '';
+              console.log('Geo resolved:', { latitude, longitude, insee });
             }
           }
         } catch (error) {

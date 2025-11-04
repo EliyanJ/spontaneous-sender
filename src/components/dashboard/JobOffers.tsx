@@ -78,12 +78,14 @@ export const JobOffers = () => {
       
       // Utiliser le code postal si disponible, sinon utiliser commune
       if (searchParams.codePostal.trim()) {
-        params.commune = searchParams.codePostal.trim();
+        params.location = searchParams.codePostal.trim();
       } else if (searchParams.commune.trim()) {
         // Extraire le code postal du format "Ville (code)"
         const match = searchParams.commune.match(/\((\d{5})\)/);
         if (match) {
-          params.commune = match[1];
+          params.location = match[1];
+        } else {
+          params.location = searchParams.commune.trim();
         }
       }
       
