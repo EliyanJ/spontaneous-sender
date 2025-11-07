@@ -1,4 +1,4 @@
-import { Search, BarChart3, Bell, HelpCircle, GitBranch, Briefcase } from "lucide-react";
+import { Search, BarChart3, Bell, HelpCircle, GitBranch, Briefcase, Mail } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -16,6 +16,7 @@ const menuItems = [
   { title: "Pipeline", icon: GitBranch, value: "pipeline" },
   { title: "Offres d'emploi", icon: Briefcase, value: "jobs" },
   { title: "Statistiques", icon: BarChart3, value: "statistics" },
+  { title: "Recherche d'email", icon: Mail, value: "email-search" },
 ];
 
 interface AppSidebarProps {

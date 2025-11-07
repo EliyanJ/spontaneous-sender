@@ -8,6 +8,7 @@ import { Statistics } from "@/components/dashboard/Statistics";
 import { Pipeline } from "@/components/dashboard/Pipeline";
 import { Notifications } from "@/components/dashboard/Notifications";
 import { Support } from "@/components/dashboard/Support";
+import { EmailSearch } from "@/components/dashboard/EmailSearch";
 import { AppSidebar } from "@/components/AppSidebar";
 import { SidebarProvider } from "@/components/ui/sidebar";
 
@@ -49,6 +50,9 @@ const Index = () => {
             </div>
             <div className={activeTab === "statistics" ? "block" : "hidden"}>
               <Statistics />
+            </div>
+            <div className={activeTab === "email-search" ? "block" : "hidden"}>
+              <EmailSearch />
             </div>
             <div className={activeTab === "notifications" ? "block" : "hidden"}>
               <Notifications />
