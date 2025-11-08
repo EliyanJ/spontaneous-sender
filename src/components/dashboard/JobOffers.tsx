@@ -64,38 +64,7 @@ export const JobOffers = () => {
     distance: "10",
   });
 
-  // Charger des offres par défaut au montage
-  useEffect(() => {
-    if (!initialLoadDone) {
-      loadDefaultOffers();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const loadDefaultOffers = async () => {
-    setLoading(true);
-    try {
-      const params = new URLSearchParams({
-        action: 'search',
-        distance: '50',
-        range: '0-30',
-      });
-
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/france-travail?${params.toString()}`
-      );
-
-      if (response.ok) {
-        const data: SearchResponse = await response.json();
-        setOffers(data.resultats || []);
-      }
-    } catch (error) {
-      console.error('Default load error:', error);
-    } finally {
-      setLoading(false);
-      setInitialLoadDone(true);
-    }
-  };
+  // Note: Chargement automatique désactivé pour éviter les erreurs si l'API n'est pas configurée
 
   const handleSearch = async () => {
     setLoading(true);
@@ -189,7 +158,7 @@ export const JobOffers = () => {
 
   return (
       <div className="space-y-6">
-        <div>
+      <div>
           <h2 className="font-display text-3xl font-bold mb-2">Offres d'emploi</h2>
           <p className="text-muted-foreground">
             {offers.length > 0 && !loading
@@ -197,6 +166,26 @@ export const JobOffers = () => {
               : "Recherchez des offres d'emploi parmi les opportunités disponibles"}
           </p>
         </div>
+
+        {offers.length === 0 && !loading && (
+          <Card className="bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900">
+            <CardHeader>
+              <CardTitle className="text-amber-900 dark:text-amber-100">⚠️ Configuration requise</CardTitle>
+            </CardHeader>
+            <CardContent className="text-sm text-amber-800 dark:text-amber-200 space-y-2">
+              <p>Pour utiliser la recherche d'offres d'emploi France Travail, vous devez :</p>
+              <ol className="list-decimal list-inside space-y-1 ml-2">
+                <li>Créer un compte sur <a href="https://francetravail.io" target="_blank" rel="noopener noreferrer" className="underline font-medium">francetravail.io</a></li>
+                <li>Créer une application et obtenir vos identifiants (Client ID et Client Secret)</li>
+                <li><strong>Attendre l'approbation</strong> de votre application par France Travail (peut prendre plusieurs jours)</li>
+                <li>Une fois approuvée, configurer les identifiants dans les paramètres</li>
+              </ol>
+              <p className="mt-3 text-xs">
+                Si vous avez déjà configuré les identifiants et que l'erreur persiste, vérifiez que votre application a bien été approuvée sur le portail francetravail.io.
+              </p>
+            </CardContent>
+          </Card>
+        )}
 
       {/* Formulaire de recherche */}
       <Card>
