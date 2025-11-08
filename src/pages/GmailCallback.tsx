@@ -15,6 +15,11 @@ export const GmailCallback = () => {
       const code = searchParams.get("code");
       const error = searchParams.get("error");
 
+      // Éviter les doubles appels en retirant le code de l'URL immédiatement
+      if (code || error) {
+        window.history.replaceState({}, '', '/auth/gmail/callback');
+      }
+
       if (error) {
         toast({
           title: "Erreur d'autorisation",
