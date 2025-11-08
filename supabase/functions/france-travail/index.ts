@@ -25,35 +25,62 @@ async function getAccessToken() {
     throw new Error('France Travail credentials not configured');
   }
 
-  const response = await fetch(
-    'https://entreprise.francetravail.fr/connexion/oauth2/access_token?realm=%2Fpartenaire',
-    {
+  const scope = Deno.env.get('FRANCE_TRAVAIL_SCOPE') || 'api_offresdemploiv2 o2dsoffre';
+  const tokenUrl = 'https://entreprise.francetravail.fr/connexion/oauth2/access_token?realm=%2Fpartenaire';
+
+  // Try with HTTP Basic first (most compatible), then fall back to body credentials
+  const basicAuth = 'Basic ' + btoa(`${clientId}:${clientSecret}`);
+
+  const requestTokenWithBasic = () =>
+    fetch(tokenUrl, {
       method: 'POST',
       headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Authorization': basicAuth,
+      },
+      body: new URLSearchParams({
+        grant_type: 'client_credentials',
+        scope,
+      }).toString(),
+    });
+
+  const requestTokenWithBody = () =>
+    fetch(tokenUrl, {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
         'Content-Type': 'application/x-www-form-urlencoded',
       },
       body: new URLSearchParams({
         grant_type: 'client_credentials',
         client_id: clientId,
         client_secret: clientSecret,
-        scope: 'api_offresdemploiv2 o2dsoffre',
+        scope,
       }).toString(),
-    }
-  );
+    });
 
-  const contentType = response.headers.get('content-type');
-  
+  let response = await requestTokenWithBasic();
+
+  // If we didn't get JSON (often HTML login page), try the alternative form
+  let contentType = response.headers.get('content-type') || '';
+  if (!response.ok || !contentType.includes('application/json')) {
+    const text = await response.text();
+    console.error('Token (basic) unexpected:', response.status, contentType, text.substring(0, 200));
+    response = await requestTokenWithBody();
+    contentType = response.headers.get('content-type') || '';
+  }
+
   if (!response.ok) {
     const error = await response.text();
     console.error('Token error:', error);
     throw new Error(`Failed to get access token: ${response.status}`);
   }
 
-  // Vérifier que la réponse est bien du JSON
-  if (!contentType || !contentType.includes('application/json')) {
+  if (!contentType.includes('application/json')) {
     const text = await response.text();
-    console.error('Unexpected response type:', contentType, text.substring(0, 200));
-    throw new Error('API France Travail returned HTML instead of JSON. Please check your credentials.');
+    console.error('Unexpected token response type:', contentType, text.substring(0, 200));
+    throw new Error('France Travail token endpoint returned non-JSON. Check credentials, scopes, and that your application is approved for access.');
   }
 
   const data = await response.json();
