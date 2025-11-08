@@ -9,6 +9,7 @@ import { Pipeline } from "@/components/dashboard/Pipeline";
 import { Notifications } from "@/components/dashboard/Notifications";
 import { Support } from "@/components/dashboard/Support";
 import { EmailSearch } from "@/components/dashboard/EmailSearch";
+import { ContactEmails } from "@/components/dashboard/ContactEmails";
 import { AppSidebar } from "@/components/AppSidebar";
 import { SidebarProvider } from "@/components/ui/sidebar";
 
@@ -52,7 +53,10 @@ const Index = () => {
               <Statistics />
             </div>
             <div className={activeTab === "email-search" ? "block" : "hidden"}>
-              <EmailSearch />
+              <EmailSearch onNavigateToContacts={() => setActiveTab("contact-emails")} />
+            </div>
+            <div className={activeTab === "contact-emails" ? "block" : "hidden"}>
+              <ContactEmails />
             </div>
             <div className={activeTab === "notifications" ? "block" : "hidden"}>
               <Notifications />

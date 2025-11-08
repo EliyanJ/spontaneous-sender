@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Mail, Globe, Search, CheckCircle2, AlertCircle } from "lucide-react";
+import { Loader2, Mail, Globe, Search, CheckCircle2, AlertCircle, ArrowRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 interface SearchResult {
@@ -16,7 +16,11 @@ interface SearchResult {
   error?: string;
 }
 
-export const EmailSearch = () => {
+interface EmailSearchProps {
+  onNavigateToContacts?: () => void;
+}
+
+export const EmailSearch = ({ onNavigateToContacts }: EmailSearchProps) => {
   const [isSearching, setIsSearching] = useState(false);
   const [results, setResults] = useState<SearchResult[]>([]);
   const [summary, setSummary] = useState<{ processed: number; total: number; emailsFound: number } | null>(null);
@@ -130,6 +134,19 @@ export const EmailSearch = () => {
                 <div className="text-sm text-muted-foreground">Taux de réussite</div>
               </div>
             </div>
+            
+            {summary.emailsFound > 0 && onNavigateToContacts && (
+              <div className="mt-4 flex justify-center">
+                <Button 
+                  onClick={onNavigateToContacts}
+                  size="lg"
+                  className="gap-2"
+                >
+                  Voir les emails trouvés
+                  <ArrowRight className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
           </CardContent>
         </Card>
       )}

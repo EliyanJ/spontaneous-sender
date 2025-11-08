@@ -17,6 +17,7 @@ const menuItems = [
   { title: "Offres d'emploi", icon: Briefcase, value: "jobs" },
   { title: "Statistiques", icon: BarChart3, value: "statistics" },
   { title: "Recherche d'email", icon: Mail, value: "email-search" },
+  { title: "Emails de contact", icon: Mail, value: "contact-emails" },
 ];
 
 interface AppSidebarProps {
