@@ -144,28 +144,29 @@ FORMAT RÉPONSE (JSON uniquement):
         messages: [
           { 
             role: "system", 
-            content: "Tu es un expert en identification de sites web d'entreprises et extraction d'emails. Tu réponds UNIQUEMENT en JSON valide, sans texte supplémentaire." 
+            content: "Tu es un expert en extraction d'emails depuis des pages web. Tu réponds TOUJOURS en JSON valide {\"website\": \"url\", \"emails\": [\"email1\", \"email2\"]}. Si aucun email trouvé, retourne un tableau vide." 
           },
           { role: "user", content: prompt },
         ],
-        max_completion_tokens: 1000,
+        max_completion_tokens: 500,
+        response_format: { type: "json_object" },
       }),
     });
 
     if (!response.ok) {
       const error = await response.text();
       console.error("[AI] OpenAI error:", response.status, error);
-      return { website: null, emails: [] };
+      return { website: scrapedData[0].url, emails: [] };
     }
 
     const data = await response.json();
     const content = data.choices?.[0]?.message?.content ?? "{}";
     
-    // Parse la réponse JSON
-    const clean = content.replace(/```json\n?/g, "").replace(/```/g, "").trim();
-    const parsed = JSON.parse(clean);
+    console.log("[AI] Raw response:", content);
+    
+    const parsed = JSON.parse(content);
 
-    const website = parsed.website || null;
+    const website = parsed.website || scrapedData[0].url;
     const emails: string[] = Array.isArray(parsed.emails) ? parsed.emails : [];
     
     // Valider les emails
@@ -182,7 +183,7 @@ FORMAT RÉPONSE (JSON uniquement):
 
   } catch (error) {
     console.error("[AI] Error:", error instanceof Error ? error.message : String(error));
-    return { website: null, emails: [] };
+    return { website: scrapedData.length > 0 ? scrapedData[0].url : null, emails: [] };
   }
 }
 
@@ -210,7 +211,7 @@ serve(async (req) => {
       .select("id, nom, ville, siren")
       .eq("user_id", user.id)
       .order("created_at", { ascending: false })
-      .limit(20); // Limité à 20 pour éviter les timeouts
+      .limit(10); // Réduit à 10 pour éviter timeout
 
     if (companiesError) throw companiesError;
     if (!companies || companies.length === 0) {
@@ -278,7 +279,7 @@ serve(async (req) => {
         });
 
         processed++;
-        await delay(2000); // Délai entre entreprises
+        await delay(1500); // Réduit à 1.5s entre entreprises
 
       } catch (error) {
         console.error("[PROCESS] Error:", error instanceof Error ? error.message : String(error));
