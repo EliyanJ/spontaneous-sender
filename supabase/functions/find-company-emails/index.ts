@@ -13,61 +13,10 @@ interface CompanyRow {
   siren: string;
 }
 
-interface SearchResult { url: string; title: string; description?: string }
-
-const BRAVE_SEARCH_API_KEY = Deno.env.get("BRAVE_SEARCH_API_KEY");
 const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
 
 async function delay(ms: number) {
   return new Promise((r) => setTimeout(r, ms));
-}
-
-async function searchWeb(query: string): Promise<SearchResult[]> {
-  if (!BRAVE_SEARCH_API_KEY) return [];
-
-  const maxAttempts = 3;
-  let backoff = 2000; // augmenté à 2s
-
-  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-    try {
-      const res = await fetch(
-        `https://api.search.brave.com/res/v1/web/search?q=${encodeURIComponent(query)}&count=6`,
-        { headers: { Accept: "application/json", "X-Subscription-Token": BRAVE_SEARCH_API_KEY } }
-      );
-
-      if (res.status === 429 || res.status === 402 || res.status === 503) {
-        console.error(`[BRAVE_API] Attempt ${attempt}/${maxAttempts}: ${res.status}`);
-        if (attempt < maxAttempts) {
-          await delay(backoff);
-          backoff *= 2;
-          continue;
-        }
-        return [];
-      }
-
-      if (!res.ok) {
-        console.error(`[BRAVE_API] error ${res.status}`);
-        return [];
-      }
-
-      const data = await res.json();
-      const results = (data.web?.results || []).map((r: any) => ({
-        url: r.url as string,
-        title: r.title as string,
-        description: r.description as string,
-      }));
-      return results as SearchResult[];
-    } catch (e) {
-      console.error("[SEARCH_ERROR]", e instanceof Error ? e.message : String(e));
-      if (attempt < maxAttempts) {
-        await delay(backoff);
-        backoff *= 2;
-        continue;
-      }
-      return [];
-    }
-  }
-  return [];
 }
 
 async function fetchText(url: string): Promise<string | null> {
@@ -75,7 +24,10 @@ async function fetchText(url: string): Promise<string | null> {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 12000);
     const res = await fetch(url, {
-      headers: { "User-Agent": "Mozilla/5.0 (compatible; EmailFinder/1.0)" },
+      headers: { 
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+      },
       signal: controller.signal,
     });
     clearTimeout(timeout);
@@ -87,176 +39,151 @@ async function fetchText(url: string): Promise<string | null> {
       .replace(/<[^>]+>/g, " ")
       .replace(/\s+/g, " ")
       .trim();
-    return text.slice(0, 20000);
+    return text.slice(0, 30000);
   } catch (_) {
     return null;
   }
 }
 
-function isPrimarySource(url: string, officialDomain: string | null) {
-  const blocked = [
-    "linkedin.com",
-    "facebook.com",
-    "twitter.com",
-    "instagram.com",
-    "pappers.fr",
-    "societe.com",
-    "verif.com",
-    "pagesjaunes.fr",
-    "b-reputation.com",
-    "manageo.fr",
-    "annuaire-entreprises.data.gouv.fr",
-    "wikipedia.org",
-    "crunchbase.com",
-    "zoominfo.com",
-    "apollo.io",
-  ];
-  const u = url.toLowerCase();
-  if (blocked.some((d) => u.includes(d))) return false;
-  if (officialDomain && !u.includes(officialDomain.toLowerCase())) return false;
-  return true;
-}
-
-async function findOfficialWebsite(name: string, city: string | null): Promise<{ url: string | null; domain: string | null }>{
-  const cleaned = name
-    .replace(/\b(SAS|SASU|SARL|SA|EURL|HOLDING|FRANCE|SOCIETE|SOCIÉTÉ)\b/gi, "")
-    .replace(/\(.*?\)/g, "")
-    .replace(/[^a-zA-Z0-9&\s-]/g, " ")
-    .replace(/\s+/g, " ")
+function generatePossibleUrls(companyName: string): string[] {
+  const cleaned = companyName
+    .toLowerCase()
+    .replace(/\b(sas|sasu|sarl|sa|eurl|eirl|holding|france|group|groupe)\b/gi, "")
+    .replace(/[^a-z0-9]/g, "")
     .trim();
 
-  const queries = Array.from(new Set([
-    `"${name}" ${city ?? ""} site officiel`,
-    `"${cleaned}" ${city ?? ""} site officiel`,
-    `"${name}" contact`,
-    `"${cleaned}" contact`,
-  ]));
+  const variations = [
+    cleaned,
+    cleaned.replace(/\s+/g, ""),
+    cleaned.replace(/\s+/g, "-"),
+  ].filter(v => v.length > 2);
 
-  const seen = new Set<string>();
-  const agg: SearchResult[] = [];
+  const domains = [".com", ".fr", ".net", ".eu"];
+  const urls: string[] = [];
 
-  for (const q of queries) {
-    const r = await searchWeb(q);
-    for (const it of r) {
-      if (!seen.has(it.url)) {
-        seen.add(it.url);
-        agg.push(it);
-      }
-    }
-    if (agg.length >= 8) break;
-  }
-
-  if (agg.length === 0) return { url: null, domain: null };
-
-  // score by token match in hostname
-  const tokens = cleaned.toLowerCase().split(/\s+/).filter((t) => t.length > 2);
-  const scored = agg
-    .filter((r) => isPrimarySource(r.url, null))
-    .map((r) => {
-      try {
-        const h = new URL(r.url).hostname.replace(/^www\./, "").toLowerCase();
-        const s = tokens.reduce((acc, t) => acc + (h.includes(t) ? 1 : 0), 0);
-        return { r, s };
-      } catch {
-        return { r, s: 0 };
-      }
-    })
-    .sort((a, b) => b.s - a.s)
-    .slice(0, 6)
-    .map((x) => x.r);
-
-  for (const cand of scored) {
-    const text = await fetchText(cand.url);
-    if (text && text.length > 100) {
-      try {
-        const u = new URL(cand.url);
-        const root = `${u.protocol}//${u.hostname}`;
-        const domain = u.hostname.replace(/^www\./, "");
-        return { url: root, domain };
-      } catch {}
+  for (const variant of [...new Set(variations)]) {
+    for (const domain of domains) {
+      urls.push(`https://www.${variant}${domain}`);
+      urls.push(`https://${variant}${domain}`);
     }
   }
-  return { url: null, domain: null };
+
+  return [...new Set(urls)].slice(0, 12);
 }
 
-async function extractEmailsWithOpenAI({
+async function aiSearchAndExtract({
   companyName,
-  website,
-  domain,
-  contents,
+  city,
+  siren,
 }: {
   companyName: string;
-  website: string;
-  domain: string;
-  contents: string[];
-}): Promise<string[]> {
-  if (!OPENAI_API_KEY) return [];
-
-  const prompt = `ENTREPRISE: ${companyName}\nSITE: ${website}\nDOMAINE: ${domain}\n\nCONTENU DE PAGES (texte brut):\n${contents.join("\n\n").slice(0, 45000)}\n\nMISSION: Extrait UNIQUEMENT les emails réellement présents dans ce contenu.\nRègles:\n- Pas d'invention\n- Préfère contact@, info@, bonjour@, support@, commercial@\n- Ignore noreply@ / no-reply@\n- Les emails doivent être valides.\n\nRéponds EXCLUSIVEMENT en JSON strict: {"emails": ["a@b.com"]}`;
-
-  const res = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: { Authorization: `Bearer ${OPENAI_API_KEY}`, "Content-Type": "application/json" },
-    body: JSON.stringify({
-      model: "gpt-5-2025-08-07",
-      messages: [
-        { role: "system", content: "Tu es un extracteur JSON strict. Réponds uniquement en JSON valide." },
-        { role: "user", content: prompt },
-      ],
-      max_completion_tokens: 800,
-    }),
-  });
-
-  if (!res.ok) {
-    console.error("[OPENAI]", res.status, await res.text());
-    return [];
+  city: string | null;
+  siren: string;
+}): Promise<{ website: string | null; emails: string[] }> {
+  if (!OPENAI_API_KEY) {
+    console.error("[AI] No OpenAI API key");
+    return { website: null, emails: [] };
   }
-  const data = await res.json();
-  const content: string = data.choices?.[0]?.message?.content ?? "{}";
+
+  // Étape 1: Générer des URLs possibles
+  const possibleUrls = generatePossibleUrls(companyName);
+  console.log(`[AI] Testing ${possibleUrls.length} possible URLs for ${companyName}`);
+
+  const scrapedData: { url: string; content: string }[] = [];
+
+  for (const url of possibleUrls) {
+    const content = await fetchText(url);
+    if (content && content.length > 200) {
+      scrapedData.push({ url, content: content.slice(0, 15000) });
+      console.log(`[AI] ✓ Found content at ${url}`);
+      if (scrapedData.length >= 4) break; // Limiter à 4 sites pour rester sous token limit
+    }
+    await delay(300);
+  }
+
+  if (scrapedData.length === 0) {
+    console.log(`[AI] No accessible websites found for ${companyName}`);
+    return { website: null, emails: [] };
+  }
+
+  // Étape 2: Demander à l'IA d'identifier le site officiel et extraire les emails
+  const prompt = `ENTREPRISE: ${companyName}
+VILLE: ${city || "Non spécifiée"}
+SIREN: ${siren}
+
+J'ai récupéré le contenu de plusieurs sites web possibles. Analyse-les et:
+1. Identifie quel site est le SITE OFFICIEL de cette entreprise (celui qui correspond vraiment à l'entreprise)
+2. Extrait TOUS les emails de contact professionnels trouvés sur ce site officiel
+
+SITES SCRAPÉS:
+${scrapedData.map((d, i) => `
+=== SITE ${i + 1}: ${d.url} ===
+${d.content}
+`).join("\n\n")}
+
+RÈGLES STRICTES:
+- Si aucun site ne correspond à l'entreprise, réponds: {"website": null, "emails": []}
+- Sinon, retourne l'URL du site officiel ET les emails trouvés
+- Priorité aux emails: contact@, info@, commercial@, bonjour@, hello@, support@
+- IGNORE: noreply@, no-reply@, newsletter@, unsubscribe@
+- Vérifie que les emails sont valides (format email@domain.com)
+- Réponds UNIQUEMENT en JSON strict
+
+FORMAT RÉPONSE (JSON uniquement):
+{"website": "https://site-officiel.fr", "emails": ["contact@example.fr", "info@example.fr"]}`;
+
   try {
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: { 
+        Authorization: `Bearer ${OPENAI_API_KEY}`, 
+        "Content-Type": "application/json" 
+      },
+      body: JSON.stringify({
+        model: "gpt-5-2025-08-07",
+        messages: [
+          { 
+            role: "system", 
+            content: "Tu es un expert en identification de sites web d'entreprises et extraction d'emails. Tu réponds UNIQUEMENT en JSON valide, sans texte supplémentaire." 
+          },
+          { role: "user", content: prompt },
+        ],
+        max_completion_tokens: 1000,
+      }),
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      console.error("[AI] OpenAI error:", response.status, error);
+      return { website: null, emails: [] };
+    }
+
+    const data = await response.json();
+    const content = data.choices?.[0]?.message?.content ?? "{}";
+    
+    // Parse la réponse JSON
     const clean = content.replace(/```json\n?/g, "").replace(/```/g, "").trim();
     const parsed = JSON.parse(clean);
+
+    const website = parsed.website || null;
     const emails: string[] = Array.isArray(parsed.emails) ? parsed.emails : [];
-    const valid = emails.filter((e) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e) && !/no-?reply/i.test(e));
-    return Array.from(new Set(valid));
-  } catch (e) {
-    console.error("[OPENAI_PARSE]", e instanceof Error ? e.message : String(e));
-    return [];
+    
+    // Valider les emails
+    const validEmails = emails.filter(
+      (e) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e) && !/no-?reply|newsletter|unsubscribe/i.test(e)
+    );
+
+    console.log(`[AI] Result for ${companyName}: site=${website}, emails=${validEmails.length}`);
+    
+    return { 
+      website, 
+      emails: [...new Set(validEmails)] 
+    };
+
+  } catch (error) {
+    console.error("[AI] Error:", error instanceof Error ? error.message : String(error));
+    return { website: null, emails: [] };
   }
-}
-
-async function findEmails(companyName: string, website: string, domain: string) {
-  const base = website.replace(/\/$/, "");
-  const candidates = [
-    `${base}/contact`,
-    `${base}/nous-contacter`,
-    `${base}/contactez-nous`,
-    `${base}/en/contact`,
-    `${base}/fr/contact`,
-    base,
-  ];
-
-  const contents: string[] = [];
-  for (const url of candidates) {
-    const text = await fetchText(url);
-    if (text && text.length > 80) contents.push(`=== ${url} ===\n${text}`);
-  }
-
-  // Fallback: recherche "nom + email"
-  if (contents.length < 2) {
-    const results = await searchWeb(`"${companyName}" email contact`);
-    for (const r of results.slice(0, 3)) {
-      if (isPrimarySource(r.url, domain)) {
-        const text = await fetchText(r.url);
-        if (text && text.length > 80) contents.push(`=== ${r.url} ===\n${text}`);
-      }
-    }
-  }
-
-  if (contents.length === 0) return { website, emails: [], pagesChecked: 0 };
-
-  const emails = await extractEmailsWithOpenAI({ companyName, website, domain, contents });
-  return { website, emails, pagesChecked: contents.length };
 }
 
 serve(async (req) => {
@@ -283,66 +210,104 @@ serve(async (req) => {
       .select("id, nom, ville, siren")
       .eq("user_id", user.id)
       .order("created_at", { ascending: false })
-      .limit(50);
+      .limit(20); // Limité à 20 pour éviter les timeouts
 
     if (companiesError) throw companiesError;
     if (!companies || companies.length === 0) {
-      return new Response(JSON.stringify({ message: "No companies found", processed: 0, results: [] }), {
+      return new Response(
+        JSON.stringify({ 
+          message: "Aucune entreprise trouvée. Ajoutez des entreprises depuis l'onglet Recherche.", 
+          processed: 0, 
+          total: 0,
+          emailsFound: 0,
+          results: [] 
+        }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
+    console.log(`[SEARCH] Starting email search for ${companies.length} companies`);
 
     let processed = 0;
     let emailsFound = 0;
     const results: any[] = [];
 
-    for (const c of companies as CompanyRow[]) {
+    for (const company of companies as CompanyRow[]) {
       try {
-        const { url, domain } = await findOfficialWebsite(c.nom, c.ville ?? null);
-        if (!url || !domain) {
-          results.push({ company: c.nom, status: "no-website" });
+        console.log(`[SEARCH] Processing: ${company.nom}`);
+        
+        const { website, emails } = await aiSearchAndExtract({
+          companyName: company.nom,
+          city: company.ville,
+          siren: company.siren,
+        });
+
+        if (!website) {
+          results.push({ 
+            company: company.nom, 
+            status: "no-website",
+            error: "Site web introuvable" 
+          });
           processed++;
-          await delay(800);
+          await delay(2000);
           continue;
         }
 
-        const found = await findEmails(c.nom, url, domain);
-
-        const updates: Record<string, any> = { website_url: url };
-        if (found.emails.length > 0) {
-          updates.emails = found.emails;
-          emailsFound += found.emails.length;
+        // Mettre à jour la base de données
+        const updates: Record<string, any> = { website_url: website };
+        if (emails.length > 0) {
+          updates.emails = emails;
+          emailsFound += emails.length;
         }
 
         const { error: updateError } = await supabase
           .from("companies")
           .update(updates)
-          .eq("id", c.id);
-        if (updateError) console.error("[DB_UPDATE]", updateError.message);
+          .eq("id", company.id);
+
+        if (updateError) {
+          console.error("[DB] Update error:", updateError.message);
+        }
 
         results.push({
-          company: c.nom,
+          company: company.nom,
           status: "success",
-          website: url,
-          emails: found.emails,
-          pagesChecked: found.pagesChecked,
+          website,
+          emails,
+          confidence: emails.length > 0 ? "high" : "medium",
         });
-      } catch (e) {
-        console.error("[PROCESS_ERROR]", e instanceof Error ? e.message : String(e));
-        results.push({ company: c.nom, status: "error", error: e instanceof Error ? e.message : "Unknown" });
+
+        processed++;
+        await delay(2000); // Délai entre entreprises
+
+      } catch (error) {
+        console.error("[PROCESS] Error:", error instanceof Error ? error.message : String(error));
+        results.push({ 
+          company: company.nom, 
+          status: "error", 
+          error: error instanceof Error ? error.message : "Erreur inconnue" 
+        });
+        processed++;
       }
-      processed++;
-      await delay(2500); // augmenté pour éviter 429 de Brave
     }
 
+    console.log(`[SEARCH] Completed: ${processed}/${companies.length}, ${emailsFound} emails found`);
+
     return new Response(
-      JSON.stringify({ message: "Email search completed", processed, total: companies.length, emailsFound, results }),
+      JSON.stringify({ 
+        message: "Recherche d'emails terminée", 
+        processed, 
+        total: companies.length, 
+        emailsFound, 
+        results 
+      }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
+
   } catch (error) {
-    console.error("[FIND_COMPANY_EMAILS]", error instanceof Error ? error.message : String(error));
+    console.error("[MAIN]", error instanceof Error ? error.message : String(error));
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }),
+      JSON.stringify({ error: error instanceof Error ? error.message : "Erreur inconnue" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
