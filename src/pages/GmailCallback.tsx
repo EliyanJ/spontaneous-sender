@@ -74,7 +74,7 @@ export const GmailCallback = () => {
         });
         setStatus("error");
       } finally {
-        setTimeout(() => navigate("/dashboard"), 2000);
+        setTimeout(() => navigate("/dashboard?tab=contact-emails"), 2000);
       }
     };
 

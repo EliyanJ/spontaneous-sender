@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { LogOut } from "lucide-react";
@@ -12,10 +12,21 @@ import { EmailSearch } from "@/components/dashboard/EmailSearch";
 import { ContactEmails } from "@/components/dashboard/ContactEmails";
 import { AppSidebar } from "@/components/AppSidebar";
 import { SidebarProvider } from "@/components/ui/sidebar";
+import { useSearchParams } from "react-router-dom";
 
 const Index = () => {
   const { user, signOut } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState("search");
+
+  useEffect(() => {
+    const tab = searchParams.get("tab");
+    if (tab) {
+      setActiveTab(tab);
+      // Nettoyer l'URL après avoir défini l'onglet
+      setSearchParams({});
+    }
+  }, [searchParams, setSearchParams]);
 
 
   return (
