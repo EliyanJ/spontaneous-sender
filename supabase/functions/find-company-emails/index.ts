@@ -26,7 +26,7 @@ async function searchWeb(query: string): Promise<SearchResult[]> {
   if (!BRAVE_SEARCH_API_KEY) return [];
 
   const maxAttempts = 3;
-  let backoff = 800;
+  let backoff = 2000; // augmenté à 2s
 
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
@@ -332,7 +332,7 @@ serve(async (req) => {
         results.push({ company: c.nom, status: "error", error: e instanceof Error ? e.message : "Unknown" });
       }
       processed++;
-      await delay(1000); // limiter les 429
+      await delay(2500); // augmenté pour éviter 429 de Brave
     }
 
     return new Response(

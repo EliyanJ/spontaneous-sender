@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 
 const menuItems = [
   { title: "Recherche", icon: Search, value: "search" },
-  { title: "Pipeline", icon: GitBranch, value: "pipeline" },
+  { title: "Tracking candidature", icon: GitBranch, value: "pipeline" },
   { title: "Offres d'emploi", icon: Briefcase, value: "jobs" },
   { title: "Statistiques", icon: BarChart3, value: "statistics" },
   { title: "Recherche d'email", icon: Mail, value: "email-search" },
