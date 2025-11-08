@@ -33,10 +33,16 @@ serve(async (req) => {
     const url = new URL(req.url);
     let code = url.searchParams.get("code");
     
-    // Si pas de code dans l'URL, chercher dans le body
     if (!code && req.method === "POST") {
-      const body = await req.json();
-      code = body.code;
+      try {
+        const raw = await req.text();
+        if (raw) {
+          const body = JSON.parse(raw);
+          code = body?.code;
+        }
+      } catch (_) {
+        // ignore parse errors when body is empty
+      }
     }
     
     const clientId = Deno.env.get("GMAIL_CLIENT_ID");
