@@ -41,10 +41,19 @@ async function getAccessToken() {
     }
   );
 
+  const contentType = response.headers.get('content-type');
+  
   if (!response.ok) {
     const error = await response.text();
     console.error('Token error:', error);
     throw new Error(`Failed to get access token: ${response.status}`);
+  }
+
+  // Vérifier que la réponse est bien du JSON
+  if (!contentType || !contentType.includes('application/json')) {
+    const text = await response.text();
+    console.error('Unexpected response type:', contentType, text.substring(0, 200));
+    throw new Error('API France Travail returned HTML instead of JSON. Please check your credentials.');
   }
 
   const data = await response.json();
