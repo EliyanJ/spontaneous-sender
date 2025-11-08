@@ -92,8 +92,17 @@ export const ContactEmails = () => {
       if (error) throw error;
 
       if (data.authUrl) {
-        // Rediriger vers Google OAuth
-        window.location.href = data.authUrl;
+        // Rediriger hors de l'iframe (Google bloque l'auth dans un iframe)
+        try {
+          if (window.top && window.top !== window.self) {
+            window.top.location.href = data.authUrl;
+          } else {
+            window.location.href = data.authUrl;
+          }
+        } catch {
+          // Fallback: ouvrir dans un nouvel onglet
+          window.open(data.authUrl, "_blank", "noopener,noreferrer");
+        }
       } else if (data.results) {
         // Les brouillons ont été créés
         toast({
