@@ -27,7 +27,9 @@ async function getAccessToken() {
 
   const scope = Deno.env.get('FRANCE_TRAVAIL_SCOPE') || 'api_offresdemploiv2 o2dsoffre';
   const tokenUrls = [
+    'https://entreprise.francetravail.fr/connexion/oauth2/access_token?realm=/partenaire',
     'https://entreprise.francetravail.fr/connexion/oauth2/access_token?realm=%2Fpartenaire',
+    'https://entreprise.pole-emploi.fr/connexion/oauth2/access_token?realm=/partenaire',
     'https://entreprise.pole-emploi.fr/connexion/oauth2/access_token?realm=%2Fpartenaire',
   ];
 
@@ -40,7 +42,7 @@ async function getAccessToken() {
       method: 'POST',
       headers: {
         'Accept': 'application/json',
-        'Content-Type': 'application/x-www-form-urlencoded',
+        'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
         'Authorization': basicAuth,
       },
       body: new URLSearchParams({
@@ -58,7 +60,7 @@ async function getAccessToken() {
         method: 'POST',
         headers: {
           'Accept': 'application/json',
-          'Content-Type': 'application/x-www-form-urlencoded',
+          'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
         },
         body: new URLSearchParams({
           grant_type: 'client_credentials',
@@ -115,7 +117,16 @@ serve(async (req) => {
       const distance = url.searchParams.get('distance') || '10';
       const range = url.searchParams.get('range') || '0-149';
 
-      const token = await getAccessToken();
+      let token: string;
+      try {
+        token = await getAccessToken();
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : 'Token error';
+        return new Response(JSON.stringify({ error: 'Token fetch failed', details: msg }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
 
       // Si on a un code postal/ville, le convertir en coordonnées GPS + code INSEE
       let latitude = '';
@@ -226,7 +237,16 @@ serve(async (req) => {
         throw new Error('Offre ID is required');
       }
 
-      const token = await getAccessToken();
+      let token: string;
+      try {
+        token = await getAccessToken();
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : 'Token error';
+        return new Response(JSON.stringify({ error: 'Token fetch failed', details: msg }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
 
       const apiUrl = `https://api.francetravail.io/partenaire/offresdemploi/v2/offres/${offreId}`;
       
