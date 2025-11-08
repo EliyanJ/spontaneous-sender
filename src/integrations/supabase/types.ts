@@ -77,8 +77,10 @@ export type Database = {
           nature_juridique: string | null
           nom: string
           pipeline_stage: string | null
+          selected_email: string | null
           siren: string
           siret: string
+          status: string | null
           tranche_effectif: string | null
           updated_at: string | null
           user_id: string
@@ -96,8 +98,10 @@ export type Database = {
           nature_juridique?: string | null
           nom: string
           pipeline_stage?: string | null
+          selected_email?: string | null
           siren: string
           siret: string
+          status?: string | null
           tranche_effectif?: string | null
           updated_at?: string | null
           user_id: string
@@ -115,8 +119,10 @@ export type Database = {
           nature_juridique?: string | null
           nom?: string
           pipeline_stage?: string | null
+          selected_email?: string | null
           siren?: string
           siret?: string
+          status?: string | null
           tranche_effectif?: string | null
           updated_at?: string | null
           user_id?: string

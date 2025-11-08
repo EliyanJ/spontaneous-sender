@@ -22,6 +22,83 @@ async function delay(ms: number) {
   return new Promise((r) => setTimeout(r, ms));
 }
 
+async function selectBestEmailWithAI(emails: string[]): Promise<string> {
+  if (!LOVABLE_API_KEY) {
+    console.error("[AI] LOVABLE_API_KEY not configured for email selection");
+    return emails[0] || "";
+  }
+
+  if (emails.length === 0) return "";
+  if (emails.length === 1) return emails[0];
+
+  const prompt = `Tu es un expert en sélection d'emails professionnels pour des candidatures spontanées.
+
+EMAILS DISPONIBLES:
+${emails.map((e, i) => `${i + 1}. ${e}`).join('\n')}
+
+MISSION:
+Choisis l'email le plus pertinent pour envoyer une candidature spontanée.
+
+ORDRE DE PRIORITÉ (mais reste flexible):
+1. Email RH ou recrutement (rh@, recrutement@, recruitment@, hr@, jobs@, careers@)
+2. Email contact général (contact@)
+3. Email information (info@)
+4. Sinon, l'email qui semble le plus approprié pour une prise de contact professionnelle
+
+RÈGLES:
+- Tu DOIS choisir un email parmi la liste fournie
+- Réponds UNIQUEMENT avec l'email choisi, rien d'autre
+- Pas de JSON, pas d'explication, juste l'email
+
+RÉPONSE ATTENDUE (exemple):
+contact@example.fr`;
+
+  try {
+    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "google/gemini-2.5-flash",
+        messages: [
+          {
+            role: "system",
+            content: "Tu es un assistant de sélection d'emails. Tu réponds UNIQUEMENT avec l'email choisi, sans aucun texte supplémentaire.",
+          },
+          {
+            role: "user",
+            content: prompt,
+          },
+        ],
+        temperature: 0.1,
+      }),
+    });
+
+    if (!response.ok) {
+      console.error("[AI] Email selection error:", response.status);
+      return emails[0]; // Fallback au premier email
+    }
+
+    const data = await response.json();
+    const selectedEmail = (data.choices?.[0]?.message?.content ?? "").trim();
+
+    // Vérifier que l'email sélectionné est dans la liste
+    if (emails.includes(selectedEmail)) {
+      console.log(`[AI] ✓ Selected email: ${selectedEmail}`);
+      return selectedEmail;
+    }
+
+    // Fallback si l'IA a retourné quelque chose d'invalide
+    console.warn(`[AI] Invalid selection, falling back to first email`);
+    return emails[0];
+  } catch (error) {
+    console.error(`[AI] Error selecting email:`, error instanceof Error ? error.message : String(error));
+    return emails[0]; // Fallback au premier email
+  }
+}
+
 async function findCompanyEmailsWithAI({
   nom,
   ville,
@@ -226,10 +303,21 @@ serve(async (req) => {
           continue;
         }
 
+        // Sélectionner le meilleur email avec l'IA
+        let selectedEmail = null;
+        if (emails.length > 0) {
+          selectedEmail = await selectBestEmailWithAI(emails);
+          console.log(`[AI] Selected email for ${company.nom}: ${selectedEmail}`);
+        }
+
         // Mettre à jour la BDD
-        const updates: Record<string, any> = { website_url: website };
+        const updates: Record<string, any> = { 
+          website_url: website,
+          status: 'not sent'
+        };
         if (emails.length > 0) {
           updates.emails = emails;
+          updates.selected_email = selectedEmail;
           emailsFound += emails.length;
         }
 

@@ -2,14 +2,17 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Loader2, TrendingUp, TrendingDown, Activity } from "lucide-react";
+import { Loader2, TrendingUp, TrendingDown, Activity, Mail } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 
 interface Company {
   id: string;
   nom: string;
   ville: string;
   pipeline_stage: string;
+  selected_email?: string | null;
+  status?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -110,6 +113,19 @@ export const Pipeline = () => {
     const currentStage = PIPELINE_STAGES.find(s => s.value === company.pipeline_stage);
     const isUpdating = updatingCompany === company.id;
     
+    const getStatusBadge = () => {
+      if (!company.status) return null;
+      
+      const statusConfig: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
+        "not sent": { label: "Non envoyé", variant: "secondary" },
+        "sent": { label: "Envoyé", variant: "default" },
+        "replied": { label: "Répondu", variant: "outline" },
+      };
+      
+      const config = statusConfig[company.status] || { label: company.status, variant: "secondary" };
+      return <Badge variant={config.variant} className="text-xs">{config.label}</Badge>;
+    };
+    
     return (
       <Card 
         key={company.id} 
@@ -118,9 +134,19 @@ export const Pipeline = () => {
         <CardContent className="p-3">
           <div className="flex items-center justify-between mb-1">
             <h4 className="font-semibold text-sm">{company.nom}</h4>
-            {isUpdating && <Loader2 className="h-4 w-4 animate-spin text-primary" />}
+            <div className="flex items-center gap-2">
+              {getStatusBadge()}
+              {isUpdating && <Loader2 className="h-4 w-4 animate-spin text-primary" />}
+            </div>
           </div>
           <p className="text-xs text-muted-foreground mb-2">📍 {company.ville}</p>
+          
+          {company.selected_email && (
+            <div className="flex items-center gap-1 mb-2 text-xs text-muted-foreground">
+              <Mail className="h-3 w-3" />
+              <span className="truncate">{company.selected_email}</span>
+            </div>
+          )}
           
           <Select 
             value={company.pipeline_stage} 
