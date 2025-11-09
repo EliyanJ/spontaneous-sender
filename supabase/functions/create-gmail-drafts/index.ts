@@ -47,7 +47,15 @@ serve(async (req) => {
     
     const clientId = Deno.env.get("GMAIL_CLIENT_ID");
     const clientSecret = Deno.env.get("GMAIL_CLIENT_SECRET");
-    const redirectUri = Deno.env.get("GMAIL_REDIRECT_URI");
+
+    // Compute redirect URI dynamically from request origin/referer, fallback to secret
+    const originHeader = req.headers.get("origin");
+    const refererHeader = req.headers.get("referer");
+    const detectedOrigin = originHeader || (refererHeader ? new URL(refererHeader).origin : "");
+    const secretRedirect = Deno.env.get("GMAIL_REDIRECT_URI") || "";
+    const secretOrigin = secretRedirect ? new URL(secretRedirect).origin : "";
+    const baseOrigin = detectedOrigin || secretOrigin;
+    const redirectUri = `${baseOrigin}/auth/gmail/callback`;
 
     if (!clientId || !clientSecret || !redirectUri) {
       throw new Error("Missing Gmail OAuth configuration");

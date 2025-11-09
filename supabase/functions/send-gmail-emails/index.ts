@@ -33,22 +33,30 @@ serve(async (req) => {
     const url = new URL(req.url);
     const code = url.searchParams.get("code");
 
+    // Compute redirect URI dynamically from request origin/referer, fallback to secret
+    const originHeader = req.headers.get("origin");
+    const refererHeader = req.headers.get("referer");
+    const detectedOrigin = originHeader || (refererHeader ? new URL(refererHeader).origin : "");
+    const secretRedirect = Deno.env.get("GMAIL_REDIRECT_URI") || "";
+    const secretOrigin = secretRedirect ? new URL(secretRedirect).origin : "";
+    const baseOrigin = detectedOrigin || secretOrigin;
+    const redirectUri = `${baseOrigin}/auth/gmail/callback`;
+
     if (!code) {
       const body = await req.json();
       if (body.code) {
-        return handleEmailSend(supabaseClient, user.id, body.code, body);
+        return handleEmailSend(supabaseClient, user.id, body.code, body, redirectUri);
       }
 
       const clientId = Deno.env.get("GMAIL_CLIENT_ID");
-      const redirectUri = Deno.env.get("GMAIL_REDIRECT_URI");
-      const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=https://www.googleapis.com/auth/gmail.send&access_type=offline&prompt=consent`;
+      const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=https://www.googleapis.com/auth/gmail.send&access_type=offline&prompt=consent`;
 
       return new Response(JSON.stringify({ authUrl }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    return handleEmailSend(supabaseClient, user.id, code, null);
+    return handleEmailSend(supabaseClient, user.id, code, null, redirectUri);
   } catch (error: any) {
     console.error("Error in send-gmail-emails:", error);
     return new Response(JSON.stringify({ error: error.message }), {
@@ -62,11 +70,11 @@ async function handleEmailSend(
   supabaseClient: any,
   userId: string,
   code: string,
-  emailData: any
+  emailData: any,
+  redirectUri: string
 ) {
   const clientId = Deno.env.get("GMAIL_CLIENT_ID");
   const clientSecret = Deno.env.get("GMAIL_CLIENT_SECRET");
-  const redirectUri = Deno.env.get("GMAIL_REDIRECT_URI");
 
   console.log("Exchanging code for access token...");
   const tokenResponse = await fetch("https://oauth2.googleapis.com/token", {
