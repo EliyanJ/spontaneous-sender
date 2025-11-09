@@ -259,6 +259,10 @@ export const EmailComposer = () => {
         data: { session },
       } = await supabase.auth.getSession();
 
+      // Indiquer le flux pour le callback OAuth
+      sessionStorage.setItem('gmail_flow', 'drafts');
+      sessionStorage.removeItem('pending_email');
+
       const { data, error } = await supabase.functions.invoke(
         "create-gmail-drafts",
         {
@@ -321,6 +325,10 @@ export const EmailComposer = () => {
       const {
         data: { session },
       } = await supabase.auth.getSession();
+
+      // Indiquer le flux et sauvegarder la composition pour le callback OAuth
+      sessionStorage.setItem('gmail_flow', 'send');
+      sessionStorage.setItem('pending_email', JSON.stringify({ recipients, subject, body, attachments: uploadedAttachments }));
 
       const { data, error } = await supabase.functions.invoke(
         "send-gmail-emails",

@@ -48,22 +48,34 @@ export const GmailCallback = () => {
           throw new Error("Session non trouvée");
         }
 
+        // Déterminer le flux (drafts ou send) conservé avant la redirection OAuth
+        const flow = sessionStorage.getItem("gmail_flow") || "drafts";
+        const pending = sessionStorage.getItem("pending_email");
+        const payload = pending ? JSON.parse(pending) : {};
+
+        const functionName = flow === "send" ? "send-gmail-emails" : "create-gmail-drafts";
+        const requestBody: any = { code, ...payload };
+
         // Appeler l'edge function avec le code OAuth
         const { data, error: invokeError } = await supabase.functions.invoke(
-          "create-gmail-drafts",
+          functionName,
           {
             headers: {
               Authorization: `Bearer ${session.access_token}`,
             },
-            body: { code },
+            body: requestBody,
           }
         );
 
         if (invokeError) throw invokeError;
 
-        if (data.results) {
+        // Nettoyage du contexte
+        sessionStorage.removeItem("gmail_flow");
+        sessionStorage.removeItem("pending_email");
+
+        if (flow === "send" ? data?.success : data?.results) {
           toast({
-            title: "Brouillons créés !",
+            title: flow === "send" ? "Emails envoyés !" : "Brouillons créés !",
             description: data.message,
           });
           setStatus("success");
