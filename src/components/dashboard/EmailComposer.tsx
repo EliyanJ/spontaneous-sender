@@ -89,6 +89,101 @@ export const EmailComposer = () => {
     setCompanies(data || []);
   };
 
+  const checkGmailConnection = async () => {
+    try {
+      setCheckingGmail(true);
+      const { data } = await supabase
+        .from("gmail_tokens")
+        .select("id")
+        .single();
+      setGmailConnected(!!data);
+    } catch (e) {
+      console.error("Error checking Gmail connection:", e);
+    } finally {
+      setCheckingGmail(false);
+    }
+  };
+
+  const connectGmail = async () => {
+    try {
+      const redirectTo = `${window.location.origin}/dashboard?connect_gmail=1`;
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          scopes:
+            "https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/gmail.compose https://www.googleapis.com/auth/gmail.modify",
+          queryParams: { access_type: "offline", prompt: "consent" },
+          redirectTo,
+        },
+      });
+      if (error) {
+        toast({
+          title: "Erreur",
+          description: "Connexion à Google échouée.",
+          variant: "destructive",
+        });
+      }
+    } catch (e) {
+      console.error("Error starting Google OAuth:", e);
+      toast({
+        title: "Erreur",
+        description: "Impossible de démarrer la connexion Google.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleOAuthReturn = async () => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("connect_gmail") === "1") {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+
+        const provider_token = (session as any)?.provider_token;
+        const provider_refresh_token = (session as any)?.provider_refresh_token;
+
+        if (session && provider_token) {
+          const { error } = await supabase.functions.invoke(
+            "store-gmail-tokens",
+            {
+              body: {
+                provider_token,
+                provider_refresh_token,
+              },
+              headers: {
+                Authorization: `Bearer ${session.access_token}`,
+              },
+            }
+          );
+
+          if (error) {
+            toast({
+              title: "Erreur",
+              description: "Impossible d'enregistrer les autorisations Gmail.",
+              variant: "destructive",
+            });
+          } else {
+            toast({
+              title: "Gmail connecté",
+              description: "Votre compte Gmail est maintenant lié.",
+            });
+            await checkGmailConnection();
+          }
+        }
+        // Nettoyage de l'URL
+        params.delete("connect_gmail");
+        const newUrl = `${window.location.pathname}${
+          params.toString() ? `?${params.toString()}` : ""
+        }`;
+        window.history.replaceState({}, "", newUrl);
+      }
+    } catch (e) {
+      console.error("Error handling OAuth return:", e);
+    }
+  };
+
   const handleLoadTemplate = (templateId: string) => {
     const template = templates.find((t) => t.id === templateId);
     if (template) {
