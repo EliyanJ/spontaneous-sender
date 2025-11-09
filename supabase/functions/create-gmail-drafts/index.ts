@@ -198,7 +198,7 @@ serve(async (req) => {
     authUrl.searchParams.set("prompt", "consent");
 
     return new Response(
-      JSON.stringify({ authUrl: authUrl.toString() }),
+      JSON.stringify({ authUrl: authUrl.toString(), redirectUri, detectedOrigin: originHeader || (refererHeader ? new URL(refererHeader).origin : ""), secretOrigin: (Deno.env.get("GMAIL_REDIRECT_URI") ? new URL(Deno.env.get("GMAIL_REDIRECT_URI")!).origin : "") }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200,

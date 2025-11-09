@@ -51,7 +51,7 @@ serve(async (req) => {
       const clientId = Deno.env.get("GMAIL_CLIENT_ID");
       const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=https://www.googleapis.com/auth/gmail.send&access_type=offline&prompt=consent`;
 
-      return new Response(JSON.stringify({ authUrl }), {
+      return new Response(JSON.stringify({ authUrl, redirectUri, detectedOrigin, secretOrigin }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
