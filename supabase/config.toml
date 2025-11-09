@@ -17,3 +17,6 @@ verify_jwt = false
 
 [functions.create-gmail-drafts]
 verify_jwt = true
+
+[functions.send-gmail-emails]
+verify_jwt = true

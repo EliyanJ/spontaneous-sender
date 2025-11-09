@@ -10,6 +10,7 @@ import { Notifications } from "@/components/dashboard/Notifications";
 import { Support } from "@/components/dashboard/Support";
 import { EmailSearch } from "@/components/dashboard/EmailSearch";
 import { ContactEmails } from "@/components/dashboard/ContactEmails";
+import { EmailComposer } from "@/components/dashboard/EmailComposer";
 import { AppSidebar } from "@/components/AppSidebar";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { useSearchParams } from "react-router-dom";
@@ -68,6 +69,9 @@ const Index = () => {
             </div>
             <div className={activeTab === "contact-emails" ? "block" : "hidden"}>
               <ContactEmails />
+            </div>
+            <div className={activeTab === "email-composer" ? "block" : "hidden"}>
+              <EmailComposer />
             </div>
             <div className={activeTab === "notifications" ? "block" : "hidden"}>
               <Notifications />
