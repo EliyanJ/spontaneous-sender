@@ -49,8 +49,8 @@ export const GmailCallback = () => {
         }
 
         // Déterminer le flux (drafts ou send) conservé avant la redirection OAuth
-        const flow = sessionStorage.getItem("gmail_flow") || "drafts";
-        const pending = sessionStorage.getItem("pending_email");
+        const flow = localStorage.getItem("gmail_flow") || "drafts";
+        const pending = localStorage.getItem("pending_email");
         const payload = pending ? JSON.parse(pending) : {};
 
         const functionName = flow === "send" ? "send-gmail-emails" : "create-gmail-drafts";
@@ -70,8 +70,8 @@ export const GmailCallback = () => {
         if (invokeError) throw invokeError;
 
         // Nettoyage du contexte
-        sessionStorage.removeItem("gmail_flow");
-        sessionStorage.removeItem("pending_email");
+        localStorage.removeItem("gmail_flow");
+        localStorage.removeItem("pending_email");
 
         if (flow === "send" ? data?.success : data?.results) {
           toast({
