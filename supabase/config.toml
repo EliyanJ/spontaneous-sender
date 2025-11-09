@@ -20,3 +20,9 @@ verify_jwt = true
 
 [functions.send-gmail-emails]
 verify_jwt = true
+
+[functions.store-gmail-tokens]
+verify_jwt = true
+
+[functions.refresh-gmail-token]
+verify_jwt = true

@@ -259,9 +259,9 @@ export const EmailComposer = () => {
         data: { session },
       } = await supabase.auth.getSession();
 
-      // Indiquer le flux pour le callback OAuth
-      localStorage.setItem('gmail_flow', 'drafts');
-      localStorage.removeItem('pending_email');
+      if (!session) {
+        throw new Error("Session non trouvée");
+      }
 
       const { data, error } = await supabase.functions.invoke(
         "create-gmail-drafts",
@@ -273,22 +273,25 @@ export const EmailComposer = () => {
             attachments: uploadedAttachments,
           },
           headers: {
-            Authorization: `Bearer ${session?.access_token}`,
+            Authorization: `Bearer ${session.access_token}`,
           },
         }
       );
 
       if (error) throw error;
 
-      if (data.authUrl) {
-        const authUrl: string = data.authUrl;
-        window.open(authUrl, "_blank", "noopener,noreferrer");
+      if (data.error === "Gmail not connected") {
+        toast({
+          title: "Gmail non connecté",
+          description: "Veuillez vous reconnecter avec Google pour activer Gmail",
+          variant: "destructive",
+        });
         return;
       }
 
       toast({
         title: "Brouillons créés",
-        description: `${recipients.length} brouillon(s) Gmail ont été créés avec succès.`,
+        description: data.message || `${recipients.length} brouillon(s) Gmail ont été créés avec succès.`,
       });
     } catch (error: any) {
       console.error("Error creating drafts:", error);
@@ -322,9 +325,9 @@ export const EmailComposer = () => {
         data: { session },
       } = await supabase.auth.getSession();
 
-      // Indiquer le flux et sauvegarder la composition pour le callback OAuth
-      localStorage.setItem('gmail_flow', 'send');
-      localStorage.setItem('pending_email', JSON.stringify({ recipients, subject, body, attachments: uploadedAttachments }));
+      if (!session) {
+        throw new Error("Session non trouvée");
+      }
 
       const { data, error } = await supabase.functions.invoke(
         "send-gmail-emails",
@@ -336,23 +339,25 @@ export const EmailComposer = () => {
             attachments: uploadedAttachments,
           },
           headers: {
-            Authorization: `Bearer ${session?.access_token}`,
+            Authorization: `Bearer ${session.access_token}`,
           },
         }
       );
 
       if (error) throw error;
 
-      if (data.authUrl) {
-        const authUrl: string = data.authUrl;
-        window.open(authUrl, "_blank", "noopener,noreferrer");
+      if (data.error === "Gmail not connected") {
+        toast({
+          title: "Gmail non connecté",
+          description: "Veuillez vous reconnecter avec Google pour activer Gmail",
+          variant: "destructive",
+        });
         return;
       }
 
       toast({
         title: "Emails envoyés",
-        description:
-          data.message || `${recipients.length} email(s) envoyé(s) avec succès.`,
+        description: data.message || `${recipients.length} email(s) envoyé(s) avec succès.`,
       });
     } catch (error: any) {
       console.error("Error sending emails:", error);
