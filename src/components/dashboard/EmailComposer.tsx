@@ -277,7 +277,12 @@ export const EmailComposer = () => {
       if (error) throw error;
 
       if (data.authUrl) {
-        window.location.href = data.authUrl;
+        const authUrl: string = data.authUrl;
+        if (window.top && window.top !== window.self) {
+          (window.top as Window).location.href = authUrl;
+        } else {
+          window.location.href = authUrl;
+        }
         return;
       }
 
@@ -335,7 +340,12 @@ export const EmailComposer = () => {
       if (error) throw error;
 
       if (data.authUrl) {
-        window.location.href = data.authUrl;
+        const authUrl: string = data.authUrl;
+        if (window.top && window.top !== window.self) {
+          (window.top as Window).location.href = authUrl;
+        } else {
+          window.location.href = authUrl;
+        }
         return;
       }
 
