@@ -255,6 +255,10 @@ export const EmailComposer = () => {
     try {
       const uploadedAttachments = await uploadAttachments();
 
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
       const { data, error } = await supabase.functions.invoke(
         "create-gmail-drafts",
         {
@@ -263,6 +267,9 @@ export const EmailComposer = () => {
             subject,
             body,
             attachments: uploadedAttachments,
+          },
+          headers: {
+            Authorization: `Bearer ${session?.access_token}`,
           },
         }
       );
@@ -306,6 +313,10 @@ export const EmailComposer = () => {
     try {
       const uploadedAttachments = await uploadAttachments();
 
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
       const { data, error } = await supabase.functions.invoke(
         "send-gmail-emails",
         {
@@ -314,6 +325,9 @@ export const EmailComposer = () => {
             subject,
             body,
             attachments: uploadedAttachments,
+          },
+          headers: {
+            Authorization: `Bearer ${session?.access_token}`,
           },
         }
       );
