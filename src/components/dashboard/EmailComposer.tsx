@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/dialog";
 import { Loader2, Mail, Save, Upload, X, Plus } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 
 interface EmailTemplate {
   id: string;
@@ -50,10 +51,14 @@ export const EmailComposer = () => {
   const [loading, setLoading] = useState(false);
   const [isSavingTemplate, setIsSavingTemplate] = useState(false);
   const [showSaveDialog, setShowSaveDialog] = useState(false);
+  const [gmailConnected, setGmailConnected] = useState(false);
+  const [checkingGmail, setCheckingGmail] = useState(true);
 
   useEffect(() => {
     loadTemplates();
     loadCompanies();
+    checkGmailConnection();
+    handleOAuthReturn();
   }, []);
 
   const loadTemplates = async () => {
@@ -316,6 +321,15 @@ export const EmailComposer = () => {
       return;
     }
 
+    if (!gmailConnected) {
+      toast({
+        title: "Gmail non connecté",
+        description: "Connectez votre compte Google pour envoyer des emails.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -376,6 +390,18 @@ export const EmailComposer = () => {
       <div className="flex items-center justify-between">
         <h2 className="text-3xl font-bold">Composer un Email</h2>
       </div>
+
+      {!checkingGmail && !gmailConnected && (
+        <Alert>
+          <AlertTitle>Gmail non connecté</AlertTitle>
+          <AlertDescription>
+            Connectez votre compte Google pour envoyer des emails et créer des brouillons.
+          </AlertDescription>
+          <div className="mt-3">
+            <Button onClick={connectGmail}>Connecter Gmail</Button>
+          </div>
+        </Alert>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
