@@ -289,6 +289,7 @@ const Landing = () => {
               <ul className="space-y-2">
                 <li><a href="#" className="text-gray-700 hover:text-blue-600 transition">Mentions légales</a></li>
                 <li><a href="/privacy-policy" className="text-gray-700 hover:text-blue-600 transition">Politique de confidentialité</a></li>
+                <li><a href="/terms-of-service" className="text-gray-700 hover:text-blue-600 transition">Conditions d'utilisation</a></li>
               </ul>
             </div>
           </div>
