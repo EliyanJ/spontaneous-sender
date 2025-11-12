@@ -1,10 +1,54 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.74.0";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
+
+// Input validation schema
+const emailSchema = z.object({
+  recipients: z.array(z.string().email()).min(1).max(100),
+  subject: z.string().min(1).max(200).refine(
+    (s) => !/[\r\n]/.test(s),
+    { message: "Subject cannot contain newlines" }
+  ),
+  body: z.string().min(1).max(100000),
+  attachments: z.array(z.object({
+    filename: z.string().min(1).max(255),
+    contentType: z.string().regex(/^[a-z]+\/[a-z0-9+.-]+$/),
+    data: z.string().max(10485760) // 10MB base64
+  })).max(10).optional()
+});
+
+// Rate limiting function
+async function checkRateLimit(supabase: any, userId: string, action: string, limit: number = 100) {
+  const oneHourAgo = new Date(Date.now() - 3600000).toISOString();
+  
+  const { count, error } = await supabase
+    .from('rate_limits')
+    .select('*', { count: 'exact', head: true })
+    .eq('user_id', userId)
+    .eq('action', action)
+    .gte('created_at', oneHourAgo);
+    
+  if (error) {
+    console.error('Rate limit check error:', error);
+    return; // Fail open
+  }
+  
+  if (count && count >= limit) {
+    throw new Error(`Rate limit exceeded. Maximum ${limit} requests per hour for ${action}`);
+  }
+  
+  // Record this request
+  await supabase.from('rate_limits').insert({
+    user_id: userId,
+    action,
+    count: 1
+  });
+}
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -29,12 +73,27 @@ serve(async (req) => {
       throw new Error("User not authenticated");
     }
 
-    // Récupérer les données de l'email
-    const { recipients, subject, body, attachments } = await req.json();
-
-    if (!recipients || !subject || !body) {
-      throw new Error("Missing required email data");
+    // Validate input
+    const requestBody = await req.json();
+    const validationResult = emailSchema.safeParse(requestBody);
+    
+    if (!validationResult.success) {
+      return new Response(
+        JSON.stringify({ 
+          error: "Invalid input", 
+          details: validationResult.error.issues.map(i => i.message) 
+        }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 400,
+        }
+      );
     }
+
+    const { recipients, subject, body, attachments } = validationResult.data;
+
+    // Check rate limit
+    await checkRateLimit(supabaseClient, user.id, 'send-gmail-emails', 50);
 
     console.log(`Sending emails to ${recipients.length} recipients...`);
 

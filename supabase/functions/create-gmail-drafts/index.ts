@@ -6,6 +6,34 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Rate limiting function
+async function checkRateLimit(supabase: any, userId: string, action: string, limit: number = 50) {
+  const oneHourAgo = new Date(Date.now() - 3600000).toISOString();
+  
+  const { count, error } = await supabase
+    .from('rate_limits')
+    .select('*', { count: 'exact', head: true })
+    .eq('user_id', userId)
+    .eq('action', action)
+    .gte('created_at', oneHourAgo);
+    
+  if (error) {
+    console.error('Rate limit check error:', error);
+    return; // Fail open
+  }
+  
+  if (count && count >= limit) {
+    throw new Error(`Rate limit exceeded. Maximum ${limit} requests per hour for ${action}`);
+  }
+  
+  // Record this request
+  await supabase.from('rate_limits').insert({
+    user_id: userId,
+    action,
+    count: 1
+  });
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -30,6 +58,9 @@ serve(async (req) => {
     }
 
     console.log("Creating Gmail drafts for user:", user.id);
+
+    // Check rate limit
+    await checkRateLimit(supabaseClient, user.id, 'create-gmail-drafts', 30);
 
     // Récupérer le token Gmail de l'utilisateur
     const { data: tokenData, error: tokenError } = await supabaseClient

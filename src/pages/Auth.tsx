@@ -20,10 +20,22 @@ const Auth = () => {
   useEffect(() => {
     // Gérer le callback OAuth Google
     const handleGoogleCallback = async () => {
-      const hashParams = new URLSearchParams(window.location.hash.substring(1));
-      const accessToken = hashParams.get('access_token');
-      const providerToken = hashParams.get('provider_token');
-      const providerRefreshToken = hashParams.get('provider_refresh_token');
+      const hash = window.location.hash;
+      const hasTokens = hash.includes('provider_token') || hash.includes('access_token');
+      
+      let accessToken = null;
+      let providerToken = null;
+      let providerRefreshToken = null;
+      
+      if (hasTokens) {
+        const hashParams = new URLSearchParams(hash.substring(1));
+        accessToken = hashParams.get('access_token');
+        providerToken = hashParams.get('provider_token');
+        providerRefreshToken = hashParams.get('provider_refresh_token');
+        
+        // IMMEDIATELY clear URL hash before processing (security)
+        window.history.replaceState({}, "", window.location.pathname + window.location.search);
+      }
 
       if (accessToken && providerToken) {
         try {

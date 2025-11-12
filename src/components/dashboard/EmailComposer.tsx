@@ -148,17 +148,25 @@ export const EmailComposer = () => {
 
       if (!isGmailConnect) return;
 
+      // Parse hash tokens BEFORE doing anything else
+      const hash = window.location.hash;
+      const hasTokens = hash.includes("provider_token");
+      
+      let provider_token = null;
+      let provider_refresh_token = null;
+      
+      if (hasTokens) {
+        const hashParams = new URLSearchParams(hash.startsWith("#") ? hash.substring(1) : hash);
+        provider_token = hashParams.get("provider_token");
+        provider_refresh_token = hashParams.get("provider_refresh_token");
+        
+        // IMMEDIATELY clear URL hash before processing (security)
+        window.history.replaceState({}, "", window.location.pathname + window.location.search);
+      }
+
       // Wait for session to be fully loaded after OAuth redirect
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
-
-      // Parse hash tokens (Supabase returns provider_token in URL hash)
-      const hash = window.location.hash.startsWith("#")
-        ? window.location.hash.substring(1)
-        : window.location.hash;
-      const hashParams = new URLSearchParams(hash);
-      const provider_token = hashParams.get("provider_token");
-      const provider_refresh_token = hashParams.get("provider_refresh_token");
 
       if (provider_token || provider_refresh_token) {
         const { error } = await supabase.functions.invoke("store-gmail-tokens", {

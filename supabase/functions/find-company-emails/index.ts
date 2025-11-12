@@ -1,10 +1,50 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
+
+// Input validation schema
+const requestSchema = z.object({
+  maxCompanies: z.number().int().min(1).max(50).optional().default(15)
+});
+
+// Rate limiting function
+async function checkRateLimit(supabase: any, userId: string, action: string, limit: number = 20) {
+  const oneHourAgo = new Date(Date.now() - 3600000).toISOString();
+  
+  const { count, error } = await supabase
+    .from('rate_limits')
+    .select('*', { count: 'exact', head: true })
+    .eq('user_id', userId)
+    .eq('action', action)
+    .gte('created_at', oneHourAgo);
+    
+  if (error) {
+    console.error('Rate limit check error:', error);
+    return; // Fail open
+  }
+  
+  if (count && count >= limit) {
+    throw new Error(`Rate limit exceeded. Maximum ${limit} requests per hour for ${action}`);
+  }
+  
+  // Record this request
+  await supabase.from('rate_limits').insert({
+    user_id: userId,
+    action,
+    count: 1
+  });
+}
+
+// Sanitize company data before AI prompts
+function sanitizeForAI(text: string | null): string {
+  if (!text) return "Non renseigné";
+  return text.replace(/[{}[\]]/g, '').slice(0, 500);
+}
 
 interface CompanyRow {
   id: string;
@@ -115,12 +155,12 @@ async function findCompanyEmailsWithAI({
   const prompt = `Tu es un expert en recherche d'informations d'entreprises sur internet.
 
 ENTREPRISE À RECHERCHER:
-- Nom: ${nom}
-- Ville: ${ville || "Non renseignée"}
-- SIREN: ${siren}
-- Code APE: ${code_ape || "Non renseigné"}
-- Secteur d'activité: ${libelle_ape || "Non renseigné"}
-- Adresse: ${adresse || "Non renseignée"}
+- Nom: ${sanitizeForAI(nom)}
+- Ville: ${sanitizeForAI(ville)}
+- SIREN: ${sanitizeForAI(siren)}
+- Code APE: ${sanitizeForAI(code_ape)}
+- Secteur d'activité: ${sanitizeForAI(libelle_ape)}
+- Adresse: ${sanitizeForAI(adresse)}
 
 MISSION:
 1. Fais une recherche web pour trouver le SITE WEB OFFICIEL de cette entreprise
@@ -255,13 +295,35 @@ serve(async (req) => {
       throw new Error("LOVABLE_API_KEY not configured");
     }
 
+    // Validate input and check rate limit
+    const requestBody = await req.json().catch(() => ({}));
+    const validationResult = requestSchema.safeParse(requestBody);
+    
+    if (!validationResult.success) {
+      return new Response(
+        JSON.stringify({ 
+          error: "Invalid input", 
+          details: validationResult.error.issues.map(i => i.message) 
+        }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 400,
+        }
+      );
+    }
+
+    const { maxCompanies } = validationResult.data;
+
+    // Check rate limit (stricter for AI-heavy operations)
+    await checkRateLimit(supabase, user.id, 'find-company-emails', 10);
+
     // Récupérer les entreprises avec toutes les infos
     const { data: companies, error: companiesError } = await supabase
       .from("companies")
       .select("id, nom, ville, siren, code_ape, libelle_ape, adresse")
       .eq("user_id", user.id)
       .order("created_at", { ascending: false })
-      .limit(15); // Limité à 15 pour éviter timeouts
+      .limit(maxCompanies);
 
     if (companiesError) throw companiesError;
 
