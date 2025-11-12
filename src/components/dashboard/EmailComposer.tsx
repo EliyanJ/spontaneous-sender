@@ -108,7 +108,6 @@ export const EmailComposer = () => {
     try {
       const redirectTo = `${window.location.origin}/dashboard?connect_gmail=1`;
 
-      const { data: sessionData } = await supabase.auth.getSession();
       const oauthOptions = {
         scopes:
           "https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/gmail.compose https://www.googleapis.com/auth/gmail.modify",
@@ -118,19 +117,11 @@ export const EmailComposer = () => {
         skipBrowserRedirect: true,
       } as const;
 
-      let data: { url?: string } | null = null;
-      let error: any = null;
-
-      if (sessionData.session) {
-        // When the user is already logged in (email/password), link Google to the account
-        const res = await supabase.auth.linkIdentity({ provider: "google", options: oauthOptions });
-        data = res.data as any;
-        error = res.error;
-      } else {
-        const res = await supabase.auth.signInWithOAuth({ provider: "google", options: oauthOptions });
-        data = res.data as any;
-        error = res.error;
-      }
+      // Always start a standard Google OAuth flow (manual linking is disabled on the backend)
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: oauthOptions,
+      });
 
       if (error) {
         console.error('OAuth error (Gmail connect):', error);
