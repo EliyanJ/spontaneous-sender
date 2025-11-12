@@ -89,7 +89,7 @@ const Auth = () => {
     setGoogleLoading(true);
     try {
       // Mémoriser la page actuelle pour y revenir après OAuth
-      sessionStorage.setItem('post_oauth_redirect', window.location.pathname + window.location.search);
+      sessionStorage.setItem('post_oauth_redirect', '/dashboard');
       sessionStorage.setItem('oauth_return_expected', '1');
 
       const { data, error } = await supabase.auth.signInWithOAuth({
