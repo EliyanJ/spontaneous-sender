@@ -18,57 +18,67 @@ const Auth = () => {
   const [password, setPassword] = useState("");
 
   useEffect(() => {
-    // Gérer le callback OAuth Google + retour à la page d'origine
     const handleGoogleCallback = async () => {
       const hash = window.location.hash;
-      const hashParams = new URLSearchParams(hash.startsWith("#") ? hash.substring(1) : hash);
-      const expectedReturn = sessionStorage.getItem("oauth_return_expected") === "1";
+      
+      // Vérifier si c'est un retour OAuth attendu
+      const expectedReturn = sessionStorage.getItem("oauth_return_expected");
       const returnPath = sessionStorage.getItem("post_oauth_redirect") || "/dashboard";
+      
+      // Si pas de retour attendu et pas de hash, ne rien faire
+      if (!expectedReturn && !hash) {
+        return;
+      }
 
-      // Tenter de récupérer les tokens depuis le hash
-      let providerToken: string | null = hashParams.get("provider_token");
-      let providerRefreshToken: string | null = hashParams.get("provider_refresh_token");
-
-      // Nettoyer le hash immédiatement (sécurité)
+      // Nettoyer immédiatement le hash (sécurité)
       if (hash) {
         window.history.replaceState({}, "", window.location.pathname + window.location.search);
       }
 
-      if (!expectedReturn && !providerToken) {
-        // Pas un retour OAuth attendu → ne rien faire
-        return;
-      }
-
       try {
+        // Attendre que la session soit établie
         const { data: { session } } = await supabase.auth.getSession();
+        
+        if (session) {
+          // Extraire les tokens OAuth depuis la session
+          const anySession = session as any;
+          const providerToken = anySession?.provider_token;
+          const providerRefreshToken = anySession?.provider_refresh_token;
 
-        // Fallback: utiliser les tokens exposés par la session OAuth
-        const anySession = session as any;
-        if (!providerToken && anySession?.provider_token) {
-          providerToken = anySession.provider_token;
-        }
-        if (!providerRefreshToken && anySession?.provider_refresh_token) {
-          providerRefreshToken = anySession.provider_refresh_token;
-        }
+          if (providerToken) {
+            console.log("Tokens Gmail détectés, stockage...");
+            
+            const { error } = await supabase.functions.invoke('store-gmail-tokens', {
+              headers: { Authorization: `Bearer ${session.access_token}` },
+              body: {
+                provider_token: providerToken,
+                provider_refresh_token: providerRefreshToken,
+              },
+            });
 
-        if (session && providerToken) {
-          await supabase.functions.invoke('store-gmail-tokens', {
-            headers: { Authorization: `Bearer ${session.access_token}` },
-            body: {
-              provider_token: providerToken,
-              provider_refresh_token: providerRefreshToken,
-            },
-          });
-          toast.success("Connexion Google réussie ! Accès Gmail configuré.");
+            if (error) {
+              console.error("Erreur stockage tokens:", error);
+              toast.error("Erreur lors de la configuration Gmail");
+            } else {
+              toast.success("Connexion Google réussie !");
+            }
+          }
+
+          // Nettoyer et rediriger
+          sessionStorage.removeItem("oauth_return_expected");
+          sessionStorage.removeItem("post_oauth_redirect");
+          
+          console.log("Redirection vers:", returnPath);
+          navigate(returnPath, { replace: true });
         }
       } catch (error) {
-        console.error("Erreur lors du traitement OAuth:", error);
-        toast.error("Erreur lors de la configuration Gmail");
-      } finally {
-        // Toujours rediriger vers la page d'origine
+        console.error("Erreur callback OAuth:", error);
+        toast.error("Erreur lors de la connexion");
+        
+        // En cas d'erreur, toujours nettoyer et rediriger
         sessionStorage.removeItem("oauth_return_expected");
         sessionStorage.removeItem("post_oauth_redirect");
-        navigate(returnPath);
+        navigate("/dashboard", { replace: true });
       }
     };
 

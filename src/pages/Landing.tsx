@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { AuthDialog } from "@/components/AuthDialog";
 import { ArrowRight, Building2, Mail, Search, Zap, Users, Target, Clock, Check } from "lucide-react";
@@ -18,10 +18,11 @@ const Landing = () => {
   const { user } = useAuth();
 
   // Si déjà connecté, rediriger vers le dashboard
-  if (user) {
-    navigate("/dashboard");
-    return null;
-  }
+  useEffect(() => {
+    if (user) {
+      navigate("/dashboard");
+    }
+  }, [user, navigate]);
 
   return (
     <div className="relative min-h-screen overflow-hidden">
