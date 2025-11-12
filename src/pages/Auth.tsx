@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,18 +12,29 @@ import { Separator } from "@/components/ui/separator";
 
 const Auth = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  
+  // Récupérer la page de destination depuis l'URL
+  const nextPath = searchParams.get('next') || '/dashboard';
 
   useEffect(() => {
+    // Stocker le chemin de destination en sessionStorage pour le conserver pendant OAuth
+    if (nextPath !== '/dashboard') {
+      sessionStorage.setItem("post_login_redirect", nextPath);
+    }
+
     const handleGoogleCallback = async () => {
       const hash = window.location.hash;
       
       // Vérifier si c'est un retour OAuth attendu
       const expectedReturn = sessionStorage.getItem("oauth_return_expected");
-      const returnPath = sessionStorage.getItem("post_oauth_redirect") || "/dashboard";
+      const returnPath = sessionStorage.getItem("post_oauth_redirect") || 
+                         sessionStorage.getItem("post_login_redirect") || 
+                         "/dashboard";
       
       // Si pas de retour attendu et pas de hash, ne rien faire
       if (!expectedReturn && !hash) {
@@ -67,6 +78,7 @@ const Auth = () => {
           // Nettoyer et rediriger
           sessionStorage.removeItem("oauth_return_expected");
           sessionStorage.removeItem("post_oauth_redirect");
+          sessionStorage.removeItem("post_login_redirect");
           
           console.log("Redirection vers:", returnPath);
           navigate(returnPath, { replace: true });
@@ -78,18 +90,20 @@ const Auth = () => {
         // En cas d'erreur, toujours nettoyer et rediriger
         sessionStorage.removeItem("oauth_return_expected");
         sessionStorage.removeItem("post_oauth_redirect");
+        sessionStorage.removeItem("post_login_redirect");
         navigate("/dashboard", { replace: true });
       }
     };
 
     handleGoogleCallback();
-  }, [navigate]);
+  }, [navigate, nextPath]);
 
   const handleGoogleSignIn = async () => {
     setGoogleLoading(true);
     try {
-      // Mémoriser la page actuelle pour y revenir après OAuth
-      sessionStorage.setItem('post_oauth_redirect', '/dashboard');
+      // Mémoriser la page de destination pour y revenir après OAuth
+      const redirectPath = sessionStorage.getItem('post_login_redirect') || nextPath;
+      sessionStorage.setItem('post_oauth_redirect', redirectPath);
       sessionStorage.setItem('oauth_return_expected', '1');
 
       const { data, error } = await supabase.auth.signInWithOAuth({
@@ -166,7 +180,11 @@ const Auth = () => {
       if (error) throw error;
 
       toast.success("Connexion réussie !");
-      navigate("/dashboard");
+      
+      // Rediriger vers la page d'origine ou le dashboard
+      const redirectPath = sessionStorage.getItem('post_login_redirect') || nextPath;
+      sessionStorage.removeItem('post_login_redirect');
+      navigate(redirectPath);
     } catch (error: any) {
       toast.error(error.message || "Erreur lors de la connexion");
     } finally {
