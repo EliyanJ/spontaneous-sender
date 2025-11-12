@@ -76,8 +76,15 @@ const Auth = () => {
 
       if (data?.url) {
         toast.success('Redirection vers Google...');
-        const topWindow = window.top ?? window;
-        topWindow.location.href = data.url;
+        const url = data.url;
+        const win = window.open(url, '_blank', 'noopener,noreferrer');
+        if (!win) {
+          try {
+            (window.top ?? window).location.assign(url);
+          } catch {
+            window.location.assign(url);
+          }
+        }
       }
     } catch (error: any) {
       console.error('OAuth error (Auth page):', error);

@@ -131,9 +131,17 @@ export const EmailComposer = () => {
           variant: "destructive",
         });
       } else if (data?.url) {
-        toast({ title: 'Redirection', description: 'Ouverture de Google...', });
-        const topWindow = window.top ?? window;
-        topWindow.location.href = data.url;
+        const url = data.url;
+        // Open in a new tab to avoid iframe/top-navigation restrictions
+        const win = window.open(url, '_blank', 'noopener,noreferrer');
+        if (!win) {
+          // Fallback if popup blocked
+          try {
+            (window.top ?? window).location.assign(url);
+          } catch {
+            window.location.assign(url);
+          }
+        }
       }
     } catch (e: any) {
       console.error("Error starting Google OAuth:", e);
