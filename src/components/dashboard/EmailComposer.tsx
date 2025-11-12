@@ -59,6 +59,22 @@ export const EmailComposer = () => {
     loadCompanies();
     checkGmailConnection();
     handleOAuthReturn();
+
+    // Listen to popup callback
+    const onMessage = (e: MessageEvent) => {
+      if (e?.data?.type === 'gmail_connected') {
+        checkGmailConnection();
+      }
+    };
+    window.addEventListener('message', onMessage);
+
+    // LocalStorage flag (in case postMessage failed)
+    if (localStorage.getItem('gmail_connected') === '1') {
+      localStorage.removeItem('gmail_connected');
+      checkGmailConnection();
+    }
+
+    return () => window.removeEventListener('message', onMessage);
   }, []);
 
   const loadTemplates = async () => {
@@ -156,48 +172,55 @@ export const EmailComposer = () => {
   const handleOAuthReturn = async () => {
     try {
       const params = new URLSearchParams(window.location.search);
-      if (params.get("connect_gmail") === "1") {
-        const {
-          data: { session },
-        } = await supabase.auth.getSession();
+      const isGmailConnect = params.get("connect_gmail") === "1";
 
-        const provider_token = (session as any)?.provider_token;
-        const provider_refresh_token = (session as any)?.provider_refresh_token;
+      // Parse hash tokens (Supabase returns provider_token in URL hash)
+      const hash = window.location.hash.startsWith("#")
+        ? window.location.hash.substring(1)
+        : window.location.hash;
+      const hashParams = new URLSearchParams(hash);
+      const provider_token = hashParams.get("provider_token");
+      const provider_refresh_token = hashParams.get("provider_refresh_token");
 
-        if (session && provider_token) {
-          const { error } = await supabase.functions.invoke(
-            "store-gmail-tokens",
-            {
-              body: {
-                provider_token,
-                provider_refresh_token,
-              },
-              headers: {
-                Authorization: `Bearer ${session.access_token}`,
-              },
-            }
-          );
+      if (isGmailConnect && (provider_token || provider_refresh_token)) {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) return;
 
-          if (error) {
-            toast({
-              title: "Erreur",
-              description: "Impossible d'enregistrer les autorisations Gmail.",
-              variant: "destructive",
-            });
-          } else {
-            toast({
-              title: "Gmail connecté",
-              description: "Votre compte Gmail est maintenant lié.",
-            });
-            await checkGmailConnection();
-          }
+        const { error } = await supabase.functions.invoke("store-gmail-tokens", {
+          body: {
+            provider_token,
+            provider_refresh_token,
+          },
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+          },
+        });
+
+        if (error) {
+          console.error("Error storing Gmail tokens:", error);
+          toast({
+            title: "Erreur",
+            description: error.message || "Impossible d'enregistrer les autorisations Gmail.",
+            variant: "destructive",
+          });
+        } else {
+          localStorage.setItem("gmail_connected", "1");
+          toast({ title: "Gmail connecté", description: "Votre compte Gmail est maintenant lié." });
+          await checkGmailConnection();
         }
-        // Nettoyage de l'URL
+
+        // Nettoyage de l'URL (supprime hash et query)
         params.delete("connect_gmail");
-        const newUrl = `${window.location.pathname}${
-          params.toString() ? `?${params.toString()}` : ""
-        }`;
-        window.history.replaceState({}, "", newUrl);
+        const basePath = window.location.pathname;
+        const queryStr = params.toString() ? `?${params.toString()}` : "";
+        const cleanUrl = `${basePath}${queryStr}`;
+        window.history.replaceState({}, "", cleanUrl);
+
+        // Si ouvert en popup, fermer et signaler à l'onglet d’origine
+        try {
+          window.opener?.postMessage({ type: "gmail_connected" }, "*");
+          window.close();
+        } catch {}
       }
     } catch (e) {
       console.error("Error handling OAuth return:", e);
