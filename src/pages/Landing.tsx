@@ -288,7 +288,7 @@ const Landing = () => {
               <h4 className="mb-4 font-semibold text-gray-900">Légal</h4>
               <ul className="space-y-2">
                 <li><a href="#" className="text-gray-700 hover:text-blue-600 transition">Mentions légales</a></li>
-                <li><a href="#" className="text-gray-700 hover:text-blue-600 transition">Confidentialité</a></li>
+                <li><a href="/privacy-policy" className="text-gray-700 hover:text-blue-600 transition">Politique de confidentialité</a></li>
               </ul>
             </div>
           </div>
