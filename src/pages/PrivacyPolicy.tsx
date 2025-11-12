@@ -56,7 +56,7 @@ const PrivacyPolicy = () => {
                 <strong>Email :</strong> eliyanjacquet99@gmail.com
               </p>
               <p className="text-gray-700">
-                <strong>Adresse :</strong> 41 rue Parmentier, 92400 Bezons
+                <strong>Adresse :</strong> 41 rue Parmentier, 95870 Bezons
               </p>
             </div>
           </section>
