@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Search, MapPin, Briefcase, Clock, ExternalLink, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { CommuneSearch } from "@/components/ui/commune-search";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Dialog,
   DialogContent,
@@ -69,6 +70,12 @@ export const JobOffers = () => {
   const handleSearch = async () => {
     setLoading(true);
     try {
+      // Get session token
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('Vous devez être connecté pour rechercher des offres');
+      }
+
       const params: Record<string, string> = {
         action: 'search',
         distance: searchParams.distance,
@@ -100,7 +107,13 @@ export const JobOffers = () => {
       const queryString = new URLSearchParams(params).toString();
       
       const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/france-travail?${queryString}`
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/france-travail?${queryString}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+            'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+          },
+        }
       );
 
       if (!response.ok) {
@@ -132,8 +145,20 @@ export const JobOffers = () => {
 
   const loadOfferDetails = async (offerId: string) => {
     try {
+      // Get session token
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('Vous devez être connecté pour voir les détails');
+      }
+
       const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/france-travail?action=details&id=${offerId}`
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/france-travail?action=details&id=${offerId}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+            'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+          },
+        }
       );
 
       if (!response.ok) {
