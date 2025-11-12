@@ -18,49 +18,57 @@ const Auth = () => {
   const [password, setPassword] = useState("");
 
   useEffect(() => {
-    // Gérer le callback OAuth Google
+    // Gérer le callback OAuth Google + retour à la page d'origine
     const handleGoogleCallback = async () => {
       const hash = window.location.hash;
-      const hasTokens = hash.includes('provider_token') || hash.includes('access_token');
-      
-      let accessToken = null;
-      let providerToken = null;
-      let providerRefreshToken = null;
-      
-      if (hasTokens) {
-        const hashParams = new URLSearchParams(hash.substring(1));
-        accessToken = hashParams.get('access_token');
-        providerToken = hashParams.get('provider_token');
-        providerRefreshToken = hashParams.get('provider_refresh_token');
-        
-        // IMMEDIATELY clear URL hash before processing (security)
+      const hashParams = new URLSearchParams(hash.startsWith("#") ? hash.substring(1) : hash);
+      const expectedReturn = sessionStorage.getItem("oauth_return_expected") === "1";
+      const returnPath = sessionStorage.getItem("post_oauth_redirect") || "/dashboard";
+
+      // Tenter de récupérer les tokens depuis le hash
+      let providerToken: string | null = hashParams.get("provider_token");
+      let providerRefreshToken: string | null = hashParams.get("provider_refresh_token");
+
+      // Nettoyer le hash immédiatement (sécurité)
+      if (hash) {
         window.history.replaceState({}, "", window.location.pathname + window.location.search);
       }
 
-      if (accessToken && providerToken) {
-        try {
-          const { data: { session } } = await supabase.auth.getSession();
-          
-          if (session) {
-            // Appeler l'edge function pour stocker les tokens Gmail
-            await supabase.functions.invoke('store-gmail-tokens', {
-              headers: {
-                Authorization: `Bearer ${session.access_token}`,
-              },
-              body: {
-                provider_token: providerToken,
-                provider_refresh_token: providerRefreshToken,
-              },
-            });
+      if (!expectedReturn && !providerToken) {
+        // Pas un retour OAuth attendu → ne rien faire
+        return;
+      }
 
-            toast.success("Connexion Google réussie ! Accès Gmail configuré.");
-            navigate("/dashboard");
-          }
-        } catch (error) {
-          console.error("Erreur lors du stockage des tokens Gmail:", error);
-          toast.error("Connexion réussie mais erreur de configuration Gmail");
-          navigate("/dashboard");
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+
+        // Fallback: utiliser les tokens exposés par la session OAuth
+        const anySession = session as any;
+        if (!providerToken && anySession?.provider_token) {
+          providerToken = anySession.provider_token;
         }
+        if (!providerRefreshToken && anySession?.provider_refresh_token) {
+          providerRefreshToken = anySession.provider_refresh_token;
+        }
+
+        if (session && providerToken) {
+          await supabase.functions.invoke('store-gmail-tokens', {
+            headers: { Authorization: `Bearer ${session.access_token}` },
+            body: {
+              provider_token: providerToken,
+              provider_refresh_token: providerRefreshToken,
+            },
+          });
+          toast.success("Connexion Google réussie ! Accès Gmail configuré.");
+        }
+      } catch (error) {
+        console.error("Erreur lors du traitement OAuth:", error);
+        toast.error("Erreur lors de la configuration Gmail");
+      } finally {
+        // Toujours rediriger vers la page d'origine
+        sessionStorage.removeItem("oauth_return_expected");
+        sessionStorage.removeItem("post_oauth_redirect");
+        navigate(returnPath);
       }
     };
 
@@ -70,16 +78,20 @@ const Auth = () => {
   const handleGoogleSignIn = async () => {
     setGoogleLoading(true);
     try {
+      // Mémoriser la page actuelle pour y revenir après OAuth
+      sessionStorage.setItem('post_oauth_redirect', window.location.pathname + window.location.search);
+      sessionStorage.setItem('oauth_return_expected', '1');
+
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
           redirectTo: `${window.location.origin}/auth`,
-          scopes: 'https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/gmail.compose',
+          scopes: 'https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/gmail.compose https://www.googleapis.com/auth/gmail.modify',
           queryParams: {
             access_type: 'offline',
             prompt: 'consent',
           },
-          // Avoid opening Google inside the Lovable preview iframe
+          // Évite Google dans l'iframe Lovable, ouvre un nouvel onglet
           skipBrowserRedirect: true,
         },
       });
@@ -101,6 +113,7 @@ const Auth = () => {
     } catch (error: any) {
       console.error('OAuth error (Auth page):', error);
       toast.error(error?.message || "Erreur lors de la connexion Google");
+    } finally {
       setGoogleLoading(false);
     }
   };

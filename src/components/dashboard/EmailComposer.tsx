@@ -106,19 +106,21 @@ export const EmailComposer = () => {
 
   const connectGmail = async () => {
     try {
-      const redirectTo = `${window.location.origin}/dashboard?connect_gmail=1`;
+      // Garder la page actuelle pour y revenir après l'autorisation Google
+      sessionStorage.setItem('post_oauth_redirect', window.location.pathname + window.location.search);
+      sessionStorage.setItem('oauth_return_expected', '1');
 
-      // Use standard OAuth flow with PKCE (handled automatically by Supabase)
-      const { error } = await supabase.auth.signInWithOAuth({
+      const { data, error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
           scopes:
             "https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/gmail.compose https://www.googleapis.com/auth/gmail.modify",
-          queryParams: { 
-            access_type: "offline", 
-            prompt: "consent" 
+          queryParams: {
+            access_type: "offline",
+            prompt: "consent",
           },
-          redirectTo,
+          redirectTo: `${window.location.origin}/auth`,
+          skipBrowserRedirect: true,
         },
       });
 
@@ -129,8 +131,17 @@ export const EmailComposer = () => {
           description: error?.message || "Connexion à Google échouée.",
           variant: "destructive",
         });
+        return;
       }
-      // Supabase handles the redirect automatically
+
+      if (data?.url) {
+        toast({ title: 'Redirection vers Google...' });
+        const url = data.url;
+        const win = window.open(url, '_blank', 'noopener,noreferrer');
+        if (!win) {
+          try { (window.top ?? window).location.assign(url); } catch { window.location.assign(url); }
+        }
+      }
     } catch (e: any) {
       console.error("Error starting Google OAuth:", e);
       toast({
