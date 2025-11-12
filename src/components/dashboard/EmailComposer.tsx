@@ -107,23 +107,36 @@ export const EmailComposer = () => {
   const connectGmail = async () => {
     try {
       const redirectTo = `${window.location.origin}/dashboard?connect_gmail=1`;
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: {
-          scopes:
-            "https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/gmail.compose https://www.googleapis.com/auth/gmail.modify",
-          queryParams: { access_type: "offline", prompt: "consent" },
-          redirectTo,
-          // Important: avoid doing OAuth inside the Lovable preview iframe
-          // We ask Supabase for the URL and redirect the top window ourselves
-          skipBrowserRedirect: true,
-        },
-      });
+
+      const { data: sessionData } = await supabase.auth.getSession();
+      const oauthOptions = {
+        scopes:
+          "https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/gmail.compose https://www.googleapis.com/auth/gmail.modify",
+        queryParams: { access_type: "offline", prompt: "consent" },
+        redirectTo,
+        // Important: avoid doing OAuth inside the Lovable preview iframe
+        skipBrowserRedirect: true,
+      } as const;
+
+      let data: { url?: string } | null = null;
+      let error: any = null;
+
+      if (sessionData.session) {
+        // When the user is already logged in (email/password), link Google to the account
+        const res = await supabase.auth.linkIdentity({ provider: "google", options: oauthOptions });
+        data = res.data as any;
+        error = res.error;
+      } else {
+        const res = await supabase.auth.signInWithOAuth({ provider: "google", options: oauthOptions });
+        data = res.data as any;
+        error = res.error;
+      }
+
       if (error) {
         console.error('OAuth error (Gmail connect):', error);
         toast({
           title: "Erreur",
-          description: (error as any)?.message || "Connexion à Google échouée.",
+          description: error?.message || "Connexion à Google échouée.",
           variant: "destructive",
         });
       } else if (data?.url) {
@@ -131,11 +144,11 @@ export const EmailComposer = () => {
         const topWindow = window.top ?? window;
         topWindow.location.href = data.url;
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error("Error starting Google OAuth:", e);
       toast({
         title: "Erreur",
-        description: "Impossible de démarrer la connexion Google.",
+        description: e?.message || "Impossible de démarrer la connexion Google.",
         variant: "destructive",
       });
     }
