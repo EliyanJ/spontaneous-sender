@@ -95,7 +95,7 @@ export const EmailComposer = () => {
       const { data } = await supabase
         .from("gmail_tokens")
         .select("id")
-        .single();
+        .maybeSingle();
       setGmailConnected(!!data);
     } catch (e) {
       console.error("Error checking Gmail connection:", e);
@@ -120,12 +120,14 @@ export const EmailComposer = () => {
         },
       });
       if (error) {
+        console.error('OAuth error (Gmail connect):', error);
         toast({
           title: "Erreur",
-          description: "Connexion à Google échouée.",
+          description: (error as any)?.message || "Connexion à Google échouée.",
           variant: "destructive",
         });
       } else if (data?.url) {
+        toast({ title: 'Redirection', description: 'Ouverture de Google...', });
         const topWindow = window.top ?? window;
         topWindow.location.href = data.url;
       }

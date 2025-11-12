@@ -75,11 +75,13 @@ const Auth = () => {
       if (error) throw error;
 
       if (data?.url) {
+        toast.success('Redirection vers Google...');
         const topWindow = window.top ?? window;
         topWindow.location.href = data.url;
       }
     } catch (error: any) {
-      toast.error(error.message || "Erreur lors de la connexion Google");
+      console.error('OAuth error (Auth page):', error);
+      toast.error(error?.message || "Erreur lors de la connexion Google");
       setGoogleLoading(false);
     }
   };
