@@ -41,9 +41,19 @@ const Auth = () => {
         return;
       }
 
-      // Nettoyer immédiatement le hash (sécurité)
+      // Extraire tokens du hash s'ils sont présents puis nettoyer (sécurité)
+      let providerTokenFromHash: string | null = null;
+      let providerRefreshTokenFromHash: string | null = null;
       if (hash) {
-        window.history.replaceState({}, "", window.location.pathname + window.location.search);
+        try {
+          const hashParams = new URLSearchParams(hash.startsWith("#") ? hash.substring(1) : hash);
+          providerTokenFromHash = hashParams.get("provider_token");
+          providerRefreshTokenFromHash = hashParams.get("provider_refresh_token");
+        } catch (e) {
+          console.warn("Impossible de parser le hash OAuth:", e);
+        } finally {
+          window.history.replaceState({}, "", window.location.pathname + window.location.search);
+        }
       }
 
       try {
@@ -51,14 +61,13 @@ const Auth = () => {
         const { data: { session } } = await supabase.auth.getSession();
         
         if (session) {
-          // Extraire les tokens OAuth depuis la session
+          // Extraire les tokens depuis le hash OU la session (fallback)
           const anySession = session as any;
-          const providerToken = anySession?.provider_token;
-          const providerRefreshToken = anySession?.provider_refresh_token;
+          const providerToken = providerTokenFromHash || anySession?.provider_token || null;
+          const providerRefreshToken = providerRefreshTokenFromHash || anySession?.provider_refresh_token || null;
 
           if (providerToken) {
             console.log("Tokens Gmail détectés, stockage...");
-            
             const { error } = await supabase.functions.invoke('store-gmail-tokens', {
               headers: { Authorization: `Bearer ${session.access_token}` },
               body: {
@@ -73,6 +82,8 @@ const Auth = () => {
             } else {
               toast.success("Connexion Google réussie !");
             }
+          } else {
+            console.warn("Aucun token Gmail détecté dans le hash ni la session.");
           }
 
           // Nettoyer et rediriger
