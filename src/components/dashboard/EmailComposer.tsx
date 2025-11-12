@@ -107,13 +107,16 @@ export const EmailComposer = () => {
   const connectGmail = async () => {
     try {
       const redirectTo = `${window.location.origin}/dashboard?connect_gmail=1`;
-      const { error } = await supabase.auth.signInWithOAuth({
+      const { data, error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
           scopes:
             "https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/gmail.compose https://www.googleapis.com/auth/gmail.modify",
           queryParams: { access_type: "offline", prompt: "consent" },
           redirectTo,
+          // Important: avoid doing OAuth inside the Lovable preview iframe
+          // We ask Supabase for the URL and redirect the top window ourselves
+          skipBrowserRedirect: true,
         },
       });
       if (error) {
@@ -122,6 +125,9 @@ export const EmailComposer = () => {
           description: "Connexion à Google échouée.",
           variant: "destructive",
         });
+      } else if (data?.url) {
+        const topWindow = window.top ?? window;
+        topWindow.location.href = data.url;
       }
     } catch (e) {
       console.error("Error starting Google OAuth:", e);

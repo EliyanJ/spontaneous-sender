@@ -58,7 +58,7 @@ const Auth = () => {
   const handleGoogleSignIn = async () => {
     setGoogleLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
+      const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
           redirectTo: `${window.location.origin}/auth`,
@@ -67,10 +67,17 @@ const Auth = () => {
             access_type: 'offline',
             prompt: 'consent',
           },
+          // Avoid opening Google inside the Lovable preview iframe
+          skipBrowserRedirect: true,
         },
       });
 
       if (error) throw error;
+
+      if (data?.url) {
+        const topWindow = window.top ?? window;
+        topWindow.location.href = data.url;
+      }
     } catch (error: any) {
       toast.error(error.message || "Erreur lors de la connexion Google");
       setGoogleLoading(false);
