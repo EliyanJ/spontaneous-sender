@@ -29,14 +29,32 @@ export const Campaigns = () => {
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'pending' | 'responded'>('all');
+  const [followUpDelay, setFollowUpDelay] = useState(10);
 
   useEffect(() => {
+    loadUserPreferences();
     loadCampaigns();
 
     // Recharger toutes les minutes
     const interval = setInterval(loadCampaigns, 60000);
     return () => clearInterval(interval);
   }, [filter]);
+
+  const loadUserPreferences = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('user_preferences')
+        .select('follow_up_delay_days')
+        .single();
+
+      if (error) throw error;
+      if (data) {
+        setFollowUpDelay(data.follow_up_delay_days || 10);
+      }
+    } catch (error) {
+      console.error('Erreur chargement préférences:', error);
+    }
+  };
 
   const loadCampaigns = async () => {
     try {
@@ -71,6 +89,12 @@ export const Campaigns = () => {
     const now = new Date();
     const diff = now.getTime() - sent.getTime();
     return Math.floor(diff / (1000 * 60 * 60 * 24));
+  };
+
+  const isUrgentFollowUp = (campaign: Campaign) => {
+    if (campaign.follow_up_status !== 'pending' || campaign.response_detected_at) return false;
+    const daysSinceSent = getDaysSinceSent(campaign.sent_at);
+    return daysSinceSent >= followUpDelay;
   };
 
   const getCategoryBadge = (category: string | null) => {
@@ -229,7 +253,7 @@ export const Campaigns = () => {
 
                     {!campaign.response_detected_at && 
                      campaign.follow_up_status === 'pending' && 
-                     getDaysSinceSent(campaign.sent_at) >= campaign.follow_up_delay_days && (
+                     getDaysSinceSent(campaign.sent_at) >= followUpDelay && (
                       <div className="pt-3 border-t">
                         <Button
                           onClick={() => handleSendFollowUp(campaign.id, campaign.recipient, campaign.subject)}
@@ -260,7 +284,7 @@ export const Campaigns = () => {
           ) : (
             pendingCampaigns.map((campaign) => {
               const daysSince = getDaysSinceSent(campaign.sent_at);
-              const isUrgent = daysSince >= 5;
+              const isUrgent = daysSince >= followUpDelay;
               
               return (
                 <Card key={campaign.id} className={isUrgent ? 'border-orange-500/50' : ''}>
