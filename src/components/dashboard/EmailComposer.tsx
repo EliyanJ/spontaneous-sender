@@ -106,82 +106,17 @@ export const EmailComposer = () => {
 
   const connectGmail = async () => {
     try {
-      // Utiliser le client Gmail OAuth dédié (pas le login Google)
-      const clientId = '581673489866-9e7cnb4eqv09vn3edb6fj63vb28jdkhn.apps.googleusercontent.com';
-      const redirectUri = `${window.location.origin}/dashboard?tab=email-composer`;
-      const scopes = [
-        'https://www.googleapis.com/auth/gmail.send',
-        'https://www.googleapis.com/auth/gmail.compose',
-        'https://www.googleapis.com/auth/gmail.modify'
-      ].join(' ');
+      // Récupérer l'URL OAuth depuis le backend (assure le bon clientId/redirectUri)
+      const { data, error } = await supabase.functions.invoke('gmail-oauth-config');
+      if (error) throw error;
 
-      const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
-        `client_id=${encodeURIComponent(clientId)}` +
-        `&redirect_uri=${encodeURIComponent(redirectUri)}` +
-        `&response_type=code` +
-        `&scope=${encodeURIComponent(scopes)}` +
-        `&access_type=offline` +
-        `&prompt=consent` +
-        `&state=gmail_oauth`;
-
-      // Ouvrir dans une popup
-      const width = 600;
-      const height = 700;
-      const left = (window.screen.width - width) / 2;
-      const top = (window.screen.height - height) / 2;
-      
-      const popup = window.open(
-        authUrl,
-        'Gmail OAuth',
-        `width=${width},height=${height},left=${left},top=${top},popup=yes`
-      );
-
-      if (!popup) {
-        toast({
-          title: "Popup bloquée",
-          description: "Veuillez autoriser les popups pour connecter Gmail.",
-          variant: "destructive",
-        });
-        return;
+      // Mémoriser le redirectUri pour l'échange du code au retour
+      if (data?.redirectUri) {
+        sessionStorage.setItem('gmail_redirect_uri', data.redirectUri);
       }
 
-      // Écouter le message de retour
-      const handleMessage = async (event: MessageEvent) => {
-        if (event.data?.type === 'gmail-oauth-success' && event.data.code) {
-          window.removeEventListener('message', handleMessage);
-          
-          try {
-            const { data: session } = await supabase.auth.getSession();
-            if (!session?.session) throw new Error("Non authentifié");
-
-            const { data, error } = await supabase.functions.invoke('gmail-oauth-callback', {
-              headers: { Authorization: `Bearer ${session.session.access_token}` },
-              body: {
-                code: event.data.code,
-                redirectUri,
-              },
-            });
-
-            if (error) throw error;
-
-            toast({
-              title: "Succès",
-              description: "Gmail connecté avec succès !",
-            });
-            
-            setGmailConnected(true);
-          } catch (error: any) {
-            console.error("Error exchanging OAuth code:", error);
-            toast({
-              title: "Erreur",
-              description: "Échec de la connexion Gmail.",
-              variant: "destructive",
-            });
-          }
-        }
-      };
-
-      window.addEventListener('message', handleMessage);
+      // Redirection dans le même onglet (pas de popup)
+      window.location.assign(data.url);
     } catch (error: any) {
       console.error("Error connecting Gmail:", error);
       toast({
@@ -196,18 +131,31 @@ export const EmailComposer = () => {
     const urlParams = new URLSearchParams(window.location.search);
     const code = urlParams.get('code');
     const state = urlParams.get('state');
-    
+
     if (code && state === 'gmail_oauth') {
-      // Nettoyer l'URL
+      // Nettoyer l'URL immédiatement
       window.history.replaceState({}, '', '/dashboard?tab=email-composer');
-      
-      // Envoyer le code à la fenêtre parent si on est dans une popup
-      if (window.opener) {
-        window.opener.postMessage({
-          type: 'gmail-oauth-success',
-          code,
-        }, window.location.origin);
-        window.close();
+
+      try {
+        const { data: session } = await supabase.auth.getSession();
+        if (!session?.session) throw new Error("Non authentifié");
+
+        const redirectUri = sessionStorage.getItem('gmail_redirect_uri') || `${window.location.origin}/dashboard?tab=email-composer`;
+
+        const { error } = await supabase.functions.invoke('gmail-oauth-callback', {
+          headers: { Authorization: `Bearer ${session.session.access_token}` },
+          body: { code, redirectUri },
+        });
+
+        if (error) throw error;
+
+        toast({ title: 'Succès', description: 'Gmail connecté avec succès !' });
+        setGmailConnected(true);
+      } catch (err: any) {
+        console.error('Error exchanging OAuth code:', err);
+        toast({ title: 'Erreur', description: "Échec de la connexion Gmail.", variant: 'destructive' });
+      } finally {
+        sessionStorage.removeItem('gmail_redirect_uri');
       }
     }
   };
@@ -516,12 +464,12 @@ export const EmailComposer = () => {
 
       {!checkingGmail && !gmailConnected && (
         <Alert>
-          <AlertTitle>Gmail non connecté</AlertTitle>
+          <AlertTitle>Autoriser Gmail pour l'envoi</AlertTitle>
           <AlertDescription>
-            Connectez votre compte Google pour envoyer des emails et créer des brouillons.
+            Vous serez redirigé vers Google puis revenu automatiquement, sans popup.
           </AlertDescription>
           <div className="mt-3">
-            <Button onClick={connectGmail}>Connecter Gmail</Button>
+            <Button onClick={connectGmail}>Autoriser Gmail</Button>
           </div>
         </Alert>
       )}
