@@ -11,6 +11,8 @@ import { Support } from "@/components/dashboard/Support";
 import { EmailSearch } from "@/components/dashboard/EmailSearch";
 import { ContactEmails } from "@/components/dashboard/ContactEmails";
 import { EmailComposer } from "@/components/dashboard/EmailComposer";
+import { ScheduledEmails } from "@/components/dashboard/ScheduledEmails";
+import { Campaigns } from "@/components/dashboard/Campaigns";
 import { AppSidebar } from "@/components/AppSidebar";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { useSearchParams } from "react-router-dom";
@@ -124,6 +126,12 @@ const Index = () => {
             </div>
             <div className={activeTab === "email-composer" ? "block" : "hidden"}>
               <EmailComposer />
+            </div>
+            <div className={activeTab === "scheduled-emails" ? "block" : "hidden"}>
+              <ScheduledEmails />
+            </div>
+            <div className={activeTab === "campaigns" ? "block" : "hidden"}>
+              <Campaigns />
             </div>
             <div className={activeTab === "notifications" ? "block" : "hidden"}>
               <Notifications />
