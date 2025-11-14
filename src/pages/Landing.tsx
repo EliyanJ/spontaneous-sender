@@ -61,13 +61,13 @@ const Landing = () => {
       <main className="container mx-auto px-6 py-20 text-center">
         <div className="mx-auto max-w-4xl space-y-8">
           <h1 className="font-display text-5xl font-bold leading-tight text-gray-900 md:text-7xl animate-fade-in">
-            Votre assistant IA
+            Décrochez votre prochain emploi
             <br />
-            <span className="text-blue-600">pour la prospection</span>
+            <span className="text-blue-600">avec des candidatures spontanées ciblées</span>
           </h1>
           
           <p className="mx-auto max-w-2xl text-lg text-gray-700 md:text-xl animate-fade-in" style={{ animationDelay: '0.2s' }}>
-            Trouvez les entreprises qui correspondent à vos critères, découvrez automatiquement les emails de contact, et lancez vos campagnes de prospection en quelques clics.
+            Trouvez les entreprises qui correspondent à votre profil, découvrez automatiquement les contacts RH, et envoyez vos candidatures spontanées personnalisées en quelques clics.
           </p>
 
           <div className="flex flex-col items-center justify-center gap-4 sm:flex-row animate-fade-in" style={{ animationDelay: '0.4s' }}>
@@ -87,9 +87,9 @@ const Landing = () => {
               <div className="mb-4 inline-block rounded-full bg-blue-100 p-3">
                 <Search className="h-6 w-6 text-blue-600" />
               </div>
-              <h3 className="mb-2 text-xl font-semibold">Recherche intelligente</h3>
+              <h3 className="mb-2 text-xl font-semibold">Recherche d'employeurs ciblée</h3>
               <p className="text-gray-600">
-                Filtrez par secteur, taille, localisation et trouvez vos prospects idéaux
+                Identifiez les entreprises qui recrutent dans votre secteur et correspondent à vos aspirations professionnelles
               </p>
             </div>
 
@@ -97,9 +97,9 @@ const Landing = () => {
               <div className="mb-4 inline-block rounded-full bg-blue-100 p-3">
                 <Mail className="h-6 w-6 text-blue-600" />
               </div>
-              <h3 className="mb-2 text-xl font-semibold">Emails automatiques</h3>
+              <h3 className="mb-2 text-xl font-semibold">Contacts RH automatiques</h3>
               <p className="text-gray-600">
-                L'IA scanne les sites web et trouve automatiquement les emails de contact
+                L'IA trouve automatiquement les emails RH et recruteurs des entreprises ciblées
               </p>
             </div>
 
@@ -107,9 +107,9 @@ const Landing = () => {
               <div className="mb-4 inline-block rounded-full bg-blue-100 p-3">
                 <Zap className="h-6 w-6 text-blue-600" />
               </div>
-              <h3 className="mb-2 text-xl font-semibold">Campagnes rapides</h3>
+              <h3 className="mb-2 text-xl font-semibold">Candidatures personnalisées</h3>
               <p className="text-gray-600">
-                Lancez vos campagnes d'emailing directement depuis la plateforme
+                Envoyez vos candidatures spontanées avec CV et lettre de motivation personnalisés
               </p>
             </div>
           </div>
@@ -121,22 +121,22 @@ const Landing = () => {
         <div className="grid gap-12 md:grid-cols-2">
           <div className="animate-fade-in" style={{ animationDelay: '1.2s' }}>
             <div className="rounded-2xl bg-white/70 backdrop-blur-sm p-8 shadow-lg">
-              <h2 className="mb-4 text-3xl font-bold text-gray-900">Recherche avancée d'entreprises</h2>
+              <h2 className="mb-4 text-3xl font-bold text-gray-900">Trouvez les entreprises qui recrutent</h2>
               <p className="mb-6 text-gray-700">
-                Avant chaque prospection, notre IA analyse les entreprises correspondant à vos critères et vous fournit un contexte détaillé sur leurs activités et besoins.
+                Notre IA identifie les entreprises correspondant à votre profil professionnel et vous aide à cibler celles avec le plus fort potentiel d'embauche.
               </p>
               <ul className="space-y-3">
                 <li className="flex items-start gap-3">
                   <Check className="mt-1 h-5 w-5 text-blue-600" />
-                  <span className="text-gray-700">Filtrage par secteur d'activité et taille</span>
+                  <span className="text-gray-700">Filtrage par secteur, taille et localisation</span>
                 </li>
                 <li className="flex items-start gap-3">
                   <Check className="mt-1 h-5 w-5 text-blue-600" />
-                  <span className="text-gray-700">Localisation géographique précise</span>
+                  <span className="text-gray-700">Analyse des besoins de recrutement</span>
                 </li>
                 <li className="flex items-start gap-3">
                   <Check className="mt-1 h-5 w-5 text-blue-600" />
-                  <span className="text-gray-700">Export et sauvegarde des listes</span>
+                  <span className="text-gray-700">Sauvegarde de vos listes d'entreprises cibles</span>
                 </li>
               </ul>
             </div>
@@ -144,22 +144,22 @@ const Landing = () => {
 
           <div className="animate-fade-in" style={{ animationDelay: '1.4s' }}>
             <div className="rounded-2xl bg-white/70 backdrop-blur-sm p-8 shadow-lg">
-              <h2 className="mb-4 text-3xl font-bold text-gray-900">Extraction automatique d'emails</h2>
+              <h2 className="mb-4 text-3xl font-bold text-gray-900">Contacts RH découverts automatiquement</h2>
               <p className="mb-6 text-gray-700">
-                Notre IA scanne automatiquement les sites web des entreprises et génère des emails de suivi basés sur vos besoins et le contexte de chaque prospect.
+                Notre IA scanne les sites web des entreprises pour trouver les bons contacts RH et générer des candidatures personnalisées adaptées à chaque entreprise.
               </p>
               <ul className="space-y-3">
                 <li className="flex items-start gap-3">
                   <Check className="mt-1 h-5 w-5 text-blue-600" />
-                  <span className="text-gray-700">Emails RH et contacts décisionnaires</span>
+                  <span className="text-gray-700">Emails RH, recruteurs et responsables</span>
                 </li>
                 <li className="flex items-start gap-3">
                   <Check className="mt-1 h-5 w-5 text-blue-600" />
-                  <span className="text-gray-700">Pages carrières et formulaires de contact</span>
+                  <span className="text-gray-700">Détection des pages carrières actives</span>
                 </li>
                 <li className="flex items-start gap-3">
                   <Check className="mt-1 h-5 w-5 text-blue-600" />
-                  <span className="text-gray-700">Vérification de validité des emails</span>
+                  <span className="text-gray-700">Vérification de validité des adresses</span>
                 </li>
               </ul>
             </div>
@@ -216,44 +216,54 @@ const Landing = () => {
 
       {/* FAQ */}
       <section id="faq" className="container mx-auto px-6 py-20">
-        <h2 className="mb-12 text-center text-4xl font-bold text-gray-900 animate-fade-in" style={{ animationDelay: '2.6s' }}>
-          Questions fréquentes
-        </h2>
+        <div className="text-center mb-12">
+          <h2 className="text-4xl font-bold text-gray-900 mb-4">Questions fréquentes</h2>
+          <p className="text-xl text-gray-700">Tout ce que vous devez savoir sur vos candidatures spontanées</p>
+        </div>
         <div className="mx-auto max-w-3xl animate-fade-in" style={{ animationDelay: '2.8s' }}>
           <Accordion type="single" collapsible className="space-y-4">
             <AccordionItem value="item-1" className="rounded-lg bg-white/70 backdrop-blur-sm px-6 shadow-lg border-none">
               <AccordionTrigger className="text-left font-semibold text-gray-900">
-                Comment fonctionne l'extraction d'emails ?
+                Comment fonctionne la recherche d'entreprises ?
               </AccordionTrigger>
               <AccordionContent className="text-gray-700">
-                Notre IA analyse les sites web des entreprises que vous avez sélectionnées, identifie les pages de contact, carrières et les formulaires pour extraire automatiquement les emails professionnels pertinents.
+                Notre plateforme utilise des bases de données publiques françaises pour identifier les entreprises selon vos critères (secteur, taille, localisation). L'IA analyse ensuite leurs sites web pour trouver les contacts RH et évaluer leur potentiel de recrutement.
               </AccordionContent>
             </AccordionItem>
 
             <AccordionItem value="item-2" className="rounded-lg bg-white/70 backdrop-blur-sm px-6 shadow-lg border-none">
               <AccordionTrigger className="text-left font-semibold text-gray-900">
-                Les données sont-elles conformes au RGPD ?
+                Les emails RH trouvés sont-ils valides ?
               </AccordionTrigger>
               <AccordionContent className="text-gray-700">
-                Oui, nous utilisons uniquement des données publiquement accessibles et respectons toutes les réglementations en vigueur concernant la protection des données personnelles.
+                Nous utilisons plusieurs techniques de vérification pour assurer la validité des emails RH. Ces informations provenant de sources publiques, nous recommandons de personnaliser chaque candidature pour maximiser vos chances de réponse.
               </AccordionContent>
             </AccordionItem>
 
             <AccordionItem value="item-3" className="rounded-lg bg-white/70 backdrop-blur-sm px-6 shadow-lg border-none">
               <AccordionTrigger className="text-left font-semibold text-gray-900">
-                Puis-je exporter mes listes de prospects ?
+                Puis-je envoyer mes candidatures directement depuis la plateforme ?
               </AccordionTrigger>
               <AccordionContent className="text-gray-700">
-                Absolument ! Vous pouvez exporter vos listes d'entreprises et d'emails au format CSV pour les utiliser dans vos outils CRM ou d'emailing préférés.
+                Oui ! Connectez votre compte Gmail pour envoyer vos candidatures spontanées directement depuis ProspectAI. Vous pouvez joindre votre CV et lettre de motivation, et suivre l'état de chaque candidature au même endroit.
               </AccordionContent>
             </AccordionItem>
 
             <AccordionItem value="item-4" className="rounded-lg bg-white/70 backdrop-blur-sm px-6 shadow-lg border-none">
               <AccordionTrigger className="text-left font-semibold text-gray-900">
-                Quel est le taux de réussite de l'extraction d'emails ?
+                Y a-t-il une limite au nombre de candidatures que je peux envoyer ?
               </AccordionTrigger>
               <AccordionContent className="text-gray-700">
-                Notre IA atteint un taux de succès de 95% sur les entreprises disposant d'un site web avec des informations de contact accessibles publiquement.
+                Les limites dépendent de votre abonnement. Le plan gratuit permet d'envoyer jusqu'à 50 candidatures par mois, tandis que les plans premium offrent des envois illimités et des fonctionnalités avancées de suivi.
+              </AccordionContent>
+            </AccordionItem>
+
+            <AccordionItem value="item-5" className="rounded-lg bg-white/70 backdrop-blur-sm px-6 shadow-lg border-none">
+              <AccordionTrigger className="text-left font-semibold text-gray-900">
+                Comment l'IA personnalise-t-elle mes candidatures ?
+              </AccordionTrigger>
+              <AccordionContent className="text-gray-700">
+                L'IA analyse le site web de chaque entreprise pour comprendre leur activité, leurs valeurs et besoins en recrutement. Elle adapte votre lettre de motivation en mettant en avant les compétences pertinentes pour chaque poste potentiel.
               </AccordionContent>
             </AccordionItem>
           </Accordion>
