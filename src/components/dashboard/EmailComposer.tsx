@@ -485,6 +485,9 @@ export const EmailComposer = () => {
         description: `Votre email sera envoyé le ${scheduledDateTime.toLocaleString('fr-FR')}`,
       });
 
+      // Déclencher un événement pour actualiser la liste des emails programmés
+      window.dispatchEvent(new CustomEvent('email-scheduled'));
+
       // Réinitialiser le formulaire
       setSubject("");
       setBody("");
