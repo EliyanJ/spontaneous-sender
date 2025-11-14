@@ -131,6 +131,83 @@ export type Database = {
         }
         Relationships: []
       }
+      email_campaigns: {
+        Row: {
+          attachments: Json | null
+          body: string
+          company_id: string | null
+          created_at: string
+          follow_up_delay_days: number | null
+          follow_up_enabled: boolean | null
+          follow_up_sent_at: string | null
+          follow_up_status: string | null
+          id: string
+          next_action: string | null
+          pipeline_stage: string | null
+          recipient: string
+          response_category: string | null
+          response_detected_at: string | null
+          response_summary: string | null
+          sent_at: string | null
+          status: string | null
+          subject: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          attachments?: Json | null
+          body: string
+          company_id?: string | null
+          created_at?: string
+          follow_up_delay_days?: number | null
+          follow_up_enabled?: boolean | null
+          follow_up_sent_at?: string | null
+          follow_up_status?: string | null
+          id?: string
+          next_action?: string | null
+          pipeline_stage?: string | null
+          recipient: string
+          response_category?: string | null
+          response_detected_at?: string | null
+          response_summary?: string | null
+          sent_at?: string | null
+          status?: string | null
+          subject: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          attachments?: Json | null
+          body?: string
+          company_id?: string | null
+          created_at?: string
+          follow_up_delay_days?: number | null
+          follow_up_enabled?: boolean | null
+          follow_up_sent_at?: string | null
+          follow_up_status?: string | null
+          id?: string
+          next_action?: string | null
+          pipeline_stage?: string | null
+          recipient?: string
+          response_category?: string | null
+          response_detected_at?: string | null
+          response_summary?: string | null
+          sent_at?: string | null
+          status?: string | null
+          subject?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_campaigns_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       email_logs: {
         Row: {
           campaign_id: string
@@ -175,6 +252,71 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      email_responses: {
+        Row: {
+          ai_confidence: number | null
+          body: string | null
+          campaign_id: string
+          category: string | null
+          created_at: string
+          gmail_message_id: string | null
+          html_body: string | null
+          id: string
+          next_action: string | null
+          pipeline_stage: string | null
+          received_at: string
+          sentiment_score: number | null
+          subject: string | null
+          summary: string | null
+          thread_id: string | null
+          user_id: string
+        }
+        Insert: {
+          ai_confidence?: number | null
+          body?: string | null
+          campaign_id: string
+          category?: string | null
+          created_at?: string
+          gmail_message_id?: string | null
+          html_body?: string | null
+          id?: string
+          next_action?: string | null
+          pipeline_stage?: string | null
+          received_at: string
+          sentiment_score?: number | null
+          subject?: string | null
+          summary?: string | null
+          thread_id?: string | null
+          user_id: string
+        }
+        Update: {
+          ai_confidence?: number | null
+          body?: string | null
+          campaign_id?: string
+          category?: string | null
+          created_at?: string
+          gmail_message_id?: string | null
+          html_body?: string | null
+          id?: string
+          next_action?: string | null
+          pipeline_stage?: string | null
+          received_at?: string
+          sentiment_score?: number | null
+          subject?: string | null
+          summary?: string | null
+          thread_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_responses_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "email_campaigns"
             referencedColumns: ["id"]
           },
         ]
@@ -239,6 +381,33 @@ export type Database = {
         }
         Relationships: []
       }
+      gmail_watch_config: {
+        Row: {
+          email_address: string | null
+          expires_at: string | null
+          history_id: string | null
+          last_check_at: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          email_address?: string | null
+          expires_at?: string | null
+          history_id?: string | null
+          last_check_at?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          email_address?: string | null
+          expires_at?: string | null
+          history_id?: string | null
+          last_check_at?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string | null
@@ -293,6 +462,51 @@ export type Database = {
         }
         Relationships: []
       }
+      scheduled_emails: {
+        Row: {
+          created_at: string
+          error_message: string | null
+          gmail_draft_id: string
+          id: string
+          notify_on_sent: boolean | null
+          recipients: string[]
+          scheduled_for: string
+          sent_at: string | null
+          status: string
+          subject: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          error_message?: string | null
+          gmail_draft_id: string
+          id?: string
+          notify_on_sent?: boolean | null
+          recipients: string[]
+          scheduled_for: string
+          sent_at?: string | null
+          status?: string
+          subject: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          error_message?: string | null
+          gmail_draft_id?: string
+          id?: string
+          notify_on_sent?: boolean | null
+          recipients?: string[]
+          scheduled_for?: string
+          sent_at?: string | null
+          status?: string
+          subject?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_company_blacklist: {
         Row: {
           company_siren: string
@@ -311,6 +525,92 @@ export type Database = {
           contacted_at?: string | null
           id?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      user_notifications: {
+        Row: {
+          created_at: string
+          id: string
+          message: string
+          read_at: string | null
+          related_campaign_id: string | null
+          status: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message: string
+          read_at?: string | null
+          related_campaign_id?: string | null
+          status?: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message?: string
+          read_at?: string | null
+          related_campaign_id?: string | null
+          status?: string | null
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_notifications_related_campaign_id_fkey"
+            columns: ["related_campaign_id"]
+            isOneToOne: false
+            referencedRelation: "email_campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_preferences: {
+        Row: {
+          auto_follow_up: boolean | null
+          follow_up_delay_days: number | null
+          follow_up_template: string | null
+          gmail_watch_enabled: boolean | null
+          notification_email: string | null
+          notify_on_email_sent: boolean | null
+          notify_on_follow_up_reminder: boolean | null
+          notify_on_response: boolean | null
+          updated_at: string
+          user_id: string
+          watch_check_frequency: string | null
+        }
+        Insert: {
+          auto_follow_up?: boolean | null
+          follow_up_delay_days?: number | null
+          follow_up_template?: string | null
+          gmail_watch_enabled?: boolean | null
+          notification_email?: string | null
+          notify_on_email_sent?: boolean | null
+          notify_on_follow_up_reminder?: boolean | null
+          notify_on_response?: boolean | null
+          updated_at?: string
+          user_id: string
+          watch_check_frequency?: string | null
+        }
+        Update: {
+          auto_follow_up?: boolean | null
+          follow_up_delay_days?: number | null
+          follow_up_template?: string | null
+          gmail_watch_enabled?: boolean | null
+          notification_email?: string | null
+          notify_on_email_sent?: boolean | null
+          notify_on_follow_up_reminder?: boolean | null
+          notify_on_response?: boolean | null
+          updated_at?: string
+          user_id?: string
+          watch_check_frequency?: string | null
         }
         Relationships: []
       }
