@@ -14,6 +14,8 @@ import { EmailComposer } from "@/components/dashboard/EmailComposer";
 import { AppSidebar } from "@/components/AppSidebar";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { useSearchParams } from "react-router-dom";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 const Index = () => {
   const { user, signOut } = useAuth();
@@ -28,6 +30,56 @@ const Index = () => {
       setSearchParams({});
     }
   }, [searchParams, setSearchParams]);
+
+  // Traiter le callback OAuth directement sur le dashboard
+  useEffect(() => {
+    const expectedReturn = sessionStorage.getItem("oauth_return_expected");
+    const hash = window.location.hash;
+    if (!expectedReturn || !hash) return;
+
+    let providerToken: string | null = null;
+    let providerRefreshToken: string | null = null;
+    try {
+      const hashParams = new URLSearchParams(hash.startsWith('#') ? hash.substring(1) : hash);
+      providerToken = hashParams.get('provider_token');
+      providerRefreshToken = hashParams.get('provider_refresh_token');
+    } catch (e) {
+      console.warn('Impossible de parser le hash OAuth:', e);
+    } finally {
+      window.history.replaceState({}, '', window.location.pathname + window.location.search);
+    }
+
+    // Une fois sur le dashboard, la session doit être prête
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (!session) return;
+
+      const anySession = session as any;
+      const token = providerToken || anySession?.provider_token || null;
+      const refresh = providerRefreshToken || anySession?.provider_refresh_token || null;
+
+      if (token) {
+        const { error } = await supabase.functions.invoke('store-gmail-tokens', {
+          headers: { Authorization: `Bearer ${session.access_token}` },
+          body: {
+            provider_token: token,
+            provider_refresh_token: refresh,
+          },
+        });
+        if (error) {
+          console.error('Erreur stockage tokens:', error);
+          toast.error('Erreur lors de la configuration Gmail');
+        } else {
+          toast.success('Connexion Google réussie !');
+        }
+      } else {
+        console.warn('Aucun token Gmail détecté dans le hash ni la session.');
+      }
+
+      sessionStorage.removeItem('oauth_return_expected');
+      sessionStorage.removeItem('post_oauth_redirect');
+      sessionStorage.removeItem('post_login_redirect');
+    });
+  }, []);
 
 
   return (
