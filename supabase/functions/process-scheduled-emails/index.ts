@@ -85,13 +85,14 @@ serve(async (req) => {
 
         // Envoyer le brouillon via Gmail API
         const sendResponse = await fetch(
-          `https://gmail.googleapis.com/gmail/v1/users/me/drafts/${email.gmail_draft_id}/send`,
+          'https://gmail.googleapis.com/gmail/v1/users/me/drafts/send',
           {
             method: 'POST',
             headers: {
               'Authorization': `Bearer ${accessToken}`,
               'Content-Type': 'application/json',
             },
+            body: JSON.stringify({ id: email.gmail_draft_id }),
           }
         );
 
