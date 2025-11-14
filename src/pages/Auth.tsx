@@ -13,11 +13,8 @@ import { Separator } from "@/components/ui/separator";
 const Auth = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [processingCallback, setProcessingCallback] = useState(false);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   
   // Récupérer la page de destination depuis l'URL
   const nextPath = searchParams.get('next') || '/dashboard';
