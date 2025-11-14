@@ -21,9 +21,11 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Loader2, Mail, Save, Upload, X, Plus } from "lucide-react";
+import { Loader2, Mail, Save, Upload, X, Plus, Clock, Send } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface EmailTemplate {
   id: string;
@@ -53,6 +55,11 @@ export const EmailComposer = () => {
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [gmailConnected, setGmailConnected] = useState(false);
   const [checkingGmail, setCheckingGmail] = useState(true);
+  
+  // Nouveaux états pour la programmation d'emails
+  const [sendMode, setSendMode] = useState<'now' | 'scheduled'>('now');
+  const [scheduledDate, setScheduledDate] = useState('');
+  const [notifyOnSent, setNotifyOnSent] = useState(false);
 
   useEffect(() => {
     loadTemplates();
@@ -409,6 +416,94 @@ export const EmailComposer = () => {
     }
   };
 
+  const handleScheduleEmail = async () => {
+    if (recipients.length === 0) {
+      toast({
+        title: "Aucun destinataire",
+        description: "Veuillez ajouter au moins un destinataire.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!subject.trim() || !body.trim()) {
+      toast({
+        title: "Champs requis",
+        description: "Veuillez remplir l'objet et le message.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!scheduledDate) {
+      toast({
+        title: "Date requise",
+        description: "Veuillez sélectionner une date et heure d'envoi.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const scheduledDateTime = new Date(scheduledDate);
+    if (scheduledDateTime <= new Date()) {
+      toast({
+        title: "Date invalide",
+        description: "La date d'envoi doit être dans le futur.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast({
+          title: "Non authentifié",
+          description: "Veuillez vous reconnecter.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const { data, error } = await supabase.functions.invoke('schedule-gmail-draft', {
+        headers: { Authorization: `Bearer ${session.access_token}` },
+        body: {
+          recipients,
+          subject,
+          body,
+          scheduledFor: scheduledDateTime.toISOString(),
+          notifyOnSent,
+        },
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Email programmé",
+        description: `Votre email sera envoyé le ${scheduledDateTime.toLocaleString('fr-FR')}`,
+      });
+
+      // Réinitialiser le formulaire
+      setSubject("");
+      setBody("");
+      setRecipients([]);
+      setScheduledDate("");
+      setNotifyOnSent(false);
+      setSendMode('now');
+    } catch (error: any) {
+      console.error("Error scheduling email:", error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de programmer l'email.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -568,20 +663,30 @@ export const EmailComposer = () => {
               </div>
 
               <div className="flex gap-2 pt-4">
-                <Button onClick={handleSendEmails} disabled={loading} className="flex-1">
-                  {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  <Mail className="mr-2 h-4 w-4" />
-                  Envoyer
-                </Button>
-                <Button
-                  onClick={handleCreateDrafts}
-                  disabled={loading}
-                  variant="outline"
-                  className="flex-1"
-                >
-                  {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Créer les brouillons
-                </Button>
+                {sendMode === 'now' ? (
+                  <>
+                    <Button onClick={handleSendEmails} disabled={loading} className="flex-1">
+                      {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      <Send className="mr-2 h-4 w-4" />
+                      Envoyer maintenant
+                    </Button>
+                    <Button
+                      onClick={handleCreateDrafts}
+                      disabled={loading}
+                      variant="outline"
+                      className="flex-1"
+                    >
+                      {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      Créer les brouillons
+                    </Button>
+                  </>
+                ) : (
+                  <Button onClick={handleScheduleEmail} disabled={loading} className="w-full">
+                    {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    <Clock className="mr-2 h-4 w-4" />
+                    Programmer l'envoi
+                  </Button>
+                )}
               </div>
             </CardContent>
           </Card>
