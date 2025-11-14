@@ -140,15 +140,25 @@ const Auth = () => {
       if (error) throw error;
 
       if (data?.url) {
-        toast.success('Redirection vers Google...');
         const url = data.url;
         const win = window.open(url, '_blank', 'noopener,noreferrer');
         if (!win) {
-          try {
-            (window.top ?? window).location.assign(url);
-          } catch {
-            window.location.assign(url);
-          }
+          // Ne pas rediriger l'iframe vers Google
+          toast.message('Popup bloquée par le navigateur', {
+            description: 'Cliquez pour ouvrir la page Google dans un nouvel onglet',
+            action: {
+              label: 'Ouvrir',
+              onClick: () => {
+                const a = document.createElement('a');
+                a.href = url;
+                a.rel = 'noopener noreferrer';
+                a.target = '_blank';
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+              }
+            }
+          });
         }
       }
     } catch (error: any) {

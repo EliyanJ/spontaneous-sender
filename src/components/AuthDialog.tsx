@@ -91,17 +91,29 @@ export const AuthDialog = ({ open, onOpenChange }: AuthDialogProps) => {
       if (error) throw error;
 
       if (data?.url) {
-        toast.success('Redirection vers Google...');
         const url = data.url;
         const win = window.open(url, '_blank', 'noopener,noreferrer');
         if (!win) {
-          try {
-            (window.top ?? window).location.assign(url);
-          } catch {
-            window.location.assign(url);
-          }
+          // Ne pas rediriger dans l'iframe pour éviter l'erreur Google
+          // Afficher un lien manuel en cas de blocage de popup
+          toast.message('Popup bloquée par le navigateur', {
+            description: 'Cliquez ici si rien ne s\'ouvre',
+            action: {
+              label: 'Ouvrir Google',
+              onClick: () => {
+                const a = document.createElement('a');
+                a.href = url;
+                a.rel = 'noopener noreferrer';
+                a.target = '_blank';
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+              }
+            }
+          });
+        } else {
+          onOpenChange(false);
         }
-        onOpenChange(false);
       }
     } catch (error: any) {
       console.error('OAuth error:', error);
