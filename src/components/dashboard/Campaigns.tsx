@@ -254,34 +254,55 @@ export const Campaigns = () => {
               <CardContent className="pt-6 text-center text-muted-foreground">
                 <Clock className="h-12 w-12 mx-auto mb-3 opacity-50" />
                 <p>Aucune relance à faire</p>
+                <p className="text-sm mt-2">Les campagnes nécessitant une relance apparaîtront ici</p>
               </CardContent>
             </Card>
           ) : (
-            pendingCampaigns.map((campaign) => (
-              <Card key={campaign.id}>
-                <CardContent className="pt-6">
-                  <div className="flex items-start justify-between">
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        <Mail className="h-4 w-4" />
-                        <span className="font-medium">{campaign.recipient}</span>
+            pendingCampaigns.map((campaign) => {
+              const daysSince = getDaysSinceSent(campaign.sent_at);
+              const isUrgent = daysSince >= 5;
+              
+              return (
+                <Card key={campaign.id} className={isUrgent ? 'border-orange-500/50' : ''}>
+                  <CardContent className="pt-6">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1 space-y-2">
+                        <div className="flex items-center gap-2">
+                          <Mail className="h-4 w-4" />
+                          <span className="font-medium">{campaign.recipient}</span>
+                          {isUrgent && (
+                            <Badge variant="destructive" className="gap-1">
+                              <AlertCircle className="h-3 w-3" />
+                              Urgent - {daysSince} jours
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="text-sm text-muted-foreground">{campaign.subject}</p>
+                        <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                          <span className="flex items-center gap-1">
+                            <Clock className="h-3 w-3" />
+                            Envoyé il y a {daysSince} jours
+                          </span>
+                          {campaign.pipeline_stage && (
+                            <Badge variant="outline" className="text-xs">
+                              {campaign.pipeline_stage}
+                            </Badge>
+                          )}
+                        </div>
                       </div>
-                      <p className="text-sm text-muted-foreground">{campaign.subject}</p>
-                      <p className="text-xs text-muted-foreground">
-                        Envoyé il y a {getDaysSinceSent(campaign.sent_at)} jours
-                      </p>
+                      <Button
+                        onClick={() => handleSendFollowUp(campaign.id, campaign.recipient, campaign.subject)}
+                        size="sm"
+                        variant={isUrgent ? "default" : "outline"}
+                      >
+                        <Send className="h-4 w-4 mr-2" />
+                        Relancer
+                      </Button>
                     </div>
-                    <Button
-                      onClick={() => handleSendFollowUp(campaign.id, campaign.recipient, campaign.subject)}
-                      size="sm"
-                    >
-                      <Send className="h-4 w-4 mr-2" />
-                      Relancer
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))
+                  </CardContent>
+                </Card>
+              );
+            })
           )}
         </TabsContent>
 
