@@ -58,7 +58,6 @@ export const EmailComposer = () => {
     loadTemplates();
     loadCompanies();
     checkGmailConnection();
-    handleOAuthReturn();
   }, []);
 
   const loadTemplates = async () => {
@@ -101,62 +100,6 @@ export const EmailComposer = () => {
       console.error("Error checking Gmail connection:", e);
     } finally {
       setCheckingGmail(false);
-    }
-  };
-
-  const connectGmail = async () => {
-    try {
-      // Récupérer l'URL OAuth depuis le backend (assure le bon clientId/redirectUri)
-      const { data, error } = await supabase.functions.invoke('gmail-oauth-config');
-      if (error) throw error;
-
-      // Mémoriser le redirectUri pour l'échange du code au retour
-      if (data?.redirectUri) {
-        sessionStorage.setItem('gmail_redirect_uri', data.redirectUri);
-      }
-
-      // Redirection dans le même onglet (pas de popup)
-      window.location.assign(data.url);
-    } catch (error: any) {
-      console.error("Error connecting Gmail:", error);
-      toast({
-        title: "Erreur",
-        description: "Impossible de se connecter à Gmail. Réessayez.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleOAuthReturn = async () => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const code = urlParams.get('code');
-    const state = urlParams.get('state');
-
-    if (code && state === 'gmail_oauth') {
-      // Nettoyer l'URL immédiatement
-      window.history.replaceState({}, '', '/dashboard?tab=email-composer');
-
-      try {
-        const { data: session } = await supabase.auth.getSession();
-        if (!session?.session) throw new Error("Non authentifié");
-
-        const redirectUri = sessionStorage.getItem('gmail_redirect_uri') || `${window.location.origin}/dashboard?tab=email-composer`;
-
-        const { error } = await supabase.functions.invoke('gmail-oauth-callback', {
-          headers: { Authorization: `Bearer ${session.session.access_token}` },
-          body: { code, redirectUri },
-        });
-
-        if (error) throw error;
-
-        toast({ title: 'Succès', description: 'Gmail connecté avec succès !' });
-        setGmailConnected(true);
-      } catch (err: any) {
-        console.error('Error exchanging OAuth code:', err);
-        toast({ title: 'Erreur', description: "Échec de la connexion Gmail.", variant: 'destructive' });
-      } finally {
-        sessionStorage.removeItem('gmail_redirect_uri');
-      }
     }
   };
 
@@ -462,17 +405,36 @@ export const EmailComposer = () => {
         <h2 className="text-3xl font-bold">Composer un Email</h2>
       </div>
 
-      {!checkingGmail && !gmailConnected && (
-        <Alert>
-          <AlertTitle>Autoriser Gmail pour l'envoi</AlertTitle>
-          <AlertDescription>
-            Vous serez redirigé vers Google puis revenu automatiquement, sans popup.
-          </AlertDescription>
-          <div className="mt-3">
-            <Button onClick={connectGmail}>Autoriser Gmail</Button>
-          </div>
-        </Alert>
-      )}
+      <Card className="mb-6">
+        <CardContent className="pt-6">
+          {checkingGmail ? (
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <span>Vérification de la connexion Gmail...</span>
+            </div>
+          ) : gmailConnected ? (
+            <div className="flex items-center gap-2 text-green-600">
+              <Mail className="h-5 w-5" />
+              <span className="font-medium">Gmail connecté ✓</span>
+            </div>
+          ) : (
+            <Alert variant="destructive">
+              <AlertTitle>Gmail non connecté</AlertTitle>
+              <AlertDescription>
+                Veuillez vous reconnecter avec Google pour activer l'envoi d'emails.
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="mt-2"
+                  onClick={() => window.location.href = '/auth'}
+                >
+                  Se reconnecter
+                </Button>
+              </AlertDescription>
+            </Alert>
+          )}
+        </CardContent>
+      </Card>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">

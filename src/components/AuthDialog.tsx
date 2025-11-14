@@ -72,49 +72,25 @@ export const AuthDialog = ({ open, onOpenChange }: AuthDialogProps) => {
   const handleGoogleSignIn = async () => {
     setGoogleLoading(true);
     try {
-      sessionStorage.setItem('post_oauth_redirect', '/dashboard');
-      sessionStorage.setItem('oauth_return_expected', '1');
-
-      const { data, error } = await supabase.auth.signInWithOAuth({
+      const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/dashboard`,
+          redirectTo: 'https://spontaneous-sender.lovable.app/dashboard',
           scopes: 'https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/gmail.compose https://www.googleapis.com/auth/gmail.modify',
           queryParams: {
             access_type: 'offline',
             prompt: 'consent',
           },
-          skipBrowserRedirect: true,
+          // Pas de skipBrowserRedirect - Supabase redirige automatiquement dans le même onglet
         },
       });
 
-      if (error) throw error;
-
-      if (data?.url) {
-        const url = data.url;
-        const win = window.open(url, '_blank', 'noopener,noreferrer');
-        if (!win) {
-          // Ne pas rediriger dans l'iframe pour éviter l'erreur Google
-          // Afficher un lien manuel en cas de blocage de popup
-          toast.message('Popup bloquée par le navigateur', {
-            description: 'Cliquez ici si rien ne s\'ouvre',
-            action: {
-              label: 'Ouvrir Google',
-              onClick: () => {
-                const a = document.createElement('a');
-                a.href = url;
-                a.rel = 'noopener noreferrer';
-                a.target = '_blank';
-                document.body.appendChild(a);
-                a.click();
-                a.remove();
-              }
-            }
-          });
-        } else {
-          onOpenChange(false);
-        }
+      if (error) {
+        console.error('OAuth error:', error);
+        toast.error(error.message || "Erreur lors de la connexion Google");
       }
+      
+      // Pas besoin de gérer data.url, Supabase redirige automatiquement
     } catch (error: any) {
       console.error('OAuth error:', error);
       toast.error(error?.message || "Erreur lors de la connexion Google");
