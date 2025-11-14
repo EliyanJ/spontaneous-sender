@@ -1,5 +1,6 @@
-import { useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
+import { AuthDialog } from "@/components/AuthDialog";
 import { ArrowRight, Building2, Mail, Search, Zap, Users, Target, Clock, Check } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -12,6 +13,7 @@ import {
 } from "@/components/ui/accordion";
 
 const Landing = () => {
+  const [authOpen, setAuthOpen] = useState(false);
   const navigate = useNavigate();
   const { user } = useAuth();
 
@@ -47,7 +49,7 @@ const Landing = () => {
           <Button 
             variant="default" 
             size="sm"
-            onClick={() => navigate("/auth")}
+            onClick={() => setAuthOpen(true)}
             className="rounded-full bg-blue-600 text-white hover:bg-blue-700 shadow-lg hover:shadow-xl transition-all duration-300"
           >
             Se connecter
@@ -71,7 +73,7 @@ const Landing = () => {
           <div className="flex flex-col items-center justify-center gap-4 sm:flex-row animate-fade-in" style={{ animationDelay: '0.4s' }}>
             <Button 
               size="lg" 
-              onClick={() => navigate("/auth")}
+              onClick={() => setAuthOpen(true)}
               className="rounded-full bg-blue-600 text-white hover:bg-blue-700 font-semibold text-base px-8 h-12 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
             >
               Commencer gratuitement
@@ -296,6 +298,8 @@ const Landing = () => {
           </div>
         </div>
       </footer>
+
+      <AuthDialog open={authOpen} onOpenChange={setAuthOpen} />
       </div>
     </div>
   );

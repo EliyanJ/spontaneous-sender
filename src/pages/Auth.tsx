@@ -39,6 +39,7 @@ const Auth = () => {
       
       // Si pas de retour attendu et pas de hash, ne rien faire
       if (!expectedReturn && !hash) {
+        setProcessingCallback(false);
         return;
       }
 
