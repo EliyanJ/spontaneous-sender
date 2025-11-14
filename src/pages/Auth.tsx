@@ -15,6 +15,7 @@ const Auth = () => {
   const [searchParams] = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [processingCallback, setProcessingCallback] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   
@@ -40,6 +41,9 @@ const Auth = () => {
       if (!expectedReturn && !hash) {
         return;
       }
+
+      // Afficher le loader pendant le traitement
+      setProcessingCallback(true);
 
       // Extraire tokens du hash s'ils sont présents puis nettoyer (sécurité)
       let providerTokenFromHash: string | null = null;
@@ -102,6 +106,7 @@ const Auth = () => {
         sessionStorage.removeItem("oauth_return_expected");
         sessionStorage.removeItem("post_oauth_redirect");
         sessionStorage.removeItem("post_login_redirect");
+        setProcessingCallback(false);
         navigate("/dashboard", { replace: true });
       }
     };
@@ -202,6 +207,18 @@ const Auth = () => {
       setLoading(false);
     }
   };
+
+  // Afficher un loader pendant le traitement du callback OAuth
+  if (processingCallback) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-primary/5 to-secondary">
+        <div className="text-center space-y-4">
+          <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto" />
+          <p className="text-muted-foreground">Connexion en cours...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-primary/5 to-secondary p-4">
