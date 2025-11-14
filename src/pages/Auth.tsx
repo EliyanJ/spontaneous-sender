@@ -31,48 +31,31 @@ const Auth = () => {
     const handleGoogleCallback = async () => {
       const hash = window.location.hash;
       
-      // Vérifier si c'est un retour OAuth attendu
-      const expectedReturn = sessionStorage.getItem("oauth_return_expected");
-      const returnPath = sessionStorage.getItem("post_oauth_redirect") || 
-                         sessionStorage.getItem("post_login_redirect") || 
-                         "/dashboard";
-      
-      // Si pas de retour attendu et pas de hash, ne rien faire
-      if (!expectedReturn && !hash) {
+      if (!hash) {
         setProcessingCallback(false);
         return;
       }
 
-      // Afficher le loader pendant le traitement
       setProcessingCallback(true);
 
-      // Extraire tokens du hash s'ils sont présents puis nettoyer (sécurité)
-      let providerTokenFromHash: string | null = null;
-      let providerRefreshTokenFromHash: string | null = null;
-      if (hash) {
-        try {
-          const hashParams = new URLSearchParams(hash.startsWith("#") ? hash.substring(1) : hash);
-          providerTokenFromHash = hashParams.get("provider_token");
-          providerRefreshTokenFromHash = hashParams.get("provider_refresh_token");
-        } catch (e) {
-          console.warn("Impossible de parser le hash OAuth:", e);
-        } finally {
-          window.history.replaceState({}, "", window.location.pathname + window.location.search);
-        }
-      }
-
       try {
+        // Nettoyer le hash immédiatement (sécurité)
+        window.history.replaceState({}, "", window.location.pathname + window.location.search);
+
         // Attendre que la session soit établie
         const { data: { session } } = await supabase.auth.getSession();
         
         if (session) {
-          // Extraire les tokens depuis le hash OU la session (fallback)
+          console.log("Session Google établie, extraction des tokens Gmail...");
+          
+          // Extraire les tokens Gmail depuis la session
           const anySession = session as any;
-          const providerToken = providerTokenFromHash || anySession?.provider_token || null;
-          const providerRefreshToken = providerRefreshTokenFromHash || anySession?.provider_refresh_token || null;
+          const providerToken = anySession?.provider_token || null;
+          const providerRefreshToken = anySession?.provider_refresh_token || null;
 
           if (providerToken) {
             console.log("Tokens Gmail détectés, stockage...");
+            
             const { error } = await supabase.functions.invoke('store-gmail-tokens', {
               headers: { Authorization: `Bearer ${session.access_token}` },
               body: {
@@ -85,30 +68,20 @@ const Auth = () => {
               console.error("Erreur stockage tokens:", error);
               toast.error("Erreur lors de la configuration Gmail");
             } else {
-              toast.success("Connexion Google réussie !");
+              console.log("Tokens Gmail stockés avec succès !");
+              toast.success("Connexion Google et Gmail réussie !");
             }
-          } else {
-            console.warn("Aucun token Gmail détecté dans le hash ni la session.");
           }
 
-          // Nettoyer et rediriger
-          sessionStorage.removeItem("oauth_return_expected");
-          sessionStorage.removeItem("post_oauth_redirect");
+          // Rediriger vers le dashboard
+          const returnPath = sessionStorage.getItem("post_login_redirect") || "/dashboard";
           sessionStorage.removeItem("post_login_redirect");
-          
-          console.log("Redirection vers:", returnPath);
           navigate(returnPath, { replace: true });
         }
       } catch (error) {
         console.error("Erreur callback OAuth:", error);
         toast.error("Erreur lors de la connexion");
-        
-        // En cas d'erreur, toujours nettoyer et rediriger
-        sessionStorage.removeItem("oauth_return_expected");
-        sessionStorage.removeItem("post_oauth_redirect");
-        sessionStorage.removeItem("post_login_redirect");
         setProcessingCallback(false);
-        navigate("/dashboard", { replace: true });
       }
     };
 
@@ -118,51 +91,32 @@ const Auth = () => {
   const handleGoogleSignIn = async () => {
     setGoogleLoading(true);
     try {
-      // Mémoriser la page de destination pour y revenir après OAuth
-      const redirectPath = sessionStorage.getItem('post_login_redirect') || nextPath;
-      sessionStorage.setItem('post_oauth_redirect', redirectPath);
-      sessionStorage.setItem('oauth_return_expected', '1');
+      // Sauvegarder la destination pour après le callback
+      if (nextPath !== '/dashboard') {
+        sessionStorage.setItem('post_login_redirect', nextPath);
+      }
 
-      const { data, error } = await supabase.auth.signInWithOAuth({
+      const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/dashboard`,
+          redirectTo: 'https://spontaneous-sender.lovable.app/auth',
           scopes: 'https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/gmail.compose https://www.googleapis.com/auth/gmail.modify',
           queryParams: {
             access_type: 'offline',
             prompt: 'consent',
           },
-          // Évite Google dans l'iframe Lovable, ouvre un nouvel onglet
-          skipBrowserRedirect: true,
+          // Pas de skipBrowserRedirect - Supabase redirige automatiquement dans le même onglet
         },
       });
 
-      if (error) throw error;
-
-      if (data?.url) {
-        const url = data.url;
-        const win = window.open(url, '_blank', 'noopener,noreferrer');
-        if (!win) {
-          // Ne pas rediriger l'iframe vers Google
-          toast.message('Popup bloquée par le navigateur', {
-            description: 'Cliquez pour ouvrir la page Google dans un nouvel onglet',
-            action: {
-              label: 'Ouvrir',
-              onClick: () => {
-                const a = document.createElement('a');
-                a.href = url;
-                a.rel = 'noopener noreferrer';
-                a.target = '_blank';
-                document.body.appendChild(a);
-                a.click();
-                a.remove();
-              }
-            }
-          });
-        }
+      if (error) {
+        console.error('OAuth error:', error);
+        toast.error(error.message || "Erreur lors de la connexion Google");
       }
+      
+      // Pas besoin de gérer data.url, Supabase redirige automatiquement
     } catch (error: any) {
-      console.error('OAuth error (Auth page):', error);
+      console.error('OAuth error:', error);
       toast.error(error?.message || "Erreur lors de la connexion Google");
     } finally {
       setGoogleLoading(false);

@@ -126,42 +126,22 @@ serve(async (req) => {
     if (expiresAt <= now && tokenData.refresh_token) {
       console.log("Token expired, refreshing...");
       
-      // Rafraîchir le token
-      const clientId = Deno.env.get("GMAIL_CLIENT_ID");
-      const clientSecret = Deno.env.get("GMAIL_CLIENT_SECRET");
+      // Rafraîchir le token en appelant l'edge function dédiée
+      console.log("Token expiré, rafraîchissement via refresh-gmail-token...");
+      
+      const { data: refreshData, error: refreshError } = await supabaseClient.functions.invoke(
+        'refresh-gmail-token',
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
 
-      const refreshResponse = await fetch("https://oauth2.googleapis.com/token", {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: new URLSearchParams({
-          client_id: clientId!,
-          client_secret: clientSecret!,
-          refresh_token: tokenData.refresh_token,
-          grant_type: "refresh_token",
-        }),
-      });
-
-      if (!refreshResponse.ok) {
-        const error = await refreshResponse.text();
-        console.error("Failed to refresh token:", error);
-        throw new Error("Failed to refresh Gmail token");
+      if (refreshError || !refreshData?.access_token) {
+        console.error("Failed to refresh Gmail token:", refreshError);
+        throw new Error("Failed to refresh Gmail token. Please reconnect Gmail.");
       }
 
-      const refreshData = await refreshResponse.json();
       accessToken = refreshData.access_token;
+      console.log("Token rafraîchi avec succès");
 
-      // Mettre à jour le token dans la base
-      const newExpiresAt = new Date();
-      newExpiresAt.setHours(newExpiresAt.getHours() + 1);
-
-      await supabaseClient
-        .from("gmail_tokens")
-        .update({
-          access_token: accessToken,
-          expires_at: newExpiresAt.toISOString(),
-          updated_at: new Date().toISOString(),
-        })
-        .eq("user_id", user.id);
 
       console.log("Token refreshed successfully");
     }
