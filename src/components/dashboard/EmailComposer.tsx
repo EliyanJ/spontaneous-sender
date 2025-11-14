@@ -106,110 +106,109 @@ export const EmailComposer = () => {
 
   const connectGmail = async () => {
     try {
-      // Garder la page actuelle pour y revenir après l'autorisation Google
-      sessionStorage.setItem('post_oauth_redirect', '/dashboard');
-      sessionStorage.setItem('oauth_return_expected', '1');
+      // Utiliser le client Gmail OAuth dédié (pas le login Google)
+      const clientId = '581673489866-9e7cnb4eqv09vn3edb6fj63vb28jdkhn.apps.googleusercontent.com';
+      const redirectUri = `${window.location.origin}/dashboard?tab=email-composer`;
+      const scopes = [
+        'https://www.googleapis.com/auth/gmail.send',
+        'https://www.googleapis.com/auth/gmail.compose',
+        'https://www.googleapis.com/auth/gmail.modify'
+      ].join(' ');
 
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: {
-          scopes:
-            "https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/gmail.compose https://www.googleapis.com/auth/gmail.modify",
-          queryParams: {
-            access_type: "offline",
-            prompt: "consent",
-          },
-          redirectTo: `${window.location.origin}/auth`,
-          skipBrowserRedirect: true,
-        },
-      });
+      const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
+        `client_id=${encodeURIComponent(clientId)}` +
+        `&redirect_uri=${encodeURIComponent(redirectUri)}` +
+        `&response_type=code` +
+        `&scope=${encodeURIComponent(scopes)}` +
+        `&access_type=offline` +
+        `&prompt=consent` +
+        `&state=gmail_oauth`;
 
-      if (error) {
-        console.error('OAuth error (Gmail connect):', error);
+      // Ouvrir dans une popup
+      const width = 600;
+      const height = 700;
+      const left = (window.screen.width - width) / 2;
+      const top = (window.screen.height - height) / 2;
+      
+      const popup = window.open(
+        authUrl,
+        'Gmail OAuth',
+        `width=${width},height=${height},left=${left},top=${top},popup=yes`
+      );
+
+      if (!popup) {
         toast({
-          title: "Erreur",
-          description: error?.message || "Connexion à Google échouée.",
+          title: "Popup bloquée",
+          description: "Veuillez autoriser les popups pour connecter Gmail.",
           variant: "destructive",
         });
         return;
       }
 
-      if (data?.url) {
-        toast({ title: 'Redirection vers Google...' });
-        const url = data.url;
-        const win = window.open(url, '_blank', 'noopener,noreferrer');
-        if (!win) {
-          try { (window.top ?? window).location.assign(url); } catch { window.location.assign(url); }
+      // Écouter le message de retour
+      const handleMessage = async (event: MessageEvent) => {
+        if (event.data?.type === 'gmail-oauth-success' && event.data.code) {
+          window.removeEventListener('message', handleMessage);
+          
+          try {
+            const { data: session } = await supabase.auth.getSession();
+            if (!session?.session) throw new Error("Non authentifié");
+
+            const { data, error } = await supabase.functions.invoke('gmail-oauth-callback', {
+              headers: { Authorization: `Bearer ${session.session.access_token}` },
+              body: {
+                code: event.data.code,
+                redirectUri,
+              },
+            });
+
+            if (error) throw error;
+
+            toast({
+              title: "Succès",
+              description: "Gmail connecté avec succès !",
+            });
+            
+            setGmailConnected(true);
+          } catch (error: any) {
+            console.error("Error exchanging OAuth code:", error);
+            toast({
+              title: "Erreur",
+              description: "Échec de la connexion Gmail.",
+              variant: "destructive",
+            });
+          }
         }
-      }
-    } catch (e: any) {
-      console.error("Error starting Google OAuth:", e);
+      };
+
+      window.addEventListener('message', handleMessage);
+    } catch (error: any) {
+      console.error("Error connecting Gmail:", error);
       toast({
         title: "Erreur",
-        description: e?.message || "Impossible de démarrer la connexion Google.",
+        description: "Impossible de se connecter à Gmail. Réessayez.",
         variant: "destructive",
       });
     }
   };
 
   const handleOAuthReturn = async () => {
-    try {
-      const params = new URLSearchParams(window.location.search);
-      const isGmailConnect = params.get("connect_gmail") === "1";
-
-      if (!isGmailConnect) return;
-
-      // Parse hash tokens BEFORE doing anything else
-      const hash = window.location.hash;
-      const hasTokens = hash.includes("provider_token");
+    const urlParams = new URLSearchParams(window.location.search);
+    const code = urlParams.get('code');
+    const state = urlParams.get('state');
+    
+    if (code && state === 'gmail_oauth') {
+      // Nettoyer l'URL
+      window.history.replaceState({}, '', '/dashboard?tab=email-composer');
       
-      let provider_token = null;
-      let provider_refresh_token = null;
-      
-      if (hasTokens) {
-        const hashParams = new URLSearchParams(hash.startsWith("#") ? hash.substring(1) : hash);
-        provider_token = hashParams.get("provider_token");
-        provider_refresh_token = hashParams.get("provider_refresh_token");
-        
-        // IMMEDIATELY clear URL hash before processing (security)
-        window.history.replaceState({}, "", window.location.pathname + window.location.search);
+      // Envoyer le code à la fenêtre parent si on est dans une popup
+      if (window.opener) {
+        window.opener.postMessage({
+          type: 'gmail-oauth-success',
+          code,
+        }, window.location.origin);
+        window.close();
       }
-
-      // Wait for session to be fully loaded after OAuth redirect
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
-
-      if (provider_token || provider_refresh_token) {
-        const { error } = await supabase.functions.invoke("store-gmail-tokens", {
-          body: {
-            provider_token,
-            provider_refresh_token,
-          },
-          headers: {
-            Authorization: `Bearer ${session.access_token}`,
-          },
-        });
-
-        if (error) {
-          console.error("Error storing Gmail tokens:", error);
-          toast({
-            title: "Erreur",
-            description: error.message || "Impossible d'enregistrer les autorisations Gmail.",
-            variant: "destructive",
-          });
-        } else {
-          toast({ title: "Gmail connecté", description: "Votre compte Gmail est maintenant lié." });
-          setGmailConnected(true);
-        }
-      }
-
-      // Clean up URL (remove hash and query params)
-      params.delete("connect_gmail");
-      const basePath = window.location.pathname;
-      const queryStr = params.toString() ? `?${params.toString()}` : "";
-      window.history.replaceState({}, "", `${basePath}${queryStr}`);
-    } catch (e) {
-      console.error("Error handling OAuth return:", e);
     }
   };
 
