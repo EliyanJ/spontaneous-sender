@@ -35,11 +35,33 @@ export const ScheduledEmails = () => {
 
   useEffect(() => {
     loadScheduledEmails();
+    processScheduledEmails();
 
-    // Recharger toutes les 30 secondes
-    const interval = setInterval(loadScheduledEmails, 30000);
-    return () => clearInterval(interval);
+    // Écouter les nouveaux emails programmés
+    const handleEmailScheduled = () => {
+      loadScheduledEmails();
+    };
+    window.addEventListener('email-scheduled', handleEmailScheduled);
+
+    // Recharger et traiter les emails toutes les 30 secondes
+    const interval = setInterval(() => {
+      loadScheduledEmails();
+      processScheduledEmails();
+    }, 30000);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('email-scheduled', handleEmailScheduled);
+    };
   }, []);
+
+  const processScheduledEmails = async () => {
+    try {
+      await supabase.functions.invoke('process-scheduled-emails');
+    } catch (error) {
+      console.error('Erreur lors du traitement des emails programmés:', error);
+    }
+  };
 
   const loadScheduledEmails = async () => {
     try {
