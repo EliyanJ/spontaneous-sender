@@ -7,7 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
+import { Loader2, Mail } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
 
 interface AuthDialogProps {
   open: boolean;
@@ -17,6 +18,7 @@ interface AuthDialogProps {
 export const AuthDialog = ({ open, onOpenChange }: AuthDialogProps) => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
@@ -67,6 +69,48 @@ export const AuthDialog = ({ open, onOpenChange }: AuthDialogProps) => {
     }
   };
 
+  const handleGoogleSignIn = async () => {
+    setGoogleLoading(true);
+    try {
+      sessionStorage.setItem('post_oauth_redirect', '/dashboard');
+      sessionStorage.setItem('oauth_return_expected', '1');
+
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/auth`,
+          scopes: 'https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/gmail.compose https://www.googleapis.com/auth/gmail.modify',
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          },
+          skipBrowserRedirect: true,
+        },
+      });
+
+      if (error) throw error;
+
+      if (data?.url) {
+        toast.success('Redirection vers Google...');
+        const url = data.url;
+        const win = window.open(url, '_blank', 'noopener,noreferrer');
+        if (!win) {
+          try {
+            (window.top ?? window).location.assign(url);
+          } catch {
+            window.location.assign(url);
+          }
+        }
+        onOpenChange(false);
+      }
+    } catch (error: any) {
+      console.error('OAuth error:', error);
+      toast.error(error?.message || "Erreur lors de la connexion Google");
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
@@ -76,6 +120,39 @@ export const AuthDialog = ({ open, onOpenChange }: AuthDialogProps) => {
             Connectez-vous ou créez un compte pour commencer votre prospection
           </DialogDescription>
         </DialogHeader>
+        
+        <div className="space-y-4">
+          <Button
+            onClick={handleGoogleSignIn}
+            disabled={googleLoading}
+            className="w-full"
+            variant="outline"
+            size="lg"
+          >
+            {googleLoading ? (
+              <>
+                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                Connexion en cours...
+              </>
+            ) : (
+              <>
+                <Mail className="mr-2 h-5 w-5" />
+                Continuer avec Google (Gmail)
+              </>
+            )}
+          </Button>
+
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <Separator />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-background px-2 text-muted-foreground">
+                Ou continuer avec email
+              </span>
+            </div>
+          </div>
+        </div>
         
         <Tabs defaultValue="signin" className="w-full">
           <TabsList className="grid w-full grid-cols-2">
