@@ -18,18 +18,19 @@ serve(async (req) => {
     );
 
     const now = new Date();
-    const fiveDaysAgo = new Date(now.getTime() - (5 * 24 * 60 * 60 * 1000));
     
     console.log('Vérification des relances à faire:', now.toISOString());
 
-    // Récupérer les campagnes envoyées il y a 5 jours ou plus sans réponse
+    // Récupérer les campagnes envoyées sans réponse
     const { data: campaigns, error: fetchError } = await supabase
       .from('email_campaigns')
-      .select('*')
+      .select(`
+        *,
+        user_preferences!inner(follow_up_delay_days)
+      `)
       .eq('status', 'sent')
       .eq('follow_up_status', 'pending')
-      .is('response_detected_at', null)
-      .lte('sent_at', fiveDaysAgo.toISOString());
+      .is('response_detected_at', null);
 
     if (fetchError) {
       console.error('Erreur récupération campagnes:', fetchError);
@@ -45,6 +46,14 @@ serve(async (req) => {
         const daysSinceSent = Math.floor(
           (now.getTime() - new Date(campaign.sent_at).getTime()) / (1000 * 60 * 60 * 24)
         );
+
+        // Récupérer le délai de relance configuré par l'utilisateur
+        const followUpDelay = (campaign as any).user_preferences?.follow_up_delay_days || 10;
+
+        // Vérifier si le délai est atteint
+        if (daysSinceSent < followUpDelay) {
+          continue;
+        }
 
         // Vérifier si une notification de relance n'existe pas déjà
         const { data: existingNotif } = await supabase
