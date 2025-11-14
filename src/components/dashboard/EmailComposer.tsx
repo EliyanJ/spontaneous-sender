@@ -662,6 +662,50 @@ export const EmailComposer = () => {
                 )}
               </div>
 
+              <div className="space-y-4 border-t pt-4 mt-4">
+                <Label>Mode d'envoi</Label>
+                <RadioGroup value={sendMode} onValueChange={(value: 'now' | 'scheduled') => setSendMode(value)}>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="now" id="now" />
+                    <Label htmlFor="now" className="font-normal cursor-pointer">
+                      Envoyer maintenant
+                    </Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="scheduled" id="scheduled" />
+                    <Label htmlFor="scheduled" className="font-normal cursor-pointer">
+                      Programmer l'envoi
+                    </Label>
+                  </div>
+                </RadioGroup>
+
+                {sendMode === 'scheduled' && (
+                  <div className="space-y-3 pl-6 border-l-2 border-primary/20">
+                    <div>
+                      <Label htmlFor="scheduled-date">Date et heure d'envoi</Label>
+                      <Input
+                        id="scheduled-date"
+                        type="datetime-local"
+                        value={scheduledDate}
+                        onChange={(e) => setScheduledDate(e.target.value)}
+                        min={new Date().toISOString().slice(0, 16)}
+                        className="mt-1"
+                      />
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="notify"
+                        checked={notifyOnSent}
+                        onCheckedChange={(checked) => setNotifyOnSent(checked as boolean)}
+                      />
+                      <Label htmlFor="notify" className="font-normal cursor-pointer text-sm">
+                        M'envoyer une notification quand l'email est envoyé
+                      </Label>
+                    </div>
+                  </div>
+                )}
+              </div>
+
               <div className="flex gap-2 pt-4">
                 {sendMode === 'now' ? (
                   <>

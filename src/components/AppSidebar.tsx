@@ -1,4 +1,4 @@
-import { Search, BarChart3, Bell, HelpCircle, GitBranch, Briefcase, Mail, Send } from "lucide-react";
+import { Search, BarChart3, Bell, HelpCircle, GitBranch, Briefcase, Mail, Send, Clock, Inbox } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -19,6 +19,8 @@ const menuItems = [
   { title: "Recherche d'email", icon: Mail, value: "email-search" },
   { title: "Emails de contact", icon: Mail, value: "contact-emails" },
   { title: "Composer Email", icon: Send, value: "email-composer" },
+  { title: "Emails programmés", icon: Clock, value: "scheduled-emails" },
+  { title: "Campagnes & Relances", icon: Inbox, value: "campaigns" },
 ];
 
 interface AppSidebarProps {
