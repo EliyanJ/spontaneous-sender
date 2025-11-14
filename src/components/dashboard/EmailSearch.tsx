@@ -51,6 +51,9 @@ export const EmailSearch = ({ onNavigateToContacts }: EmailSearchProps) => {
         emailsFound: data.emailsFound
       });
 
+      // Déclencher la mise à jour des entreprises pour que EmailComposer rafraîchisse
+      window.dispatchEvent(new CustomEvent('companies:updated'));
+
       toast({
         title: "Recherche terminée",
         description: `${data.emailsFound} emails trouvés pour ${data.processed} entreprises`,

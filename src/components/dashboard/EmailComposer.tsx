@@ -58,6 +58,16 @@ export const EmailComposer = () => {
     loadTemplates();
     loadCompanies();
     checkGmailConnection();
+
+    // Écouter les mises à jour des entreprises
+    const handleCompaniesUpdate = () => {
+      loadCompanies();
+    };
+    window.addEventListener('companies:updated', handleCompaniesUpdate);
+
+    return () => {
+      window.removeEventListener('companies:updated', handleCompaniesUpdate);
+    };
   }, []);
 
   const loadTemplates = async () => {
@@ -606,7 +616,28 @@ export const EmailComposer = () => {
               </div>
 
               <div>
-                <Label htmlFor="company-select">Depuis les contacts</Label>
+                <div className="flex items-center justify-between mb-2">
+                  <Label htmlFor="company-select">Depuis les contacts</Label>
+                  {companies.length > 0 && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        const allEmails = companies
+                          .filter((c) => c.selected_email)
+                          .map((c) => c.selected_email);
+                        const newRecipients = [...new Set([...recipients, ...allEmails])];
+                        setRecipients(newRecipients);
+                        toast({
+                          title: "Contacts ajoutés",
+                          description: `${allEmails.length} contact(s) ajouté(s)`,
+                        });
+                      }}
+                    >
+                      Sélectionner tous
+                    </Button>
+                  )}
+                </div>
                 <Select
                   onValueChange={(value) => {
                     const company = companies.find((c) => c.id === value);

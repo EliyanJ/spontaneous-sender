@@ -72,6 +72,7 @@ export const SearchCompanies = () => {
   const [sector, setSector] = useState("");
   const [ville, setVille] = useState("");
   const [minResults, setMinResults] = useState("20");
+  const [minEmployees, setMinEmployees] = useState("20");
   const handleSearch = async () => {
     if (!sector && !ville) {
       toast.error("Veuillez renseigner au moins un critère de recherche");
@@ -109,6 +110,11 @@ export const SearchCompanies = () => {
       // Localisation
       if (ville) {
         searchPayload.location = ville;
+      }
+
+      // Filtre salariés minimum
+      if (minEmployees) {
+        searchPayload.minEmployees = parseInt(minEmployees) || 0;
       }
 
       console.log('Recherche avec:', searchPayload);
@@ -281,6 +287,22 @@ export const SearchCompanies = () => {
                 value={minResults}
                 onChange={(e) => setMinResults(e.target.value)}
               />
+            </div>
+            <div className="space-y-2">
+              <Label>Nombre de salariés minimum</Label>
+              <Select value={minEmployees} onValueChange={setMinEmployees}>
+                <SelectTrigger className="bg-background">
+                  <SelectValue placeholder="Minimum de salariés" />
+                </SelectTrigger>
+                <SelectContent className="bg-background z-50">
+                  <SelectItem value="0">Tous (0+)</SelectItem>
+                  <SelectItem value="10">10+ salariés</SelectItem>
+                  <SelectItem value="20">20+ salariés</SelectItem>
+                  <SelectItem value="50">50+ salariés</SelectItem>
+                  <SelectItem value="100">100+ salariés</SelectItem>
+                  <SelectItem value="250">250+ salariés</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
           <Button onClick={handleSearch} disabled={loading} className="w-full">

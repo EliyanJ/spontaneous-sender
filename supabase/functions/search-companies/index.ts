@@ -11,7 +11,8 @@ const requestSchema = z.object({
   codeApe: z.string().max(10).optional(),
   location: z.string().max(100).optional(),
   nombre: z.number().int().min(1).max(200),
-  userId: z.string().uuid()
+  userId: z.string().uuid(),
+  minEmployees: z.number().int().min(0).optional().default(20)
 });
 
 function sanitizeError(error: any): { message: string; code?: string } {
@@ -88,6 +89,28 @@ async function sleep(ms: number) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+// Mapper le nombre minimum de salariés vers les codes de tranche
+function getEmployeeTranches(minEmployees: number): string {
+  const tranches = {
+    0: '00,01,02,03,11,12,21,22,31,32,41,42,51,52,53', // Tous
+    10: '11,12,21,22,31,32,41,42,51,52,53', // 10+
+    20: '12,21,22,31,32,41,42,51,52,53', // 20+
+    50: '21,22,31,32,41,42,51,52,53', // 50+
+    100: '22,31,32,41,42,51,52,53', // 100+
+    250: '41,42,51,52,53', // 250+
+  };
+  
+  // Trouver la tranche correspondante ou la plus proche inférieure
+  const keys = Object.keys(tranches).map(Number).sort((a, b) => b - a);
+  for (const key of keys) {
+    if (minEmployees >= key) {
+      return tranches[key as keyof typeof tranches];
+    }
+  }
+  
+  return tranches[20]; // Par défaut 20+
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -110,9 +133,9 @@ serve(async (req) => {
       );
     }
 
-    const { codeApe, location, nombre = 20, userId } = validationResult.data;
+    const { codeApe, location, nombre = 20, userId, minEmployees = 20 } = validationResult.data;
 
-    console.log('Recherche:', { codeApe, location, nombre, userId });
+    console.log('Recherche:', { codeApe, location, nombre, userId, minEmployees });
 
     // Récupérer la blacklist de l'utilisateur
     let blacklistedSirens: string[] = [];
@@ -134,7 +157,7 @@ serve(async (req) => {
       page: '1',
       est_entrepreneur_individuel: 'false',
       etat_administratif: 'A',
-      tranche_effectif_salarie: '12,21,22,31,32,41,42,51,52,53', // Min 20 salariés
+      tranche_effectif_salarie: getEmployeeTranches(minEmployees),
     };
 
     // Gestion du code APE
