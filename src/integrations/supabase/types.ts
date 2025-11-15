@@ -76,6 +76,7 @@ export type Database = {
           libelle_ape: string | null
           nature_juridique: string | null
           nom: string
+          notes: string | null
           pipeline_stage: string | null
           selected_email: string | null
           siren: string
@@ -97,6 +98,7 @@ export type Database = {
           libelle_ape?: string | null
           nature_juridique?: string | null
           nom: string
+          notes?: string | null
           pipeline_stage?: string | null
           selected_email?: string | null
           siren: string
@@ -118,6 +120,7 @@ export type Database = {
           libelle_ape?: string | null
           nature_juridique?: string | null
           nom?: string
+          notes?: string | null
           pipeline_stage?: string | null
           selected_email?: string | null
           siren?: string
