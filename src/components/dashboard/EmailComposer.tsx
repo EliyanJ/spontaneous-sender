@@ -56,6 +56,7 @@ export const EmailComposer = () => {
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [gmailConnected, setGmailConnected] = useState(false);
   const [checkingGmail, setCheckingGmail] = useState(true);
+  const [syncingHistory, setSyncingHistory] = useState(false);
   
   // Nouveaux états pour la programmation d'emails
   const [sendMode, setSendMode] = useState<'now' | 'scheduled'>('now');
@@ -442,6 +443,56 @@ export const EmailComposer = () => {
     }
   };
 
+  const handleSyncHistory = async () => {
+    if (!gmailConnected) {
+      toast({
+        title: "Gmail non connecté",
+        description: "Connectez votre compte Gmail d'abord",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setSyncingHistory(true);
+      const { data: session } = await supabase.auth.getSession();
+      
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/sync-gmail-history`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.session?.access_token}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to sync Gmail history");
+      }
+
+      const data = await response.json();
+
+      toast({
+        title: "Synchronisation réussie",
+        description: `${data.syncedCount} emails historiques ajoutés. Les entreprises correspondantes ne seront plus proposées.`,
+      });
+
+      // Recharger la liste des entreprises pour mettre à jour l'affichage
+      loadCompanies();
+    } catch (error: any) {
+      console.error("Error syncing Gmail history:", error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de synchroniser l'historique Gmail.",
+        variant: "destructive",
+      });
+    } finally {
+      setSyncingHistory(false);
+    }
+  };
+
   const handleScheduleEmail = async () => {
     if (recipients.length === 0) {
       toast({
@@ -547,9 +598,26 @@ export const EmailComposer = () => {
               <span>Vérification de la connexion Gmail...</span>
             </div>
           ) : gmailConnected ? (
-            <div className="flex items-center gap-2 text-green-600">
-              <Mail className="h-5 w-5" />
-              <span className="font-medium">Gmail connecté ✓</span>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-green-600">
+                <Mail className="h-5 w-5" />
+                <span className="font-medium">Gmail connecté ✓</span>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleSyncHistory}
+                disabled={syncingHistory}
+              >
+                {syncingHistory ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Synchronisation...
+                  </>
+                ) : (
+                  "Synchroniser historique Gmail"
+                )}
+              </Button>
             </div>
           ) : (
             <Alert variant="destructive">
