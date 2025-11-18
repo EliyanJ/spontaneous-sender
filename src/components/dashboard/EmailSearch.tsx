@@ -32,31 +32,69 @@ export const EmailSearch = ({ onNavigateToContacts }: EmailSearchProps) => {
     setSummary(null);
 
     try {
-      const { data, error } = await supabase.functions.invoke('find-company-emails');
+      let totalProcessed = 0;
+      let totalEmailsFound = 0;
+      let allResults: SearchResult[] = [];
+      let hasMore = true;
+      let batchCount = 0;
 
-      if (error) {
-        console.error('Error searching emails:', error);
-        toast({
-          title: "Erreur",
-          description: "Impossible de rechercher les emails. Veuillez réessayer.",
-          variant: "destructive",
+      // Traiter par batch de 50 entreprises pour éviter les timeouts
+      while (hasMore && batchCount < 10) { // Max 10 batches (500 entreprises)
+        batchCount++;
+        console.log(`Processing batch ${batchCount}...`);
+
+        const { data, error } = await supabase.functions.invoke('find-company-emails', {
+          body: { maxCompanies: 50 }
         });
-        return;
-      }
 
-      setResults(data.results || []);
-      setSummary({
-        processed: data.processed,
-        total: data.total,
-        emailsFound: data.emailsFound
-      });
+        if (error) {
+          console.error('Error searching emails:', error);
+          
+          // Si erreur de rate limit, on arrête et on affiche ce qu'on a trouvé
+          if (error.message?.includes('Rate limit')) {
+            toast({
+              title: "Limite de requêtes atteinte",
+              description: `${totalProcessed} entreprises traitées avant la limite. Réessayez dans quelques minutes.`,
+              variant: "destructive",
+            });
+            break;
+          }
+          
+          toast({
+            title: "Erreur",
+            description: error.message || "Impossible de rechercher les emails. Veuillez réessayer.",
+            variant: "destructive",
+          });
+          break;
+        }
+
+        totalProcessed += data.processed || 0;
+        totalEmailsFound += data.emailsFound || 0;
+        allResults = [...allResults, ...(data.results || [])];
+        hasMore = data.hasMore || false;
+
+        // Mise à jour des résultats et du résumé en temps réel
+        setResults(allResults);
+        setSummary({
+          processed: totalProcessed,
+          total: totalProcessed,
+          emailsFound: totalEmailsFound
+        });
+
+        if (hasMore) {
+          // Petite pause entre les batches
+          await new Promise(resolve => setTimeout(resolve, 2000));
+        }
+      }
 
       // Déclencher la mise à jour des entreprises pour que EmailComposer rafraîchisse
       window.dispatchEvent(new CustomEvent('companies:updated'));
 
       toast({
-        title: "Recherche terminée",
-        description: `${data.emailsFound} emails trouvés pour ${data.processed} entreprises`,
+        title: hasMore ? "Recherche partielle terminée" : "Recherche terminée",
+        description: hasMore 
+          ? `${totalEmailsFound} emails trouvés. Il reste des entreprises à traiter. Relancez la recherche.`
+          : `${totalEmailsFound} emails trouvés pour ${totalProcessed} entreprises`,
       });
 
     } catch (error) {
@@ -267,6 +305,18 @@ export const EmailSearch = ({ onNavigateToContacts }: EmailSearchProps) => {
                 <h4 className="font-medium">Recherche alternative</h4>
                 <p className="text-sm text-muted-foreground">
                   Si aucun email n'est trouvé sur le site, l'IA cherche sur des annuaires et sites partenaires
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex items-start gap-3">
+              <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <span className="text-xs font-bold text-primary">4</span>
+              </div>
+              <div>
+                <h4 className="font-medium">Traitement par batch</h4>
+                <p className="text-sm text-muted-foreground">
+                  Pour éviter les timeouts, le système traite 50 entreprises à la fois. Si vous avez plus d'entreprises, relancez simplement la recherche.
                 </p>
               </div>
             </div>
