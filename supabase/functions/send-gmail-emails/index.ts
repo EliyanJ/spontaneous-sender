@@ -90,7 +90,10 @@ serve(async (req) => {
       );
     }
 
-    const { recipients, subject, body, attachments } = validationResult.data;
+    const { recipients, subject, body: rawBody, attachments } = validationResult.data;
+
+    // Formater le body avec des retours à la ligne HTML
+    const body = rawBody.replace(/\n/g, '<br>');
 
     // Check rate limit
     await checkRateLimit(supabaseClient, user.id, 'send-gmail-emails', 50);

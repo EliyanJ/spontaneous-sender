@@ -27,7 +27,10 @@ serve(async (req) => {
       throw new Error('Non authentifié');
     }
 
-    const { recipients, subject, body, scheduledFor, notifyOnSent } = await req.json();
+    const { recipients, subject, body: rawBody, scheduledFor, notifyOnSent } = await req.json();
+
+    // Formater le body avec des retours à la ligne HTML
+    const body = rawBody.replace(/\n/g, '<br>');
 
     // Récupérer le token Gmail
     const { data: tokenData } = await supabase
