@@ -152,40 +152,51 @@ async function findCompanyEmailsWithAI({
     return { website: null, emails: [] };
   }
 
-  const prompt = `Tu es un expert en recherche d'informations d'entreprises sur internet.
+  const prompt = `Tu es un expert en recherche d'informations d'entreprises sur Internet. Ta mission est simple : pour une entreprise fournie, trouver son SITE WEB OFFICIEL et EXTRAIRE TOUS LES EMAILS PROFESSIONNELS visibles sur ce site.
 
-ENTREPRISE À RECHERCHER:
+INPUT fourni :
 - Nom: ${sanitizeForAI(nom)}
 - Ville: ${sanitizeForAI(ville)}
-- SIREN: ${sanitizeForAI(siren)}
 - Code APE: ${sanitizeForAI(code_ape)}
 - Secteur d'activité: ${sanitizeForAI(libelle_ape)}
 - Adresse: ${sanitizeForAI(adresse)}
 
-MISSION:
-1. Fais une recherche web pour trouver le SITE WEB OFFICIEL de cette entreprise
-2. Une fois le site trouvé, extrait TOUS les emails de contact professionnels présents (contact@, info@, commercial@, rh@, recrutement@, bonjour@, hello@, etc.)
+OBJECTIF :
+Retourner un JSON strict contenant le site officiel, la liste d'e-mails trouvés et un niveau de confiance.
 
-RÈGLES:
-- Cherche d'abord avec le nom exact + la ville
-- Si pas de résultat, cherche avec le nom + SIREN
-- Si pas de résultat, cherche avec le nom + secteur d'activité
-- Privilégie les sites officiels (pas LinkedIn, Facebook, ou annuaires)
-- Extrait TOUS les emails trouvés (sauf noreply@, no-reply@, newsletter@, unsubscribe@)
-- Vérifie que les emails sont valides (format email@domaine.extension)
+PROCÉDURE DE RECHERCHE :
+1. Faire une recherche web avec :
+   - "<Nom exact> <Ville>"
+   - "<Nom exact> <secteur d'activité>"
+   - "<Nom exact> site officiel"
+2. Identifier le site officiel :
+   - Privilégier les sites sur domaine de marque (ex : nom-entreprise.fr / .com)
+   - Vérifier cohérence avec adresse, activité, mentions légales
+   - Ne PAS utiliser LinkedIn, Facebook, Instagram ou annuaires comme site officiel
+3. Une fois le site officiel trouvé :
+   - Extraire les emails visibles depuis :
+     - Page Contact
+     - Footer
+     - Mentions légales
+     - Page "À propos", "Recrutement", etc.
+4. Emails acceptés :
+   - contact@, info@, bonjour@, hello@, commercial@, support@, rh@, recrutement@, etc.
+5. Emails à EXCLURE :
+   - noreply@, no-reply@, newsletter@, unsubscribe@, mailer-daemon@
+6. Valider le format des emails (email@domaine.extension)
+7. ne JAMAIS inventer d'emails ou deviner un domaine : seuls les emails réellement vus sur le site sont acceptés.
 
-RÉPONSE ATTENDUE (JSON strict):
+SCORE DE CONFIANCE :
+- high : site officiel certain + email trouvé sur page contact / footer / mentions légales
+- medium : site officiel probable mais un seul email générique ou pas de mentions légales
+- low : site non confirmé mais cohérent (ex : petite boutique sans mentions légales visibles)
+- none : aucun site officiel trouvé
+
+FORMAT DE RÉPONSE (JSON strict) :
 {
-  "website": "https://site-officiel.fr",
-  "emails": ["contact@example.fr", "info@example.fr"],
-  "confidence": "high" | "medium" | "low"
-}
-
-Si aucun site trouvé:
-{
-  "website": null,
-  "emails": [],
-  "confidence": "none"
+  "website": "https://site-officiel.fr" | null,
+  "emails": ["email1@example.fr", "email2@example.fr"],
+  "confidence": "high" | "medium" | "low" | "none"
 }`;
 
   try {
@@ -200,7 +211,7 @@ Si aucun site trouvé:
         messages: [
           {
             role: "system",
-            content: "Tu es un assistant de recherche d'informations d'entreprises. Tu utilises la recherche web pour trouver des sites officiels et extraire des emails. Tu réponds UNIQUEMENT en JSON valide.",
+            content: "Tu es un expert en recherche d'informations d'entreprises sur Internet. Tu utilises la recherche web pour trouver des sites officiels et extraire des emails. Tu réponds UNIQUEMENT en JSON valide.",
           },
           {
             role: "user",
