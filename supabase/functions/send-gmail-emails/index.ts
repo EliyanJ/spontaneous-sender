@@ -9,7 +9,7 @@ const corsHeaders = {
 
 // Input validation schema
 const emailSchema = z.object({
-  recipients: z.array(z.string().email()).min(1).max(100),
+  recipients: z.array(z.string().email()).min(1).max(500),
   subject: z.string().min(1).max(200).refine(
     (s) => !/[\r\n]/.test(s),
     { message: "Subject cannot contain newlines" }
@@ -96,7 +96,7 @@ serve(async (req) => {
     const body = rawBody.replace(/\n/g, '<br>');
 
     // Check rate limit
-    await checkRateLimit(supabaseClient, user.id, 'send-gmail-emails', 50);
+    await checkRateLimit(supabaseClient, user.id, 'send-gmail-emails', 200);
 
     console.log(`Sending emails to ${recipients.length} recipients...`);
 
