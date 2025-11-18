@@ -160,7 +160,7 @@ serve(async (req) => {
           `To: ${recipient}`,
           `Subject: ${subject}`,
           "MIME-Version: 1.0",
-          'Content-Type: text/html; charset="UTF-8"',
+          'Content-Type: text/html; charset=utf-8',
           "",
           body,
         ].join("\r\n");
@@ -175,7 +175,7 @@ serve(async (req) => {
             `Content-Type: multipart/mixed; boundary="${boundary}"`,
             "",
             `--${boundary}`,
-            'Content-Type: text/html; charset="UTF-8"',
+            'Content-Type: text/html; charset=utf-8',
             "",
             body,
             "",

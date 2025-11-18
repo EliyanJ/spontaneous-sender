@@ -159,11 +159,13 @@ serve(async (req) => {
         const emailContent = [
           `To: ${company.selected_email}`,
           `Subject: ${subject}`,
+          "MIME-Version: 1.0",
+          "Content-Type: text/html; charset=utf-8",
           "",
           body,
         ].join("\r\n");
 
-        const encodedMessage = btoa(emailContent)
+        const encodedMessage = btoa(unescape(encodeURIComponent(emailContent)))
           .replace(/\+/g, "-")
           .replace(/\//g, "_")
           .replace(/=+$/, "");
