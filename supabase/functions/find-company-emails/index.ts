@@ -7,9 +7,9 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Input validation schema - no limit, process all companies without emails
+// Input validation schema - process companies in batches to avoid timeouts
 const requestSchema = z.object({
-  maxCompanies: z.number().int().min(1).max(10000).optional().default(10000)
+  maxCompanies: z.number().int().min(1).max(50).optional().default(50)
 });
 
 // Rate limiting function
@@ -314,8 +314,8 @@ serve(async (req) => {
 
     const { maxCompanies } = validationResult.data;
 
-    // Check rate limit (stricter for AI-heavy operations)
-    await checkRateLimit(supabase, user.id, 'find-company-emails', 10);
+    // Check rate limit (increased for batch processing)
+    await checkRateLimit(supabase, user.id, 'find-company-emails', 100);
 
     // Récupérer uniquement les entreprises sans emails (selected_email est null)
     const { data: companies, error: companiesError } = await supabase
@@ -331,10 +331,11 @@ serve(async (req) => {
     if (!companies || companies.length === 0) {
       return new Response(
         JSON.stringify({
-          message: "Aucune entreprise trouvée. Ajoutez des entreprises depuis l'onglet Recherche.",
+          message: "Toutes vos entreprises ont déjà des emails ou aucune entreprise n'a été trouvée.",
           processed: 0,
           total: 0,
           emailsFound: 0,
+          hasMore: false,
           results: [],
         }),
         {
@@ -342,6 +343,15 @@ serve(async (req) => {
         }
       );
     }
+
+    // Vérifier s'il y a plus d'entreprises à traiter
+    const { count: totalCount } = await supabase
+      .from("companies")
+      .select('*', { count: 'exact', head: true })
+      .eq("user_id", user.id)
+      .is("selected_email", null);
+
+    const hasMore = (totalCount ?? 0) > companies.length;
 
     console.log(`[SEARCH] Starting AI-powered search for ${companies.length} companies`);
 
@@ -428,10 +438,14 @@ serve(async (req) => {
 
     return new Response(
       JSON.stringify({
-        message: "Recherche d'emails terminée",
+        message: hasMore 
+          ? `Batch terminé. ${processed} entreprises traitées, ${emailsFound} emails trouvés. Il reste des entreprises à traiter.`
+          : "Recherche d'emails terminée pour toutes vos entreprises.",
         processed,
         total: companies.length,
+        totalRemaining: (totalCount ?? 0) - processed,
         emailsFound,
+        hasMore,
         results,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
