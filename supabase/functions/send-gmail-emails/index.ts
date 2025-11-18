@@ -224,6 +224,21 @@ serve(async (req) => {
         } else {
           console.log(`Email sent successfully to ${recipient}`);
           successCount++;
+          
+          // Enregistrer l'envoi dans email_campaigns pour l'historique
+          try {
+            await supabaseClient.from("email_campaigns").insert({
+              user_id: user.id,
+              recipient: recipient,
+              subject: subject,
+              body: body,
+              sent_at: new Date().toISOString(),
+              status: 'sent'
+            });
+          } catch (campaignError: any) {
+            console.error(`Failed to log campaign for ${recipient}:`, campaignError);
+            // Ne pas bloquer l'envoi si le log échoue
+          }
         }
       } catch (error: any) {
         console.error(`Error sending to ${recipient}:`, error);
