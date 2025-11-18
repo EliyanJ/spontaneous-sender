@@ -38,6 +38,7 @@ interface CompanyEmail {
   id: string;
   nom: string;
   selected_email: string;
+  siren: string;
 }
 
 export const EmailComposer = () => {
@@ -92,9 +93,28 @@ export const EmailComposer = () => {
   };
 
   const loadCompanies = async () => {
+    // Récupérer les emails déjà contactés via email_campaigns
+    const { data: campaignsData } = await supabase
+      .from("email_campaigns")
+      .select("recipient");
+    
+    const contactedEmails = new Set(
+      (campaignsData || []).map(c => c.recipient.toLowerCase())
+    );
+
+    // Récupérer les SIRENs des entreprises blacklistées
+    const { data: blacklistData } = await supabase
+      .from("user_company_blacklist")
+      .select("company_siren");
+    
+    const blacklistedSirens = new Set(
+      (blacklistData || []).map(b => b.company_siren)
+    );
+
+    // Récupérer les entreprises avec email
     const { data, error } = await supabase
       .from("companies")
-      .select("id, nom, selected_email")
+      .select("id, nom, selected_email, siren")
       .not("selected_email", "is", null);
 
     if (error) {
@@ -102,7 +122,13 @@ export const EmailComposer = () => {
       return;
     }
 
-    setCompanies(data || []);
+    // Filtrer les entreprises déjà contactées (via email ou via blacklist)
+    const filteredCompanies = (data || []).filter(company => 
+      !contactedEmails.has(company.selected_email.toLowerCase()) &&
+      !blacklistedSirens.has(company.siren)
+    );
+
+    setCompanies(filteredCompanies);
   };
 
   const checkGmailConnection = async () => {
