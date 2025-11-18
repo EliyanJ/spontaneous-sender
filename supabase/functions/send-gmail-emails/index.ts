@@ -154,23 +154,24 @@ serve(async (req) => {
     let failureCount = 0;
     const errors: string[] = [];
 
-    for (const recipient of recipients) {
-      try {
-        let emailContent = [
-          `To: ${recipient}`,
-          `Subject: ${subject}`,
-          "MIME-Version: 1.0",
-          'Content-Type: text/html; charset=utf-8',
-          "",
-          body,
-        ].join("\r\n");
+      for (const recipient of recipients) {
+        try {
+          const encodedSubject = `=?UTF-8?B?${btoa(unescape(encodeURIComponent(subject)))}?=`;
+          let emailContent = [
+            `To: ${recipient}`,
+            `Subject: ${encodedSubject}`,
+            "MIME-Version: 1.0",
+            'Content-Type: text/html; charset=utf-8',
+            "",
+            body,
+          ].join("\r\n");
 
         // Handle attachments if present
         if (attachments && attachments.length > 0) {
           const boundary = "boundary_" + Math.random().toString(36).substring(7);
           emailContent = [
             `To: ${recipient}`,
-            `Subject: ${subject}`,
+            `Subject: ${encodedSubject}`,
             "MIME-Version: 1.0",
             `Content-Type: multipart/mixed; boundary="${boundary}"`,
             "",
