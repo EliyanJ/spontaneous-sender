@@ -1,230 +1,197 @@
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { BarChart3, TrendingUp, Building2, Target, CheckCircle2, XCircle } from "lucide-react";
-import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { CheckCircle2, XCircle, Mail, TrendingUp, AlertTriangle } from "lucide-react";
 
-export function Statistics() {
-  const { data: companies } = useQuery({
-    queryKey: ["companies-stats"],
-    queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("User not authenticated");
-      
-      const { data, error } = await supabase
-        .from("companies")
-        .select("*")
-        .eq("user_id", user.id);
-      if (error) throw error;
-      return data;
-    },
+export const Statistics = () => {
+  const { toast } = useToast();
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState({
+    totalSent: 0,
+    successful: 0,
+    bounces: 0,
+    pending: 0,
+    successRate: 0,
   });
 
-  const totalCompanies = companies?.length || 0;
-  
-  const parPhase = {
-    nouveau: companies?.filter(c => c.pipeline_stage === 'nouveau').length || 0,
-    candidature_envoyee: companies?.filter(c => c.pipeline_stage === 'candidature_envoyee').length || 0,
-    en_attente: companies?.filter(c => c.pipeline_stage === 'en_attente').length || 0,
-    relance: companies?.filter(c => c.pipeline_stage === 'relance').length || 0,
-    entretien: companies?.filter(c => c.pipeline_stage === 'entretien').length || 0,
-    offre_recue: companies?.filter(c => c.pipeline_stage === 'offre_recue').length || 0,
-    refuse: companies?.filter(c => c.pipeline_stage === 'refuse').length || 0,
-    accepte: companies?.filter(c => c.pipeline_stage === 'accepte').length || 0,
+  useEffect(() => {
+    loadStatistics();
+  }, []);
+
+  const loadStatistics = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      // Récupérer toutes les campagnes
+      const { data: campaigns, error } = await supabase
+        .from("email_campaigns")
+        .select("status")
+        .eq("user_id", user.id);
+
+      if (error) throw error;
+
+      if (campaigns) {
+        const totalSent = campaigns.filter(c => c.status === 'sent' || c.status === 'bounce').length;
+        const successful = campaigns.filter(c => c.status === 'sent').length;
+        const bounces = campaigns.filter(c => c.status === 'bounce').length;
+        const pending = campaigns.filter(c => c.status === 'pending').length;
+        const successRate = totalSent > 0 ? (successful / totalSent) * 100 : 0;
+
+        setStats({
+          totalSent,
+          successful,
+          bounces,
+          pending,
+          successRate,
+        });
+      }
+    } catch (error) {
+      console.error('Erreur chargement statistiques:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de charger les statistiques",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const enCours = parPhase.candidature_envoyee + parPhase.en_attente + parPhase.relance + parPhase.entretien;
-  const tauxSucces = totalCompanies > 0 ? ((parPhase.accepte / totalCompanies) * 100).toFixed(1) : 0;
-  const tauxRefus = totalCompanies > 0 ? ((parPhase.refuse / totalCompanies) * 100).toFixed(1) : 0;
-
-  // Données pour le graphique en barres
-  const barChartData = [
-    { name: "Nouveau", value: parPhase.nouveau, fill: "#3b82f6" },
-    { name: "Candidature", value: parPhase.candidature_envoyee, fill: "#a855f7" },
-    { name: "En attente", value: parPhase.en_attente, fill: "#eab308" },
-    { name: "Relance", value: parPhase.relance, fill: "#f97316" },
-    { name: "Entretien", value: parPhase.entretien, fill: "#6366f1" },
-    { name: "Offre reçue", value: parPhase.offre_recue, fill: "#22c55e" },
-    { name: "Refusé", value: parPhase.refuse, fill: "#ef4444" },
-    { name: "Accepté", value: parPhase.accepte, fill: "#10b981" },
-  ];
-
-  // Données pour le graphique camembert
-  const pieChartData = [
-    { name: "Accepté", value: parPhase.accepte, color: "#10b981" },
-    { name: "Refusé", value: parPhase.refuse, color: "#ef4444" },
-    { name: "En cours", value: enCours, color: "#3b82f6" },
-    { name: "Nouveau", value: parPhase.nouveau, color: "#94a3b8" },
-    { name: "Offre reçue", value: parPhase.offre_recue, color: "#22c55e" },
-  ].filter(item => item.value > 0);
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Statistiques</h1>
+          <p className="text-muted-foreground">Chargement...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-3xl font-bold tracking-tight">Statistiques</h2>
-        <p className="text-muted-foreground">Vue d'ensemble de vos candidatures</p>
+        <h1 className="text-3xl font-bold tracking-tight">Statistiques d'envoi</h1>
+        <p className="text-muted-foreground">
+          Suivez les performances réelles de vos campagnes d'emails
+        </p>
       </div>
 
-      {/* Statistiques principales */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Entreprises</CardTitle>
-            <Building2 className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Total envoyés</CardTitle>
+            <Mail className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalCompanies}</div>
+            <div className="text-2xl font-bold">{stats.totalSent}</div>
             <p className="text-xs text-muted-foreground">
-              Dans votre pipeline
+              Emails envoyés au total
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">En cours</CardTitle>
-            <Target className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Réussis</CardTitle>
+            <CheckCircle2 className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{enCours}</div>
+            <div className="text-2xl font-bold text-green-600">{stats.successful}</div>
             <p className="text-xs text-muted-foreground">
-              Candidatures actives
+              Emails délivrés avec succès
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Taux de Réponse</CardTitle>
+            <CardTitle className="text-sm font-medium">Bounces</CardTitle>
+            <XCircle className="h-4 w-4 text-red-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-red-600">{stats.bounces}</div>
+            <p className="text-xs text-muted-foreground">
+              Emails non délivrés
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Taux de succès</CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">{tauxSucces}%</div>
+            <div className="text-2xl font-bold">{stats.successRate.toFixed(1)}%</div>
             <p className="text-xs text-muted-foreground">
-              {parPhase.accepte} acceptées
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Taux de Refus</CardTitle>
-            <BarChart3 className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-600">{tauxRefus}%</div>
-            <p className="text-xs text-muted-foreground">
-              {parPhase.refuse} refusées
+              Emails réellement délivrés
             </p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Graphiques */}
-      <div className="grid gap-6 md:grid-cols-2">
-        {/* Graphique en barres */}
-        <Card className="border-0 shadow-lg">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <BarChart3 className="h-5 w-5 text-primary" />
-              Répartition par Phase
-            </CardTitle>
-            <CardDescription>Distribution des entreprises dans votre pipeline</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={barChartData}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                <XAxis 
-                  dataKey="name" 
-                  className="text-xs"
-                  angle={-45}
-                  textAnchor="end"
-                  height={80}
-                />
-                <YAxis className="text-xs" />
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: 'hsl(var(--card))', 
-                    border: '1px solid hsl(var(--border))',
-                    borderRadius: '8px'
-                  }}
-                />
-                <Bar dataKey="value" radius={[8, 8, 0, 0]}>
-                  {barChartData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.fill} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-
-        {/* Graphique camembert */}
-        <Card className="border-0 shadow-lg">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Target className="h-5 w-5 text-primary" />
-              Vue d'ensemble
-            </CardTitle>
-            <CardDescription>Statut global de vos candidatures</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={pieChartData}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                  outerRadius={80}
-                  fill="#8884d8"
-                  dataKey="value"
-                >
-                  {pieChartData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: 'hsl(var(--card))', 
-                    border: '1px solid hsl(var(--border))',
-                    borderRadius: '8px'
-                  }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Détails par phase */}
-      <Card className="border-0 shadow-lg">
+      <Card>
         <CardHeader>
-          <CardTitle>Détails par Phase</CardTitle>
-          <CardDescription>Vue détaillée de toutes les phases du pipeline</CardDescription>
+          <CardTitle>Détails des envois</CardTitle>
+          <CardDescription>
+            Vue d'ensemble de l'état de vos campagnes
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {barChartData.map((phase) => (
-              <div 
-                key={phase.name} 
-                className="p-4 rounded-lg border border-border hover:shadow-md transition-shadow"
-                style={{ borderLeftWidth: '4px', borderLeftColor: phase.fill }}
-              >
-                <p className="text-sm text-muted-foreground mb-1">{phase.name}</p>
-                <p className="text-3xl font-bold" style={{ color: phase.fill }}>
-                  {phase.value}
-                </p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {totalCompanies > 0 ? `${((phase.value / totalCompanies) * 100).toFixed(1)}%` : '0%'}
-                </p>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <CheckCircle2 className="h-4 w-4 text-green-600" />
+                <span className="text-sm font-medium">Emails délivrés</span>
               </div>
-            ))}
+              <span className="text-sm font-bold">{stats.successful}</span>
+            </div>
+            
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <XCircle className="h-4 w-4 text-red-600" />
+                <span className="text-sm font-medium">Emails non délivrés (bounces)</span>
+              </div>
+              <span className="text-sm font-bold">{stats.bounces}</span>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <AlertTriangle className="h-4 w-4 text-yellow-600" />
+                <span className="text-sm font-medium">En attente</span>
+              </div>
+              <span className="text-sm font-bold">{stats.pending}</span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Gestion des bounces</CardTitle>
+          <CardDescription>
+            Les emails non délivrés sont automatiquement détectés
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2 text-sm">
+            <p>
+              Le système vérifie automatiquement votre boîte mail pour détecter les bounces
+              (emails non délivrés).
+            </p>
+            <p>
+              Lorsqu'un email bounce et qu'une entreprise possède d'autres adresses email,
+              le système retente automatiquement l'envoi avec une adresse alternative.
+            </p>
+            <p className="text-muted-foreground">
+              Vous recevrez une notification pour chaque bounce détecté et chaque retry effectué.
+            </p>
           </div>
         </CardContent>
       </Card>
     </div>
   );
-}
+};
