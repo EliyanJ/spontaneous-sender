@@ -93,7 +93,7 @@ export const EmailSearch = ({ onNavigateToContacts }: EmailSearchProps) => {
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Recherche d'Emails</h2>
           <p className="text-muted-foreground mt-2">
-            Recherchez automatiquement les emails de contact de vos entreprises sauvegardées
+            Recherchez automatiquement les emails de toutes vos entreprises sauvegardées qui n'ont pas encore d'email
           </p>
         </div>
         <Button 
@@ -231,7 +231,7 @@ export const EmailSearch = ({ onNavigateToContacts }: EmailSearchProps) => {
           <CardHeader>
             <CardTitle>Comment ça fonctionne ?</CardTitle>
             <CardDescription>
-              Notre IA va analyser toutes vos entreprises sauvegardées et:
+              Notre IA va analyser toutes vos entreprises sauvegardées qui n'ont pas encore d'email et:
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">

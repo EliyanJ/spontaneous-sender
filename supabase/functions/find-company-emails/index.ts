@@ -7,9 +7,9 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Input validation schema
+// Input validation schema - no limit, process all companies without emails
 const requestSchema = z.object({
-  maxCompanies: z.number().int().min(1).max(50).optional().default(15)
+  maxCompanies: z.number().int().min(1).max(10000).optional().default(10000)
 });
 
 // Rate limiting function
@@ -317,11 +317,12 @@ serve(async (req) => {
     // Check rate limit (stricter for AI-heavy operations)
     await checkRateLimit(supabase, user.id, 'find-company-emails', 10);
 
-    // Récupérer les entreprises avec toutes les infos
+    // Récupérer uniquement les entreprises sans emails (selected_email est null)
     const { data: companies, error: companiesError } = await supabase
       .from("companies")
       .select("id, nom, ville, siren, code_ape, libelle_ape, adresse")
       .eq("user_id", user.id)
+      .is("selected_email", null)
       .order("created_at", { ascending: false })
       .limit(maxCompanies);
 
