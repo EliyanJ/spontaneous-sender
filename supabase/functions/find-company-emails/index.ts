@@ -48,9 +48,91 @@ interface CompanyRow {
 }
 
 const HUNTER_API_KEY = Deno.env.get("HUNTER_IO_API_KEY");
+const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
 
 async function delay(ms: number) {
   return new Promise((r) => setTimeout(r, ms));
+}
+
+async function guessCompanyDomain(company: CompanyRow): Promise<string | null> {
+  if (!LOVABLE_API_KEY) {
+    console.error("[AI] LOVABLE_API_KEY not configured");
+    return null;
+  }
+
+  const prompt = `Tu es un expert en identification de noms de domaine d'entreprises françaises.
+
+ENTREPRISE:
+Nom légal: ${company.nom}
+Ville: ${company.ville || "N/A"}
+Code APE: ${company.code_ape || "N/A"} - ${company.libelle_ape || "N/A"}
+
+MISSION:
+Devine le nom de domaine le plus probable de cette entreprise (sans http://, juste le domaine).
+
+RÈGLES STRICTES:
+1. Si c'est une grande entreprise connue → utilise le nom de marque (ex: "THALES LAS FRANCE" → "thalesgroup.com")
+2. Si c'est une PME/TPE → essaie des variantes logiques:
+   - Nom simplifié + .fr (ex: "SARL DUPONT" → "dupont.fr")
+   - Acronyme + .fr (ex: "SA J.C.E." → "jce.fr" ou "sacje.fr")
+   - Nom-ville + .fr (ex: "GARAGE MARTIN Lyon" → "garagemartin-lyon.fr")
+3. Si tu n'es vraiment PAS SÛR → réponds exactement "UNKNOWN"
+4. TOUJOURS privilégier .fr pour les entreprises françaises sauf grandes marques internationales
+
+EXEMPLES:
+- "DEICHMANN CHAUSSURES" → "deichmann.fr"
+- "BNP PARIBAS ANTILLES GUYANE" → "bnpparibas.com"
+- "ASSOCIATION LES AMITIES D'ARMOR" → "UNKNOWN" (trop incertain)
+- "VC TECHNOLOGY" → "vctechnology.fr" (tentative raisonnable)
+
+RÉPONSE ATTENDUE:
+Juste le domaine (exemple: "thalesgroup.com") ou "UNKNOWN"`;
+
+  try {
+    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "google/gemini-2.5-flash",
+        messages: [
+          {
+            role: "system",
+            content: "Tu réponds UNIQUEMENT avec le nom de domaine ou 'UNKNOWN'. Aucun texte supplémentaire.",
+          },
+          {
+            role: "user",
+            content: prompt,
+          },
+        ],
+        temperature: 0.2,
+      }),
+    });
+
+    if (!response.ok) {
+      console.error("[AI] Domain guess error:", response.status);
+      return null;
+    }
+
+    const data = await response.json();
+    const guess = data.choices?.[0]?.message?.content?.trim().toLowerCase() || "";
+    
+    if (guess === "unknown" || !guess || guess.includes(" ")) {
+      console.log(`[AI] No confident guess for ${company.nom}`);
+      return null;
+    }
+
+    // Nettoyer le domaine
+    const cleanDomain = guess.replace(/^(https?:\/\/)?(www\.)?/, '').replace(/\/$/, '');
+    console.log(`[AI] Guessed domain for ${company.nom}: ${cleanDomain}`);
+    
+    return cleanDomain;
+  } catch (error) {
+    console.error(`[AI] Error guessing domain for ${company.nom}:`, error);
+    return null;
+  }
 }
 
 function selectBestEmail(emails: Array<{ value: string; type: string }>): string {
@@ -84,7 +166,7 @@ async function findCompanyWithHunter(company: CompanyRow): Promise<{
       website: null,
       emails: [],
       confidence: "none",
-      source: "hunter",
+      source: "hunter-ai",
       error: "API key not configured"
     };
   }
@@ -92,91 +174,120 @@ async function findCompanyWithHunter(company: CompanyRow): Promise<{
   console.log(`[Hunter.io] Searching for: ${company.nom} (${company.ville || 'N/A'})`);
 
   try {
-    // Step 1: Company Search to find domain
-    const searchQuery = company.ville 
-      ? `${company.nom} ${company.ville} France`
-      : `${company.nom} France`;
+    // Step 1: Use AI to guess domain
+    const guessedDomain = await guessCompanyDomain(company);
     
-    const companySearchUrl = `https://api.hunter.io/v2/domain-search?company=${encodeURIComponent(searchQuery)}&api_key=${HUNTER_API_KEY}&limit=1`;
-    
-    console.log(`[Hunter.io] Company search for: ${searchQuery}`);
-    const companyResponse = await fetch(companySearchUrl);
-    
-    if (!companyResponse.ok) {
-      const errorText = await companyResponse.text();
-      console.error(`[Hunter.io] Company search error (${companyResponse.status}):`, errorText);
+    let domain: string | null = null;
+
+    if (guessedDomain) {
+      // AI has a guess, verify with Hunter.io Domain Search directly
+      console.log(`[Hunter.io] Testing AI guess: ${guessedDomain}`);
       
-      if (companyResponse.status === 429) {
+      const domainSearchUrl = `https://api.hunter.io/v2/domain-search?domain=${guessedDomain}&api_key=${HUNTER_API_KEY}&limit=20`;
+      const domainResponse = await fetch(domainSearchUrl);
+      
+      if (domainResponse.ok) {
+        const domainData = await domainResponse.json();
+        
+        if (domainData.data?.domain) {
+          domain = domainData.data.domain;
+          console.log(`[Hunter.io] ✅ AI guess verified: ${domain}`);
+        } else {
+          console.log(`[Hunter.io] ❌ AI guess incorrect, domain not found`);
+        }
+      } else {
+        console.log(`[Hunter.io] ❌ AI guess incorrect or API error`);
+      }
+    }
+
+    // Step 2: If AI didn't guess or guess was wrong, fallback to Company Search
+    if (!domain) {
+      console.log(`[Hunter.io] Falling back to Company Search`);
+      
+      const searchQuery = company.ville 
+        ? `${company.nom} ${company.ville} France`
+        : `${company.nom} France`;
+      
+      const companySearchUrl = `https://api.hunter.io/v2/domain-search?company=${encodeURIComponent(searchQuery)}&api_key=${HUNTER_API_KEY}&limit=1`;
+      
+      const companyResponse = await fetch(companySearchUrl);
+      
+      if (!companyResponse.ok) {
+        const errorText = await companyResponse.text();
+        console.error(`[Hunter.io] Company search error (${companyResponse.status}):`, errorText);
+        
+        if (companyResponse.status === 429) {
+          return {
+            website: null,
+            emails: [],
+            confidence: "none",
+            source: "hunter-ai",
+            error: "Rate limit exceeded"
+          };
+        }
+        
         return {
           website: null,
           emails: [],
           confidence: "none",
-          source: "hunter",
-          error: "Rate limit exceeded"
+          source: "hunter-ai",
+          error: `API error: ${companyResponse.status}`
         };
       }
+
+      const companyData = await companyResponse.json();
       
-      return {
-        website: null,
-        emails: [],
-        confidence: "none",
-        source: "hunter",
-        error: `API error: ${companyResponse.status}`
-      };
-    }
+      if (!companyData.data?.domain) {
+        console.log(`[Hunter.io] No domain found for ${company.nom}`);
+        return {
+          website: null,
+          emails: [],
+          confidence: "none",
+          source: "hunter-ai",
+          error: "No domain found"
+        };
+      }
 
-    const companyData = await companyResponse.json();
-    
-    if (!companyData.data?.domain) {
-      console.log(`[Hunter.io] No domain found for ${company.nom}`);
-      return {
-        website: null,
-        emails: [],
-        confidence: "none",
-        source: "hunter",
-        error: "No domain found"
-      };
+      domain = companyData.data.domain;
+      console.log(`[Hunter.io] Domain found via search: ${domain}`);
     }
-
-    const domain = companyData.data.domain;
-    console.log(`[Hunter.io] Domain found: ${domain}`);
 
     // Small delay to respect rate limits
     await delay(1000);
 
-    // Step 2: Domain Search to get emails
+    // Step 3: Get emails from the domain
     const domainSearchUrl = `https://api.hunter.io/v2/domain-search?domain=${domain}&api_key=${HUNTER_API_KEY}&limit=20`;
     
-    console.log(`[Hunter.io] Domain search for: ${domain}`);
-    const domainResponse = await fetch(domainSearchUrl);
+    console.log(`[Hunter.io] Domain search for emails: ${domain}`);
+    const emailResponse = await fetch(domainSearchUrl);
     
-    if (!domainResponse.ok) {
-      const errorText = await domainResponse.text();
-      console.error(`[Hunter.io] Domain search error (${domainResponse.status}):`, errorText);
+    if (!emailResponse.ok) {
+      const errorText = await emailResponse.text();
+      console.error(`[Hunter.io] Domain search error (${emailResponse.status}):`, errorText);
       
       return {
         website: `https://${domain}`,
         emails: [],
         confidence: "low",
-        source: "hunter",
-        error: `Failed to get emails: ${domainResponse.status}`
+        source: "hunter-ai",
+        error: `Failed to get emails: ${emailResponse.status}`
       };
     }
 
-    const domainData = await domainResponse.json();
+    const emailData = await emailResponse.json();
     
-    if (!domainData.data?.emails || domainData.data.emails.length === 0) {
+    if (!emailData.data?.emails || emailData.data.emails.length === 0) {
       console.log(`[Hunter.io] No emails found for ${domain}`);
       return {
         website: `https://${domain}`,
         emails: [],
         confidence: "low",
-        source: "hunter",
+        source: "hunter-ai",
         error: "No emails found"
       };
     }
 
-    const emails = domainData.data.emails
+    const emails = emailData.data.emails
       .filter((e: any) => e.value && e.confidence && e.confidence >= 50)
       .map((e: any) => e.value);
 
@@ -188,7 +299,7 @@ async function findCompanyWithHunter(company: CompanyRow): Promise<{
       website: `https://${domain}`,
       emails,
       confidence,
-      source: "hunter"
+      source: "hunter-ai"
     };
 
   } catch (error) {
@@ -197,7 +308,7 @@ async function findCompanyWithHunter(company: CompanyRow): Promise<{
       website: null,
       emails: [],
       confidence: "none",
-      source: "hunter",
+      source: "hunter-ai",
       error: error instanceof Error ? error.message : "Unknown error"
     };
   }
