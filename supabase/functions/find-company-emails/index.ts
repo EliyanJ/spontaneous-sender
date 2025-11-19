@@ -7,13 +7,11 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Input validation schema - process companies in batches to avoid timeouts
 const requestSchema = z.object({
-  maxCompanies: z.number().int().min(1).max(50).optional().default(50)
+  maxCompanies: z.number().int().min(1).max(50).optional().default(25)
 });
 
-// Rate limiting function
-async function checkRateLimit(supabase: any, userId: string, action: string, limit: number = 20) {
+async function checkRateLimit(supabase: any, userId: string, action: string, limit: number = 10) {
   const oneHourAgo = new Date(Date.now() - 3600000).toISOString();
   
   const { count, error } = await supabase
@@ -25,25 +23,18 @@ async function checkRateLimit(supabase: any, userId: string, action: string, lim
     
   if (error) {
     console.error('Rate limit check error:', error);
-    return; // Fail open
+    return;
   }
   
   if (count && count >= limit) {
     throw new Error(`Rate limit exceeded. Maximum ${limit} requests per hour for ${action}`);
   }
   
-  // Record this request
   await supabase.from('rate_limits').insert({
     user_id: userId,
     action,
     count: 1
   });
-}
-
-// Sanitize company data before AI prompts
-function sanitizeForAI(text: string | null): string {
-  if (!text) return "Non renseigné";
-  return text.replace(/[{}[\]]/g, '').slice(0, 500);
 }
 
 interface CompanyRow {
@@ -56,229 +47,159 @@ interface CompanyRow {
   adresse: string | null;
 }
 
-const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+const HUNTER_API_KEY = Deno.env.get("HUNTER_IO_API_KEY");
 
 async function delay(ms: number) {
   return new Promise((r) => setTimeout(r, ms));
 }
 
-async function selectBestEmailWithAI(emails: string[]): Promise<string> {
-  if (!LOVABLE_API_KEY) {
-    console.error("[AI] LOVABLE_API_KEY not configured for email selection");
-    return emails[0] || "";
-  }
-
+function selectBestEmail(emails: Array<{ value: string; type: string }>): string {
   if (emails.length === 0) return "";
-  if (emails.length === 1) return emails[0];
+  if (emails.length === 1) return emails[0].value;
 
-  const prompt = `Tu es un expert en sélection d'emails professionnels pour des candidatures spontanées.
-
-EMAILS DISPONIBLES:
-${emails.map((e, i) => `${i + 1}. ${e}`).join('\n')}
-
-MISSION:
-Choisis l'email le plus pertinent pour envoyer une candidature spontanée.
-
-ORDRE DE PRIORITÉ (mais reste flexible):
-1. Email RH ou recrutement (rh@, recrutement@, recruitment@, hr@, jobs@, careers@)
-2. Email contact général (contact@)
-3. Email information (info@)
-4. Sinon, l'email qui semble le plus approprié pour une prise de contact professionnelle
-
-RÈGLES:
-- Tu DOIS choisir un email parmi la liste fournie
-- Réponds UNIQUEMENT avec l'email choisi, rien d'autre
-- Pas de JSON, pas d'explication, juste l'email
-
-RÉPONSE ATTENDUE (exemple):
-contact@example.fr`;
-
-  try {
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: [
-          {
-            role: "system",
-            content: "Tu es un assistant de sélection d'emails. Tu réponds UNIQUEMENT avec l'email choisi, sans aucun texte supplémentaire.",
-          },
-          {
-            role: "user",
-            content: prompt,
-          },
-        ],
-        temperature: 0.1,
-      }),
-    });
-
-    if (!response.ok) {
-      console.error("[AI] Email selection error:", response.status);
-      return emails[0]; // Fallback au premier email
-    }
-
-    const data = await response.json();
-    const selectedEmail = (data.choices?.[0]?.message?.content ?? "").trim();
-
-    // Vérifier que l'email sélectionné est dans la liste
-    if (emails.includes(selectedEmail)) {
-      console.log(`[AI] ✓ Selected email: ${selectedEmail}`);
-      return selectedEmail;
-    }
-
-    // Fallback si l'IA a retourné quelque chose d'invalide
-    console.warn(`[AI] Invalid selection, falling back to first email`);
-    return emails[0];
-  } catch (error) {
-    console.error(`[AI] Error selecting email:`, error instanceof Error ? error.message : String(error));
-    return emails[0]; // Fallback au premier email
+  // Priorité : rh/recrutement > contact > info > autres
+  const priorities = ['rh', 'recrutement', 'recruitment', 'hr', 'jobs', 'careers', 'contact', 'info'];
+  
+  for (const priority of priorities) {
+    const found = emails.find(e => 
+      e.value.toLowerCase().includes(priority) || 
+      e.type?.toLowerCase().includes(priority)
+    );
+    if (found) return found.value;
   }
+  
+  return emails[0].value;
 }
 
-async function findCompanyEmailsWithAI({
-  nom,
-  ville,
-  siren,
-  code_ape,
-  libelle_ape,
-  adresse,
-}: CompanyRow): Promise<{ website: string | null; emails: string[] }> {
-  if (!LOVABLE_API_KEY) {
-    console.error("[AI] LOVABLE_API_KEY not configured");
-    return { website: null, emails: [] };
+async function findCompanyWithHunter(company: CompanyRow): Promise<{
+  website: string | null;
+  emails: string[];
+  confidence: string;
+  source: string;
+  error?: string;
+}> {
+  if (!HUNTER_API_KEY) {
+    console.error("[Hunter.io] API key not configured");
+    return {
+      website: null,
+      emails: [],
+      confidence: "none",
+      source: "hunter",
+      error: "API key not configured"
+    };
   }
 
-  const prompt = `Tu es un expert en recherche d'informations d'entreprises sur Internet. Ta mission est simple : pour une entreprise fournie, trouver son SITE WEB OFFICIEL et EXTRAIRE TOUS LES EMAILS PROFESSIONNELS visibles sur ce site.
-
-INPUT fourni :
-- Nom: ${sanitizeForAI(nom)}
-- Ville: ${sanitizeForAI(ville)}
-- Code APE: ${sanitizeForAI(code_ape)}
-- Secteur d'activité: ${sanitizeForAI(libelle_ape)}
-- Adresse: ${sanitizeForAI(adresse)}
-
-OBJECTIF :
-Retourner un JSON strict contenant le site officiel, la liste d'e-mails trouvés et un niveau de confiance.
-
-PROCÉDURE DE RECHERCHE :
-1. Faire une recherche web avec :
-   - "<Nom exact> <Ville>"
-   - "<Nom exact> <secteur d'activité>"
-   - "<Nom exact> site officiel"
-2. Identifier le site officiel :
-   - Privilégier les sites sur domaine de marque (ex : nom-entreprise.fr / .com)
-   - Vérifier cohérence avec adresse, activité, mentions légales
-   - Ne PAS utiliser LinkedIn, Facebook, Instagram ou annuaires comme site officiel
-3. Une fois le site officiel trouvé :
-   - Extraire les emails visibles depuis :
-     - Page Contact
-     - Footer
-     - Mentions légales
-     - Page "À propos", "Recrutement", etc.
-4. Emails acceptés :
-   - contact@, info@, bonjour@, hello@, commercial@, support@, rh@, recrutement@, etc.
-5. Emails à EXCLURE :
-   - noreply@, no-reply@, newsletter@, unsubscribe@, mailer-daemon@
-6. Valider le format des emails (email@domaine.extension)
-7. ne JAMAIS inventer d'emails ou deviner un domaine : seuls les emails réellement vus sur le site sont acceptés.
-
-SCORE DE CONFIANCE :
-- high : site officiel certain + email trouvé sur page contact / footer / mentions légales
-- medium : site officiel probable mais un seul email générique ou pas de mentions légales
-- low : site non confirmé mais cohérent (ex : petite boutique sans mentions légales visibles)
-- none : aucun site officiel trouvé
-
-FORMAT DE RÉPONSE (JSON strict) :
-{
-  "website": "https://site-officiel.fr" | null,
-  "emails": ["email1@example.fr", "email2@example.fr"],
-  "confidence": "high" | "medium" | "low" | "none"
-}`;
+  console.log(`[Hunter.io] Searching for: ${company.nom} (${company.ville || 'N/A'})`);
 
   try {
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: [
-          {
-            role: "system",
-            content: "Tu es un expert en recherche d'informations d'entreprises sur Internet. Tu utilises la recherche web pour trouver des sites officiels et extraire des emails. Tu réponds UNIQUEMENT en JSON valide.",
-          },
-          {
-            role: "user",
-            content: prompt,
-          },
-        ],
-        temperature: 0.3,
-      }),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("[AI] Lovable AI error:", response.status, errorText);
+    // Step 1: Company Search to find domain
+    const searchQuery = company.ville 
+      ? `${company.nom} ${company.ville} France`
+      : `${company.nom} France`;
+    
+    const companySearchUrl = `https://api.hunter.io/v2/domain-search?company=${encodeURIComponent(searchQuery)}&api_key=${HUNTER_API_KEY}&limit=1`;
+    
+    console.log(`[Hunter.io] Company search for: ${searchQuery}`);
+    const companyResponse = await fetch(companySearchUrl);
+    
+    if (!companyResponse.ok) {
+      const errorText = await companyResponse.text();
+      console.error(`[Hunter.io] Company search error (${companyResponse.status}):`, errorText);
       
-      if (response.status === 429) {
-        throw new Error("Rate limit atteint. Attendez quelques minutes avant de relancer.");
-      }
-      if (response.status === 402) {
-        throw new Error("Crédits Lovable AI épuisés. Rechargez vos crédits.");
+      if (companyResponse.status === 429) {
+        return {
+          website: null,
+          emails: [],
+          confidence: "none",
+          source: "hunter",
+          error: "Rate limit exceeded"
+        };
       }
       
-      return { website: null, emails: [] };
+      return {
+        website: null,
+        emails: [],
+        confidence: "none",
+        source: "hunter",
+        error: `API error: ${companyResponse.status}`
+      };
     }
 
-    const data = await response.json();
-    const content = data.choices?.[0]?.message?.content ?? "{}";
-
-    console.log(`[AI] Raw response for ${nom}:`, content.slice(0, 500));
-
-    // Parse le JSON
-    let parsed;
-    try {
-      // Nettoyer le contenu si nécessaire
-      const cleaned = content
-        .replace(/```json\n?/g, "")
-        .replace(/```/g, "")
-        .trim();
-      parsed = JSON.parse(cleaned);
-    } catch (e) {
-      console.error("[AI] JSON parse error:", e);
-      // Essayer d'extraire le JSON avec regex
-      const jsonMatch = content.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        parsed = JSON.parse(jsonMatch[0]);
-      } else {
-        return { website: null, emails: [] };
-      }
+    const companyData = await companyResponse.json();
+    
+    if (!companyData.data?.domain) {
+      console.log(`[Hunter.io] No domain found for ${company.nom}`);
+      return {
+        website: null,
+        emails: [],
+        confidence: "none",
+        source: "hunter",
+        error: "No domain found"
+      };
     }
 
-    const website = parsed.website || null;
-    const emails: string[] = Array.isArray(parsed.emails) ? parsed.emails : [];
+    const domain = companyData.data.domain;
+    console.log(`[Hunter.io] Domain found: ${domain}`);
 
-    // Valider les emails (format basique)
-    const validEmails = emails.filter((e) => 
-      /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e) && 
-      !/no-?reply|newsletter|unsubscribe/i.test(e)
-    );
+    // Small delay to respect rate limits
+    await delay(1000);
 
-    console.log(`[AI] ✓ ${nom}: website=${website ? "found" : "not found"}, emails=${validEmails.length}`);
+    // Step 2: Domain Search to get emails
+    const domainSearchUrl = `https://api.hunter.io/v2/domain-search?domain=${domain}&api_key=${HUNTER_API_KEY}&limit=20`;
+    
+    console.log(`[Hunter.io] Domain search for: ${domain}`);
+    const domainResponse = await fetch(domainSearchUrl);
+    
+    if (!domainResponse.ok) {
+      const errorText = await domainResponse.text();
+      console.error(`[Hunter.io] Domain search error (${domainResponse.status}):`, errorText);
+      
+      return {
+        website: `https://${domain}`,
+        emails: [],
+        confidence: "low",
+        source: "hunter",
+        error: `Failed to get emails: ${domainResponse.status}`
+      };
+    }
 
+    const domainData = await domainResponse.json();
+    
+    if (!domainData.data?.emails || domainData.data.emails.length === 0) {
+      console.log(`[Hunter.io] No emails found for ${domain}`);
+      return {
+        website: `https://${domain}`,
+        emails: [],
+        confidence: "low",
+        source: "hunter",
+        error: "No emails found"
+      };
+    }
+
+    const emails = domainData.data.emails
+      .filter((e: any) => e.value && e.confidence && e.confidence >= 50)
+      .map((e: any) => e.value);
+
+    console.log(`[Hunter.io] Found ${emails.length} emails for ${domain}`);
+
+    const confidence = emails.length > 0 ? "high" : "low";
+    
     return {
-      website,
-      emails: [...new Set(validEmails)], // Dédupliquer
+      website: `https://${domain}`,
+      emails,
+      confidence,
+      source: "hunter"
     };
+
   } catch (error) {
-    console.error(`[AI] Error for ${nom}:`, error instanceof Error ? error.message : String(error));
-    throw error;
+    console.error(`[Hunter.io] Error for ${company.nom}:`, error);
+    return {
+      website: null,
+      emails: [],
+      confidence: "none",
+      source: "hunter",
+      error: error instanceof Error ? error.message : "Unknown error"
+    };
   }
 }
 
@@ -288,188 +209,137 @@ serve(async (req) => {
   }
 
   try {
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) throw new Error("Unauthorized");
-
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_ANON_KEY") ?? "",
-      { global: { headers: { Authorization: authHeader } } }
-    );
-
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) throw new Error("Unauthorized");
-
-    if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY not configured");
+    if (!authHeader) {
+      throw new Error("Missing Authorization header");
     }
 
-    // Validate input and check rate limit
-    const requestBody = await req.json().catch(() => ({}));
-    const validationResult = requestSchema.safeParse(requestBody);
-    
-    if (!validationResult.success) {
-      return new Response(
-        JSON.stringify({ 
-          error: "Invalid input", 
-          details: validationResult.error.issues.map(i => i.message) 
-        }),
-        {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 400,
-        }
-      );
+    const token = authHeader.replace("Bearer ", "");
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+
+    if (authError || !user) {
+      throw new Error("Unauthorized");
     }
 
-    const { maxCompanies } = validationResult.data;
+    const requestData = await req.json();
+    const { maxCompanies } = requestSchema.parse(requestData);
 
-    // Check rate limit (increased for batch processing)
-    await checkRateLimit(supabase, user.id, 'find-company-emails', 100);
+    await checkRateLimit(supabase, user.id, "find-company-emails", 10);
 
-    // Récupérer uniquement les entreprises sans emails (selected_email est null)
-    const { data: companies, error: companiesError } = await supabase
+    // Fetch companies without selected_email
+    const { data: companies, error: fetchError } = await supabase
       .from("companies")
       .select("id, nom, ville, siren, code_ape, libelle_ape, adresse")
       .eq("user_id", user.id)
       .is("selected_email", null)
-      .order("created_at", { ascending: false })
       .limit(maxCompanies);
 
-    if (companiesError) throw companiesError;
+    if (fetchError) {
+      console.error("Error fetching companies:", fetchError);
+      throw new Error(`Database error: ${fetchError.message}`);
+    }
 
     if (!companies || companies.length === 0) {
       return new Response(
         JSON.stringify({
-          message: "Toutes vos entreprises ont déjà des emails ou aucune entreprise n'a été trouvée.",
+          success: true,
           processed: 0,
-          total: 0,
-          emailsFound: 0,
-          hasMore: false,
           results: [],
+          message: "No companies to process",
+          hasMore: false
         }),
-        {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Vérifier s'il y a plus d'entreprises à traiter
-    const { count: totalCount } = await supabase
+    console.log(`[Hunter.io] Processing ${companies.length} companies`);
+
+    const results = [];
+    let processed = 0;
+
+    for (const company of companies) {
+      processed++;
+      
+      console.log(`\n[${processed}/${companies.length}] Processing: ${company.nom}`);
+
+      const result = await findCompanyWithHunter(company);
+
+      const updateData: any = {
+        website_url: result.website,
+        emails: result.emails.length > 0 ? result.emails : null,
+        updated_at: new Date().toISOString()
+      };
+
+      if (result.emails.length > 0) {
+        updateData.selected_email = selectBestEmail(
+          result.emails.map(e => ({ value: e, type: 'generic' }))
+        );
+      }
+
+      const { error: updateError } = await supabase
+        .from("companies")
+        .update(updateData)
+        .eq("id", company.id);
+
+      if (updateError) {
+        console.error(`Error updating company ${company.id}:`, updateError);
+      }
+
+      results.push({
+        company: company.nom,
+        website: result.website,
+        emails: result.emails,
+        selected_email: updateData.selected_email || null,
+        confidence: result.confidence,
+        source: result.source,
+        error: result.error
+      });
+
+      // Respecter les limites de l'API gratuite (50 req/mois)
+      await delay(2000);
+    }
+
+    const { count: remainingCount } = await supabase
       .from("companies")
-      .select('*', { count: 'exact', head: true })
+      .select("*", { count: "exact", head: true })
       .eq("user_id", user.id)
       .is("selected_email", null);
 
-    const hasMore = (totalCount ?? 0) > companies.length;
+    const summary = {
+      processed: results.length,
+      found: results.filter(r => r.emails && r.emails.length > 0).length,
+      notFound: results.filter(r => !r.emails || r.emails.length === 0).length
+    };
 
-    console.log(`[SEARCH] Starting AI-powered search for ${companies.length} companies`);
-
-    let processed = 0;
-    let emailsFound = 0;
-    const results: any[] = [];
-
-    for (const company of companies as CompanyRow[]) {
-      try {
-        console.log(`[SEARCH] Processing: ${company.nom}`);
-
-        const { website, emails } = await findCompanyEmailsWithAI(company);
-
-        if (!website) {
-          results.push({
-            company: company.nom,
-            status: "no-website",
-            error: "Site web introuvable malgré la recherche web",
-          });
-          processed++;
-          await delay(2000);
-          continue;
-        }
-
-        // Sélectionner le meilleur email avec l'IA
-        let selectedEmail = null;
-        if (emails.length > 0) {
-          selectedEmail = await selectBestEmailWithAI(emails);
-          console.log(`[AI] Selected email for ${company.nom}: ${selectedEmail}`);
-        }
-
-        // Mettre à jour la BDD
-        const updates: Record<string, any> = { 
-          website_url: website,
-          status: 'not sent'
-        };
-        if (emails.length > 0) {
-          updates.emails = emails;
-          updates.selected_email = selectedEmail;
-          emailsFound += emails.length;
-        }
-
-        const { error: updateError } = await supabase
-          .from("companies")
-          .update(updates)
-          .eq("id", company.id);
-
-        if (updateError) {
-          console.error("[DB] Update error:", updateError.message);
-        }
-
-        results.push({
-          company: company.nom,
-          status: "success",
-          website,
-          emails,
-          confidence: emails.length > 0 ? "high" : "medium",
-        });
-
-        processed++;
-        await delay(1500); // Pause entre entreprises
-
-      } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : "Erreur inconnue";
-        console.error(`[PROCESS] Error for ${company.nom}:`, errorMessage);
-        
-        results.push({
-          company: company.nom,
-          status: "error",
-          error: errorMessage,
-        });
-        
-        processed++;
-        
-        // Si rate limit, arrêter
-        if (errorMessage.includes("Rate limit") || errorMessage.includes("Crédits")) {
-          console.error("[SEARCH] Stopping due to API limits");
-          break;
-        }
-      }
-    }
-
-    console.log(`[SEARCH] ✓ Completed: ${processed}/${companies.length}, ${emailsFound} emails found`);
+    console.log(`\n[Summary] Processed: ${summary.processed}, Found: ${summary.found}, Not found: ${summary.notFound}`);
 
     return new Response(
       JSON.stringify({
-        message: hasMore 
-          ? `Batch terminé. ${processed} entreprises traitées, ${emailsFound} emails trouvés. Il reste des entreprises à traiter.`
-          : "Recherche d'emails terminée pour toutes vos entreprises.",
-        processed,
-        total: companies.length,
-        totalRemaining: (totalCount ?? 0) - processed,
-        emailsFound,
-        hasMore,
+        success: true,
+        processed: summary.processed,
         results,
+        summary,
+        hasMore: (remainingCount || 0) > 0,
+        message: `${summary.found} emails trouvés sur ${summary.processed} entreprises`
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
+
   } catch (error) {
-    console.error("[MAIN]", error instanceof Error ? error.message : String(error));
+    console.error("Error in find-company-emails:", error);
+    
     return new Response(
       JSON.stringify({
-        error: error instanceof Error ? error.message : "Erreur inconnue",
+        success: false,
+        error: error instanceof Error ? error.message : "Unknown error"
       }),
       {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: error instanceof Error && error.message.includes("Rate limit") ? 429 : 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" }
       }
     );
   }
