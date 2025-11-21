@@ -337,18 +337,12 @@ async function extractEmailFromWebsite(
   let allContent = '';
   let hasContactForm = false;
 
-  // Pages à scraper
+  // Pages à scraper (réduites à 4 pages principales)
   const pagesToCheck = [
     websiteUrl,
     `${websiteUrl}/contact`,
-    `${websiteUrl}/nous-contacter`,
     `${websiteUrl}/recrutement`,
-    `${websiteUrl}/jobs`,
     `${websiteUrl}/careers`,
-    `${websiteUrl}/carrieres`,
-    `${websiteUrl}/rejoignez-nous`,
-    `${websiteUrl}/about`,
-    `${websiteUrl}/equipe`,
   ];
 
   console.log(`[Email Extraction] Starting for ${companyName}`);
@@ -383,8 +377,14 @@ async function extractEmailFromWebsite(
       console.log(`[Scraping] Found career page: ${pageUrl}`);
     }
 
-    // Délai entre les pages
-    await delay(1000);
+    // Si on a trouvé un email, on arrête de scraper
+    if (emails.size > 0) {
+      console.log(`[Email Extraction] Found ${emails.size} email(s), stopping scraping`);
+      break;
+    }
+
+    // Délai réduit entre les pages
+    await delay(500);
   }
 
   const emailList = Array.from(emails);
