@@ -322,34 +322,48 @@ async function extractEmailWithAI(
   try {
     console.log(`[AI] Analyzing content for ${companyName}...`);
 
-    const prompt = `Tu es un expert en extraction d'informations de contact professionnelles depuis des sites web.
+    const systemPrompt = `Tu es un agent d'extraction d'informations à partir de pages web. 
+Ton rôle : analyser une URL fournie, récupérer uniquement les informations réellement présentes sur cette page ou sur les pages internes accessibles sans action humaine (mentions légales, contact, recrutement, etc.).
 
-ENTREPRISE: ${companyName}
-DOMAINE: ${domain}
-${scrapedEmails.length > 0 ? `EMAILS DÉJÀ TROUVÉS: ${scrapedEmails.join(', ')}\n` : ''}
-${scrapedCareerUrl ? `PAGE CARRIÈRE TROUVÉE: ${scrapedCareerUrl}\n` : ''}
+Règles :
+1. NE DONNE AUCUNE INFORMATION si elle n'est pas explicitement trouvée dans la page. Pas d'invention.
+2. Si aucune information n'est trouvée, renvoie : "Aucune information trouvée."
+3. Toujours fournir la ou les sources exactes (URL(s) réellement analysée(s)).
+4. Si l'email, le téléphone, le formulaire ou la page carrière existent → les extraire et les classifier.
+5. Tu peux suivre des liens internes (contact, mentions légales, recrutement) mais jamais des sites externes.
+6. Le format de sortie doit être strictement JSON.
 
-CONTENU DU SITE WEB:
+Format JSON obligatoire :
+{
+  "company_name": "...",
+  "emails_found": [...],
+  "phones_found": [...],
+  "career_page": "...",
+  "other_contacts": [...],
+  "pages_visited": [...]
+}`;
+
+    const userPrompt = `Analyse cette URL : https://${domain}
+
+CONTENU DE LA PAGE :
 ${pageContent}
 
-MISSION:
-1. Trouve l'email de contact général IDÉAL pour une candidature spontanée (priorité: recrutement@, rh@, contact@, info@)
-2. Identifie l'URL de la page carrière/recrutement si elle existe (recherche: "emploi", "recrutement", "careers", "jobs", "rejoignez-nous")
+${scrapedEmails.length > 0 ? `EMAILS DÉJÀ TROUVÉS PAR SCRAPING: ${scrapedEmails.join(', ')}\n` : ''}
+${scrapedCareerUrl ? `PAGE CARRIÈRE DÉJÀ TROUVÉE: ${scrapedCareerUrl}\n` : ''}
+
+Extrait uniquement :
+- les emails visibles (priorité: recrutement@, rh@, contact@, info@, jobs@, careers@, hr@)
+- les numéros de téléphone
+- le formulaire de contact / page contact
+- le site carrière s'il existe
+- toute autre page utile interne
 
 RÈGLES CRITIQUES:
-- NE JAMAIS INVENTER ou HALLUCINER d'emails
-- UNIQUEMENT retourner des emails qui sont EXPLICITEMENT présents dans le contenu fourni
-- Pour les emails: privilégie contact@, info@, recrutement@, rh@, jobs@, careers@, hr@
+- NE JAMAIS INVENTER d'emails
 - Exclure: noreply@, newsletter@, no-reply@
-- Pour la page carrière: cherche les URLs mentionnant careers, jobs, recrutement, emploi
-- Si la page carrière est hébergée sur WelcomeKit, Welcome to the Jungle, etc., indique l'URL complète
-- Si AUCUN email n'est trouvé dans le contenu, retourne un tableau VIDE []
+- Si aucun email trouvé, emails_found doit être un tableau vide []
 
-RÉPONSE (FORMAT JSON OBLIGATOIRE):
-{
-  "emails": ["email1@domain.com", "email2@domain.com"],
-  "careerPageUrl": "https://example.com/careers ou null si non trouvé"
-}`;
+Et renvoie uniquement le JSON spécifié dans les instructions.`;
 
     const aiResponse = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
@@ -362,14 +376,17 @@ RÉPONSE (FORMAT JSON OBLIGATOIRE):
         messages: [
           {
             role: "system",
-            content: "Tu réponds UNIQUEMENT en JSON valide, sans texte additionnel. NE JAMAIS inventer d'emails qui ne sont pas dans le contenu fourni.",
+            content: systemPrompt,
           },
           {
             role: "user",
-            content: prompt,
+            content: userPrompt,
           },
         ],
-        max_completion_tokens: 500,
+        temperature: 0,
+        top_p: 1,
+        max_completion_tokens: 2000,
+        response_format: { type: "json_object" },
       }),
     });
 
@@ -383,46 +400,56 @@ RÉPONSE (FORMAT JSON OBLIGATOIRE):
     
     console.log("[AI] Response:", answer);
 
-    // Parser le JSON
+    // Parser le JSON (avec response_format json_object, pas besoin de chercher les backticks)
     try {
-      let jsonStr = answer;
-      const jsonMatch = answer.match(/```json\n?(.*?)\n?```/s) || answer.match(/```\n?(.*?)\n?```/s);
-      if (jsonMatch) {
-        jsonStr = jsonMatch[1];
-      }
+      const result = JSON.parse(answer);
       
-      const result = JSON.parse(jsonStr);
+      // Vérifier si aucune information n'a été trouvée
+      if (answer.includes("Aucune information trouvée")) {
+        console.log("[AI] No information found by AI");
+        return { emails: scrapedEmails, careerPageUrl: scrapedCareerUrl };
+      }
       
       // Combiner emails trouvés par scraping et IA
       const allEmails = new Set([...scrapedEmails]);
-      if (result.emails && Array.isArray(result.emails)) {
-        result.emails.forEach((email: string) => {
+      
+      // Utiliser le nouveau format JSON
+      if (result.emails_found && Array.isArray(result.emails_found)) {
+        result.emails_found.forEach((email: string) => {
           if (email && email.includes('@')) {
-            allEmails.add(email.toLowerCase().trim());
+            const lowerEmail = email.toLowerCase().trim();
+            // Filtrer les emails indésirables
+            if (
+              !lowerEmail.includes('noreply') &&
+              !lowerEmail.includes('no-reply') &&
+              !lowerEmail.includes('newsletter')
+            ) {
+              allEmails.add(lowerEmail);
+            }
           }
         });
       }
 
+      // Récupérer la career page
+      let careerPage = scrapedCareerUrl;
+      if (result.career_page && result.career_page !== "null" && result.career_page.startsWith('http')) {
+        careerPage = result.career_page;
+      }
+
+      console.log(`[AI] Extracted ${allEmails.size - scrapedEmails.length} additional emails`);
+      console.log(`[AI] Career page: ${careerPage || 'not found'}`);
+
       return {
         emails: Array.from(allEmails),
-        careerPageUrl: result.careerPageUrl || scrapedCareerUrl,
+        careerPageUrl: careerPage,
       };
     } catch (parseError) {
       console.error("[AI] Failed to parse JSON:", parseError);
+      console.error("[AI] Raw response:", answer);
       
-      // Fallback: extraire emails du texte
-      const emailRegex = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g;
-      const foundEmails = answer.match(emailRegex) || [];
-      
-      const validEmails = new Set([...scrapedEmails]);
-      foundEmails.forEach((email: string) => {
-        if (email.toLowerCase().includes(domain.replace('www.', '').split('.')[0])) {
-          validEmails.add(email.toLowerCase());
-        }
-      });
-
+      // Fallback: utiliser uniquement les emails scrapés
       return {
-        emails: Array.from(validEmails),
+        emails: scrapedEmails,
         careerPageUrl: scrapedCareerUrl,
       };
     }
