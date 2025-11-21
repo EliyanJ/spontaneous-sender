@@ -50,7 +50,7 @@ interface CompanyRow {
 }
 
 const SERPAPI_KEY = Deno.env.get("SERPAPI_API_KEY");
-const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
+const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
 
 async function delay(ms: number) {
   return new Promise((r) => setTimeout(r, ms));
@@ -251,7 +251,7 @@ async function validateWebsiteWithAI(
   company: CompanyRow, 
   candidates: Array<{ link: string; title: string; snippet?: string }>
 ): Promise<string | null> {
-  if (!OPENAI_API_KEY) {
+  if (!LOVABLE_API_KEY) {
     console.log("[AI] No API key, returning first candidate");
     return candidates[0].link;
   }
@@ -278,14 +278,14 @@ RÉPONSE:
 Réponds UNIQUEMENT avec le numéro du candidat (1, 2, 3...) ou "NONE".`;
 
   try {
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${OPENAI_API_KEY}`,
+        Authorization: `Bearer ${LOVABLE_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "gpt-5-2025-08-07",
+        model: "google/gemini-2.5-flash",
         messages: [
           {
             role: "system",
@@ -296,7 +296,7 @@ Réponds UNIQUEMENT avec le numéro du candidat (1, 2, 3...) ou "NONE".`;
             content: prompt,
           },
         ],
-        max_completion_tokens: 10,
+        max_tokens: 10,
       }),
     });
 
@@ -425,7 +425,7 @@ async function extractEmailWithAI(
   emails: string[];
   careerPageUrl?: string;
 }> {
-  if (!OPENAI_API_KEY) {
+  if (!LOVABLE_API_KEY) {
     console.log("[AI] No API key for email extraction");
     return { emails: [] };
   }
@@ -458,22 +458,20 @@ ${pageContent.substring(0, 2500)}
 
 Retourne le JSON avec les emails trouvés et la page carrière si elle existe.`;
 
-    const aiResponse = await fetch("https://api.openai.com/v1/chat/completions", {
+    const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${OPENAI_API_KEY}`,
+        Authorization: `Bearer ${LOVABLE_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "gpt-5-mini-2025-08-07",
+        model: "google/gemini-2.5-flash",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt },
         ],
         temperature: 0,
-        top_p: 1,
-        max_completion_tokens: 300,
-        response_format: { type: "json_object" },
+        max_tokens: 300,
       }),
     });
 
