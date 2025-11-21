@@ -1,7 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
-import * as cheerio from "https://esm.sh/cheerio@1.0.0-rc.12";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -9,7 +8,7 @@ const corsHeaders = {
 };
 
 const requestSchema = z.object({
-  maxCompanies: z.number().int().min(1).max(150).optional().default(25)
+  maxCompanies: z.number().int().min(1).max(150).optional().default(10)
 });
 
 async function checkRateLimit(supabase: any, userId: string, action: string, limit: number = 10) {
@@ -51,9 +50,45 @@ interface CompanyRow {
 
 const SERPAPI_KEY = Deno.env.get("SERPAPI_API_KEY");
 const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
+const JINA_API_KEY = Deno.env.get("JINA_API_KEY"); // Optional: for higher limits
 
 async function delay(ms: number) {
   return new Promise((r) => setTimeout(r, ms));
+}
+
+// Utiliser Jina AI Reader pour convertir une URL en markdown propre
+async function scrapeWithJina(url: string): Promise<string | null> {
+  try {
+    console.log(`[Jina] Scraping: ${url}`);
+    
+    const headers: Record<string, string> = {
+      'Accept': 'application/json',
+      'X-Return-Format': 'markdown'
+    };
+    
+    if (JINA_API_KEY) {
+      headers['Authorization'] = `Bearer ${JINA_API_KEY}`;
+    }
+    
+    const response = await fetch(`https://r.jina.ai/${url}`, {
+      headers,
+      signal: AbortSignal.timeout(15000),
+    });
+
+    if (!response.ok) {
+      console.error(`[Jina] Error ${response.status} for ${url}`);
+      return null;
+    }
+
+    const data = await response.json();
+    const content = data.data?.content || '';
+    
+    console.log(`[Jina] ✅ Scraped ${content.length} chars from ${url}`);
+    return content;
+  } catch (error) {
+    console.error(`[Jina] Failed to scrape ${url}:`, error);
+    return null;
+  }
 }
 
 // Étape 2: Trouver le site officiel avec SerpAPI
@@ -209,7 +244,7 @@ Réponds UNIQUEMENT avec le numéro du candidat (1, 2, 3...) ou "NONE".`;
   }
 }
 
-// Étape 3: Extraire l'email avec scraping amélioré
+// Étape 3: Extraire les informations avec Jina AI Reader
 async function extractEmailFromWebsite(
   websiteUrl: string,
   companyName: string
@@ -223,83 +258,63 @@ async function extractEmailFromWebsite(
   let careerPageUrl: string | undefined;
   let fullPageContent = '';
 
+  // Pages à scraper avec Jina AI
   const pagesToCheck = [
     websiteUrl,
-    new URL('/contact', websiteUrl).toString(),
-    new URL('/nous-contacter', websiteUrl).toString(),
-    new URL('/recrutement', websiteUrl).toString(),
-    new URL('/jobs', websiteUrl).toString(),
-    new URL('/carrieres', websiteUrl).toString(),
-    new URL('/careers', websiteUrl).toString(),
-    new URL('/rejoignez-nous', websiteUrl).toString(),
-    new URL('/about', websiteUrl).toString(),
+    `${websiteUrl}/contact`,
+    `${websiteUrl}/nous-contacter`,
+    `${websiteUrl}/recrutement`,
+    `${websiteUrl}/jobs`,
+    `${websiteUrl}/careers`,
+    `${websiteUrl}/carrieres`,
+    `${websiteUrl}/rejoignez-nous`,
+    `${websiteUrl}/about`,
   ];
 
   for (const pageUrl of pagesToCheck) {
-    try {
-      console.log(`[Scraper] Checking ${pageUrl}`);
-      const response = await fetch(pageUrl, {
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-        },
-        signal: AbortSignal.timeout(10000),
-      });
-
-      if (!response.ok) continue;
-
-      const html = await response.text();
-      const $ = cheerio.load(html);
-      
-      // Extraire le texte de la page
-      const text = $('body').text();
-      fullPageContent += text + '\n\n';
-      
-      // Détecter si c'est une page carrière
-      const lowerText = text.toLowerCase();
-      if (!careerPageUrl && (
-        (lowerText.includes('offre') && lowerText.includes('emploi')) ||
-        lowerText.includes('recrutement') ||
-        lowerText.includes('rejoignez') ||
-        lowerText.includes('careers') ||
-        lowerText.includes('jobs')
-      )) {
-        careerPageUrl = pageUrl;
-        console.log(`[Scraper] Found career page: ${pageUrl}`);
-      }
-      
-      // Trouver tous les emails
-      const found = text.match(emailRegex) || [];
-      
-      found.forEach(email => {
-        const lowerEmail = email.toLowerCase();
-        // Filtrer les emails indésirables
-        if (
-          !lowerEmail.includes('noreply') &&
-          !lowerEmail.includes('no-reply') &&
-          !lowerEmail.includes('newsletter') &&
-          !lowerEmail.includes('example') &&
-          !lowerEmail.includes('test') &&
-          !lowerEmail.includes('wix') &&
-          !lowerEmail.includes('google') &&
-          !lowerEmail.includes('facebook') &&
-          !lowerEmail.includes('.png') &&
-          !lowerEmail.includes('.jpg')
-        ) {
-          emails.add(email);
-        }
-      });
-
-      await delay(300);
-
-    } catch (error) {
-      console.log(`[Scraper] Failed to fetch ${pageUrl}`);
+    const content = await scrapeWithJina(pageUrl);
+    
+    if (!content) continue;
+    
+    fullPageContent += content + '\n\n---\n\n';
+    
+    // Détecter page carrière
+    const lowerText = content.toLowerCase();
+    if (!careerPageUrl && (
+      (lowerText.includes('offre') && lowerText.includes('emploi')) ||
+      lowerText.includes('recrutement') ||
+      lowerText.includes('rejoignez') ||
+      lowerText.includes('careers') ||
+      lowerText.includes('jobs') ||
+      lowerText.includes('welcomekit') ||
+      lowerText.includes('welcome to the jungle')
+    )) {
+      careerPageUrl = pageUrl;
+      console.log(`[Jina] Found career page: ${pageUrl}`);
     }
+    
+    // Extraire emails du markdown
+    const found = content.match(emailRegex) || [];
+    found.forEach(email => {
+      const lowerEmail = email.toLowerCase();
+      if (
+        !lowerEmail.includes('noreply') &&
+        !lowerEmail.includes('no-reply') &&
+        !lowerEmail.includes('newsletter') &&
+        !lowerEmail.includes('example') &&
+        !lowerEmail.includes('test')
+      ) {
+        emails.add(email);
+      }
+    });
+
+    await delay(500); // Rate limiting
   }
 
   return {
     emails: Array.from(emails),
     careerPageUrl,
-    pageContent: fullPageContent.substring(0, 8000), // Limiter pour l'IA
+    pageContent: fullPageContent.substring(0, 12000), // Plus de contenu pour GPT-5
   };
 }
 
@@ -372,7 +387,7 @@ Et renvoie uniquement le JSON spécifié dans les instructions.`;
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "gpt-5-2025-08-07",
+        model: "gpt-5-mini-2025-08-07",
         messages: [
           {
             role: "system",
@@ -385,7 +400,7 @@ Et renvoie uniquement le JSON spécifié dans les instructions.`;
         ],
         temperature: 0,
         top_p: 1,
-        max_completion_tokens: 2000,
+        max_completion_tokens: 1500,
         response_format: { type: "json_object" },
       }),
     });
