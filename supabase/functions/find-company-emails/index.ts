@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
+import * as cheerio from "https://esm.sh/cheerio@1.0.0-rc.12";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -8,7 +9,7 @@ const corsHeaders = {
 };
 
 const requestSchema = z.object({
-  maxCompanies: z.number().int().min(1).max(50).optional().default(25)
+  maxCompanies: z.number().int().min(1).max(150).optional().default(25)
 });
 
 async function checkRateLimit(supabase: any, userId: string, action: string, limit: number = 10) {
@@ -47,46 +48,119 @@ interface CompanyRow {
   adresse: string | null;
 }
 
-const HUNTER_API_KEY = Deno.env.get("HUNTER_IO_API_KEY");
+const SERPAPI_KEY = Deno.env.get("SERPAPI_API_KEY");
 const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
 
 async function delay(ms: number) {
   return new Promise((r) => setTimeout(r, ms));
 }
 
-async function guessCompanyDomain(company: CompanyRow): Promise<string | null> {
-  if (!LOVABLE_API_KEY) {
-    console.error("[AI] LOVABLE_API_KEY not configured");
+// Étape 2: Trouver le site officiel avec SerpAPI
+async function findOfficialWebsite(company: CompanyRow): Promise<string | null> {
+  if (!SERPAPI_KEY) {
+    console.error("[SerpAPI] API key not configured");
     return null;
   }
 
-  const prompt = `Tu es un expert en identification de noms de domaine d'entreprises françaises.
+  const searchQuery = company.ville 
+    ? `${company.nom} ${company.ville} site officiel`
+    : `${company.nom} site officiel`;
+  
+  console.log(`[SerpAPI] Searching: "${searchQuery}"`);
+
+  try {
+    const url = `https://serpapi.com/search?q=${encodeURIComponent(searchQuery)}&api_key=${SERPAPI_KEY}&num=5`;
+    const response = await fetch(url);
+
+    if (!response.ok) {
+      console.error(`[SerpAPI] Error ${response.status}`);
+      return null;
+    }
+
+    const data = await response.json();
+    const organicResults = data.organic_results || [];
+
+    if (organicResults.length === 0) {
+      console.log(`[SerpAPI] No results found`);
+      return null;
+    }
+
+    // Filtrer les résultats indésirables
+    const filteredResults = organicResults
+      .slice(0, 3)
+      .filter((result: any) => {
+        const link = result.link?.toLowerCase() || "";
+        // Exclure les annuaires et réseaux sociaux
+        const blacklist = [
+          'linkedin.com',
+          'facebook.com',
+          'instagram.com',
+          'twitter.com',
+          'pagesjaunes.fr',
+          'societe.com',
+          'verif.com',
+          'pappers.fr',
+          'infogreffe.fr',
+          'data.gouv.fr',
+          'wikipedia.org'
+        ];
+        return !blacklist.some(domain => link.includes(domain));
+      });
+
+    if (filteredResults.length === 0) {
+      console.log(`[SerpAPI] No valid results after filtering`);
+      return null;
+    }
+
+    // Si un seul candidat, on le retourne directement
+    if (filteredResults.length === 1) {
+      const url = filteredResults[0].link;
+      console.log(`[SerpAPI] ✅ Single candidate: ${url}`);
+      return url;
+    }
+
+    // Si plusieurs candidats, utiliser l'IA pour valider
+    console.log(`[SerpAPI] Multiple candidates (${filteredResults.length}), using AI validation`);
+    const validatedUrl = await validateWebsiteWithAI(company, filteredResults);
+    
+    return validatedUrl || filteredResults[0].link;
+
+  } catch (error) {
+    console.error(`[SerpAPI] Error:`, error);
+    return null;
+  }
+}
+
+// Validation IA si plusieurs candidats
+async function validateWebsiteWithAI(
+  company: CompanyRow, 
+  candidates: Array<{ link: string; title: string; snippet?: string }>
+): Promise<string | null> {
+  if (!LOVABLE_API_KEY) {
+    console.log("[AI] No API key, returning first candidate");
+    return candidates[0].link;
+  }
+
+  const prompt = `Tu es un expert en identification de sites web officiels d'entreprises françaises.
 
 ENTREPRISE:
-Nom légal: ${company.nom}
+Nom: ${company.nom}
 Ville: ${company.ville || "N/A"}
-Code APE: ${company.code_ape || "N/A"} - ${company.libelle_ape || "N/A"}
+Activité: ${company.libelle_ape || "N/A"}
+
+CANDIDATS TROUVÉS:
+${candidates.map((c, i) => `${i + 1}. ${c.link}\n   Titre: ${c.title}\n   Description: ${c.snippet || "N/A"}`).join('\n\n')}
 
 MISSION:
-Devine le nom de domaine le plus probable de cette entreprise (sans http://, juste le domaine).
+Identifie quel candidat est le SITE OFFICIEL de l'entreprise (pas un annuaire, pas un réseau social).
 
-RÈGLES STRICTES:
-1. Si c'est une grande entreprise connue → utilise le nom de marque (ex: "THALES LAS FRANCE" → "thalesgroup.com")
-2. Si c'est une PME/TPE → essaie des variantes logiques:
-   - Nom simplifié + .fr (ex: "SARL DUPONT" → "dupont.fr")
-   - Acronyme + .fr (ex: "SA J.C.E." → "jce.fr" ou "sacje.fr")
-   - Nom-ville + .fr (ex: "GARAGE MARTIN Lyon" → "garagemartin-lyon.fr")
-3. Si tu n'es vraiment PAS SÛR → réponds exactement "UNKNOWN"
-4. TOUJOURS privilégier .fr pour les entreprises françaises sauf grandes marques internationales
+RÈGLES:
+1. Le site doit appartenir à l'entreprise elle-même
+2. Privilégier les domaines qui contiennent le nom de l'entreprise
+3. Si aucun n'est sûr, réponds "NONE"
 
-EXEMPLES:
-- "DEICHMANN CHAUSSURES" → "deichmann.fr"
-- "BNP PARIBAS ANTILLES GUYANE" → "bnpparibas.com"
-- "ASSOCIATION LES AMITIES D'ARMOR" → "UNKNOWN" (trop incertain)
-- "VC TECHNOLOGY" → "vctechnology.fr" (tentative raisonnable)
-
-RÉPONSE ATTENDUE:
-Juste le domaine (exemple: "thalesgroup.com") ou "UNKNOWN"`;
+RÉPONSE:
+Réponds UNIQUEMENT avec le numéro du candidat (1, 2, 3...) ou "NONE".`;
 
   try {
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -100,218 +174,243 @@ Juste le domaine (exemple: "thalesgroup.com") ou "UNKNOWN"`;
         messages: [
           {
             role: "system",
-            content: "Tu réponds UNIQUEMENT avec le nom de domaine ou 'UNKNOWN'. Aucun texte supplémentaire.",
+            content: "Tu réponds UNIQUEMENT avec un chiffre ou 'NONE'. Aucun texte supplémentaire.",
           },
           {
             role: "user",
             content: prompt,
           },
         ],
-        temperature: 0.2,
       }),
     });
 
     if (!response.ok) {
-      console.error("[AI] Domain guess error:", response.status);
-      return null;
+      console.error("[AI] Validation error:", response.status);
+      return candidates[0].link;
     }
 
     const data = await response.json();
-    const guess = data.choices?.[0]?.message?.content?.trim().toLowerCase() || "";
+    const answer = data.choices?.[0]?.message?.content?.trim() || "";
     
-    if (guess === "unknown" || !guess || guess.includes(" ")) {
-      console.log(`[AI] No confident guess for ${company.nom}`);
-      return null;
+    const candidateNum = parseInt(answer);
+    if (!isNaN(candidateNum) && candidateNum >= 1 && candidateNum <= candidates.length) {
+      console.log(`[AI] Selected candidate ${candidateNum}: ${candidates[candidateNum - 1].link}`);
+      return candidates[candidateNum - 1].link;
     }
 
-    // Nettoyer le domaine
-    const cleanDomain = guess.replace(/^(https?:\/\/)?(www\.)?/, '').replace(/\/$/, '');
-    console.log(`[AI] Guessed domain for ${company.nom}: ${cleanDomain}`);
-    
-    return cleanDomain;
+    console.log(`[AI] No confident choice, using first candidate`);
+    return candidates[0].link;
+
   } catch (error) {
-    console.error(`[AI] Error guessing domain for ${company.nom}:`, error);
-    return null;
+    console.error("[AI] Error validating:", error);
+    return candidates[0].link;
   }
 }
 
-function selectBestEmail(emails: Array<{ value: string; type: string }>): string {
-  if (emails.length === 0) return "";
-  if (emails.length === 1) return emails[0].value;
+// Étape 3: Extraire l'email avec scraping
+async function extractEmailFromWebsite(websiteUrl: string): Promise<string[]> {
+  const emails: Set<string> = new Set();
+  const emailRegex = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g;
 
-  // Priorité : rh/recrutement > contact > info > autres
-  const priorities = ['rh', 'recrutement', 'recruitment', 'hr', 'jobs', 'careers', 'contact', 'info'];
-  
-  for (const priority of priorities) {
-    const found = emails.find(e => 
-      e.value.toLowerCase().includes(priority) || 
-      e.type?.toLowerCase().includes(priority)
-    );
-    if (found) return found.value;
+  const pagesToCheck = [
+    websiteUrl,
+    new URL('/contact', websiteUrl).toString(),
+    new URL('/recrutement', websiteUrl).toString(),
+    new URL('/jobs', websiteUrl).toString(),
+    new URL('/carrieres', websiteUrl).toString(),
+  ];
+
+  for (const pageUrl of pagesToCheck) {
+    try {
+      console.log(`[Scraper] Checking ${pageUrl}`);
+      const response = await fetch(pageUrl, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        },
+        signal: AbortSignal.timeout(10000), // 10s timeout
+      });
+
+      if (!response.ok) continue;
+
+      const html = await response.text();
+      const $ = cheerio.load(html);
+
+      // Extraire le texte de la page
+      const text = $('body').text();
+      
+      // Trouver tous les emails
+      const found = text.match(emailRegex) || [];
+      
+      found.forEach(email => {
+        const lowerEmail = email.toLowerCase();
+        // Filtrer les emails indésirables
+        if (
+          !lowerEmail.includes('noreply') &&
+          !lowerEmail.includes('no-reply') &&
+          !lowerEmail.includes('newsletter') &&
+          !lowerEmail.includes('example') &&
+          !lowerEmail.includes('test') &&
+          (
+            lowerEmail.includes('contact') ||
+            lowerEmail.includes('info') ||
+            lowerEmail.includes('rh') ||
+            lowerEmail.includes('recrutement') ||
+            lowerEmail.includes('jobs') ||
+            lowerEmail.includes('careers') ||
+            lowerEmail.includes('hr')
+          )
+        ) {
+          emails.add(email);
+        }
+      });
+
+      // Si on a trouvé des emails, pas besoin de continuer
+      if (emails.size > 0) break;
+
+    } catch (error) {
+      console.log(`[Scraper] Failed to fetch ${pageUrl}`);
+    }
   }
-  
-  return emails[0].value;
+
+  return Array.from(emails);
 }
 
-async function findCompanyWithHunter(company: CompanyRow): Promise<{
+// Si scraping échoue, utiliser l'IA pour analyser la page contact
+async function extractEmailWithAI(websiteUrl: string): Promise<string[]> {
+  if (!LOVABLE_API_KEY) {
+    console.log("[AI] No API key for email extraction");
+    return [];
+  }
+
+  try {
+    const contactUrl = new URL('/contact', websiteUrl).toString();
+    console.log(`[AI] Analyzing ${contactUrl}`);
+
+    const response = await fetch(contactUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+      },
+      signal: AbortSignal.timeout(10000),
+    });
+
+    if (!response.ok) return [];
+
+    const html = await response.text();
+    const $ = cheerio.load(html);
+    const text = $('body').text().substring(0, 5000); // Limiter pour l'IA
+
+    const prompt = `Tu es un expert en extraction d'emails de sites web.
+
+CONTENU DE LA PAGE CONTACT:
+${text}
+
+MISSION:
+Extrais UNIQUEMENT les adresses email de contact professionnel (RH, recrutement, contact général).
+
+RÈGLES:
+- N'extrais QUE des emails valides
+- Exclure: noreply@, newsletter@, no-reply@
+- Privilégier: rh@, recrutement@, contact@, info@, jobs@, careers@, hr@
+- Si aucun email trouvé, réponds "NONE"
+
+RÉPONSE:
+Liste les emails séparés par des virgules ou "NONE".`;
+
+    const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "google/gemini-2.5-flash",
+        messages: [
+          {
+            role: "system",
+            content: "Tu réponds UNIQUEMENT avec des emails séparés par des virgules ou 'NONE'.",
+          },
+          {
+            role: "user",
+            content: prompt,
+          },
+        ],
+      }),
+    });
+
+    if (!aiResponse.ok) return [];
+
+    const data = await aiResponse.json();
+    const answer = data.choices?.[0]?.message?.content?.trim() || "";
+
+    if (answer === "NONE" || !answer) return [];
+
+    const emails = answer.split(',').map((e: string) => e.trim()).filter((e: string) => e.includes('@'));
+    console.log(`[AI] Extracted ${emails.length} emails`);
+    
+    return emails;
+
+  } catch (error) {
+    console.error("[AI] Error extracting email:", error);
+    return [];
+  }
+}
+
+async function findCompanyEmailsNew(company: CompanyRow): Promise<{
   website: string | null;
   emails: string[];
   confidence: string;
   source: string;
   error?: string;
 }> {
-  if (!HUNTER_API_KEY) {
-    console.error("[Hunter.io] API key not configured");
+  console.log(`\n[Processing] ${company.nom} (${company.ville || 'N/A'})`);
+
+  // Étape 2: Trouver le site officiel
+  const website = await findOfficialWebsite(company);
+  
+  if (!website) {
     return {
       website: null,
       emails: [],
       confidence: "none",
-      source: "hunter-ai",
-      error: "API key not configured"
+      source: "serpapi",
+      error: "No official website found"
     };
   }
 
-  console.log(`[Hunter.io] Searching for: ${company.nom} (${company.ville || 'N/A'})`);
+  console.log(`[Website] Found: ${website}`);
 
-  try {
-    // Step 1: Use AI to guess domain
-    const guessedDomain = await guessCompanyDomain(company);
-    
-    let domain: string | null = null;
+  // Étape 3a: Scraping basique
+  let emails = await extractEmailFromWebsite(website);
 
-    if (guessedDomain) {
-      // AI has a guess, verify with Hunter.io Domain Search directly
-      console.log(`[Hunter.io] Testing AI guess: ${guessedDomain}`);
-      
-      const domainSearchUrl = `https://api.hunter.io/v2/domain-search?domain=${guessedDomain}&api_key=${HUNTER_API_KEY}&limit=20`;
-      const domainResponse = await fetch(domainSearchUrl);
-      
-      if (domainResponse.ok) {
-        const domainData = await domainResponse.json();
-        
-        if (domainData.data?.domain) {
-          domain = domainData.data.domain;
-          console.log(`[Hunter.io] ✅ AI guess verified: ${domain}`);
-        } else {
-          console.log(`[Hunter.io] ❌ AI guess incorrect, domain not found`);
-        }
-      } else {
-        console.log(`[Hunter.io] ❌ AI guess incorrect or API error`);
-      }
-    }
-
-    // Step 2: If AI didn't guess or guess was wrong, fallback to Company Search
-    if (!domain) {
-      console.log(`[Hunter.io] Falling back to Company Search`);
-      
-      const searchQuery = company.ville 
-        ? `${company.nom} ${company.ville} France`
-        : `${company.nom} France`;
-      
-      const companySearchUrl = `https://api.hunter.io/v2/domain-search?company=${encodeURIComponent(searchQuery)}&api_key=${HUNTER_API_KEY}&limit=1`;
-      
-      const companyResponse = await fetch(companySearchUrl);
-      
-      if (!companyResponse.ok) {
-        const errorText = await companyResponse.text();
-        console.error(`[Hunter.io] Company search error (${companyResponse.status}):`, errorText);
-        
-        if (companyResponse.status === 429) {
-          return {
-            website: null,
-            emails: [],
-            confidence: "none",
-            source: "hunter-ai",
-            error: "Rate limit exceeded"
-          };
-        }
-        
-        return {
-          website: null,
-          emails: [],
-          confidence: "none",
-          source: "hunter-ai",
-          error: `API error: ${companyResponse.status}`
-        };
-      }
-
-      const companyData = await companyResponse.json();
-      
-      if (!companyData.data?.domain) {
-        console.log(`[Hunter.io] No domain found for ${company.nom}`);
-        return {
-          website: null,
-          emails: [],
-          confidence: "none",
-          source: "hunter-ai",
-          error: "No domain found"
-        };
-      }
-
-      domain = companyData.data.domain;
-      console.log(`[Hunter.io] Domain found via search: ${domain}`);
-    }
-
-    // Small delay to respect rate limits
-    await delay(1000);
-
-    // Step 3: Get emails from the domain
-    const domainSearchUrl = `https://api.hunter.io/v2/domain-search?domain=${domain}&api_key=${HUNTER_API_KEY}&limit=20`;
-    
-    console.log(`[Hunter.io] Domain search for emails: ${domain}`);
-    const emailResponse = await fetch(domainSearchUrl);
-    
-    if (!emailResponse.ok) {
-      const errorText = await emailResponse.text();
-      console.error(`[Hunter.io] Domain search error (${emailResponse.status}):`, errorText);
-      
-      return {
-        website: `https://${domain}`,
-        emails: [],
-        confidence: "low",
-        source: "hunter-ai",
-        error: `Failed to get emails: ${emailResponse.status}`
-      };
-    }
-
-    const emailData = await emailResponse.json();
-    
-    if (!emailData.data?.emails || emailData.data.emails.length === 0) {
-      console.log(`[Hunter.io] No emails found for ${domain}`);
-      return {
-        website: `https://${domain}`,
-        emails: [],
-        confidence: "low",
-        source: "hunter-ai",
-        error: "No emails found"
-      };
-    }
-
-    const emails = emailData.data.emails
-      .filter((e: any) => e.value && e.confidence && e.confidence >= 50)
-      .map((e: any) => e.value);
-
-    console.log(`[Hunter.io] Found ${emails.length} emails for ${domain}`);
-
-    const confidence = emails.length > 0 ? "high" : "low";
-    
-    return {
-      website: `https://${domain}`,
-      emails,
-      confidence,
-      source: "hunter-ai"
-    };
-
-  } catch (error) {
-    console.error(`[Hunter.io] Error for ${company.nom}:`, error);
-    return {
-      website: null,
-      emails: [],
-      confidence: "none",
-      source: "hunter-ai",
-      error: error instanceof Error ? error.message : "Unknown error"
-    };
+  // Étape 3b: Si pas d'emails, utiliser l'IA
+  if (emails.length === 0) {
+    console.log(`[Fallback] Using AI to extract emails`);
+    emails = await extractEmailWithAI(website);
   }
+
+  const confidence = emails.length > 0 ? "high" : "low";
+
+  return {
+    website,
+    emails,
+    confidence,
+    source: emails.length > 0 ? "scraper-ai" : "serpapi"
+  };
+}
+
+function selectBestEmail(emails: string[]): string {
+  if (emails.length === 0) return "";
+  if (emails.length === 1) return emails[0];
+
+  // Priorité : rh/recrutement > contact > info > autres
+  const priorities = ['rh', 'recrutement', 'recruitment', 'hr', 'jobs', 'careers', 'contact', 'info'];
+  
+  for (const priority of priorities) {
+    const found = emails.find(e => e.toLowerCase().includes(priority));
+    if (found) return found;
+  }
+  
+  return emails[0];
 }
 
 serve(async (req) => {
@@ -367,7 +466,7 @@ serve(async (req) => {
       );
     }
 
-    console.log(`[Hunter.io] Processing ${companies.length} companies`);
+    console.log(`[Start] Processing ${companies.length} companies`);
 
     const results = [];
     let processed = 0;
@@ -377,7 +476,7 @@ serve(async (req) => {
       
       console.log(`\n[${processed}/${companies.length}] Processing: ${company.nom}`);
 
-      const result = await findCompanyWithHunter(company);
+      const result = await findCompanyEmailsNew(company);
 
       const updateData: any = {
         website_url: result.website,
@@ -386,9 +485,7 @@ serve(async (req) => {
       };
 
       if (result.emails.length > 0) {
-        updateData.selected_email = selectBestEmail(
-          result.emails.map(e => ({ value: e, type: 'generic' }))
-        );
+        updateData.selected_email = selectBestEmail(result.emails);
       }
 
       const { error: updateError } = await supabase
@@ -410,8 +507,8 @@ serve(async (req) => {
         error: result.error
       });
 
-      // Respecter les limites de l'API gratuite (50 req/mois)
-      await delay(2000);
+      // Délai pour éviter de surcharger les APIs
+      await delay(1500);
     }
 
     const { count: remainingCount } = await supabase
