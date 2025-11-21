@@ -46,6 +46,7 @@ interface CompanyRow {
   code_ape: string | null;
   libelle_ape: string | null;
   adresse: string | null;
+  notes: string | null;
 }
 
 const SERPAPI_KEY = Deno.env.get("SERPAPI_API_KEY");
@@ -207,17 +208,30 @@ Réponds UNIQUEMENT avec le numéro du candidat (1, 2, 3...) ou "NONE".`;
   }
 }
 
-// Étape 3: Extraire l'email avec scraping
-async function extractEmailFromWebsite(websiteUrl: string): Promise<string[]> {
+// Étape 3: Extraire l'email avec scraping amélioré
+async function extractEmailFromWebsite(
+  websiteUrl: string,
+  companyName: string
+): Promise<{
+  emails: string[];
+  careerPageUrl?: string;
+  pageContent: string;
+}> {
   const emails: Set<string> = new Set();
   const emailRegex = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g;
+  let careerPageUrl: string | undefined;
+  let fullPageContent = '';
 
   const pagesToCheck = [
     websiteUrl,
     new URL('/contact', websiteUrl).toString(),
+    new URL('/nous-contacter', websiteUrl).toString(),
     new URL('/recrutement', websiteUrl).toString(),
     new URL('/jobs', websiteUrl).toString(),
     new URL('/carrieres', websiteUrl).toString(),
+    new URL('/careers', websiteUrl).toString(),
+    new URL('/rejoignez-nous', websiteUrl).toString(),
+    new URL('/about', websiteUrl).toString(),
   ];
 
   for (const pageUrl of pagesToCheck) {
@@ -227,16 +241,30 @@ async function extractEmailFromWebsite(websiteUrl: string): Promise<string[]> {
         headers: {
           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
         },
-        signal: AbortSignal.timeout(10000), // 10s timeout
+        signal: AbortSignal.timeout(10000),
       });
 
       if (!response.ok) continue;
 
       const html = await response.text();
       const $ = cheerio.load(html);
-
+      
       // Extraire le texte de la page
       const text = $('body').text();
+      fullPageContent += text + '\n\n';
+      
+      // Détecter si c'est une page carrière
+      const lowerText = text.toLowerCase();
+      if (!careerPageUrl && (
+        (lowerText.includes('offre') && lowerText.includes('emploi')) ||
+        lowerText.includes('recrutement') ||
+        lowerText.includes('rejoignez') ||
+        lowerText.includes('careers') ||
+        lowerText.includes('jobs')
+      )) {
+        careerPageUrl = pageUrl;
+        console.log(`[Scraper] Found career page: ${pageUrl}`);
+      }
       
       // Trouver tous les emails
       const found = text.match(emailRegex) || [];
@@ -250,71 +278,74 @@ async function extractEmailFromWebsite(websiteUrl: string): Promise<string[]> {
           !lowerEmail.includes('newsletter') &&
           !lowerEmail.includes('example') &&
           !lowerEmail.includes('test') &&
-          (
-            lowerEmail.includes('contact') ||
-            lowerEmail.includes('info') ||
-            lowerEmail.includes('rh') ||
-            lowerEmail.includes('recrutement') ||
-            lowerEmail.includes('jobs') ||
-            lowerEmail.includes('careers') ||
-            lowerEmail.includes('hr')
-          )
+          !lowerEmail.includes('wix') &&
+          !lowerEmail.includes('google') &&
+          !lowerEmail.includes('facebook') &&
+          !lowerEmail.includes('.png') &&
+          !lowerEmail.includes('.jpg')
         ) {
           emails.add(email);
         }
       });
 
-      // Si on a trouvé des emails, pas besoin de continuer
-      if (emails.size > 0) break;
+      await delay(300);
 
     } catch (error) {
       console.log(`[Scraper] Failed to fetch ${pageUrl}`);
     }
   }
 
-  return Array.from(emails);
+  return {
+    emails: Array.from(emails),
+    careerPageUrl,
+    pageContent: fullPageContent.substring(0, 8000), // Limiter pour l'IA
+  };
 }
 
-// Si scraping échoue, utiliser l'IA pour analyser la page contact
-async function extractEmailWithAI(websiteUrl: string): Promise<string[]> {
+// Utiliser l'IA pour enrichir et valider les emails
+async function extractEmailWithAI(
+  pageContent: string,
+  companyName: string,
+  domain: string,
+  scrapedEmails: string[],
+  scrapedCareerUrl?: string
+): Promise<{
+  emails: string[];
+  careerPageUrl?: string;
+}> {
   if (!LOVABLE_API_KEY) {
     console.log("[AI] No API key for email extraction");
-    return [];
+    return { emails: scrapedEmails, careerPageUrl: scrapedCareerUrl };
   }
 
   try {
-    const contactUrl = new URL('/contact', websiteUrl).toString();
-    console.log(`[AI] Analyzing ${contactUrl}`);
+    console.log(`[AI] Analyzing content for ${companyName}...`);
 
-    const response = await fetch(contactUrl, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-      },
-      signal: AbortSignal.timeout(10000),
-    });
+    const prompt = `Tu es un expert en extraction d'informations de contact professionnelles depuis des sites web.
 
-    if (!response.ok) return [];
+ENTREPRISE: ${companyName}
+DOMAINE: ${domain}
+${scrapedEmails.length > 0 ? `EMAILS DÉJÀ TROUVÉS: ${scrapedEmails.join(', ')}\n` : ''}
+${scrapedCareerUrl ? `PAGE CARRIÈRE TROUVÉE: ${scrapedCareerUrl}\n` : ''}
 
-    const html = await response.text();
-    const $ = cheerio.load(html);
-    const text = $('body').text().substring(0, 5000); // Limiter pour l'IA
-
-    const prompt = `Tu es un expert en extraction d'emails de sites web.
-
-CONTENU DE LA PAGE CONTACT:
-${text}
+CONTENU DU SITE WEB:
+${pageContent}
 
 MISSION:
-Extrais UNIQUEMENT les adresses email de contact professionnel (RH, recrutement, contact général).
+1. Trouve l'email de contact général IDÉAL pour une candidature spontanée (priorité: recrutement@, rh@, contact@, info@)
+2. Identifie l'URL de la page carrière/recrutement si elle existe (recherche: "emploi", "recrutement", "careers", "jobs", "rejoignez-nous")
 
 RÈGLES:
-- N'extrais QUE des emails valides
+- Pour les emails: privilégie contact@, info@, recrutement@, rh@, jobs@, careers@, hr@
 - Exclure: noreply@, newsletter@, no-reply@
-- Privilégier: rh@, recrutement@, contact@, info@, jobs@, careers@, hr@
-- Si aucun email trouvé, réponds "NONE"
+- Pour la page carrière: cherche les URLs mentionnant careers, jobs, recrutement, emploi
+- Si la page carrière est hébergée sur WelcomeKit, Welcome to the Jungle, etc., indique l'URL complète
 
-RÉPONSE:
-Liste les emails séparés par des virgules ou "NONE".`;
+RÉPONSE (FORMAT JSON OBLIGATOIRE):
+{
+  "emails": ["email1@domain.com", "email2@domain.com"],
+  "careerPageUrl": "https://example.com/careers ou null si non trouvé"
+}`;
 
     const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -327,7 +358,7 @@ Liste les emails séparés par des virgules ou "NONE".`;
         messages: [
           {
             role: "system",
-            content: "Tu réponds UNIQUEMENT avec des emails séparés par des virgules ou 'NONE'.",
+            content: "Tu réponds UNIQUEMENT en JSON valide, sans texte additionnel.",
           },
           {
             role: "user",
@@ -337,21 +368,63 @@ Liste les emails séparés par des virgules ou "NONE".`;
       }),
     });
 
-    if (!aiResponse.ok) return [];
+    if (!aiResponse.ok) {
+      console.error("[AI] Error:", aiResponse.status);
+      return { emails: scrapedEmails, careerPageUrl: scrapedCareerUrl };
+    }
 
     const data = await aiResponse.json();
     const answer = data.choices?.[0]?.message?.content?.trim() || "";
-
-    if (answer === "NONE" || !answer) return [];
-
-    const emails = answer.split(',').map((e: string) => e.trim()).filter((e: string) => e.includes('@'));
-    console.log(`[AI] Extracted ${emails.length} emails`);
     
-    return emails;
+    console.log("[AI] Response:", answer);
+
+    // Parser le JSON
+    try {
+      let jsonStr = answer;
+      const jsonMatch = answer.match(/```json\n?(.*?)\n?```/s) || answer.match(/```\n?(.*?)\n?```/s);
+      if (jsonMatch) {
+        jsonStr = jsonMatch[1];
+      }
+      
+      const result = JSON.parse(jsonStr);
+      
+      // Combiner emails trouvés par scraping et IA
+      const allEmails = new Set([...scrapedEmails]);
+      if (result.emails && Array.isArray(result.emails)) {
+        result.emails.forEach((email: string) => {
+          if (email && email.includes('@')) {
+            allEmails.add(email.toLowerCase().trim());
+          }
+        });
+      }
+
+      return {
+        emails: Array.from(allEmails),
+        careerPageUrl: result.careerPageUrl || scrapedCareerUrl,
+      };
+    } catch (parseError) {
+      console.error("[AI] Failed to parse JSON:", parseError);
+      
+      // Fallback: extraire emails du texte
+      const emailRegex = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g;
+      const foundEmails = answer.match(emailRegex) || [];
+      
+      const validEmails = new Set([...scrapedEmails]);
+      foundEmails.forEach((email: string) => {
+        if (email.toLowerCase().includes(domain.replace('www.', '').split('.')[0])) {
+          validEmails.add(email.toLowerCase());
+        }
+      });
+
+      return {
+        emails: Array.from(validEmails),
+        careerPageUrl: scrapedCareerUrl,
+      };
+    }
 
   } catch (error) {
     console.error("[AI] Error extracting email:", error);
-    return [];
+    return { emails: scrapedEmails, careerPageUrl: scrapedCareerUrl };
   }
 }
 
@@ -360,6 +433,7 @@ async function findCompanyEmailsNew(company: CompanyRow): Promise<{
   emails: string[];
   confidence: string;
   source: string;
+  careerPageUrl?: string;
   error?: string;
 }> {
   console.log(`\n[Processing] ${company.nom} (${company.ville || 'N/A'})`);
@@ -379,22 +453,29 @@ async function findCompanyEmailsNew(company: CompanyRow): Promise<{
 
   console.log(`[Website] Found: ${website}`);
 
-  // Étape 3a: Scraping basique
-  let emails = await extractEmailFromWebsite(website);
+  // Étape 3: Scraping + IA (toujours utiliser l'IA pour enrichir)
+  const scrapingResult = await extractEmailFromWebsite(website, company.nom);
+  console.log(`[Scraping] Found ${scrapingResult.emails.length} emails`);
 
-  // Étape 3b: Si pas d'emails, utiliser l'IA
-  if (emails.length === 0) {
-    console.log(`[Fallback] Using AI to extract emails`);
-    emails = await extractEmailWithAI(website);
-  }
+  const domain = new URL(website).hostname;
+  const aiResult = await extractEmailWithAI(
+    scrapingResult.pageContent,
+    company.nom,
+    domain,
+    scrapingResult.emails,
+    scrapingResult.careerPageUrl
+  );
 
-  const confidence = emails.length > 0 ? "high" : "low";
+  const confidence = aiResult.emails.length > 0 ? "high" : "low";
+  const source = aiResult.emails.length > scrapingResult.emails.length ? "ai+scraping" : 
+                 scrapingResult.emails.length > 0 ? "scraping" : "ai";
 
   return {
     website,
-    emails,
+    emails: aiResult.emails,
     confidence,
-    source: emails.length > 0 ? "scraper-ai" : "serpapi"
+    source,
+    careerPageUrl: aiResult.careerPageUrl,
   };
 }
 
@@ -443,7 +524,7 @@ serve(async (req) => {
     // Fetch companies without selected_email
     const { data: companies, error: fetchError } = await supabase
       .from("companies")
-      .select("id, nom, ville, siren, code_ape, libelle_ape, adresse")
+      .select("id, nom, ville, siren, code_ape, libelle_ape, adresse, notes")
       .eq("user_id", user.id)
       .is("selected_email", null)
       .limit(maxCompanies);
@@ -486,6 +567,12 @@ serve(async (req) => {
 
       if (result.emails.length > 0) {
         updateData.selected_email = selectBestEmail(result.emails);
+      }
+
+      // Stocker l'URL de la page carrière dans les notes
+      if (result.careerPageUrl) {
+        const notesPrefix = `Page carrière: ${result.careerPageUrl}\n`;
+        updateData.notes = notesPrefix + (company.notes || '');
       }
 
       const { error: updateError } = await supabase
