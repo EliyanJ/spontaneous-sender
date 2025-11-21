@@ -481,9 +481,16 @@ Retourne le JSON avec les emails trouvés et la page carrière si elle existe.`;
     }
 
     const data = await aiResponse.json();
-    const answer = data.choices?.[0]?.message?.content?.trim() || "";
+    let answer = data.choices?.[0]?.message?.content?.trim() || "";
     
     console.log("[AI] Response:", answer);
+
+    // Clean markdown code blocks if present
+    if (answer.startsWith("```json")) {
+      answer = answer.replace(/^```json\s*/, "").replace(/\s*```$/, "");
+    } else if (answer.startsWith("```")) {
+      answer = answer.replace(/^```\s*/, "").replace(/\s*```$/, "");
+    }
 
     try {
       const result = JSON.parse(answer);
