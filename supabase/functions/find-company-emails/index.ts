@@ -171,7 +171,7 @@ Réponds UNIQUEMENT avec le numéro du candidat (1, 2, 3...) ou "NONE".`;
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "gpt-5-mini-2025-08-07",
+        model: "gpt-5-2025-08-07",
         messages: [
           {
             role: "system",
@@ -372,7 +372,7 @@ Et renvoie uniquement le JSON spécifié dans les instructions.`;
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "gpt-5-mini-2025-08-07",
+        model: "gpt-5-2025-08-07",
         messages: [
           {
             role: "system",
