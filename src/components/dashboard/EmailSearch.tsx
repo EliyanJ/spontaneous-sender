@@ -38,13 +38,13 @@ export const EmailSearch = ({ onNavigateToContacts }: EmailSearchProps) => {
       let hasMore = true;
       let batchCount = 0;
 
-      // Traiter par batch de 50 entreprises pour éviter les timeouts
-      while (hasMore && batchCount < 10) { // Max 10 batches (500 entreprises)
+      // Traiter 10 entreprises pour le test
+      while (hasMore && batchCount < 1) { // 1 seul batch pour le test
         batchCount++;
         console.log(`Processing batch ${batchCount}...`);
 
         const { data, error } = await supabase.functions.invoke('find-company-emails', {
-          body: { maxCompanies: 50 }
+          body: { maxCompanies: 10 }
         });
 
         if (error) {
@@ -314,9 +314,9 @@ export const EmailSearch = ({ onNavigateToContacts }: EmailSearchProps) => {
                 <span className="text-xs font-bold text-primary">4</span>
               </div>
               <div>
-                <h4 className="font-medium">Traitement par batch</h4>
+                <h4 className="font-medium">Traitement par batch (TEST)</h4>
                 <p className="text-sm text-muted-foreground">
-                  Pour éviter les timeouts, le système traite 50 entreprises à la fois. Si vous avez plus d'entreprises, relancez simplement la recherche.
+                  Pour le test, le système traite 10 entreprises maximum. Une fois validé, on augmentera la limite.
                 </p>
               </div>
             </div>
