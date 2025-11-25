@@ -51,6 +51,7 @@ interface CompanyRow {
 
 const SERPAPI_KEY = Deno.env.get("SERPAPI_API_KEY");
 const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+const HUNTER_API_KEY = Deno.env.get("HUNTER_IO_API_KEY");
 
 async function delay(ms: number) {
   return new Promise((r) => setTimeout(r, ms));
@@ -323,6 +324,104 @@ Réponds UNIQUEMENT avec le numéro du candidat (1, 2, 3...) ou "NONE".`;
   }
 }
 
+// Nouvelle fonction: Recherche d'emails avec Hunter.io
+async function findEmailsWithHunter(websiteUrl: string): Promise<{
+  emails: string[];
+  source: string;
+  confidence: string;
+}> {
+  if (!HUNTER_API_KEY) {
+    console.log("[Hunter.io] API key not configured");
+    return { emails: [], source: "hunter-disabled", confidence: "none" };
+  }
+
+  try {
+    // Extraire le domaine de l'URL
+    const domain = new URL(websiteUrl).hostname.replace('www.', '');
+    console.log(`[Hunter.io] Searching emails for domain: ${domain}`);
+
+    const url = `https://api.hunter.io/v2/domain-search?domain=${encodeURIComponent(domain)}&api_key=${HUNTER_API_KEY}&type=generic&limit=50`;
+    
+    const response = await fetch(url);
+
+    if (!response.ok) {
+      console.error(`[Hunter.io] Error ${response.status}`);
+      return { emails: [], source: "hunter-error", confidence: "none" };
+    }
+
+    const data = await response.json();
+    console.log(`[Hunter.io] Response:`, JSON.stringify(data, null, 2));
+
+    if (!data.data || !data.data.emails || data.data.emails.length === 0) {
+      console.log(`[Hunter.io] No emails found for ${domain}`);
+      return { emails: [], source: "hunter-no-results", confidence: "none" };
+    }
+
+    // Filtrer et prioriser les emails génériques
+    const genericEmails = data.data.emails.filter((item: any) => item.type === "generic");
+    
+    console.log(`[Hunter.io] Found ${genericEmails.length} generic emails`);
+
+    // Prioriser par department
+    const priorityDepartments = ['hr', 'management', 'sales', 'support', 'communication'];
+    const sortedEmails = [...genericEmails].sort((a: any, b: any) => {
+      const aDept = a.department?.toLowerCase() || '';
+      const bDept = b.department?.toLowerCase() || '';
+      
+      const aPriority = priorityDepartments.indexOf(aDept);
+      const bPriority = priorityDepartments.indexOf(bDept);
+      
+      // Si les deux ont une priorité, comparer
+      if (aPriority !== -1 && bPriority !== -1) {
+        return aPriority - bPriority;
+      }
+      // Si seulement a a une priorité
+      if (aPriority !== -1) return -1;
+      // Si seulement b a une priorité
+      if (bPriority !== -1) return 1;
+      
+      // Sinon, prioriser par confidence
+      return (b.confidence || 0) - (a.confidence || 0);
+    });
+
+    // Prioriser aussi par mot-clé dans l'email
+    const keywordPriorities = ['recrutement', 'rh', 'recruitment', 'hr', 'jobs', 'careers', 'contact', 'info'];
+    const finalSorted = [...sortedEmails].sort((a: any, b: any) => {
+      const aEmail = a.value?.toLowerCase() || '';
+      const bEmail = b.value?.toLowerCase() || '';
+      
+      const aKeywordIndex = keywordPriorities.findIndex(kw => aEmail.includes(kw));
+      const bKeywordIndex = keywordPriorities.findIndex(kw => bEmail.includes(kw));
+      
+      if (aKeywordIndex !== -1 && bKeywordIndex !== -1) {
+        return aKeywordIndex - bKeywordIndex;
+      }
+      if (aKeywordIndex !== -1) return -1;
+      if (bKeywordIndex !== -1) return 1;
+      
+      return 0;
+    });
+
+    const emails = finalSorted
+      .map((item: any) => item.value)
+      .filter((email: string) => email && email.includes('@'));
+
+    console.log(`[Hunter.io] Prioritized emails:`, emails);
+
+    const confidence = emails.length > 0 ? "high" : "none";
+
+    return {
+      emails,
+      source: "hunter.io",
+      confidence
+    };
+
+  } catch (error) {
+    console.error("[Hunter.io] Error:", error);
+    return { emails: [], source: "hunter-error", confidence: "none" };
+  }
+}
+
 // Étape 3: Extraire les informations avec scraping multi-pages
 async function extractEmailFromWebsite(
   websiteUrl: string,
@@ -561,13 +660,34 @@ async function findCompanyEmailsNew(company: CompanyRow): Promise<{
 
   console.log(`[Website] Found: ${website}`);
 
-  // Étape 3: Scraping multi-pages + IA en fallback
-  const scrapingResult = await extractEmailFromWebsite(website, company.nom);
+  // Étape 3: Recherche avec Hunter.io en priorité
+  const hunterResult = await findEmailsWithHunter(website);
   
-  let finalEmails = scrapingResult.emails;
+  let finalEmails: string[] = [];
+  let source = hunterResult.source;
+  let confidence = hunterResult.confidence;
+  let careerPageUrl: string | undefined;
+  let alternativeContact: string | undefined;
+
+  // Si Hunter.io a trouvé des emails, les utiliser
+  if (hunterResult.emails.length > 0) {
+    console.log(`[Hunter.io] ✅ Found ${hunterResult.emails.length} email(s)`);
+    finalEmails = hunterResult.emails;
+    source = "hunter.io";
+    confidence = "high";
+  } else {
+    // Fallback: Scraping multi-pages + IA
+    console.log(`[Hunter.io] ❌ No results, falling back to scraping`);
+    const scrapingResult = await extractEmailFromWebsite(website, company.nom);
+    finalEmails = scrapingResult.emails;
+    careerPageUrl = scrapingResult.careerPageUrl;
+    alternativeContact = scrapingResult.alternativeContact;
+    source = scrapingResult.emails.length > 0 ? "scraping" : "none";
+    confidence = scrapingResult.emails.length > 0 ? "medium" : "low";
+  }
   
-  // Si des emails trouvés, priorise-les
-  if (finalEmails.length > 1) {
+  // Si des emails trouvés, priorise-les (seulement si source n'est pas Hunter.io car déjà priorisés)
+  if (finalEmails.length > 1 && source !== "hunter.io") {
     const bestEmail = prioritizeEmails(finalEmails, company.nom);
     if (bestEmail) {
       // Mettre le meilleur email en premier
@@ -575,16 +695,13 @@ async function findCompanyEmailsNew(company: CompanyRow): Promise<{
     }
   }
 
-  const confidence = finalEmails.length > 0 ? "high" : "low";
-  const source = finalEmails.length > 0 ? "scraping" : "none";
-
   return {
     website,
     emails: finalEmails,
     confidence,
     source,
-    careerPageUrl: scrapingResult.careerPageUrl,
-    alternativeContact: scrapingResult.alternativeContact,
+    careerPageUrl,
+    alternativeContact,
   };
 }
 
