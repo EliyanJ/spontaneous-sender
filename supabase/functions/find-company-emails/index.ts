@@ -345,12 +345,13 @@ async function findEmailsWithHunter(websiteUrl: string): Promise<{
     const response = await fetch(url);
 
     if (!response.ok) {
-      console.error(`[Hunter.io] Error ${response.status}`);
+      const errorText = await response.text();
+      console.error(`[Hunter.io] Error ${response.status}: ${errorText}`);
       return { emails: [], source: "hunter-error", confidence: "none" };
     }
 
     const data = await response.json();
-    console.log(`[Hunter.io] Response:`, JSON.stringify(data, null, 2));
+    console.log(`[Hunter.io] ✅ Found ${data.data?.emails?.length || 0} emails for ${domain}`);
 
     if (!data.data || !data.data.emails || data.data.emails.length === 0) {
       console.log(`[Hunter.io] No emails found for ${domain}`);
