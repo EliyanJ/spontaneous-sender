@@ -340,7 +340,8 @@ async function findEmailsWithHunter(websiteUrl: string): Promise<{
     const domain = new URL(websiteUrl).hostname.replace('www.', '');
     console.log(`[Hunter.io] Searching emails for domain: ${domain}`);
 
-    const url = `https://api.hunter.io/v2/domain-search?domain=${encodeURIComponent(domain)}&api_key=${HUNTER_API_KEY}&type=generic&limit=50`;
+    // IMPORTANT: Retirer type=generic pour obtenir TOUS les emails (pas seulement génériques)
+    const url = `https://api.hunter.io/v2/domain-search?domain=${encodeURIComponent(domain)}&api_key=${HUNTER_API_KEY}&limit=100`;
     
     const response = await fetch(url);
 
@@ -351,21 +352,47 @@ async function findEmailsWithHunter(websiteUrl: string): Promise<{
     }
 
     const data = await response.json();
-    console.log(`[Hunter.io] ✅ Found ${data.data?.emails?.length || 0} emails for ${domain}`);
+    
+    // Logger la réponse complète pour debug
+    console.log(`[Hunter.io] Full response:`, JSON.stringify({
+      domain: data.data?.domain,
+      organization: data.data?.organization,
+      total_emails: data.data?.emails?.length || 0,
+      emails_sample: data.data?.emails?.slice(0, 3).map((e: any) => ({
+        value: e.value,
+        type: e.type,
+        confidence: e.confidence,
+        department: e.department
+      }))
+    }, null, 2));
+    
+    console.log(`[Hunter.io] ✅ Found ${data.data?.emails?.length || 0} total emails for ${domain}`);
 
     if (!data.data || !data.data.emails || data.data.emails.length === 0) {
-      console.log(`[Hunter.io] No emails found for ${domain}`);
+      console.log(`[Hunter.io] ❌ No emails found for ${domain}`);
+      console.log(`[Hunter.io] API response status: ${data.meta?.results || 'unknown'} emails`);
       return { emails: [], source: "hunter-no-results", confidence: "none" };
     }
 
-    // Filtrer et prioriser les emails génériques
-    const genericEmails = data.data.emails.filter((item: any) => item.type === "generic");
+    // Filtrer les emails : prioriser génériques, mais accepter aussi les personnels pertinents
+    const allEmails = data.data.emails;
+    const genericEmails = allEmails.filter((item: any) => item.type === "generic");
+    const relevantPersonalEmails = allEmails.filter((item: any) => {
+      if (item.type !== "personal") return false;
+      const email = item.value?.toLowerCase() || '';
+      const dept = item.department?.toLowerCase() || '';
+      // Accepter les emails personnels RH, recrutement, direction
+      return dept.includes('hr') || dept.includes('management') || 
+             email.includes('rh') || email.includes('recrutement') || 
+             email.includes('recruitment') || email.includes('jobs');
+    });
     
-    console.log(`[Hunter.io] Found ${genericEmails.length} generic emails`);
+    const selectedEmails = [...genericEmails, ...relevantPersonalEmails];
+    console.log(`[Hunter.io] Found ${genericEmails.length} generic + ${relevantPersonalEmails.length} relevant personal emails (total: ${allEmails.length})`);
 
     // Prioriser par department
     const priorityDepartments = ['hr', 'management', 'sales', 'support', 'communication'];
-    const sortedEmails = [...genericEmails].sort((a: any, b: any) => {
+    const sortedEmails = [...selectedEmails].sort((a: any, b: any) => {
       const aDept = a.department?.toLowerCase() || '';
       const bDept = b.department?.toLowerCase() || '';
       
