@@ -1,13 +1,13 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search, Loader2, Save, Building2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { ACTIVITY_SECTORS } from "@/lib/activity-sectors";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import AIGuidedSearch from "./AIGuidedSearch";
 
 interface Company {
   siren: string;
@@ -69,13 +69,13 @@ export const SearchCompanies = () => {
   const [loading, setLoading] = useState(false);
   const [savingCompany, setSavingCompany] = useState<string | null>(null);
   const [companies, setCompanies] = useState<Company[]>([]);
-  const [sector, setSector] = useState("");
+  const [selectedCodes, setSelectedCodes] = useState<string[]>([]);
   const [ville, setVille] = useState("");
   const [minResults, setMinResults] = useState("20");
   const [minEmployees, setMinEmployees] = useState("20");
   const handleSearch = async () => {
-    if (!sector && !ville) {
-      toast.error("Veuillez renseigner au moins un critère de recherche");
+    if (selectedCodes.length === 0 && !ville) {
+      toast.error("Sélectionne au moins un secteur ou une ville");
       return;
     }
 
@@ -89,51 +89,59 @@ export const SearchCompanies = () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        toast.error("Vous devez être connecté");
+        toast.error("Tu dois être connecté");
         return;
       }
 
-      // Appel à l'Edge Function de recherche
-      const searchPayload: any = {
-        nombre: minResultsNum,
-        userId: user.id,
-      };
+      const allResults: Company[] = [];
 
-      // Code APE du secteur (si "Tous les secteurs" n'est pas sélectionné)
-      if (sector && sector !== "all") {
-        const selectedSector = ACTIVITY_SECTORS.find(s => s.label === sector);
-        if (selectedSector && selectedSector.codes.length > 0) {
-          searchPayload.codeApe = selectedSector.codes[0];
+      // Si aucun code APE n'est sélectionné, recherche sans filtre de code
+      const codesToSearch = selectedCodes.length > 0 ? selectedCodes : [''];
+
+      for (const codeApe of codesToSearch) {
+        const searchPayload: any = {
+          nombre: Math.ceil(minResultsNum / codesToSearch.length),
+          userId: user.id,
+        };
+
+        if (codeApe) {
+          searchPayload.codeApe = codeApe;
+        }
+
+        if (ville) {
+          searchPayload.location = ville;
+        }
+
+        if (minEmployees) {
+          searchPayload.minEmployees = parseInt(minEmployees) || 0;
+        }
+
+        console.log('Recherche avec:', searchPayload);
+
+        const { data: searchData, error: searchError } = await supabase.functions.invoke(
+          'search-companies',
+          { body: searchPayload }
+        );
+
+        if (searchError) {
+          console.error('Erreur pour code', codeApe, ':', searchError);
+          continue;
+        }
+
+        if (searchData.success && searchData.data) {
+          allResults.push(...searchData.data);
         }
       }
 
-      // Localisation
-      if (ville) {
-        searchPayload.location = ville;
-      }
+      // Supprimer les doublons par SIREN
+      const uniqueResults = Array.from(
+        new Map(allResults.map(c => [c.siren, c])).values()
+      ).slice(0, minResultsNum);
 
-      // Filtre salariés minimum
-      if (minEmployees) {
-        searchPayload.minEmployees = parseInt(minEmployees) || 0;
-      }
+      console.log(`${uniqueResults.length} entreprises uniques trouvées`);
 
-      console.log('Recherche avec:', searchPayload);
-      toast.info("Recherche en cours avec randomisation...");
-
-      const { data: searchData, error: searchError } = await supabase.functions.invoke(
-        'search-companies',
-        { body: searchPayload }
-      );
-
-      if (searchError) throw searchError;
-      if (!searchData.success) throw new Error(searchData.error);
-
-      let results = searchData.data || [];
-      console.log(`${results.length} entreprises trouvées`);
-
-
-      setCompanies(results);
-      toast.success(`${results.length} entreprise(s) trouvée(s)`);
+      setCompanies(uniqueResults);
+      toast.success(`${uniqueResults.length} entreprise(s) trouvée(s)`);
 
     } catch (error) {
       console.error('Erreur recherche:', error);
@@ -250,59 +258,47 @@ export const SearchCompanies = () => {
           <CardDescription>Utilisez les filtres pour cibler vos prospects (20 salariés minimum)</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="space-y-4">
             <div className="space-y-2">
-              <Label>Secteur d'activité</Label>
-              <Select value={sector} onValueChange={setSector}>
-                <SelectTrigger className="bg-background">
-                  <SelectValue placeholder="Choisir un secteur" />
-                </SelectTrigger>
-                <SelectContent className="bg-background z-50">
-                  <SelectItem value="all">
-                    Tous les secteurs
-                  </SelectItem>
-                  {ACTIVITY_SECTORS.map((s) => (
-                    <SelectItem key={s.label} value={s.label}>
-                      {s.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Label>Secteurs d'activité</Label>
+              <AIGuidedSearch onSectorsSelected={setSelectedCodes} />
             </div>
-            <div className="space-y-2">
-              <Label>Ville ou Code Postal (filtrage strict)</Label>
-              <Input
-                placeholder="Paris, 75001..."
-                value={ville}
-                onChange={(e) => setVille(e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Nombre de résultats (1-100)</Label>
-              <Input
-                type="number"
-                min="1"
-                max="100"
-                placeholder="20"
-                value={minResults}
-                onChange={(e) => setMinResults(e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Nombre de salariés minimum</Label>
-              <Select value={minEmployees} onValueChange={setMinEmployees}>
-                <SelectTrigger className="bg-background">
-                  <SelectValue placeholder="Minimum de salariés" />
-                </SelectTrigger>
-                <SelectContent className="bg-background z-50">
-                  <SelectItem value="0">Tous (0+)</SelectItem>
-                  <SelectItem value="10">10+ salariés</SelectItem>
-                  <SelectItem value="20">20+ salariés</SelectItem>
-                  <SelectItem value="50">50+ salariés</SelectItem>
-                  <SelectItem value="100">100+ salariés</SelectItem>
-                  <SelectItem value="250">250+ salariés</SelectItem>
-                </SelectContent>
-              </Select>
+            <div className="grid gap-4 md:grid-cols-3">
+              <div className="space-y-2">
+                <Label>Ville ou Code Postal</Label>
+                <Input
+                  placeholder="Paris, 75001..."
+                  value={ville}
+                  onChange={(e) => setVille(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Nombre de résultats (1-100)</Label>
+                <Input
+                  type="number"
+                  min="1"
+                  max="100"
+                  placeholder="20"
+                  value={minResults}
+                  onChange={(e) => setMinResults(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Nombre de salariés minimum</Label>
+                <Select value={minEmployees} onValueChange={setMinEmployees}>
+                  <SelectTrigger className="bg-background">
+                    <SelectValue placeholder="Minimum de salariés" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-background z-50">
+                    <SelectItem value="0">Tous (0+)</SelectItem>
+                    <SelectItem value="10">10+ salariés</SelectItem>
+                    <SelectItem value="20">20+ salariés</SelectItem>
+                    <SelectItem value="50">50+ salariés</SelectItem>
+                    <SelectItem value="100">100+ salariés</SelectItem>
+                    <SelectItem value="250">250+ salariés</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
           <Button onClick={handleSearch} disabled={loading} className="w-full">
