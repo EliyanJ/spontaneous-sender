@@ -91,9 +91,9 @@ async function sleep(ms: number) {
 }
 
 // Mapper les limites de salariés vers les codes de tranche
-// Codes: 00=0, 01=1-2, 02=3-5, 03=6-9, 11=10-19, 12=20-49, 21=50-99, 22=100-199, 31=200-249, 32=250-499, 41=500-999, 42=1000-1999, 51=2000-4999, 52=5000-9999, 53=10000+
+// Codes valides INSEE: 00=0, 01=1-2, 02=3-5, 03=6-9, 11=10-19, 12=20-49, 21=50-99, 22=100-199, 32=200-499, 41=500-999, 42=1000-1999, 51=2000-4999, 52=5000-9999, 53=10000+
 function getEmployeeTranches(minEmployees: number, maxEmployees?: number): string {
-  // Toutes les tranches avec leurs bornes
+  // Toutes les tranches avec leurs bornes (codes INSEE valides uniquement)
   const allTranches = [
     { code: '00', min: 0, max: 0 },
     { code: '01', min: 1, max: 2 },
@@ -103,8 +103,7 @@ function getEmployeeTranches(minEmployees: number, maxEmployees?: number): strin
     { code: '12', min: 20, max: 49 },
     { code: '21', min: 50, max: 99 },
     { code: '22', min: 100, max: 199 },
-    { code: '31', min: 200, max: 249 },
-    { code: '32', min: 250, max: 499 },
+    { code: '32', min: 200, max: 499 },
     { code: '41', min: 500, max: 999 },
     { code: '42', min: 1000, max: 1999 },
     { code: '51', min: 2000, max: 4999 },
@@ -114,7 +113,6 @@ function getEmployeeTranches(minEmployees: number, maxEmployees?: number): strin
   
   // Filtrer les tranches qui correspondent aux critères min/max
   const matchingTranches = allTranches.filter(t => {
-    // La tranche doit avoir au moins une partie dans la plage demandée
     const trancheOverlapsMin = t.max >= minEmployees;
     const trancheOverlapsMax = maxEmployees ? t.min <= maxEmployees : true;
     return trancheOverlapsMin && trancheOverlapsMax;
@@ -125,6 +123,7 @@ function getEmployeeTranches(minEmployees: number, maxEmployees?: number): strin
     return '02,03,11,12,21';
   }
   
+  console.log(`[Tranches] min=${minEmployees}, max=${maxEmployees} → ${matchingTranches.map(t => t.code).join(',')}`);
   return matchingTranches.map(t => t.code).join(',');
 }
 
