@@ -194,8 +194,10 @@ serve(async (req) => {
         params.code_postal = arrondissements.join(',');
         console.log(`Filtrage strict sur tous les arrondissements: ${arrondissements.length} codes postaux`);
       } else {
-        // Ville normale: recherche par nom de commune
-        params.commune = location;
+        // Ville normale: utiliser le paramètre q pour recherche textuelle
+        // Le paramètre 'commune' n'existe pas dans l'API, on utilise 'q' pour inclure le nom de ville
+        params.q = location;
+        console.log(`Recherche textuelle par ville: ${location}`);
       }
     }
 
