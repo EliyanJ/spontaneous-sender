@@ -72,7 +72,7 @@ export const SearchCompanies = () => {
   const [selectedCodes, setSelectedCodes] = useState<string[]>([]);
   const [ville, setVille] = useState("");
   const [minResults, setMinResults] = useState("20");
-  const [minEmployees, setMinEmployees] = useState("20");
+  const [minEmployees, setMinEmployees] = useState("5-100");
   const handleSearch = async () => {
     if (selectedCodes.length === 0 && !ville) {
       toast.error("Sélectionne au moins un secteur ou une ville");
@@ -113,7 +113,10 @@ export const SearchCompanies = () => {
         }
 
         if (minEmployees) {
-          searchPayload.minEmployees = parseInt(minEmployees) || 0;
+          // Parse min-max format (e.g., "5-100")
+          const [min, max] = minEmployees.split('-').map(Number);
+          searchPayload.minEmployees = min || 5;
+          searchPayload.maxEmployees = max || 100;
         }
 
         console.log('Recherche avec:', searchPayload);
@@ -255,7 +258,7 @@ export const SearchCompanies = () => {
       <Card className="border-0 shadow-md">
         <CardHeader className="bg-gradient-to-r from-muted/50 to-background pb-4">
           <CardTitle className="text-2xl">Rechercher des entreprises</CardTitle>
-          <CardDescription>Utilisez les filtres pour cibler vos prospects (20 salariés minimum)</CardDescription>
+          <CardDescription>Utilisez les filtres pour cibler vos prospects (5-100 salariés par défaut pour de meilleurs résultats)</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-4">
@@ -284,18 +287,18 @@ export const SearchCompanies = () => {
                 />
               </div>
               <div className="space-y-2">
-                <Label>Nombre de salariés minimum</Label>
+                <Label>Nombre de salariés</Label>
                 <Select value={minEmployees} onValueChange={setMinEmployees}>
                   <SelectTrigger className="bg-background">
-                    <SelectValue placeholder="Minimum de salariés" />
+                    <SelectValue placeholder="5-100 salariés (recommandé)" />
                   </SelectTrigger>
                   <SelectContent className="bg-background z-50">
-                    <SelectItem value="0">Tous (0+)</SelectItem>
-                    <SelectItem value="10">10+ salariés</SelectItem>
-                    <SelectItem value="20">20+ salariés</SelectItem>
-                    <SelectItem value="50">50+ salariés</SelectItem>
-                    <SelectItem value="100">100+ salariés</SelectItem>
-                    <SelectItem value="250">250+ salariés</SelectItem>
+                    <SelectItem value="5-100">5-100 salariés (recommandé)</SelectItem>
+                    <SelectItem value="5-50">5-50 salariés (PME)</SelectItem>
+                    <SelectItem value="10-100">10-100 salariés</SelectItem>
+                    <SelectItem value="20-100">20-100 salariés</SelectItem>
+                    <SelectItem value="50-200">50-200 salariés (ETI)</SelectItem>
+                    <SelectItem value="0-500">Tous (0-500)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
