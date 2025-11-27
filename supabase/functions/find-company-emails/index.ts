@@ -1,7 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
-import { DOMParser } from "https://deno.land/x/deno_dom@v0.1.38/deno-dom-wasm.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -57,89 +56,53 @@ async function delay(ms: number) {
   return new Promise((r) => setTimeout(r, ms));
 }
 
-// Scrape une page avec DOMParser
-async function scrapePage(url: string): Promise<{ emails: string[]; text: string; hasContactForm: boolean }> {
+// Scrape une page - OPTIMISÉ pour réduire la mémoire
+async function scrapePage(url: string): Promise<{ emails: string[]; hasContactForm: boolean }> {
   try {
-    console.log(`[Scraping] ${url}`);
-    
     const response = await fetch(url, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (compatible; JobBot/1.0;)',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-        'Accept-Language': 'fr-FR,fr;q=0.9,en;q=0.8',
+        'Accept': 'text/html',
       },
-      signal: AbortSignal.timeout(5000),
+      signal: AbortSignal.timeout(3000),
     });
 
-    if (!response.ok) {
-      console.log(`[Scraping] HTTP ${response.status} for ${url}`);
-      return { emails: [], text: '', hasContactForm: false };
-    }
+    if (!response.ok) return { emails: [], hasContactForm: false };
 
     const html = await response.text();
-    const doc = new DOMParser().parseFromString(html, 'text/html');
     
-    if (!doc) {
-      return { emails: [], text: '', hasContactForm: false };
-    }
-
-    // Supprime les éléments non pertinents
-    const removeSelectors = ['script', 'style', 'nav', 'header', 'footer', 'iframe', 'noscript'];
-    removeSelectors.forEach(selector => {
-      doc.querySelectorAll(selector).forEach(el => {
-        if (el.parentNode) {
-          el.parentNode.removeChild(el);
-        }
-      });
-    });
-
-    // Extrait le texte propre
-    const bodyText = doc.querySelector('body')?.textContent || '';
-    const cleanText = bodyText
-      .replace(/\s+/g, ' ')
-      .trim()
-      .substring(0, 3000);
-
-    // Cherche les emails par regex
+    // Extraction emails par regex
     const emailRegex = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g;
-    const emailsFound: string[] = [];
-    const emailMatches = html.match(emailRegex) || [];
-    emailsFound.push(...emailMatches);
+    const emailsFound: string[] = html.match(emailRegex) || [];
     
-    // Cherche les mailto:
+    // mailto:
     const mailtoRegex = /mailto:([A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,})/gi;
     const mailtoMatches = [...html.matchAll(mailtoRegex)];
     mailtoMatches.forEach(match => {
       if (match[1]) emailsFound.push(match[1]);
     });
 
-    // Détecte les formulaires de contact
-    const hasContactForm = doc.querySelectorAll('form').length > 0 && 
-                          (cleanText.toLowerCase().includes('contact') || 
-                           cleanText.toLowerCase().includes('message'));
+    // Détecte formulaire de contact
+    const hasContactForm = html.includes('<form') && 
+                          (html.toLowerCase().includes('contact') || html.toLowerCase().includes('message'));
 
-    // Filtre les emails invalides
+    // Filtre emails invalides
     const validEmails = emailsFound.filter((email: string) => {
       const lower = email.toLowerCase();
       return !lower.includes('noreply') &&
              !lower.includes('no-reply') &&
              !lower.includes('example') &&
              !lower.includes('.png') &&
-             !lower.includes('.jpg') &&
-             !lower.includes('.gif');
+             !lower.includes('.jpg');
     });
 
-    console.log(`[Scraping] Found ${validEmails.length} emails on ${url}`);
-    
     return {
-      emails: [...new Set(validEmails)],
-      text: cleanText,
+      emails: [...new Set(validEmails)] as string[],
       hasContactForm
     };
 
-  } catch (error) {
-    console.error(`[Scraping] Error on ${url}:`, error);
-    return { emails: [], text: '', hasContactForm: false };
+  } catch {
+    return { emails: [], hasContactForm: false };
   }
 }
 
@@ -444,6 +407,7 @@ async function findEmailsWithHunter(websiteUrl: string): Promise<{
 }
 
 // Extraction d'emails multi-pages (scraping)
+// Extraction d'emails simplifiée - OPTIMISÉE pour éviter WORKER_LIMIT
 async function extractEmailFromWebsite(
   websiteUrl: string,
   companyName: string
@@ -453,81 +417,40 @@ async function extractEmailFromWebsite(
   alternativeContact?: string;
 }> {
   const emails: Set<string> = new Set();
-  let careerPageUrl: string | undefined;
-  let allContent = '';
   let hasContactForm = false;
 
-  const pagesToCheck = [
-    websiteUrl,
-    `${websiteUrl}/contact`,
-    `${websiteUrl}/recrutement`,
-    `${websiteUrl}/careers`,
-  ];
+  // Scraper seulement 2 pages max pour économiser les ressources
+  const pagesToCheck = [websiteUrl, `${websiteUrl}/contact`];
 
-  console.log(`[Scraping] Starting multi-page extraction for ${companyName}`);
+  console.log(`[Scraping] Checking ${pagesToCheck.length} pages for ${companyName}`);
 
   for (const pageUrl of pagesToCheck) {
     const result = await scrapePage(pageUrl);
     
-    if (result.text) {
-      allContent += result.text + '\n\n';
-    }
-    
-    if (result.hasContactForm) {
-      hasContactForm = true;
-    }
-    
+    if (result.hasContactForm) hasContactForm = true;
     result.emails.forEach((email: string) => emails.add(email));
-    
-    const lowerText = result.text.toLowerCase();
-    if (!careerPageUrl && (
-      (lowerText.includes('offre') && lowerText.includes('emploi')) ||
-      lowerText.includes('recrutement') ||
-      lowerText.includes('rejoignez') ||
-      lowerText.includes('careers') ||
-      lowerText.includes('jobs') ||
-      lowerText.includes('welcomekit') ||
-      lowerText.includes('welcome to the jungle')
-    )) {
-      careerPageUrl = pageUrl;
-      console.log(`[Scraping] Found career page: ${pageUrl}`);
-    }
 
-    // Si on a trouvé un email, on arrête le scraping des autres pages
+    // Stop dès qu'on trouve un email
     if (emails.size > 0) {
-      console.log(`[Scraping] Found ${emails.size} email(s), stopping`);
+      console.log(`[Scraping] ✅ Found ${emails.size} email(s)`);
       break;
     }
 
-    await delay(500);
+    await delay(300);
   }
 
   const emailList = Array.from(emails);
-  console.log(`[Scraping] Total found: ${emailList.length} emails`);
 
-  // Si pas d'emails et formulaire disponible
   if (emailList.length === 0 && hasContactForm) {
     return {
       emails: [],
-      careerPageUrl,
       alternativeContact: "Formulaire de contact disponible"
-    };
-  }
-
-  // Si pas d'emails → fallback IA pour analyser le contenu
-  if (emailList.length === 0 && allContent) {
-    console.log(`[AI Fallback] No emails found by regex, using AI to analyze content`);
-    const aiResult = await extractEmailWithAI(allContent, companyName, new URL(websiteUrl).hostname);
-    return {
-      emails: aiResult.emails,
-      careerPageUrl: aiResult.careerPageUrl || careerPageUrl,
-      alternativeContact: aiResult.emails.length === 0 ? "Aucun email trouvé par scraping" : undefined
     };
   }
 
   return {
     emails: emailList,
-    careerPageUrl,
+    alternativeContact: emailList.length === 0 ? "Aucun email trouvé" : undefined
   };
 }
 
