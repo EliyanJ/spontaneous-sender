@@ -57,7 +57,7 @@ async function delay(ms: number) {
   return new Promise((r) => setTimeout(r, ms));
 }
 
-// Scrape une page avec Axios + Cheerio (via DOMParser)
+// Scrape une page avec DOMParser
 async function scrapePage(url: string): Promise<{ emails: string[]; text: string; hasContactForm: boolean }> {
   try {
     console.log(`[Scraping] ${url}`);
@@ -132,7 +132,7 @@ async function scrapePage(url: string): Promise<{ emails: string[]; text: string
     console.log(`[Scraping] Found ${validEmails.length} emails on ${url}`);
     
     return {
-      emails: [...new Set(validEmails)], // Déduplique
+      emails: [...new Set(validEmails)],
       text: cleanText,
       hasContactForm
     };
@@ -154,38 +154,37 @@ function prioritizeEmails(emails: string[], companyName: string): string | null 
     'contact', 'info'
   ];
 
-  // Cherche un email avec mot-clé prioritaire
   for (const priority of priorities) {
     const found = emails.find((email: string) => email.toLowerCase().includes(priority));
     if (found) return found;
   }
 
-  // Cherche un email du domaine de l'entreprise
   const companyWords = lowerCompany.split(/\s+/).filter(w => w.length > 3);
   for (const word of companyWords) {
     const found = emails.find((email: string) => email.toLowerCase().includes(word));
     if (found) return found;
   }
 
-  // Retourne le premier email
   return emails[0];
 }
 
-// Étape 2: Trouver le site officiel avec SerpAPI
+// Étape 2: Trouver le site officiel avec SerpAPI - AMÉLIORÉ
 async function findOfficialWebsite(company: CompanyRow): Promise<string | null> {
   if (!SERPAPI_KEY) {
     console.error("[SerpAPI] API key not configured");
     return null;
   }
 
+  // Recherche plus précise
   const searchQuery = company.ville 
-    ? `${company.nom} ${company.ville} site officiel`
-    : `${company.nom} site officiel`;
+    ? `"${company.nom}" ${company.ville} site officiel`
+    : `"${company.nom}" site officiel entreprise`;
   
   console.log(`[SerpAPI] Searching: "${searchQuery}"`);
 
   try {
-    const url = `https://serpapi.com/search?q=${encodeURIComponent(searchQuery)}&api_key=${SERPAPI_KEY}&num=5`;
+    // Récupérer 10 résultats (toute la page 1)
+    const url = `https://serpapi.com/search?q=${encodeURIComponent(searchQuery)}&api_key=${SERPAPI_KEY}&num=10&gl=fr&hl=fr`;
     const response = await fetch(url);
 
     if (!response.ok) {
@@ -196,32 +195,28 @@ async function findOfficialWebsite(company: CompanyRow): Promise<string | null> 
     const data = await response.json();
     const organicResults = data.organic_results || [];
 
+    console.log(`[SerpAPI] Got ${organicResults.length} raw results`);
+
     if (organicResults.length === 0) {
       console.log(`[SerpAPI] No results found`);
       return null;
     }
 
-    // Filtrer les résultats indésirables
-    const filteredResults = organicResults
-      .slice(0, 3)
-      .filter((result: any) => {
-        const link = result.link?.toLowerCase() || "";
-        // Exclure les annuaires et réseaux sociaux
-        const blacklist = [
-          'linkedin.com',
-          'facebook.com',
-          'instagram.com',
-          'twitter.com',
-          'pagesjaunes.fr',
-          'societe.com',
-          'verif.com',
-          'pappers.fr',
-          'infogreffe.fr',
-          'data.gouv.fr',
-          'wikipedia.org'
-        ];
-        return !blacklist.some(domain => link.includes(domain));
-      });
+    // Filtrer les résultats indésirables - garder TOUS les résultats valides (jusqu'à 10)
+    const blacklist = [
+      'linkedin.com', 'facebook.com', 'instagram.com', 'twitter.com', 'x.com',
+      'pagesjaunes.fr', 'societe.com', 'verif.com', 'pappers.fr', 'infogreffe.fr',
+      'data.gouv.fr', 'wikipedia.org', 'youtube.com', 'tiktok.com', 'pinterest.com',
+      'annuaire-entreprises.data.gouv.fr', 'google.com', 'bing.com', 'indeed.com',
+      'glassdoor.com', 'welcometothejungle.com'
+    ];
+
+    const filteredResults = organicResults.filter((result: any) => {
+      const link = result.link?.toLowerCase() || "";
+      return !blacklist.some(domain => link.includes(domain));
+    });
+
+    console.log(`[SerpAPI] ${filteredResults.length} results after filtering`);
 
     if (filteredResults.length === 0) {
       console.log(`[SerpAPI] No valid results after filtering`);
@@ -235,11 +230,11 @@ async function findOfficialWebsite(company: CompanyRow): Promise<string | null> 
       return url;
     }
 
-    // Si plusieurs candidats, utiliser l'IA pour valider
-    console.log(`[SerpAPI] Multiple candidates (${filteredResults.length}), using AI validation`);
+    // Si plusieurs candidats, utiliser l'IA pour valider avec TOUS les résultats
+    console.log(`[SerpAPI] Multiple candidates (${filteredResults.length}), using AI validation with all results`);
     const validatedUrl = await validateWebsiteWithAI(company, filteredResults);
     
-    return validatedUrl || filteredResults[0].link;
+    return validatedUrl;
 
   } catch (error) {
     console.error(`[SerpAPI] Error:`, error);
@@ -247,7 +242,7 @@ async function findOfficialWebsite(company: CompanyRow): Promise<string | null> 
   }
 }
 
-// Validation IA si plusieurs candidats
+// Validation IA AMÉLIORÉE avec meilleur prompt
 async function validateWebsiteWithAI(
   company: CompanyRow, 
   candidates: Array<{ link: string; title: string; snippet?: string }>
@@ -257,26 +252,42 @@ async function validateWebsiteWithAI(
     return candidates[0].link;
   }
 
+  // Normaliser le nom de l'entreprise pour comparaison
+  const normalizedName = company.nom.toLowerCase()
+    .replace(/[^a-z0-9]/g, '')
+    .replace(/sas|sarl|sa|eurl|sasu|sci|auto|entreprise/g, '');
+
   const prompt = `Tu es un expert en identification de sites web officiels d'entreprises françaises.
 
-ENTREPRISE:
-Nom: ${company.nom}
-Ville: ${company.ville || "N/A"}
-Activité: ${company.libelle_ape || "N/A"}
+ENTREPRISE À TROUVER:
+- Nom: ${company.nom}
+- Nom normalisé: ${normalizedName}
+- Ville: ${company.ville || "N/A"}
+- Activité (APE): ${company.libelle_ape || "N/A"}
 
-CANDIDATS TROUVÉS:
-${candidates.map((c, i) => `${i + 1}. ${c.link}\n   Titre: ${c.title}\n   Description: ${c.snippet || "N/A"}`).join('\n\n')}
+CANDIDATS TROUVÉS SUR GOOGLE (${candidates.length} résultats):
+${candidates.map((c, i) => `${i + 1}. URL: ${c.link}
+   Titre: ${c.title}
+   Description: ${c.snippet || "N/A"}`).join('\n\n')}
 
 MISSION:
-Identifie quel candidat est le SITE OFFICIEL de l'entreprise (pas un annuaire, pas un réseau social).
+Identifie quel candidat est le SITE OFFICIEL de l'entreprise "${company.nom}".
 
-RÈGLES:
-1. Le site doit appartenir à l'entreprise elle-même
-2. Privilégier les domaines qui contiennent le nom de l'entreprise
-3. Si aucun n'est sûr, réponds "NONE"
+CRITÈRES DE SÉLECTION (par ordre d'importance):
+1. Le DOMAINE doit contenir le nom de l'entreprise ou une version abrégée
+2. Le TITRE de la page doit mentionner l'entreprise
+3. Le site ne doit PAS être un annuaire, un réseau social, ou un site tiers
+4. Privilégier les .fr, .com pour les entreprises françaises
+5. Si l'activité est mentionnée dans le snippet, c'est un bon signe
+
+EXEMPLES:
+- Pour "Soldino" → soldino.fr ou soldino.com serait correct
+- Pour "ABC Consulting" → abc-consulting.fr serait correct
+- NE PAS choisir un site qui parle DE l'entreprise mais qui n'EST PAS l'entreprise
 
 RÉPONSE:
-Réponds UNIQUEMENT avec le numéro du candidat (1, 2, 3...) ou "NONE".`;
+Réponds UNIQUEMENT avec le numéro du candidat (1, 2, 3...) que tu identifies comme le site officiel.
+Si AUCUN ne correspond de manière certaine, réponds "NONE".`;
 
   try {
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -290,13 +301,14 @@ Réponds UNIQUEMENT avec le numéro du candidat (1, 2, 3...) ou "NONE".`;
         messages: [
           {
             role: "system",
-            content: "Tu réponds UNIQUEMENT avec un chiffre ou 'NONE'. Aucun texte supplémentaire.",
+            content: "Tu es un assistant expert en identification de sites web d'entreprises. Tu réponds UNIQUEMENT avec un chiffre (1-10) ou 'NONE'. AUCUN texte supplémentaire.",
           },
           {
             role: "user",
             content: prompt,
           },
         ],
+        temperature: 0,
         max_tokens: 10,
       }),
     });
@@ -309,10 +321,29 @@ Réponds UNIQUEMENT avec le numéro du candidat (1, 2, 3...) ou "NONE".`;
     const data = await response.json();
     const answer = data.choices?.[0]?.message?.content?.trim() || "";
     
-    const candidateNum = parseInt(answer);
+    console.log(`[AI] Raw answer: "${answer}"`);
+    
+    // Extraire le numéro de la réponse
+    const match = answer.match(/\d+/);
+    const candidateNum = match ? parseInt(match[0]) : NaN;
+    
     if (!isNaN(candidateNum) && candidateNum >= 1 && candidateNum <= candidates.length) {
-      console.log(`[AI] Selected candidate ${candidateNum}: ${candidates[candidateNum - 1].link}`);
+      console.log(`[AI] ✅ Selected candidate ${candidateNum}: ${candidates[candidateNum - 1].link}`);
       return candidates[candidateNum - 1].link;
+    }
+
+    if (answer.toUpperCase().includes("NONE")) {
+      console.log(`[AI] ❌ No confident match found`);
+      // Fallback: chercher un domaine qui contient le nom de l'entreprise
+      const fallback = candidates.find(c => {
+        const domain = new URL(c.link).hostname.toLowerCase().replace('www.', '');
+        return domain.includes(normalizedName.substring(0, 5));
+      });
+      if (fallback) {
+        console.log(`[AI] Fallback match: ${fallback.link}`);
+        return fallback.link;
+      }
+      return candidates[0].link;
     }
 
     console.log(`[AI] No confident choice, using first candidate`);
@@ -324,23 +355,21 @@ Réponds UNIQUEMENT avec le numéro du candidat (1, 2, 3...) ou "NONE".`;
   }
 }
 
-// Nouvelle fonction: Recherche d'emails avec Hunter.io
+// Recherche d'emails avec Hunter.io
 async function findEmailsWithHunter(websiteUrl: string): Promise<{
   emails: string[];
   source: string;
   confidence: string;
 }> {
   if (!HUNTER_API_KEY) {
-    console.log("[Hunter.io] API key not configured");
+    console.log("[Hunter.io] ❌ API key not configured");
     return { emails: [], source: "hunter-disabled", confidence: "none" };
   }
 
   try {
-    // Extraire le domaine de l'URL
     const domain = new URL(websiteUrl).hostname.replace('www.', '');
-    console.log(`[Hunter.io] Searching emails for domain: ${domain}`);
+    console.log(`[Hunter.io] 🔍 Searching emails for domain: ${domain}`);
 
-    // IMPORTANT: Retirer type=generic pour obtenir TOUS les emails (pas seulement génériques)
     const url = `https://api.hunter.io/v2/domain-search?domain=${encodeURIComponent(domain)}&api_key=${HUNTER_API_KEY}&limit=100`;
     
     const response = await fetch(url);
@@ -353,95 +382,59 @@ async function findEmailsWithHunter(websiteUrl: string): Promise<{
 
     const data = await response.json();
     
-    // Logger la réponse complète pour debug
-    console.log(`[Hunter.io] Full response:`, JSON.stringify({
-      domain: data.data?.domain,
+    console.log(`[Hunter.io] Response for ${domain}:`, JSON.stringify({
       organization: data.data?.organization,
       total_emails: data.data?.emails?.length || 0,
-      emails_sample: data.data?.emails?.slice(0, 3).map((e: any) => ({
-        value: e.value,
-        type: e.type,
-        confidence: e.confidence,
-        department: e.department
-      }))
-    }, null, 2));
-    
-    console.log(`[Hunter.io] ✅ Found ${data.data?.emails?.length || 0} total emails for ${domain}`);
+    }));
 
     if (!data.data || !data.data.emails || data.data.emails.length === 0) {
       console.log(`[Hunter.io] ❌ No emails found for ${domain}`);
-      console.log(`[Hunter.io] API response status: ${data.meta?.results || 'unknown'} emails`);
       return { emails: [], source: "hunter-no-results", confidence: "none" };
     }
 
-    // Filtrer les emails : prioriser génériques, mais accepter aussi les personnels pertinents
     const allEmails = data.data.emails;
+    console.log(`[Hunter.io] ✅ Found ${allEmails.length} total emails`);
+
+    // Filtrer et prioriser
     const genericEmails = allEmails.filter((item: any) => item.type === "generic");
     const relevantPersonalEmails = allEmails.filter((item: any) => {
       if (item.type !== "personal") return false;
       const email = item.value?.toLowerCase() || '';
       const dept = item.department?.toLowerCase() || '';
-      // Accepter les emails personnels RH, recrutement, direction
       return dept.includes('hr') || dept.includes('management') || 
              email.includes('rh') || email.includes('recrutement') || 
              email.includes('recruitment') || email.includes('jobs');
     });
     
     const selectedEmails = [...genericEmails, ...relevantPersonalEmails];
-    console.log(`[Hunter.io] Found ${genericEmails.length} generic + ${relevantPersonalEmails.length} relevant personal emails (total: ${allEmails.length})`);
+    console.log(`[Hunter.io] ${genericEmails.length} generic + ${relevantPersonalEmails.length} relevant personal`);
 
-    // Prioriser par department
-    const priorityDepartments = ['hr', 'management', 'sales', 'support', 'communication'];
-    const sortedEmails = [...selectedEmails].sort((a: any, b: any) => {
-      const aDept = a.department?.toLowerCase() || '';
-      const bDept = b.department?.toLowerCase() || '';
-      
-      const aPriority = priorityDepartments.indexOf(aDept);
-      const bPriority = priorityDepartments.indexOf(bDept);
-      
-      // Si les deux ont une priorité, comparer
-      if (aPriority !== -1 && bPriority !== -1) {
-        return aPriority - bPriority;
-      }
-      // Si seulement a a une priorité
-      if (aPriority !== -1) return -1;
-      // Si seulement b a une priorité
-      if (bPriority !== -1) return 1;
-      
-      // Sinon, prioriser par confidence
-      return (b.confidence || 0) - (a.confidence || 0);
-    });
-
-    // Prioriser aussi par mot-clé dans l'email
+    // Prioriser par keyword
     const keywordPriorities = ['recrutement', 'rh', 'recruitment', 'hr', 'jobs', 'careers', 'contact', 'info'];
-    const finalSorted = [...sortedEmails].sort((a: any, b: any) => {
+    const sortedEmails = [...selectedEmails].sort((a: any, b: any) => {
       const aEmail = a.value?.toLowerCase() || '';
       const bEmail = b.value?.toLowerCase() || '';
       
       const aKeywordIndex = keywordPriorities.findIndex(kw => aEmail.includes(kw));
       const bKeywordIndex = keywordPriorities.findIndex(kw => bEmail.includes(kw));
       
-      if (aKeywordIndex !== -1 && bKeywordIndex !== -1) {
-        return aKeywordIndex - bKeywordIndex;
-      }
+      if (aKeywordIndex !== -1 && bKeywordIndex !== -1) return aKeywordIndex - bKeywordIndex;
       if (aKeywordIndex !== -1) return -1;
       if (bKeywordIndex !== -1) return 1;
       
-      return 0;
+      return (b.confidence || 0) - (a.confidence || 0);
     });
 
-    const emails = finalSorted
+    const emails = sortedEmails
       .map((item: any) => item.value)
       .filter((email: string) => email && email.includes('@'));
 
-    console.log(`[Hunter.io] Prioritized emails:`, emails);
-
-    const confidence = emails.length > 0 ? "high" : "none";
+    console.log(`[Hunter.io] Final prioritized emails:`, emails.slice(0, 3));
 
     return {
       emails,
       source: "hunter.io",
-      confidence
+      confidence: emails.length > 0 ? "high" : "none"
     };
 
   } catch (error) {
@@ -450,7 +443,7 @@ async function findEmailsWithHunter(websiteUrl: string): Promise<{
   }
 }
 
-// Étape 3: Extraire les informations avec scraping multi-pages
+// Extraction d'emails multi-pages (scraping)
 async function extractEmailFromWebsite(
   websiteUrl: string,
   companyName: string
@@ -464,7 +457,6 @@ async function extractEmailFromWebsite(
   let allContent = '';
   let hasContactForm = false;
 
-  // Pages à scraper (réduites à 4 pages principales)
   const pagesToCheck = [
     websiteUrl,
     `${websiteUrl}/contact`,
@@ -472,9 +464,8 @@ async function extractEmailFromWebsite(
     `${websiteUrl}/careers`,
   ];
 
-  console.log(`[Email Extraction] Starting for ${companyName}`);
+  console.log(`[Scraping] Starting multi-page extraction for ${companyName}`);
 
-  // Crawl chaque page
   for (const pageUrl of pagesToCheck) {
     const result = await scrapePage(pageUrl);
     
@@ -486,10 +477,8 @@ async function extractEmailFromWebsite(
       hasContactForm = true;
     }
     
-    // Ajoute les emails trouvés
     result.emails.forEach((email: string) => emails.add(email));
     
-    // Détecte page carrière
     const lowerText = result.text.toLowerCase();
     if (!careerPageUrl && (
       (lowerText.includes('offre') && lowerText.includes('emploi')) ||
@@ -504,20 +493,19 @@ async function extractEmailFromWebsite(
       console.log(`[Scraping] Found career page: ${pageUrl}`);
     }
 
-    // Si on a trouvé un email, on arrête de scraper
+    // Si on a trouvé un email, on arrête le scraping des autres pages
     if (emails.size > 0) {
-      console.log(`[Email Extraction] Found ${emails.size} email(s), stopping scraping`);
+      console.log(`[Scraping] Found ${emails.size} email(s), stopping`);
       break;
     }
 
-    // Délai réduit entre les pages
     await delay(500);
   }
 
   const emailList = Array.from(emails);
-  console.log(`[Email Extraction] Found ${emailList.length} emails by scraping`);
+  console.log(`[Scraping] Total found: ${emailList.length} emails`);
 
-  // Si pas d'emails trouvés mais formulaire disponible
+  // Si pas d'emails et formulaire disponible
   if (emailList.length === 0 && hasContactForm) {
     return {
       emails: [],
@@ -526,14 +514,14 @@ async function extractEmailFromWebsite(
     };
   }
 
-  // Si pas d'emails trouvés → fallback sur IA
+  // Si pas d'emails → fallback IA pour analyser le contenu
   if (emailList.length === 0 && allContent) {
-    console.log(`[AI Fallback] No emails found, using AI to analyze content`);
+    console.log(`[AI Fallback] No emails found by regex, using AI to analyze content`);
     const aiResult = await extractEmailWithAI(allContent, companyName, new URL(websiteUrl).hostname);
     return {
       emails: aiResult.emails,
       careerPageUrl: aiResult.careerPageUrl || careerPageUrl,
-      alternativeContact: aiResult.emails.length === 0 ? "Aucun email trouvé" : undefined
+      alternativeContact: aiResult.emails.length === 0 ? "Aucun email trouvé par scraping" : undefined
     };
   }
 
@@ -543,7 +531,7 @@ async function extractEmailFromWebsite(
   };
 }
 
-// Utiliser l'IA pour enrichir et valider les emails (FALLBACK UNIQUEMENT)
+// Extraction IA (fallback uniquement)
 async function extractEmailWithAI(
   pageContent: string,
   companyName: string,
@@ -612,7 +600,6 @@ Retourne le JSON avec les emails trouvés et la page carrière si elle existe.`;
     
     console.log("[AI] Response:", answer);
 
-    // Clean markdown code blocks if present
     if (answer.startsWith("```json")) {
       answer = answer.replace(/^```json\s*/, "").replace(/\s*```$/, "");
     } else if (answer.startsWith("```")) {
@@ -645,7 +632,6 @@ Retourne le JSON avec les emails trouvés et la page carrière si elle existe.`;
       }
 
       console.log(`[AI] Extracted ${emails.size} emails`);
-      console.log(`[AI] Career page: ${careerPage || 'not found'}`);
 
       return {
         emails: Array.from(emails),
@@ -662,6 +648,7 @@ Retourne le JSON avec les emails trouvés et la page carrière si elle existe.`;
   }
 }
 
+// FONCTION PRINCIPALE - CORRIGÉE pour utiliser Hunter.io correctement
 async function findCompanyEmailsNew(company: CompanyRow): Promise<{
   website: string | null;
   emails: string[];
@@ -671,7 +658,9 @@ async function findCompanyEmailsNew(company: CompanyRow): Promise<{
   alternativeContact?: string;
   error?: string;
 }> {
-  console.log(`\n[Processing] ${company.nom} (${company.ville || 'N/A'})`);
+  console.log(`\n========================================`);
+  console.log(`[Processing] ${company.nom} (${company.ville || 'N/A'})`);
+  console.log(`========================================`);
 
   // Étape 1: Trouver le site officiel
   const website = await findOfficialWebsite(company);
@@ -686,7 +675,7 @@ async function findCompanyEmailsNew(company: CompanyRow): Promise<{
     };
   }
 
-  console.log(`[Website] Found: ${website}`);
+  console.log(`[Website] ✅ Found: ${website}`);
 
   let finalEmails: string[] = [];
   let source = "none";
@@ -695,27 +684,26 @@ async function findCompanyEmailsNew(company: CompanyRow): Promise<{
   let alternativeContact: string | undefined;
 
   // ÉTAPE 2: Scraping d'abord (GRATUIT)
-  console.log(`[Scraping] 🔍 Trying scraping first (free)...`);
+  console.log(`\n[Step 2] 🔍 Trying scraping first (free)...`);
   const scrapingResult = await extractEmailFromWebsite(website, company.nom);
   
+  careerPageUrl = scrapingResult.careerPageUrl;
+  alternativeContact = scrapingResult.alternativeContact;
+
   if (scrapingResult.emails.length > 0) {
     // Scraping a trouvé des emails → on les utilise
-    console.log(`[Scraping] ✅ Found ${scrapingResult.emails.length} email(s) via scraping`);
+    console.log(`[Scraping] ✅ SUCCESS: Found ${scrapingResult.emails.length} email(s)`);
     finalEmails = scrapingResult.emails;
-    careerPageUrl = scrapingResult.careerPageUrl;
-    alternativeContact = scrapingResult.alternativeContact;
     source = "scraping";
     confidence = "medium";
   } else {
     // ÉTAPE 3: Fallback Hunter.io (PAYANT mais plus fiable)
-    console.log(`[Scraping] ❌ No emails found, falling back to Hunter.io (paid)...`);
-    careerPageUrl = scrapingResult.careerPageUrl;
-    alternativeContact = scrapingResult.alternativeContact;
+    console.log(`\n[Step 3] 💰 Scraping found 0 emails, trying Hunter.io (paid fallback)...`);
     
     const hunterResult = await findEmailsWithHunter(website);
     
     if (hunterResult.emails.length > 0) {
-      console.log(`[Hunter.io] ✅ Found ${hunterResult.emails.length} email(s)`);
+      console.log(`[Hunter.io] ✅ SUCCESS: Found ${hunterResult.emails.length} email(s)`);
       finalEmails = hunterResult.emails;
       source = "hunter.io";
       confidence = "high";
@@ -724,20 +712,21 @@ async function findCompanyEmailsNew(company: CompanyRow): Promise<{
       source = "none";
       confidence = "low";
       
-      // Garder l'info du formulaire de contact si présent
-      if (!alternativeContact && scrapingResult.alternativeContact) {
-        alternativeContact = scrapingResult.alternativeContact;
+      if (!alternativeContact) {
+        alternativeContact = "Aucun email trouvé (scraping + Hunter.io)";
       }
     }
   }
   
-  // Prioriser les emails (seulement si source n'est pas Hunter.io car déjà priorisés)
+  // Prioriser les emails (sauf Hunter.io déjà priorisé)
   if (finalEmails.length > 1 && source !== "hunter.io") {
     const bestEmail = prioritizeEmails(finalEmails, company.nom);
     if (bestEmail) {
       finalEmails = [bestEmail, ...finalEmails.filter(e => e !== bestEmail)];
     }
   }
+
+  console.log(`\n[Result] Source: ${source}, Emails: ${finalEmails.length}, Confidence: ${confidence}`);
 
   return {
     website,
@@ -753,7 +742,6 @@ function selectBestEmail(emails: string[]): string {
   if (emails.length === 0) return "";
   if (emails.length === 1) return emails[0];
 
-  // Priorité : rh/recrutement > contact > info > autres
   const priorities = ['rh', 'recrutement', 'recruitment', 'hr', 'jobs', 'careers', 'contact', 'info'];
   
   for (const priority of priorities) {
@@ -817,7 +805,10 @@ serve(async (req) => {
       );
     }
 
-    console.log(`[Start] Processing ${companies.length} companies`);
+    console.log(`\n[Start] Processing ${companies.length} companies`);
+    console.log(`[Config] SERPAPI_KEY: ${SERPAPI_KEY ? 'SET' : 'NOT SET'}`);
+    console.log(`[Config] HUNTER_API_KEY: ${HUNTER_API_KEY ? 'SET' : 'NOT SET'}`);
+    console.log(`[Config] LOVABLE_API_KEY: ${LOVABLE_API_KEY ? 'SET' : 'NOT SET'}`);
 
     const results = [];
     let processed = 0;
@@ -839,7 +830,6 @@ serve(async (req) => {
         updateData.selected_email = selectBestEmail(result.emails);
       }
 
-      // Stocker l'URL de la page carrière dans les notes
       if (result.careerPageUrl) {
         const notesPrefix = `Page carrière: ${result.careerPageUrl}\n`;
         updateData.notes = notesPrefix + (company.notes || '');
@@ -864,7 +854,6 @@ serve(async (req) => {
         error: result.error
       });
 
-      // Délai pour éviter de surcharger les APIs
       await delay(1500);
     }
 
@@ -877,10 +866,21 @@ serve(async (req) => {
     const summary = {
       processed: results.length,
       found: results.filter(r => r.emails && r.emails.length > 0).length,
-      notFound: results.filter(r => !r.emails || r.emails.length === 0).length
+      notFound: results.filter(r => !r.emails || r.emails.length === 0).length,
+      sources: {
+        scraping: results.filter(r => r.source === "scraping").length,
+        hunterIo: results.filter(r => r.source === "hunter.io").length,
+        none: results.filter(r => r.source === "none").length,
+      }
     };
 
-    console.log(`\n[Summary] Processed: ${summary.processed}, Found: ${summary.found}, Not found: ${summary.notFound}`);
+    console.log(`\n========================================`);
+    console.log(`[Summary]`);
+    console.log(`  Processed: ${summary.processed}`);
+    console.log(`  Found: ${summary.found}`);
+    console.log(`  Not found: ${summary.notFound}`);
+    console.log(`  Sources: Scraping=${summary.sources.scraping}, Hunter.io=${summary.sources.hunterIo}, None=${summary.sources.none}`);
+    console.log(`========================================`);
 
     return new Response(
       JSON.stringify({
