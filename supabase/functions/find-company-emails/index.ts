@@ -673,7 +673,7 @@ async function findCompanyEmailsNew(company: CompanyRow): Promise<{
 }> {
   console.log(`\n[Processing] ${company.nom} (${company.ville || 'N/A'})`);
 
-  // Étape 2: Trouver le site officiel
+  // Étape 1: Trouver le site officiel
   const website = await findOfficialWebsite(company);
   
   if (!website) {
@@ -688,37 +688,53 @@ async function findCompanyEmailsNew(company: CompanyRow): Promise<{
 
   console.log(`[Website] Found: ${website}`);
 
-  // Étape 3: Recherche avec Hunter.io en priorité
-  const hunterResult = await findEmailsWithHunter(website);
-  
   let finalEmails: string[] = [];
-  let source = hunterResult.source;
-  let confidence = hunterResult.confidence;
+  let source = "none";
+  let confidence = "none";
   let careerPageUrl: string | undefined;
   let alternativeContact: string | undefined;
 
-  // Si Hunter.io a trouvé des emails, les utiliser
-  if (hunterResult.emails.length > 0) {
-    console.log(`[Hunter.io] ✅ Found ${hunterResult.emails.length} email(s)`);
-    finalEmails = hunterResult.emails;
-    source = "hunter.io";
-    confidence = "high";
-  } else {
-    // Fallback: Scraping multi-pages + IA
-    console.log(`[Hunter.io] ❌ No results, falling back to scraping`);
-    const scrapingResult = await extractEmailFromWebsite(website, company.nom);
+  // ÉTAPE 2: Scraping d'abord (GRATUIT)
+  console.log(`[Scraping] 🔍 Trying scraping first (free)...`);
+  const scrapingResult = await extractEmailFromWebsite(website, company.nom);
+  
+  if (scrapingResult.emails.length > 0) {
+    // Scraping a trouvé des emails → on les utilise
+    console.log(`[Scraping] ✅ Found ${scrapingResult.emails.length} email(s) via scraping`);
     finalEmails = scrapingResult.emails;
     careerPageUrl = scrapingResult.careerPageUrl;
     alternativeContact = scrapingResult.alternativeContact;
-    source = scrapingResult.emails.length > 0 ? "scraping" : "none";
-    confidence = scrapingResult.emails.length > 0 ? "medium" : "low";
+    source = "scraping";
+    confidence = "medium";
+  } else {
+    // ÉTAPE 3: Fallback Hunter.io (PAYANT mais plus fiable)
+    console.log(`[Scraping] ❌ No emails found, falling back to Hunter.io (paid)...`);
+    careerPageUrl = scrapingResult.careerPageUrl;
+    alternativeContact = scrapingResult.alternativeContact;
+    
+    const hunterResult = await findEmailsWithHunter(website);
+    
+    if (hunterResult.emails.length > 0) {
+      console.log(`[Hunter.io] ✅ Found ${hunterResult.emails.length} email(s)`);
+      finalEmails = hunterResult.emails;
+      source = "hunter.io";
+      confidence = "high";
+    } else {
+      console.log(`[Hunter.io] ❌ No emails found either`);
+      source = "none";
+      confidence = "low";
+      
+      // Garder l'info du formulaire de contact si présent
+      if (!alternativeContact && scrapingResult.alternativeContact) {
+        alternativeContact = scrapingResult.alternativeContact;
+      }
+    }
   }
   
-  // Si des emails trouvés, priorise-les (seulement si source n'est pas Hunter.io car déjà priorisés)
+  // Prioriser les emails (seulement si source n'est pas Hunter.io car déjà priorisés)
   if (finalEmails.length > 1 && source !== "hunter.io") {
     const bestEmail = prioritizeEmails(finalEmails, company.nom);
     if (bestEmail) {
-      // Mettre le meilleur email en premier
       finalEmails = [bestEmail, ...finalEmails.filter(e => e !== bestEmail)];
     }
   }

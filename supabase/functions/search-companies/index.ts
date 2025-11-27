@@ -12,7 +12,8 @@ const requestSchema = z.object({
   location: z.string().max(100).optional(),
   nombre: z.number().int().min(1).max(200),
   userId: z.string().uuid(),
-  minEmployees: z.number().int().min(0).optional().default(20)
+  minEmployees: z.number().int().min(0).optional().default(5),
+  maxEmployees: z.number().int().min(1).optional().default(100)
 });
 
 function sanitizeError(error: any): { message: string; code?: string } {
@@ -89,26 +90,42 @@ async function sleep(ms: number) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-// Mapper le nombre minimum de salariés vers les codes de tranche
-function getEmployeeTranches(minEmployees: number): string {
-  const tranches = {
-    0: '00,01,02,03,11,12,21,22,31,32,41,42,51,52,53', // Tous
-    10: '11,12,21,22,31,32,41,42,51,52,53', // 10+
-    20: '12,21,22,31,32,41,42,51,52,53', // 20+
-    50: '21,22,31,32,41,42,51,52,53', // 50+
-    100: '22,31,32,41,42,51,52,53', // 100+
-    250: '41,42,51,52,53', // 250+
-  };
+// Mapper les limites de salariés vers les codes de tranche
+// Codes: 00=0, 01=1-2, 02=3-5, 03=6-9, 11=10-19, 12=20-49, 21=50-99, 22=100-199, 31=200-249, 32=250-499, 41=500-999, 42=1000-1999, 51=2000-4999, 52=5000-9999, 53=10000+
+function getEmployeeTranches(minEmployees: number, maxEmployees?: number): string {
+  // Toutes les tranches avec leurs bornes
+  const allTranches = [
+    { code: '00', min: 0, max: 0 },
+    { code: '01', min: 1, max: 2 },
+    { code: '02', min: 3, max: 5 },
+    { code: '03', min: 6, max: 9 },
+    { code: '11', min: 10, max: 19 },
+    { code: '12', min: 20, max: 49 },
+    { code: '21', min: 50, max: 99 },
+    { code: '22', min: 100, max: 199 },
+    { code: '31', min: 200, max: 249 },
+    { code: '32', min: 250, max: 499 },
+    { code: '41', min: 500, max: 999 },
+    { code: '42', min: 1000, max: 1999 },
+    { code: '51', min: 2000, max: 4999 },
+    { code: '52', min: 5000, max: 9999 },
+    { code: '53', min: 10000, max: Infinity },
+  ];
   
-  // Trouver la tranche correspondante ou la plus proche inférieure
-  const keys = Object.keys(tranches).map(Number).sort((a, b) => b - a);
-  for (const key of keys) {
-    if (minEmployees >= key) {
-      return tranches[key as keyof typeof tranches];
-    }
+  // Filtrer les tranches qui correspondent aux critères min/max
+  const matchingTranches = allTranches.filter(t => {
+    // La tranche doit avoir au moins une partie dans la plage demandée
+    const trancheOverlapsMin = t.max >= minEmployees;
+    const trancheOverlapsMax = maxEmployees ? t.min <= maxEmployees : true;
+    return trancheOverlapsMin && trancheOverlapsMax;
+  });
+  
+  if (matchingTranches.length === 0) {
+    // Fallback: 5-99 (tranches 02, 03, 11, 12, 21)
+    return '02,03,11,12,21';
   }
   
-  return tranches[20]; // Par défaut 20+
+  return matchingTranches.map(t => t.code).join(',');
 }
 
 serve(async (req) => {
@@ -133,9 +150,9 @@ serve(async (req) => {
       );
     }
 
-    const { codeApe, location, nombre = 20, userId, minEmployees = 20 } = validationResult.data;
+    const { codeApe, location, nombre = 20, userId, minEmployees = 5, maxEmployees = 100 } = validationResult.data;
 
-    console.log('Recherche:', { codeApe, location, nombre, userId, minEmployees });
+    console.log('Recherche:', { codeApe, location, nombre, userId, minEmployees, maxEmployees });
 
     // Récupérer la blacklist de l'utilisateur
     let blacklistedSirens: string[] = [];
@@ -157,7 +174,7 @@ serve(async (req) => {
       page: '1',
       est_entrepreneur_individuel: 'false',
       etat_administratif: 'A',
-      tranche_effectif_salarie: getEmployeeTranches(minEmployees),
+      tranche_effectif_salarie: getEmployeeTranches(minEmployees, maxEmployees),
     };
 
     // Gestion du code APE
