@@ -306,11 +306,13 @@ Si AUCUN ne correspond de manière certaine, réponds "NONE".`;
         console.log(`[AI] Fallback match: ${fallback.link}`);
         return fallback.link;
       }
-      return candidates[0].link;
+      // Si aucun fallback, retourner NULL (pas d'annuaire!)
+      console.log(`[AI] No fallback found, skipping company`);
+      return null;
     }
 
-    console.log(`[AI] No confident choice, using first candidate`);
-    return candidates[0].link;
+    console.log(`[AI] No confident choice, skipping`);
+    return null;
 
   } catch (error) {
     console.error("[AI] Error validating:", error);
@@ -333,7 +335,7 @@ async function findEmailsWithHunter(websiteUrl: string): Promise<{
     const domain = new URL(websiteUrl).hostname.replace('www.', '');
     console.log(`[Hunter.io] 🔍 Searching emails for domain: ${domain}`);
 
-    const url = `https://api.hunter.io/v2/domain-search?domain=${encodeURIComponent(domain)}&api_key=${HUNTER_API_KEY}&limit=100`;
+    const url = `https://api.hunter.io/v2/domain-search?domain=${encodeURIComponent(domain)}&api_key=${HUNTER_API_KEY}&limit=10`;
     
     const response = await fetch(url);
 
