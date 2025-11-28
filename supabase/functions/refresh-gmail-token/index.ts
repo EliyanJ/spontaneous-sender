@@ -61,8 +61,20 @@ serve(async (req) => {
     });
 
     if (!refreshResponse.ok) {
-      const errorText = await refreshResponse.text();
-      console.error("Error refreshing token:", errorText);
+      const errorData = await refreshResponse.json().catch(() => ({}));
+      console.error("Error refreshing token:", JSON.stringify(errorData));
+      
+      // Si le token a été révoqué ou a expiré, supprimer les tokens invalides
+      if (errorData.error === "invalid_grant") {
+        console.log("Token revoked or expired, deleting invalid tokens for user:", user.id);
+        await supabase
+          .from("gmail_tokens")
+          .delete()
+          .eq("user_id", user.id);
+        
+        throw new Error("Gmail token has been revoked or expired. Please reconnect your Gmail account.");
+      }
+      
       throw new Error("Failed to refresh token");
     }
 
