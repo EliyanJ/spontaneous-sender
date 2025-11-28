@@ -74,11 +74,15 @@ const Auth = () => {
         sessionStorage.setItem('post_login_redirect', nextPath);
       }
 
+      // Utiliser l'URL d'origine pour le redirect (preview ou production)
+      const redirectUrl = `${window.location.origin}/auth`;
+      console.log('OAuth redirect URL:', redirectUrl);
+
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: 'https://spontaneous-sender.lovable.app/auth',
-          scopes: 'https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/gmail.modify',
+          redirectTo: redirectUrl,
+          scopes: 'https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/gmail.modify https://www.googleapis.com/auth/gmail.compose',
           queryParams: {
             access_type: 'offline',
             prompt: 'consent',

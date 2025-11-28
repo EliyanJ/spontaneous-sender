@@ -622,15 +622,20 @@ export const EmailComposer = () => {
           ) : (
             <Alert variant="destructive">
               <AlertTitle>Gmail non connecté</AlertTitle>
-              <AlertDescription>
-                Veuillez vous reconnecter avec Google pour activer l'envoi d'emails.
+              <AlertDescription className="space-y-2">
+                <p>Votre connexion Gmail a expiré. Veuillez vous reconnecter avec Google pour activer l'envoi d'emails.</p>
                 <Button 
-                  variant="outline" 
+                  variant="default" 
                   size="sm" 
                   className="mt-2"
-                  onClick={() => window.location.href = '/auth'}
+                  onClick={() => {
+                    // Sauvegarder la page actuelle pour y revenir après OAuth
+                    sessionStorage.setItem('post_login_redirect', '/dashboard');
+                    window.location.href = '/auth';
+                  }}
                 >
-                  Se reconnecter
+                  <Mail className="mr-2 h-4 w-4" />
+                  Reconnecter Gmail
                 </Button>
               </AlertDescription>
             </Alert>
