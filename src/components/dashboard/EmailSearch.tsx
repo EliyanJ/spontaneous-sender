@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Mail, Globe, Search, CheckCircle2, AlertCircle, ArrowRight } from "lucide-react";
+import { Loader2, Mail, Globe, Search, CheckCircle2, ArrowRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 interface SearchResult {
@@ -38,13 +38,13 @@ export const EmailSearch = ({ onNavigateToContacts }: EmailSearchProps) => {
       let hasMore = true;
       let batchCount = 0;
 
-      // Traiter 10 entreprises pour le test
-      while (hasMore && batchCount < 1) { // 1 seul batch pour le test
+      // Traiter toutes les entreprises sans limite
+      while (hasMore) {
         batchCount++;
         console.log(`Processing batch ${batchCount}...`);
 
         const { data, error } = await supabase.functions.invoke('find-company-emails', {
-          body: { maxCompanies: 10 }
+          body: { maxCompanies: 50 }
         });
 
         if (error) {
@@ -159,20 +159,14 @@ export const EmailSearch = ({ onNavigateToContacts }: EmailSearchProps) => {
             <CardTitle>Résumé de la recherche</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-3 gap-4 text-center">
+            <div className="grid grid-cols-2 gap-4 text-center">
               <div>
-                <div className="text-2xl font-bold">{summary.processed}/{summary.total}</div>
+                <div className="text-2xl font-bold">{summary.processed}</div>
                 <div className="text-sm text-muted-foreground">Entreprises traitées</div>
               </div>
               <div>
                 <div className="text-2xl font-bold text-green-600">{summary.emailsFound}</div>
                 <div className="text-sm text-muted-foreground">Emails trouvés</div>
-              </div>
-              <div>
-                <div className="text-2xl font-bold">
-                  {summary.emailsFound > 0 ? Math.round((summary.emailsFound / summary.processed) * 100) : 0}%
-                </div>
-                <div className="text-sm text-muted-foreground">Taux de réussite</div>
               </div>
             </div>
             
@@ -192,19 +186,15 @@ export const EmailSearch = ({ onNavigateToContacts }: EmailSearchProps) => {
         </Card>
       )}
 
-      {results.length > 0 && (
+      {results.filter(r => r.emails && r.emails.length > 0).length > 0 && (
         <div className="space-y-4">
-          <h3 className="text-xl font-semibold">Résultats détaillés</h3>
-          {results.map((result, index) => (
+          <h3 className="text-xl font-semibold">Emails trouvés</h3>
+          {results.filter(r => r.emails && r.emails.length > 0).map((result, index) => (
             <Card key={index}>
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-lg flex items-center gap-2">
-                    {result.status === 'success' ? (
-                      <CheckCircle2 className="h-5 w-5 text-green-600" />
-                    ) : (
-                      <AlertCircle className="h-5 w-5 text-destructive" />
-                    )}
+                    <CheckCircle2 className="h-5 w-5 text-green-600" />
                     {result.company}
                   </CardTitle>
                   {result.confidence && getConfidenceBadge(result.confidence)}
@@ -247,17 +237,6 @@ export const EmailSearch = ({ onNavigateToContacts }: EmailSearchProps) => {
                   </div>
                 )}
 
-                {result.error && (
-                  <div className="text-sm text-destructive pl-6">
-                    <span className="font-medium">Erreur:</span> {result.error}
-                  </div>
-                )}
-
-                {result.status === 'success' && (!result.emails || result.emails.length === 0) && (
-                  <div className="text-sm text-muted-foreground pl-6">
-                    Aucun email trouvé pour cette entreprise
-                  </div>
-                )}
               </CardContent>
             </Card>
           ))}
@@ -314,9 +293,9 @@ export const EmailSearch = ({ onNavigateToContacts }: EmailSearchProps) => {
                 <span className="text-xs font-bold text-primary">4</span>
               </div>
               <div>
-                <h4 className="font-medium">Traitement par batch (TEST)</h4>
+                <h4 className="font-medium">Fallback Hunter.io</h4>
                 <p className="text-sm text-muted-foreground">
-                  Pour le test, le système traite 10 entreprises maximum. Une fois validé, on augmentera la limite.
+                  Si le scraping ne trouve rien, Hunter.io est utilisé en backup pour maximiser les chances
                 </p>
               </div>
             </div>
