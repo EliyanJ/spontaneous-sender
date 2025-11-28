@@ -683,7 +683,7 @@ serve(async (req) => {
     const requestData = await req.json();
     const { maxCompanies } = requestSchema.parse(requestData);
 
-    await checkRateLimit(supabase, user.id, "find-company-emails", 10);
+    // Rate limit désactivé pour permettre le traitement de toutes les entreprises
 
     // Fetch companies without selected_email
     const { data: companies, error: fetchError } = await supabase
