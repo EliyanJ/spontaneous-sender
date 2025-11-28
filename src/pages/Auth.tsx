@@ -22,16 +22,42 @@ const Auth = () => {
     const handleGoogleCallback = async () => {
       const hash = window.location.hash;
       
+      // Pas de hash = pas de callback OAuth en cours
       if (!hash) {
+        setProcessingCallback(false);
+        return;
+      }
+
+      // Vérifier si c'est bien un callback OAuth (contient access_token)
+      if (!hash.includes('access_token')) {
         setProcessingCallback(false);
         return;
       }
 
       setProcessingCallback(true);
 
+      // Timeout de sécurité pour éviter le blocage infini
+      const timeout = setTimeout(() => {
+        console.error('OAuth callback timeout - redirecting to dashboard');
+        setProcessingCallback(false);
+        const returnPath = sessionStorage.getItem("post_login_redirect") || "/dashboard";
+        sessionStorage.removeItem("post_login_redirect");
+        navigate(returnPath, { replace: true });
+      }, 10000); // 10 secondes max
+
       try {
+        // Nettoyer le hash de l'URL immédiatement
         window.history.replaceState({}, "", window.location.pathname + window.location.search);
-        const { data: { session } } = await supabase.auth.getSession();
+        
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        
+        if (sessionError) {
+          console.error('Session error:', sessionError);
+          clearTimeout(timeout);
+          toast.error("Erreur lors de la récupération de la session");
+          setProcessingCallback(false);
+          return;
+        }
         
         if (session) {
           const anySession = session as any;
@@ -48,17 +74,30 @@ const Auth = () => {
             });
 
             if (error) {
+              console.error('Error storing Gmail tokens:', error);
               toast.error("Erreur lors de la configuration Gmail");
             } else {
               toast.success("Connexion Google et Gmail réussie !");
             }
+          } else {
+            // Session existe mais pas de provider token - connexion normale sans Gmail
+            toast.success("Connexion réussie !");
           }
 
+          clearTimeout(timeout);
           const returnPath = sessionStorage.getItem("post_login_redirect") || "/dashboard";
           sessionStorage.removeItem("post_login_redirect");
           navigate(returnPath, { replace: true });
+        } else {
+          // Pas de session trouvée malgré le hash - erreur
+          console.error('No session found after OAuth callback');
+          clearTimeout(timeout);
+          toast.error("Erreur: session non trouvée");
+          setProcessingCallback(false);
         }
       } catch (error) {
+        console.error('OAuth callback error:', error);
+        clearTimeout(timeout);
         toast.error("Erreur lors de la connexion");
         setProcessingCallback(false);
       }
