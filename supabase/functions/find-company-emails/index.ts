@@ -131,22 +131,21 @@ function prioritizeEmails(emails: string[], companyName: string): string | null 
   return emails[0];
 }
 
-// Étape 2: Trouver le site officiel avec SerpAPI - AMÉLIORÉ
+// Étape 2: Trouver le site officiel avec SerpAPI - CORRIGÉ pour utiliser knowledge_graph
 async function findOfficialWebsite(company: CompanyRow): Promise<string | null> {
   if (!SERPAPI_KEY) {
     console.error("[SerpAPI] API key not configured");
     return null;
   }
 
-  // Recherche plus précise
+  // Recherche simple avec le nom de l'entreprise
   const searchQuery = company.ville 
-    ? `"${company.nom}" ${company.ville} site officiel`
-    : `"${company.nom}" site officiel entreprise`;
+    ? `${company.nom} ${company.ville}`
+    : company.nom;
   
   console.log(`[SerpAPI] Searching: "${searchQuery}"`);
 
   try {
-    // Récupérer 10 résultats (toute la page 1)
     const url = `https://serpapi.com/search?q=${encodeURIComponent(searchQuery)}&api_key=${SERPAPI_KEY}&num=10&gl=fr&hl=fr`;
     const response = await fetch(url);
 
@@ -156,22 +155,33 @@ async function findOfficialWebsite(company: CompanyRow): Promise<string | null> 
     }
 
     const data = await response.json();
-    const organicResults = data.organic_results || [];
+    
+    // ✅ PRIORITÉ 1: Vérifier le knowledge_graph (comme dans ta capture!)
+    const knowledgeGraph = data.knowledge_graph;
+    if (knowledgeGraph) {
+      const kgWebsite = knowledgeGraph.site_web || knowledgeGraph.website || knowledgeGraph.site;
+      if (kgWebsite) {
+        console.log(`[SerpAPI] ✅ Found website in knowledge_graph: ${kgWebsite}`);
+        return kgWebsite;
+      }
+    }
 
-    console.log(`[SerpAPI] Got ${organicResults.length} raw results`);
+    const organicResults = data.organic_results || [];
+    console.log(`[SerpAPI] Got ${organicResults.length} organic results`);
 
     if (organicResults.length === 0) {
       console.log(`[SerpAPI] No results found`);
       return null;
     }
 
-    // Filtrer les résultats indésirables - garder TOUS les résultats valides (jusqu'à 10)
+    // Blacklist des annuaires et réseaux sociaux
     const blacklist = [
       'linkedin.com', 'facebook.com', 'instagram.com', 'twitter.com', 'x.com',
       'pagesjaunes.fr', 'societe.com', 'verif.com', 'pappers.fr', 'infogreffe.fr',
       'data.gouv.fr', 'wikipedia.org', 'youtube.com', 'tiktok.com', 'pinterest.com',
       'annuaire-entreprises.data.gouv.fr', 'google.com', 'bing.com', 'indeed.com',
-      'glassdoor.com', 'welcometothejungle.com'
+      'glassdoor.com', 'welcometothejungle.com', 'kompass.com', 'mappy.com',
+      'francetravail.fr', 'pole-emploi.fr', 'cci.fr', 'manageo.fr', 'entreprises.lefigaro.fr'
     ];
 
     const filteredResults = organicResults.filter((result: any) => {
@@ -186,18 +196,40 @@ async function findOfficialWebsite(company: CompanyRow): Promise<string | null> 
       return null;
     }
 
-    // Si un seul candidat, on le retourne directement
-    if (filteredResults.length === 1) {
-      const url = filteredResults[0].link;
-      console.log(`[SerpAPI] ✅ Single candidate: ${url}`);
-      return url;
+    // ✅ PRIORITÉ 2: Vérifier si le 1er résultat contient le nom de l'entreprise dans le domaine
+    const normalizedName = company.nom.toLowerCase()
+      .replace(/[^a-z0-9]/g, '')
+      .replace(/sas|sarl|sa|eurl|sasu|sci|auto|entreprise|france|paris|groupe/g, '');
+    
+    // Chercher un domaine qui ressemble au nom de l'entreprise
+    for (const result of filteredResults) {
+      try {
+        const domain = new URL(result.link).hostname.toLowerCase().replace('www.', '');
+        const domainBase = domain.split('.')[0].replace(/-/g, '');
+        
+        // Si le domaine contient une partie significative du nom (min 4 caractères)
+        if (normalizedName.length >= 4 && domainBase.includes(normalizedName.substring(0, Math.min(6, normalizedName.length)))) {
+          console.log(`[SerpAPI] ✅ Domain match found: ${result.link}`);
+          return result.link;
+        }
+      } catch { /* ignore invalid URLs */ }
     }
 
-    // Si plusieurs candidats, utiliser l'IA pour valider avec TOUS les résultats
-    console.log(`[SerpAPI] Multiple candidates (${filteredResults.length}), using AI validation with all results`);
-    const validatedUrl = await validateWebsiteWithAI(company, filteredResults);
-    
-    return validatedUrl;
+    // ✅ PRIORITÉ 3: Utiliser l'IA uniquement si pas de match évident
+    if (filteredResults.length >= 1) {
+      console.log(`[SerpAPI] Using AI to validate ${filteredResults.length} candidates`);
+      const validatedUrl = await validateWebsiteWithAI(company, filteredResults);
+      
+      // Si l'IA ne trouve rien, utiliser le premier résultat filtré (mieux que rien!)
+      if (!validatedUrl && filteredResults.length > 0) {
+        console.log(`[SerpAPI] ⚠️ AI couldn't decide, using first filtered result: ${filteredResults[0].link}`);
+        return filteredResults[0].link;
+      }
+      
+      return validatedUrl;
+    }
+
+    return null;
 
   } catch (error) {
     console.error(`[SerpAPI] Error:`, error);
@@ -205,52 +237,23 @@ async function findOfficialWebsite(company: CompanyRow): Promise<string | null> 
   }
 }
 
-// Validation IA AMÉLIORÉE avec meilleur prompt
+// Validation IA - SIMPLIFIÉE et plus tolérante
 async function validateWebsiteWithAI(
   company: CompanyRow, 
   candidates: Array<{ link: string; title: string; snippet?: string }>
 ): Promise<string | null> {
-  if (!LOVABLE_API_KEY) {
-    console.log("[AI] No API key, returning first candidate");
-    return candidates[0].link;
+  if (!LOVABLE_API_KEY || candidates.length === 0) {
+    console.log("[AI] No API key or no candidates, returning first");
+    return candidates.length > 0 ? candidates[0].link : null;
   }
 
-  // Normaliser le nom de l'entreprise pour comparaison
-  const normalizedName = company.nom.toLowerCase()
-    .replace(/[^a-z0-9]/g, '')
-    .replace(/sas|sarl|sa|eurl|sasu|sci|auto|entreprise/g, '');
+  const prompt = `Entreprise: "${company.nom}" (${company.ville || "France"})
+Activité: ${company.libelle_ape || "N/A"}
 
-  const prompt = `Tu es un expert en identification de sites web officiels d'entreprises françaises.
+Candidats:
+${candidates.slice(0, 5).map((c, i) => `${i + 1}. ${c.link} - ${c.title}`).join('\n')}
 
-ENTREPRISE À TROUVER:
-- Nom: ${company.nom}
-- Nom normalisé: ${normalizedName}
-- Ville: ${company.ville || "N/A"}
-- Activité (APE): ${company.libelle_ape || "N/A"}
-
-CANDIDATS TROUVÉS SUR GOOGLE (${candidates.length} résultats):
-${candidates.map((c, i) => `${i + 1}. URL: ${c.link}
-   Titre: ${c.title}
-   Description: ${c.snippet || "N/A"}`).join('\n\n')}
-
-MISSION:
-Identifie quel candidat est le SITE OFFICIEL de l'entreprise "${company.nom}".
-
-CRITÈRES DE SÉLECTION (par ordre d'importance):
-1. Le DOMAINE doit contenir le nom de l'entreprise ou une version abrégée
-2. Le TITRE de la page doit mentionner l'entreprise
-3. Le site ne doit PAS être un annuaire, un réseau social, ou un site tiers
-4. Privilégier les .fr, .com pour les entreprises françaises
-5. Si l'activité est mentionnée dans le snippet, c'est un bon signe
-
-EXEMPLES:
-- Pour "Soldino" → soldino.fr ou soldino.com serait correct
-- Pour "ABC Consulting" → abc-consulting.fr serait correct
-- NE PAS choisir un site qui parle DE l'entreprise mais qui n'EST PAS l'entreprise
-
-RÉPONSE:
-Réponds UNIQUEMENT avec le numéro du candidat (1, 2, 3...) que tu identifies comme le site officiel.
-Si AUCUN ne correspond de manière certaine, réponds "NONE".`;
+Quel numéro correspond au site OFFICIEL de l'entreprise? Réponds avec un chiffre (1-5) ou "1" par défaut si incertain.`;
 
   try {
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -260,62 +263,40 @@ Si AUCUN ne correspond de manière certaine, réponds "NONE".`;
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+        model: "google/gemini-2.5-flash-lite",
         messages: [
-          {
-            role: "system",
-            content: "Tu es un assistant expert en identification de sites web d'entreprises. Tu réponds UNIQUEMENT avec un chiffre (1-10) ou 'NONE'. AUCUN texte supplémentaire.",
-          },
-          {
-            role: "user",
-            content: prompt,
-          },
+          { role: "system", content: "Tu identifies des sites web d'entreprises. Réponds UNIQUEMENT avec un chiffre (1-5)." },
+          { role: "user", content: prompt },
         ],
         temperature: 0,
-        max_tokens: 10,
+        max_tokens: 5,
       }),
     });
 
     if (!response.ok) {
-      console.error("[AI] Validation error:", response.status);
+      console.log("[AI] Error, using first candidate");
       return candidates[0].link;
     }
 
     const data = await response.json();
-    const answer = data.choices?.[0]?.message?.content?.trim() || "";
+    const answer = data.choices?.[0]?.message?.content?.trim() || "1";
     
-    console.log(`[AI] Raw answer: "${answer}"`);
+    console.log(`[AI] Answer: "${answer}"`);
     
-    // Extraire le numéro de la réponse
     const match = answer.match(/\d+/);
-    const candidateNum = match ? parseInt(match[0]) : NaN;
+    const num = match ? parseInt(match[0]) : 1;
     
-    if (!isNaN(candidateNum) && candidateNum >= 1 && candidateNum <= candidates.length) {
-      console.log(`[AI] ✅ Selected candidate ${candidateNum}: ${candidates[candidateNum - 1].link}`);
-      return candidates[candidateNum - 1].link;
+    if (num >= 1 && num <= candidates.length) {
+      console.log(`[AI] ✅ Selected: ${candidates[num - 1].link}`);
+      return candidates[num - 1].link;
     }
 
-    if (answer.toUpperCase().includes("NONE")) {
-      console.log(`[AI] ❌ No confident match found`);
-      // Fallback: chercher un domaine qui contient le nom de l'entreprise
-      const fallback = candidates.find(c => {
-        const domain = new URL(c.link).hostname.toLowerCase().replace('www.', '');
-        return domain.includes(normalizedName.substring(0, 5));
-      });
-      if (fallback) {
-        console.log(`[AI] Fallback match: ${fallback.link}`);
-        return fallback.link;
-      }
-      // Si aucun fallback, retourner NULL (pas d'annuaire!)
-      console.log(`[AI] No fallback found, skipping company`);
-      return null;
-    }
-
-    console.log(`[AI] No confident choice, skipping`);
-    return null;
+    // Fallback au premier résultat
+    console.log(`[AI] Using first candidate as fallback`);
+    return candidates[0].link;
 
   } catch (error) {
-    console.error("[AI] Error validating:", error);
+    console.error("[AI] Error:", error);
     return candidates[0].link;
   }
 }
