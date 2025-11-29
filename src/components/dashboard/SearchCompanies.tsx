@@ -1,10 +1,12 @@
 import React, { useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { SmartSearchSuggestions } from "./SmartSearchSuggestions";
-import { SectorGrid } from "./SectorGrid";
-import { SearchFilters } from "./SearchFilters";
-import { SearchResults } from "./SearchResults";
+import { AISearchMode } from "./search/AISearchMode";
+import { ManualSearchMode } from "./search/ManualSearchMode";
+import { SearchFiltersStep } from "./search/SearchFiltersStep";
+import { SearchResultsStep } from "./search/SearchResultsStep";
+import { Sparkles, Grid3X3 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface Company {
   siren: string;
@@ -27,10 +29,12 @@ interface Company {
   website_url?: string | null;
 }
 
-type SearchStep = "sectors" | "filters";
+type SearchMode = "ai" | "manual";
+type SearchStep = "select" | "filters" | "results";
 
 export const SearchCompanies = () => {
-  const [step, setStep] = useState<SearchStep>("sectors");
+  const [mode, setMode] = useState<SearchMode>("ai");
+  const [step, setStep] = useState<SearchStep>("select");
   const [loading, setLoading] = useState(false);
   const [savingCompany, setSavingCompany] = useState<string | null>(null);
   const [companies, setCompanies] = useState<Company[]>([]);
@@ -39,17 +43,14 @@ export const SearchCompanies = () => {
   const [minResults, setMinResults] = useState("20");
   const [minEmployees, setMinEmployees] = useState("5-100");
 
-  const handleSmartSuggestion = (codes: string[]) => {
+  const handleSectorsValidated = (codes: string[]) => {
     setSelectedCodes(codes);
     setStep("filters");
   };
 
-  const handleValidateSectors = () => {
-    if (selectedCodes.length === 0) {
-      toast.error("Sélectionne au moins un secteur");
-      return;
-    }
-    setStep("filters");
+  const handleBackToSelect = () => {
+    setStep("select");
+    setCompanies([]);
   };
 
   const handleSearch = async () => {
@@ -110,6 +111,7 @@ export const SearchCompanies = () => {
       ).slice(0, minResultsNum);
 
       setCompanies(uniqueResults);
+      setStep("results");
       toast.success(`${uniqueResults.length} entreprise(s) trouvée(s)`);
 
     } catch (error) {
@@ -210,41 +212,57 @@ export const SearchCompanies = () => {
     }
   };
 
-  const getSelectedSectorsCount = () => {
-    // Count unique sectors from codes
-    const sectors = new Set<string>();
-    selectedCodes.forEach(code => {
-      sectors.add(code.split('.')[0]);
-    });
-    return selectedCodes.length;
-  };
-
   return (
     <div className="h-full">
-      {step === "sectors" && (
-        <div className="space-y-6 animate-fade-in">
-          {/* Smart Suggestions */}
-          <SmartSearchSuggestions onSuggestionSelect={handleSmartSuggestion} />
-          
-          {/* Divider */}
-          <div className="flex items-center gap-4">
-            <div className="flex-1 h-px bg-border" />
-            <span className="text-xs text-muted-foreground uppercase tracking-wider">ou choisir manuellement</span>
-            <div className="flex-1 h-px bg-border" />
+      {/* Mode Tabs - Only visible during selection step */}
+      {step === "select" && (
+        <div className="flex justify-center mb-8 animate-fade-in">
+          <div className="inline-flex p-1.5 rounded-2xl bg-card border border-border/50">
+            <button
+              onClick={() => setMode("ai")}
+              className={cn(
+                "flex items-center gap-2 px-6 py-3 rounded-xl font-medium text-sm transition-all duration-300",
+                mode === "ai"
+                  ? "bg-primary text-primary-foreground shadow-lg"
+                  : "text-muted-foreground hover:text-foreground hover:bg-accent"
+              )}
+              style={mode === "ai" ? { boxShadow: '0 0 20px hsl(var(--primary) / 0.3)' } : {}}
+            >
+              <Sparkles className="h-4 w-4" />
+              Recherche IA
+            </button>
+            <button
+              onClick={() => setMode("manual")}
+              className={cn(
+                "flex items-center gap-2 px-6 py-3 rounded-xl font-medium text-sm transition-all duration-300",
+                mode === "manual"
+                  ? "bg-primary text-primary-foreground shadow-lg"
+                  : "text-muted-foreground hover:text-foreground hover:bg-accent"
+              )}
+              style={mode === "manual" ? { boxShadow: '0 0 20px hsl(var(--primary) / 0.3)' } : {}}
+            >
+              <Grid3X3 className="h-4 w-4" />
+              Recherche manuelle
+            </button>
           </div>
-
-          {/* Sector Grid */}
-          <SectorGrid 
-            selectedCodes={selectedCodes}
-            onCodesChange={setSelectedCodes}
-            onValidate={handleValidateSectors}
-          />
         </div>
       )}
 
-      {step === "filters" && (
-        <div className="space-y-4">
-          <SearchFilters
+      {/* Content based on step */}
+      <div className="relative">
+        {step === "select" && (
+          <div className="animate-fade-in">
+            {mode === "ai" ? (
+              <AISearchMode onSectorsValidated={handleSectorsValidated} />
+            ) : (
+              <ManualSearchMode onSectorsValidated={handleSectorsValidated} />
+            )}
+          </div>
+        )}
+
+        {step === "filters" && (
+          <SearchFiltersStep
+            selectedCodesCount={selectedCodes.length}
             ville={ville}
             setVille={setVille}
             minResults={minResults}
@@ -253,19 +271,22 @@ export const SearchCompanies = () => {
             setMinEmployees={setMinEmployees}
             loading={loading}
             onSearch={handleSearch}
-            onBack={() => setStep("sectors")}
-            selectedSectorsCount={getSelectedSectorsCount()}
+            onBack={handleBackToSelect}
           />
+        )}
 
-          <SearchResults
+        {step === "results" && (
+          <SearchResultsStep
             companies={companies}
             loading={loading}
             savingCompany={savingCompany}
             onSaveCompany={saveCompany}
             onSaveAll={saveAllCompanies}
+            onBack={() => setStep("filters")}
+            onNewSearch={handleBackToSelect}
           />
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 };
