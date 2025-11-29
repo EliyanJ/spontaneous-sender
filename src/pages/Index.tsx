@@ -1,33 +1,33 @@
-import { useState, useEffect } from "react";
-import { useAuth } from "@/hooks/useAuth";
+import React, { useState, useEffect, useRef } from "react";
+import { useSearchParams } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import { SearchCompanies } from "@/components/dashboard/SearchCompanies";
 import { JobOffers } from "@/components/dashboard/JobOffers";
 import { Entreprises } from "@/components/dashboard/Entreprises";
 import { Emails } from "@/components/dashboard/Emails";
 import { CampaignsHub } from "@/components/dashboard/CampaignsHub";
 import { Settings } from "@/components/dashboard/Settings";
-import { AppSidebar } from "@/components/AppSidebar";
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import { useSearchParams } from "react-router-dom";
-import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
-import { Settings as SettingsIcon } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { HorizontalNav } from "@/components/HorizontalNav";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 const Index = () => {
-  const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState("search");
+  const [isDark, setIsDark] = useState(true);
+  const [slideDirection, setSlideDirection] = useState<"left" | "right">("right");
+  const prevTabRef = useRef(activeTab);
+
+  const tabOrder = ["search", "entreprises", "jobs", "emails", "campaigns", "settings"];
 
   useEffect(() => {
-    const tab = searchParams.get("tab");
-    if (tab) {
-      setActiveTab(tab);
-      setSearchParams({});
+    const tabFromUrl = searchParams.get("tab");
+    if (tabFromUrl) {
+      setActiveTab(tabFromUrl);
     }
-  }, [searchParams, setSearchParams]);
+  }, [searchParams]);
 
-  // OAuth callback handler
+  // Handle OAuth callback
   useEffect(() => {
     const expectedReturn = sessionStorage.getItem("oauth_return_expected");
     const hash = window.location.hash;
@@ -74,57 +74,74 @@ const Index = () => {
     });
   }, []);
 
+  // Theme toggle
+  useEffect(() => {
+    if (isDark) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [isDark]);
+
+  const handleTabChange = (newTab: string) => {
+    const currentIndex = tabOrder.indexOf(activeTab);
+    const newIndex = tabOrder.indexOf(newTab);
+    setSlideDirection(newIndex > currentIndex ? "right" : "left");
+    prevTabRef.current = activeTab;
+    setActiveTab(newTab);
+    setSearchParams({ tab: newTab });
+  };
+
+  const renderContent = () => {
+    switch (activeTab) {
+      case "search":
+        return <SearchCompanies />;
+      case "entreprises":
+        return <Entreprises />;
+      case "jobs":
+        return <JobOffers />;
+      case "emails":
+        return <Emails />;
+      case "campaigns":
+        return <CampaignsHub />;
+      case "settings":
+        return <Settings />;
+      default:
+        return <SearchCompanies />;
+    }
+  };
+
   return (
-    <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-background">
-        <AppSidebar activeTab={activeTab} onTabChange={setActiveTab} />
-        
-        <div className="flex-1 flex flex-col">
-          {/* Header simplifié */}
-          <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-10">
-            <div className="flex items-center justify-between px-6 py-4">
-              <div className="flex items-center gap-4">
-                <SidebarTrigger className="lg:hidden" />
-              </div>
-              
-              <h1 className="font-display text-xl font-semibold text-foreground">
-                Connexions
-              </h1>
-              
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setActiveTab("settings")}
-                className="text-muted-foreground hover:text-foreground"
-              >
-                <SettingsIcon className="h-5 w-5" />
-              </Button>
+    <div className="min-h-screen bg-background">
+      {/* Fixed Header */}
+      <header className="sticky top-0 z-50 w-full border-b border-border/50 bg-background/80 backdrop-blur-xl">
+        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
+          {/* Logo */}
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center">
+              <span className="text-primary font-bold">C</span>
             </div>
-          </header>
-          
-          <main className="flex-1 p-6 overflow-auto">
-            <div className={activeTab === "search" ? "block" : "hidden"}>
-              <SearchCompanies />
-            </div>
-            <div className={activeTab === "entreprises" ? "block" : "hidden"}>
-              <Entreprises />
-            </div>
-            <div className={activeTab === "jobs" ? "block" : "hidden"}>
-              <JobOffers />
-            </div>
-            <div className={activeTab === "emails" ? "block" : "hidden"}>
-              <Emails />
-            </div>
-            <div className={activeTab === "campaigns" ? "block" : "hidden"}>
-              <CampaignsHub />
-            </div>
-            <div className={activeTab === "settings" ? "block" : "hidden"}>
-              <Settings />
-            </div>
-          </main>
+            <span className="font-semibold text-foreground hidden sm:inline">Connexions</span>
+          </div>
+
+          {/* Navigation */}
+          <HorizontalNav activeTab={activeTab} onTabChange={handleTabChange} />
+
+          {/* Theme Toggle */}
+          <ThemeToggle isDark={isDark} onToggle={() => setIsDark(!isDark)} />
         </div>
-      </div>
-    </SidebarProvider>
+      </header>
+
+      {/* Main Content */}
+      <main className="container mx-auto px-4 py-6">
+        <div 
+          key={activeTab}
+          className={slideDirection === "right" ? "animate-slide-in-right" : "animate-slide-in-left"}
+        >
+          {renderContent()}
+        </div>
+      </main>
+    </div>
   );
 };
 
