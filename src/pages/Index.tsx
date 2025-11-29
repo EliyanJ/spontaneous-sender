@@ -1,27 +1,21 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import { Button } from "@/components/ui/button";
-import { LogOut } from "lucide-react";
 import { SearchCompanies } from "@/components/dashboard/SearchCompanies";
 import { JobOffers } from "@/components/dashboard/JobOffers";
-import { Statistics } from "@/components/dashboard/Statistics";
-import { Pipeline } from "@/components/dashboard/Pipeline";
-import { Notifications } from "@/components/dashboard/Notifications";
-import { Support } from "@/components/dashboard/Support";
-import { EmailSearch } from "@/components/dashboard/EmailSearch";
-import { ContactEmails } from "@/components/dashboard/ContactEmails";
-import { EmailComposer } from "@/components/dashboard/EmailComposer";
-import { ScheduledEmails } from "@/components/dashboard/ScheduledEmails";
-import { Campaigns } from "@/components/dashboard/Campaigns";
-import CompanyDetails from "@/components/dashboard/CompanyDetails";
+import { Entreprises } from "@/components/dashboard/Entreprises";
+import { Emails } from "@/components/dashboard/Emails";
+import { CampaignsHub } from "@/components/dashboard/CampaignsHub";
+import { Settings } from "@/components/dashboard/Settings";
 import { AppSidebar } from "@/components/AppSidebar";
-import { SidebarProvider } from "@/components/ui/sidebar";
+import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { Settings as SettingsIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 const Index = () => {
-  const { user, signOut } = useAuth();
+  const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState("search");
 
@@ -29,12 +23,11 @@ const Index = () => {
     const tab = searchParams.get("tab");
     if (tab) {
       setActiveTab(tab);
-      // Nettoyer l'URL après avoir défini l'onglet
       setSearchParams({});
     }
   }, [searchParams, setSearchParams]);
 
-  // Traiter le callback OAuth directement sur le dashboard
+  // OAuth callback handler
   useEffect(() => {
     const expectedReturn = sessionStorage.getItem("oauth_return_expected");
     const hash = window.location.hash;
@@ -52,7 +45,6 @@ const Index = () => {
       window.history.replaceState({}, '', window.location.pathname + window.location.search);
     }
 
-    // Une fois sur le dashboard, la session doit être prête
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (!session) return;
 
@@ -74,8 +66,6 @@ const Index = () => {
         } else {
           toast.success('Connexion Google réussie !');
         }
-      } else {
-        console.warn('Aucun token Gmail détecté dans le hash ni la session.');
       }
 
       sessionStorage.removeItem('oauth_return_expected');
@@ -84,67 +74,52 @@ const Index = () => {
     });
   }, []);
 
-
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-background">
         <AppSidebar activeTab={activeTab} onTabChange={setActiveTab} />
         
         <div className="flex-1 flex flex-col">
-          <header className="border-b bg-card">
-            <div className="flex items-center justify-between p-4">
-              <div>
-                <h1 className="font-display text-xl font-bold">API recherche-entreprises.api.gouv.fr</h1>
-              </div>
+          {/* Header simplifié */}
+          <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-10">
+            <div className="flex items-center justify-between px-6 py-4">
               <div className="flex items-center gap-4">
-                <span className="text-sm text-muted-foreground">{user?.email}</span>
-                <Button variant="outline" size="sm" onClick={signOut}>
-                  <LogOut className="mr-2 h-4 w-4" />
-                  Déconnexion
-                </Button>
+                <SidebarTrigger className="lg:hidden" />
               </div>
+              
+              <h1 className="font-display text-xl font-semibold text-foreground">
+                Connexions
+              </h1>
+              
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setActiveTab("settings")}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                <SettingsIcon className="h-5 w-5" />
+              </Button>
             </div>
           </header>
           
-          <main className="flex-1 p-6">
+          <main className="flex-1 p-6 overflow-auto">
             <div className={activeTab === "search" ? "block" : "hidden"}>
               <SearchCompanies />
             </div>
-            <div className={activeTab === "pipeline" ? "block" : "hidden"}>
-              <Pipeline />
+            <div className={activeTab === "entreprises" ? "block" : "hidden"}>
+              <Entreprises />
             </div>
             <div className={activeTab === "jobs" ? "block" : "hidden"}>
               <JobOffers />
             </div>
-            <div className={activeTab === "statistics" ? "block" : "hidden"}>
-              <Statistics />
-            </div>
-            <div className={activeTab === "email-search" ? "block" : "hidden"}>
-              <EmailSearch onNavigateToContacts={() => setActiveTab("contact-emails")} />
-            </div>
-            <div className={activeTab === "contact-emails" ? "block" : "hidden"}>
-              <ContactEmails />
-            </div>
-            <div className={activeTab === "email-composer" ? "block" : "hidden"}>
-              <EmailComposer />
-            </div>
-            <div className={activeTab === "scheduled-emails" ? "block" : "hidden"}>
-              <ScheduledEmails />
+            <div className={activeTab === "emails" ? "block" : "hidden"}>
+              <Emails />
             </div>
             <div className={activeTab === "campaigns" ? "block" : "hidden"}>
-              <Campaigns />
+              <CampaignsHub />
             </div>
-            <div className={activeTab === "company-details" ? "block" : "hidden"}>
-              <div className="p-6">
-                <h2 className="text-2xl font-bold mb-6">Détails des Entreprises</h2>
-                <CompanyDetails />
-              </div>
-            </div>
-            <div className={activeTab === "notifications" ? "block" : "hidden"}>
-              <Notifications />
-            </div>
-            <div className={activeTab === "support" ? "block" : "hidden"}>
-              <Support />
+            <div className={activeTab === "settings" ? "block" : "hidden"}>
+              <Settings />
             </div>
           </main>
         </div>
