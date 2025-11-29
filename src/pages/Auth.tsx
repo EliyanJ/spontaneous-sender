@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -189,11 +189,11 @@ const Auth = () => {
 
             <p className="text-xs text-center text-muted-foreground">
               En vous connectant, vous acceptez nos{" "}
-              <a href="/terms" className="underline hover:text-foreground">
+              <a href="/terms-of-service" className="underline hover:text-foreground">
                 conditions d'utilisation
               </a>{" "}
               et notre{" "}
-              <a href="/privacy" className="underline hover:text-foreground">
+              <a href="/privacy-policy" className="underline hover:text-foreground">
                 politique de confidentialité
               </a>
             </p>

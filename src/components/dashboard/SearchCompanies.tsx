@@ -1,13 +1,10 @@
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Search, Loader2, Save, Building2 } from "lucide-react";
+import React, { useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import AIGuidedSearch from "./AIGuidedSearch";
+import { SmartSearchSuggestions } from "./SmartSearchSuggestions";
+import { SectorGrid } from "./SectorGrid";
+import { SearchFilters } from "./SearchFilters";
+import { SearchResults } from "./SearchResults";
 
 interface Company {
   siren: string;
@@ -30,42 +27,10 @@ interface Company {
   website_url?: string | null;
 }
 
-// Helpers d'effectif: transforme une tranche en estimation stable par entreprise
-const TRANCHE_RANGES: Record<string, [number, number, string]> = {
-  "00": [0, 0, "0"],
-  "01": [1, 2, "1-2"],
-  "02": [3, 5, "3-5"],
-  "03": [6, 9, "6-9"],
-  "11": [10, 19, "10-19"],
-  "12": [20, 49, "20-49"],
-  "21": [50, 99, "50-99"],
-  "22": [100, 199, "100-199"],
-  "32": [200, 249, "200-249"],
-  "41": [250, 499, "250-499"],
-  "42": [500, 999, "500-999"],
-  "51": [1000, 1999, "1000-1999"],
-  "52": [2000, 4999, "2000-4999"],
-  "53": [5000, 8000, "5000+"],
-};
-
-function hashString(str: string) {
-  let h = 5381; for (let i = 0; i < str.length; i++) h = (h * 33) ^ str.charCodeAt(i);
-  return h >>> 0;
-}
-function seededBetween(seed: string, min: number, max: number) {
-  if (min >= max) return min;
-  const h = hashString(seed);
-  return min + (h % (max - min + 1));
-}
-function prettyEstimate(code: string, siren: string) {
-  const r = TRANCHE_RANGES[code]; if (!r) return "n.c.";
-  const [min, max, label] = r;
-  if (min === max) return label;
-  const val = seededBetween(siren, min, max);
-  return `${val} (~${label})`;
-}
+type SearchStep = "sectors" | "filters";
 
 export const SearchCompanies = () => {
+  const [step, setStep] = useState<SearchStep>("sectors");
   const [loading, setLoading] = useState(false);
   const [savingCompany, setSavingCompany] = useState<string | null>(null);
   const [companies, setCompanies] = useState<Company[]>([]);
@@ -73,6 +38,20 @@ export const SearchCompanies = () => {
   const [ville, setVille] = useState("");
   const [minResults, setMinResults] = useState("20");
   const [minEmployees, setMinEmployees] = useState("5-100");
+
+  const handleSmartSuggestion = (codes: string[]) => {
+    setSelectedCodes(codes);
+    setStep("filters");
+  };
+
+  const handleValidateSectors = () => {
+    if (selectedCodes.length === 0) {
+      toast.error("Sélectionne au moins un secteur");
+      return;
+    }
+    setStep("filters");
+  };
+
   const handleSearch = async () => {
     if (selectedCodes.length === 0 && !ville) {
       toast.error("Sélectionne au moins un secteur ou une ville");
@@ -94,8 +73,6 @@ export const SearchCompanies = () => {
       }
 
       const allResults: Company[] = [];
-
-      // Si aucun code APE n'est sélectionné, recherche sans filtre de code
       const codesToSearch = selectedCodes.length > 0 ? selectedCodes : [''];
 
       for (const codeApe of codesToSearch) {
@@ -104,22 +81,14 @@ export const SearchCompanies = () => {
           userId: user.id,
         };
 
-        if (codeApe) {
-          searchPayload.codeApe = codeApe;
-        }
-
-        if (ville) {
-          searchPayload.location = ville;
-        }
+        if (codeApe) searchPayload.codeApe = codeApe;
+        if (ville) searchPayload.location = ville;
 
         if (minEmployees) {
-          // Parse min-max format (e.g., "5-100")
           const [min, max] = minEmployees.split('-').map(Number);
           searchPayload.minEmployees = min || 5;
           searchPayload.maxEmployees = max || 100;
         }
-
-        console.log('Recherche avec:', searchPayload);
 
         const { data: searchData, error: searchError } = await supabase.functions.invoke(
           'search-companies',
@@ -136,12 +105,9 @@ export const SearchCompanies = () => {
         }
       }
 
-      // Supprimer les doublons par SIREN
       const uniqueResults = Array.from(
         new Map(allResults.map(c => [c.siren, c])).values()
       ).slice(0, minResultsNum);
-
-      console.log(`${uniqueResults.length} entreprises uniques trouvées`);
 
       setCompanies(uniqueResults);
       toast.success(`${uniqueResults.length} entreprise(s) trouvée(s)`);
@@ -177,14 +143,8 @@ export const SearchCompanies = () => {
 
       if (error) throw error;
       
-      // Retirer l'entreprise de la liste après sauvegarde réussie
-      setCompanies(prevCompanies => 
-        prevCompanies.filter(c => c.siret !== company.siret)
-      );
-      
-      // Notifier les autres vues (pipeline) qu'il y a eu une mise à jour
+      setCompanies(prev => prev.filter(c => c.siret !== company.siret));
       window.dispatchEvent(new CustomEvent('companies:updated'));
-      
       toast.success("Entreprise sauvegardée");
     } catch (error) {
       toast.error("Erreur lors de la sauvegarde");
@@ -204,12 +164,10 @@ export const SearchCompanies = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Récupérer les SIREN déjà sauvegardés pour éviter les doublons
-      const { data: existing, error: existingError } = await supabase
+      const { data: existing } = await supabase
         .from('companies')
         .select('siren')
         .eq('user_id', user.id);
-      if (existingError) throw existingError;
 
       const existingSirens = new Set((existing || []).map((c: any) => c.siren));
       const uniqueBySiren = new Map<string, any>();
@@ -247,169 +205,66 @@ export const SearchCompanies = () => {
       setCompanies([]);
     } catch (error: any) {
       toast.error('Erreur lors de la sauvegarde');
-      console.error(error);
     } finally {
       setLoading(false);
     }
   };
 
-  return (
-    <div className="space-y-6">
-      <Card className="border-0 shadow-md">
-        <CardHeader className="bg-gradient-to-r from-muted/50 to-background pb-4">
-          <CardTitle className="text-2xl">Rechercher des entreprises</CardTitle>
-          <CardDescription>Utilisez les filtres pour cibler vos prospects (5-100 salariés par défaut pour de meilleurs résultats)</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label>Secteurs d'activité</Label>
-              <AIGuidedSearch onSectorsSelected={setSelectedCodes} />
-            </div>
-            <div className="grid gap-4 md:grid-cols-3">
-              <div className="space-y-2">
-                <Label>Ville ou Code Postal</Label>
-                <Input
-                  placeholder="Paris, 75001..."
-                  value={ville}
-                  onChange={(e) => setVille(e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Nombre de résultats (1-100)</Label>
-                <Input
-                  type="number"
-                  min="1"
-                  max="100"
-                  placeholder="20"
-                  value={minResults}
-                  onChange={(e) => setMinResults(e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Nombre de salariés</Label>
-                <Select value={minEmployees} onValueChange={setMinEmployees}>
-                  <SelectTrigger className="bg-background">
-                    <SelectValue placeholder="5-100 salariés (recommandé)" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-background z-50">
-                    <SelectItem value="5-100">5-100 salariés (recommandé)</SelectItem>
-                    <SelectItem value="5-50">5-50 salariés (PME)</SelectItem>
-                    <SelectItem value="10-100">10-100 salariés</SelectItem>
-                    <SelectItem value="20-100">20-100 salariés</SelectItem>
-                    <SelectItem value="50-200">50-200 salariés (ETI)</SelectItem>
-                    <SelectItem value="0-500">Tous (0-500)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </div>
-          <Button onClick={handleSearch} disabled={loading} className="w-full">
-            {loading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Recherche en cours...
-              </>
-            ) : (
-              <>
-                <Search className="mr-2 h-4 w-4" />
-                Rechercher
-              </>
-            )}
-          </Button>
-        </CardContent>
-      </Card>
+  const getSelectedSectorsCount = () => {
+    // Count unique sectors from codes
+    const sectors = new Set<string>();
+    selectedCodes.forEach(code => {
+      sectors.add(code.split('.')[0]);
+    });
+    return selectedCodes.length;
+  };
 
-      {companies.length > 0 && (
-        <Card className="border-0 shadow-md">
-          <CardHeader className="bg-gradient-to-r from-muted/50 to-background pb-4">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-xl flex items-center gap-2">
-                <Building2 className="h-5 w-5 text-primary" />
-                Résultats de recherche ({companies.length})
-              </CardTitle>
-              <Button 
-                onClick={saveAllCompanies} 
-                disabled={loading}
-                size="lg"
-                className="shadow-lg"
-              >
-                {loading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Sauvegarde...
-                  </>
-                ) : (
-                  <>
-                    <Save className="mr-2 h-4 w-4" />
-                    Sauvegarder tous les résultats
-                  </>
-                )}
-              </Button>
-            </div>
-            <CardDescription className="mt-2">
-              Cliquez sur "Sauvegarder tous les résultats" pour ajouter toutes ces entreprises à votre base
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="pt-6">
-            <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2">
-              {companies.map((company) => (
-                <div
-                  key={company.siret}
-                  className="group relative flex items-center justify-between rounded-xl border border-border/50 bg-card p-4 transition-all hover:border-primary/50 hover:shadow-md"
-                >
-                  <div className="flex-1 space-y-1">
-                    <h3 className="font-semibold text-lg group-hover:text-primary transition-colors">
-                      {company.nom}
-                    </h3>
-                    <p className="text-sm text-muted-foreground">
-                      📍 {company.adresse || `${company.code_postal} ${company.ville}`}
-                    </p>
-                    <p className="text-sm font-medium text-primary">
-                      👥 Effectif estimé: {prettyEstimate(company.effectif_code, company.siren)}
-                    </p>
-                    {company.website_url && (
-                      <p className="text-sm text-muted-foreground">
-                        🌐 <a 
-                          href={company.website_url} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="text-primary hover:underline"
-                        >
-                          {company.website_url}
-                        </a>
-                      </p>
-                    )}
-                    {company.dirigeant_nom && (
-                      <p className="text-xs text-muted-foreground">
-                        👤 {company.dirigeant_prenoms} {company.dirigeant_nom} - {company.dirigeant_fonction}
-                      </p>
-                    )}
-                  </div>
-                  <Button
-                    variant="default"
-                    size="sm"
-                    onClick={() => saveCompany(company)}
-                    className="ml-4"
-                    disabled={savingCompany === company.siret}
-                  >
-                    {savingCompany === company.siret ? (
-                      <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        Sauvegarde...
-                      </>
-                    ) : (
-                      <>
-                        <Save className="h-4 w-4 mr-2" />
-                        Sauvegarder
-                      </>
-                    )}
-                  </Button>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+  return (
+    <div className="h-full">
+      {step === "sectors" && (
+        <div className="space-y-6 animate-fade-in">
+          {/* Smart Suggestions */}
+          <SmartSearchSuggestions onSuggestionSelect={handleSmartSuggestion} />
+          
+          {/* Divider */}
+          <div className="flex items-center gap-4">
+            <div className="flex-1 h-px bg-border" />
+            <span className="text-xs text-muted-foreground uppercase tracking-wider">ou choisir manuellement</span>
+            <div className="flex-1 h-px bg-border" />
+          </div>
+
+          {/* Sector Grid */}
+          <SectorGrid 
+            selectedCodes={selectedCodes}
+            onCodesChange={setSelectedCodes}
+            onValidate={handleValidateSectors}
+          />
+        </div>
+      )}
+
+      {step === "filters" && (
+        <div className="space-y-4">
+          <SearchFilters
+            ville={ville}
+            setVille={setVille}
+            minResults={minResults}
+            setMinResults={setMinResults}
+            minEmployees={minEmployees}
+            setMinEmployees={setMinEmployees}
+            loading={loading}
+            onSearch={handleSearch}
+            onBack={() => setStep("sectors")}
+            selectedSectorsCount={getSelectedSectorsCount()}
+          />
+
+          <SearchResults
+            companies={companies}
+            loading={loading}
+            savingCompany={savingCompany}
+            onSaveCompany={saveCompany}
+            onSaveAll={saveAllCompanies}
+          />
+        </div>
       )}
     </div>
   );
