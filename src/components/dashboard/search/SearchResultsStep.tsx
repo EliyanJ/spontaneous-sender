@@ -1,6 +1,6 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { Save, Loader2, Building2, ExternalLink } from "lucide-react";
+import { Save, Loader2, Building2, ExternalLink, ArrowLeft, RotateCcw } from "lucide-react";
 
 interface Company {
   siren: string;
@@ -14,9 +14,6 @@ interface Company {
   nature_juridique: string;
   effectif_code: string;
   website_url?: string | null;
-  dirigeant_nom?: string;
-  dirigeant_prenoms?: string;
-  dirigeant_fonction?: string;
 }
 
 // Helpers
@@ -47,59 +44,106 @@ function prettyEstimate(code: string, siren: string) {
   return `${val} (~${label})`;
 }
 
-interface SearchResultsProps {
+interface SearchResultsStepProps {
   companies: Company[];
   loading: boolean;
   savingCompany: string | null;
   onSaveCompany: (company: Company) => void;
   onSaveAll: () => void;
+  onBack: () => void;
+  onNewSearch: () => void;
 }
 
-export const SearchResults = ({
+export const SearchResultsStep = ({
   companies,
   loading,
   savingCompany,
   onSaveCompany,
-  onSaveAll
-}: SearchResultsProps) => {
-  if (companies.length === 0) return null;
+  onSaveAll,
+  onBack,
+  onNewSearch
+}: SearchResultsStepProps) => {
+  if (companies.length === 0) {
+    return (
+      <div className="max-w-2xl mx-auto text-center py-16 animate-fade-in">
+        <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-muted flex items-center justify-center">
+          <Building2 className="h-8 w-8 text-muted-foreground" />
+        </div>
+        <h3 className="text-xl font-semibold text-foreground mb-2">Aucun résultat trouvé</h3>
+        <p className="text-muted-foreground mb-6">Essayez avec d'autres critères de recherche</p>
+        <div className="flex justify-center gap-4">
+          <Button variant="outline" onClick={onBack} className="rounded-xl">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Modifier les filtres
+          </Button>
+          <Button onClick={onNewSearch} className="rounded-xl">
+            <RotateCcw className="h-4 w-4 mr-2" />
+            Nouvelle recherche
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="mt-6 animate-fade-in-up">
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-3">
-          <Building2 className="h-5 w-5 text-primary" />
-          <h3 className="text-lg font-semibold">{companies.length} entreprise{companies.length > 1 ? 's' : ''}</h3>
+    <div className="animate-slide-in-right">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-4">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={onBack}
+            className="text-muted-foreground hover:text-foreground rounded-xl"
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Filtres
+          </Button>
+          <div className="h-6 w-px bg-border" />
+          <div className="flex items-center gap-2">
+            <Building2 className="h-5 w-5 text-primary" />
+            <span className="font-semibold text-foreground">{companies.length} entreprise{companies.length > 1 ? 's' : ''}</span>
+          </div>
         </div>
-        <Button 
-          onClick={onSaveAll} 
-          disabled={loading}
-          className="btn-premium"
-        >
-          {loading ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Sauvegarde...
-            </>
-          ) : (
-            <>
-              <Save className="mr-2 h-4 w-4" />
-              Tout sauvegarder
-            </>
-          )}
-        </Button>
+        <div className="flex gap-3">
+          <Button 
+            variant="outline"
+            onClick={onNewSearch}
+            className="rounded-xl"
+          >
+            <RotateCcw className="h-4 w-4 mr-2" />
+            Nouvelle recherche
+          </Button>
+          <Button 
+            onClick={onSaveAll} 
+            disabled={loading}
+            className="btn-premium rounded-xl"
+          >
+            {loading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Sauvegarde...
+              </>
+            ) : (
+              <>
+                <Save className="mr-2 h-4 w-4" />
+                Tout sauvegarder
+              </>
+            )}
+          </Button>
+        </div>
       </div>
 
-      {/* Grid layout for results - max 20 visible */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-3 max-h-[calc(100vh-400px)] overflow-y-auto pr-2">
+      {/* Results Grid - Max 20 visible, no scroll for 1920x1080 */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-3">
         {companies.slice(0, 20).map((company, index) => (
           <div
             key={company.siret}
             className="group p-4 rounded-xl bg-card border border-border/50 hover:border-primary/50 transition-all duration-300 hover:shadow-lg animate-fade-in"
             style={{ animationDelay: `${index * 30}ms` }}
           >
-            <div className="flex items-start justify-between mb-2">
-              <h4 className="font-semibold text-sm text-foreground group-hover:text-primary transition-colors line-clamp-2">
+            <div className="flex items-start justify-between mb-3">
+              <h4 className="font-semibold text-sm text-foreground group-hover:text-primary transition-colors line-clamp-2 pr-2">
                 {company.nom}
               </h4>
               <Button
@@ -107,7 +151,7 @@ export const SearchResults = ({
                 size="icon"
                 onClick={() => onSaveCompany(company)}
                 disabled={savingCompany === company.siret}
-                className="shrink-0 h-8 w-8 hover:bg-primary/10 hover:text-primary"
+                className="shrink-0 h-8 w-8 hover:bg-primary/10 hover:text-primary rounded-lg"
               >
                 {savingCompany === company.siret ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -141,8 +185,8 @@ export const SearchResults = ({
       </div>
 
       {companies.length > 20 && (
-        <p className="text-center text-sm text-muted-foreground mt-4">
-          +{companies.length - 20} autres résultats
+        <p className="text-center text-sm text-muted-foreground mt-6">
+          +{companies.length - 20} autres résultats disponibles
         </p>
       )}
     </div>
