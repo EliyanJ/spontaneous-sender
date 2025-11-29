@@ -192,25 +192,7 @@ export const JobOffers = () => {
           </p>
         </div>
 
-        {offers.length === 0 && !loading && (
-          <Card className="bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900">
-            <CardHeader>
-              <CardTitle className="text-amber-900 dark:text-amber-100">⚠️ Configuration requise</CardTitle>
-            </CardHeader>
-            <CardContent className="text-sm text-amber-800 dark:text-amber-200 space-y-2">
-              <p>Pour utiliser la recherche d'offres d'emploi France Travail, vous devez :</p>
-              <ol className="list-decimal list-inside space-y-1 ml-2">
-                <li>Créer un compte sur <a href="https://francetravail.io" target="_blank" rel="noopener noreferrer" className="underline font-medium">francetravail.io</a></li>
-                <li>Créer une application et obtenir vos identifiants (Client ID et Client Secret)</li>
-                <li><strong>Attendre l'approbation</strong> de votre application par France Travail (peut prendre plusieurs jours)</li>
-                <li>Une fois approuvée, configurer les identifiants dans les paramètres</li>
-              </ol>
-              <p className="mt-3 text-xs">
-                Si vous avez déjà configuré les identifiants et que l'erreur persiste, vérifiez que votre application a bien été approuvée sur le portail francetravail.io.
-              </p>
-            </CardContent>
-          </Card>
-        )}
+        {/* Removed configuration warning section */}
 
       {/* Formulaire de recherche */}
       <Card>

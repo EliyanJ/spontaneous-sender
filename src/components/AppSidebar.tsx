@@ -1,4 +1,4 @@
-import { Search, BarChart3, Bell, HelpCircle, GitBranch, Briefcase, Mail, Send, Clock, Inbox, Building2 } from "lucide-react";
+import { Search, Building2, Briefcase, Mail, Send, Settings } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -7,21 +7,15 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarFooter,
 } from "@/components/ui/sidebar";
-import { Button } from "@/components/ui/button";
 
 const menuItems = [
   { title: "Recherche", icon: Search, value: "search" },
-  { title: "Entreprises", icon: Building2, value: "company-details" },
-  { title: "Tracking candidature", icon: GitBranch, value: "pipeline" },
+  { title: "Entreprises", icon: Building2, value: "entreprises" },
   { title: "Offres d'emploi", icon: Briefcase, value: "jobs" },
-  { title: "Statistiques", icon: BarChart3, value: "statistics" },
-  { title: "Recherche d'email", icon: Mail, value: "email-search" },
-  { title: "Emails de contact", icon: Mail, value: "contact-emails" },
-  { title: "Composer Email", icon: Send, value: "email-composer" },
-  { title: "Emails programmés", icon: Clock, value: "scheduled-emails" },
-  { title: "Campagnes & Relances", icon: Inbox, value: "campaigns" },
+  { title: "Emails", icon: Mail, value: "emails" },
+  { title: "Campagnes", icon: Send, value: "campaigns" },
+  { title: "Paramètres", icon: Settings, value: "settings" },
 ];
 
 interface AppSidebarProps {
@@ -31,25 +25,24 @@ interface AppSidebarProps {
 
 export function AppSidebar({ activeTab, onTabChange }: AppSidebarProps) {
   return (
-    <Sidebar className="border-r">
-      <SidebarContent>
-        <div className="p-6">
-          <h1 className="font-display text-xl font-bold">Prospection</h1>
-          <p className="text-xs text-muted-foreground mt-1">Entreprises B2B</p>
-        </div>
-        
+    <Sidebar className="border-r border-sidebar-border bg-sidebar">
+      <SidebarContent className="pt-6">
         <SidebarGroup>
           <SidebarGroupContent>
-            <SidebarMenu className="space-y-2 px-3">
+            <SidebarMenu className="space-y-1 px-3">
               {menuItems.map((item) => (
                 <SidebarMenuItem key={item.value}>
                   <SidebarMenuButton
                     onClick={() => onTabChange(item.value)}
                     isActive={activeTab === item.value}
-                    className="w-full py-3"
+                    className={`w-full py-3 px-4 rounded-lg transition-all duration-200 ${
+                      activeTab === item.value
+                        ? "bg-primary/10 text-primary border border-primary/20"
+                        : "hover:bg-sidebar-accent text-sidebar-foreground"
+                    }`}
                   >
                     <item.icon className="h-4 w-4" />
-                    <span>{item.title}</span>
+                    <span className="font-medium">{item.title}</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
@@ -57,25 +50,6 @@ export function AppSidebar({ activeTab, onTabChange }: AppSidebarProps) {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-      
-      <SidebarFooter className="border-t p-4 space-y-2">
-        <Button 
-          variant="ghost" 
-          className="w-full justify-start"
-          onClick={() => onTabChange("notifications")}
-        >
-          <Bell className="mr-2 h-4 w-4" />
-          Notifications
-        </Button>
-        <Button 
-          variant="ghost" 
-          className="w-full justify-start"
-          onClick={() => onTabChange("support")}
-        >
-          <HelpCircle className="mr-2 h-4 w-4" />
-          Support
-        </Button>
-      </SidebarFooter>
     </Sidebar>
   );
 }
