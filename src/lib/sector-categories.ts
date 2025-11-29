@@ -63,9 +63,9 @@ export const SECTOR_CATEGORIES: SectorCategory[] = [
         codes: ["70.22Z"]
       },
       {
-        label: "Études techniques",
-        description: "Ingénierie, contrôle technique",
-        codes: ["71.12B"]
+        label: "Conseil en management",
+        description: "Conseil en organisation et RH",
+        codes: ["70.22Z"]
       },
       {
         label: "Autres activités de conseil",
