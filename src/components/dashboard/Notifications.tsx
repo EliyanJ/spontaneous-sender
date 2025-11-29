@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
-import { Bell, Check, Trash2, Loader2, Mail, AlertCircle, CheckCircle } from "lucide-react";
+import { Bell, Check, Trash2, Loader2, Mail, AlertCircle, CheckCircle, RefreshCw } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
 
@@ -21,6 +21,13 @@ interface Notification {
 export function Notifications() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await loadNotifications();
+    setRefreshing(false);
+  };
 
   useEffect(() => {
     loadNotifications();
@@ -121,18 +128,26 @@ export function Notifications() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Bell className="h-5 w-5" />
-            Centre de notifications
-            {notifications.filter(n => n.status === 'unread').length > 0 && (
-              <Badge variant="destructive" className="ml-2">
-                {notifications.filter(n => n.status === 'unread').length}
-              </Badge>
-            )}
-          </CardTitle>
-          <CardDescription>
-            Vous serez notifié ici des événements importants
-          </CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <Bell className="h-5 w-5" />
+                Centre de notifications
+                {notifications.filter(n => n.status === 'unread').length > 0 && (
+                  <Badge variant="destructive" className="ml-2">
+                    {notifications.filter(n => n.status === 'unread').length}
+                  </Badge>
+                )}
+              </CardTitle>
+              <CardDescription>
+                Vous serez notifié ici des événements importants
+              </CardDescription>
+            </div>
+            <Button variant="outline" size="sm" onClick={handleRefresh} disabled={refreshing}>
+              <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
+              Actualiser
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           {notifications.length === 0 ? (
