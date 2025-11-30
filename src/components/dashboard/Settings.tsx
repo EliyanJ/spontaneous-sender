@@ -238,26 +238,54 @@ export const Settings = () => {
                 {/* Gmail Status */}
                 <div>
                   <Label className="text-muted-foreground">Connexion Gmail</Label>
-                  <div className="flex items-center gap-3 mt-1.5">
+                  <div className="flex flex-col gap-3 mt-1.5">
                     {gmailConnected ? (
                       <>
-                        <Badge variant="default" className="gap-1">
-                          <CheckCircle className="h-3 w-3" />
-                          Connecté
-                        </Badge>
-                        <span className="text-sm text-muted-foreground">
-                          Vous pouvez envoyer des emails
-                        </span>
+                        <div className="flex items-center gap-3">
+                          <Badge variant="default" className="gap-1">
+                            <CheckCircle className="h-3 w-3" />
+                            Connecté
+                          </Badge>
+                          <span className="text-sm text-muted-foreground">
+                            Vous pouvez envoyer des emails
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={async () => {
+                              try {
+                                // Supprimer les tokens Gmail existants
+                                await supabase.from('gmail_tokens').delete().eq('user_id', user?.id);
+                                // Rediriger vers l'auth pour reconnecter
+                                sessionStorage.setItem('post_login_redirect', '/dashboard?tab=settings');
+                                window.location.href = '/auth';
+                              } catch (error) {
+                                toast({ title: "Erreur", description: "Impossible de déconnecter Gmail", variant: "destructive" });
+                              }
+                            }}
+                          >
+                            <RefreshCw className="h-4 w-4 mr-2" />
+                            Reconnecter Gmail
+                          </Button>
+                          <span className="text-xs text-muted-foreground">
+                            (si vos tokens ont expiré)
+                          </span>
+                        </div>
                       </>
                     ) : (
                       <>
-                        <Badge variant="destructive" className="gap-1">
-                          <AlertCircle className="h-3 w-3" />
-                          Non connecté
-                        </Badge>
+                        <div className="flex items-center gap-3">
+                          <Badge variant="destructive" className="gap-1">
+                            <AlertCircle className="h-3 w-3" />
+                            Non connecté
+                          </Badge>
+                        </div>
                         <Button 
                           variant="outline" 
                           size="sm"
+                          className="w-fit"
                           onClick={() => {
                             sessionStorage.setItem('post_login_redirect', '/dashboard?tab=settings');
                             window.location.href = '/auth';
