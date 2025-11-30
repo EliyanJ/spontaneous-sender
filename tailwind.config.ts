@@ -89,8 +89,12 @@ export default {
           to: { opacity: "1", transform: "scale(1)" },
         },
         "slide-in-right": {
-          from: { transform: "translateX(100%)" },
-          to: { transform: "translateX(0)" },
+          from: { transform: "translateX(20px)", opacity: "0" },
+          to: { transform: "translateX(0)", opacity: "1" },
+        },
+        "slide-in-left": {
+          from: { transform: "translateX(-20px)", opacity: "0" },
+          to: { transform: "translateX(0)", opacity: "1" },
         },
         "glow-pulse": {
           "0%, 100%": { boxShadow: "0 0 20px hsl(217 91% 60% / 0.3)" },
@@ -103,6 +107,7 @@ export default {
         "fade-in": "fade-in 0.3s ease-out",
         "scale-in": "scale-in 0.2s ease-out",
         "slide-in-right": "slide-in-right 0.3s ease-out",
+        "slide-in-left": "slide-in-left 0.3s ease-out",
         "glow-pulse": "glow-pulse 3s ease-in-out infinite",
       },
       fontFamily: {
