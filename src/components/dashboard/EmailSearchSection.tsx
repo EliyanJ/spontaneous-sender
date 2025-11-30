@@ -234,18 +234,28 @@ export const EmailSearchSection = ({ onEmailsFound }: EmailSearchSectionProps) =
       {summary && !isSearching && (
         <Card className="bg-card/50 border-border animate-fade-in">
           <CardContent className="p-6">
-            <div className="grid grid-cols-3 gap-6 text-center">
+            {/* Pourcentage de succès */}
+            <div className="text-center mb-6">
+              <div className="text-5xl font-bold text-primary">
+                {summary.processed > 0 ? Math.round((summary.emailsFound / summary.processed) * 100) : 0}%
+              </div>
+              <div className="text-lg text-muted-foreground mt-1">
+                {summary.emailsFound} / {summary.processed} entreprises avec email
+              </div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-6 text-center border-t border-border pt-4">
               <div>
-                <div className="text-3xl font-bold text-foreground">{summary.processed}</div>
-                <div className="text-sm text-muted-foreground">Entreprises traitées</div>
+                <div className="text-2xl font-bold text-foreground">{summary.processed}</div>
+                <div className="text-xs text-muted-foreground">Traitées</div>
               </div>
               <div>
-                <div className="text-3xl font-bold text-green-500">{summary.emailsFound}</div>
-                <div className="text-sm text-muted-foreground">Emails trouvés</div>
+                <div className="text-2xl font-bold text-green-500">{summary.emailsFound}</div>
+                <div className="text-xs text-muted-foreground">Trouvés</div>
               </div>
               <div>
-                <div className="text-3xl font-bold text-muted-foreground">{summary.processed - summary.emailsFound}</div>
-                <div className="text-sm text-muted-foreground">Sans email</div>
+                <div className="text-2xl font-bold text-muted-foreground">{summary.processed - summary.emailsFound}</div>
+                <div className="text-xs text-muted-foreground">Sans email</div>
               </div>
             </div>
             
