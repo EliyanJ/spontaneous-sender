@@ -90,31 +90,37 @@ export const EmailComposerSection = () => {
   };
 
   const loadCompanies = async () => {
+    // Récupérer les emails déjà envoyés
     const { data: campaignsData } = await supabase
       .from("email_campaigns")
       .select("recipient");
     
-    const contactedEmails = new Set(
+    const sentEmails = new Set(
       (campaignsData || []).map(c => c.recipient.toLowerCase())
     );
 
-    const { data: blacklistData } = await supabase
-      .from("user_company_blacklist")
-      .select("company_siren");
+    // Récupérer les emails programmés (en attente d'envoi)
+    const { data: scheduledData } = await supabase
+      .from("scheduled_emails")
+      .select("recipients")
+      .eq("status", "pending");
     
-    const blacklistedSirens = new Set(
-      (blacklistData || []).map(b => b.company_siren)
-    );
+    const scheduledEmails = new Set<string>();
+    (scheduledData || []).forEach(s => {
+      (s.recipients || []).forEach((r: string) => scheduledEmails.add(r.toLowerCase()));
+    });
 
+    // Récupérer les entreprises avec un email
     const { data } = await supabase
       .from("companies")
       .select("id, nom, selected_email, siren")
       .not("selected_email", "is", null);
 
-    const filteredCompanies = (data || []).filter(company => 
-      !contactedEmails.has(company.selected_email.toLowerCase()) &&
-      !blacklistedSirens.has(company.siren)
-    );
+    // Filtrer les entreprises déjà contactées ou programmées
+    const filteredCompanies = (data || []).filter(company => {
+      const email = company.selected_email.toLowerCase();
+      return !sentEmails.has(email) && !scheduledEmails.has(email);
+    });
 
     setCompanies(filteredCompanies);
   };
