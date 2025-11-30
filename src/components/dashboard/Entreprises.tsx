@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { 
   Building2, 
@@ -13,7 +15,13 @@ import {
   XCircle, 
   TrendingUp,
   ChevronRight,
-  ExternalLink
+  ExternalLink,
+  Search,
+  Clock,
+  Save,
+  X,
+  FileText,
+  Trash2
 } from "lucide-react";
 import {
   Sheet,
@@ -22,6 +30,17 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface Company {
   id: string;
@@ -33,6 +52,11 @@ interface Company {
   pipeline_stage: string | null;
   website_url: string | null;
   libelle_ape: string | null;
+  notes: string | null;
+  siren: string;
+  siret: string;
+  adresse: string | null;
+  code_ape: string | null;
 }
 
 interface Stats {
@@ -44,10 +68,17 @@ interface Stats {
   totalCompanies: number;
 }
 
+type TabType = "saved" | "history";
+
 export const Entreprises = () => {
   const { toast } = useToast();
   const [companies, setCompanies] = useState<Company[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<TabType>("saved");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
+  const [notes, setNotes] = useState("");
+  const [savingNotes, setSavingNotes] = useState(false);
   const [stats, setStats] = useState<Stats>({
     totalSent: 0,
     successful: 0,
@@ -61,6 +92,12 @@ export const Entreprises = () => {
     loadData();
   }, []);
 
+  useEffect(() => {
+    if (selectedCompany) {
+      setNotes(selectedCompany.notes || "");
+    }
+  }, [selectedCompany]);
+
   const loadData = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -69,7 +106,7 @@ export const Entreprises = () => {
       // Load companies
       const { data: companiesData, error: companiesError } = await supabase
         .from("companies")
-        .select("id, nom, ville, code_postal, selected_email, status, pipeline_stage, website_url, libelle_ape")
+        .select("*")
         .eq("user_id", user.id)
         .order("created_at", { ascending: false });
 
@@ -112,6 +149,66 @@ export const Entreprises = () => {
     }
   };
 
+  const saveNotes = async () => {
+    if (!selectedCompany) return;
+    
+    setSavingNotes(true);
+    try {
+      const { error } = await supabase
+        .from("companies")
+        .update({ notes })
+        .eq("id", selectedCompany.id);
+
+      if (error) throw error;
+
+      // Update local state
+      setCompanies(prev => prev.map(c => 
+        c.id === selectedCompany.id ? { ...c, notes } : c
+      ));
+      setSelectedCompany(prev => prev ? { ...prev, notes } : null);
+
+      toast({
+        title: "Notes sauvegardées",
+        description: "Les notes ont été mises à jour",
+      });
+    } catch (error) {
+      console.error('Error saving notes:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de sauvegarder les notes",
+        variant: "destructive",
+      });
+    } finally {
+      setSavingNotes(false);
+    }
+  };
+
+  const deleteCompany = async (companyId: string) => {
+    try {
+      const { error } = await supabase
+        .from("companies")
+        .delete()
+        .eq("id", companyId);
+
+      if (error) throw error;
+
+      setCompanies(prev => prev.filter(c => c.id !== companyId));
+      setSelectedCompany(null);
+
+      toast({
+        title: "Entreprise supprimée",
+        description: "L'entreprise a été retirée de votre liste",
+      });
+    } catch (error) {
+      console.error('Error deleting company:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de supprimer l'entreprise",
+        variant: "destructive",
+      });
+    }
+  };
+
   const getStatusBadge = (status: string | null) => {
     const config: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
       "not sent": { label: "Non envoyé", variant: "secondary" },
@@ -122,6 +219,31 @@ export const Entreprises = () => {
     const cfg = config[status || "not sent"] || { label: status || "Non défini", variant: "secondary" };
     return <Badge variant={cfg.variant} className="text-xs">{cfg.label}</Badge>;
   };
+
+  // Filter companies based on tab and search
+  const filteredCompanies = companies.filter(company => {
+    // Tab filter
+    const isSaved = company.status === "not sent" || !company.status;
+    const isHistory = company.status === "sent" || company.status === "replied" || company.status === "bounce";
+    
+    if (activeTab === "saved" && !isSaved) return false;
+    if (activeTab === "history" && !isHistory) return false;
+
+    // Search filter
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      return (
+        company.nom.toLowerCase().includes(query) ||
+        company.ville?.toLowerCase().includes(query) ||
+        company.libelle_ape?.toLowerCase().includes(query)
+      );
+    }
+
+    return true;
+  });
+
+  const savedCount = companies.filter(c => c.status === "not sent" || !c.status).length;
+  const historyCount = companies.filter(c => c.status === "sent" || c.status === "replied" || c.status === "bounce").length;
 
   if (loading) {
     return (
@@ -138,7 +260,7 @@ export const Entreprises = () => {
         <div>
           <h2 className="text-2xl font-display font-semibold text-foreground">Entreprises</h2>
           <p className="text-muted-foreground text-sm mt-1">
-            {companies.length} entreprise{companies.length > 1 ? 's' : ''} sauvegardée{companies.length > 1 ? 's' : ''}
+            {companies.length} entreprise{companies.length > 1 ? 's' : ''} au total
           </p>
         </div>
         
@@ -255,21 +377,67 @@ export const Entreprises = () => {
         </Sheet>
       </div>
 
+      {/* Sub-tabs */}
+      <div className="flex gap-2">
+        <Button
+          variant={activeTab === "saved" ? "default" : "outline"}
+          onClick={() => setActiveTab("saved")}
+          className="gap-2"
+        >
+          <Building2 className="h-4 w-4" />
+          Sauvegardées
+          <Badge variant="secondary" className="ml-1">{savedCount}</Badge>
+        </Button>
+        <Button
+          variant={activeTab === "history" ? "default" : "outline"}
+          onClick={() => setActiveTab("history")}
+          className="gap-2"
+        >
+          <Clock className="h-4 w-4" />
+          Historique
+          <Badge variant="secondary" className="ml-1">{historyCount}</Badge>
+        </Button>
+      </div>
+
+      {/* Search bar */}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input
+          placeholder="Rechercher une entreprise par nom, ville ou secteur..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="pl-10"
+        />
+      </div>
+
       {/* Companies List */}
-      {companies.length === 0 ? (
+      {filteredCompanies.length === 0 ? (
         <Card className="bg-card/50 border-dashed">
           <CardContent className="py-12 text-center">
             <Building2 className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
-            <p className="text-muted-foreground">Aucune entreprise sauvegardée</p>
-            <p className="text-sm text-muted-foreground mt-1">
-              Utilisez l'onglet Recherche pour trouver des entreprises
+            <p className="text-muted-foreground">
+              {searchQuery 
+                ? "Aucune entreprise trouvée pour cette recherche"
+                : activeTab === "saved" 
+                  ? "Aucune entreprise sauvegardée" 
+                  : "Aucune entreprise dans l'historique"
+              }
             </p>
+            {!searchQuery && activeTab === "saved" && (
+              <p className="text-sm text-muted-foreground mt-1">
+                Utilisez l'onglet Recherche pour trouver des entreprises
+              </p>
+            )}
           </CardContent>
         </Card>
       ) : (
         <div className="grid gap-3">
-          {companies.map((company) => (
-            <Card key={company.id} className="bg-card/50 hover:bg-card/70 transition-colors group">
+          {filteredCompanies.map((company) => (
+            <Card 
+              key={company.id} 
+              className="bg-card/50 hover:bg-card/70 transition-colors group cursor-pointer"
+              onClick={() => setSelectedCompany(company)}
+            >
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4 flex-1 min-w-0">
@@ -285,9 +453,13 @@ export const Entreprises = () => {
                             target="_blank" 
                             rel="noopener noreferrer"
                             className="opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={(e) => e.stopPropagation()}
                           >
                             <ExternalLink className="h-3 w-3 text-muted-foreground" />
                           </a>
+                        )}
+                        {company.notes && (
+                          <FileText className="h-3 w-3 text-primary/60" />
                         )}
                       </div>
                       <div className="flex items-center gap-3 mt-1 text-sm text-muted-foreground">
@@ -320,6 +492,133 @@ export const Entreprises = () => {
           ))}
         </div>
       )}
+
+      {/* Company Details Sheet */}
+      <Sheet open={!!selectedCompany} onOpenChange={(open) => !open && setSelectedCompany(null)}>
+        <SheetContent className="w-[400px] sm:w-[540px]">
+          {selectedCompany && (
+            <>
+              <SheetHeader>
+                <SheetTitle className="flex items-center gap-2">
+                  <Building2 className="h-5 w-5 text-primary" />
+                  {selectedCompany.nom}
+                </SheetTitle>
+              </SheetHeader>
+              
+              <div className="mt-6 space-y-6">
+                {/* Company Info */}
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Statut</span>
+                    {getStatusBadge(selectedCompany.status)}
+                  </div>
+                  
+                  {selectedCompany.ville && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">Ville</span>
+                      <span className="text-sm font-medium">
+                        {selectedCompany.ville} {selectedCompany.code_postal && `(${selectedCompany.code_postal})`}
+                      </span>
+                    </div>
+                  )}
+                  
+                  {selectedCompany.adresse && (
+                    <div className="flex items-start justify-between gap-4">
+                      <span className="text-sm text-muted-foreground shrink-0">Adresse</span>
+                      <span className="text-sm font-medium text-right">{selectedCompany.adresse}</span>
+                    </div>
+                  )}
+                  
+                  {selectedCompany.selected_email && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">Email</span>
+                      <span className="text-sm font-medium">{selectedCompany.selected_email}</span>
+                    </div>
+                  )}
+                  
+                  {selectedCompany.website_url && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">Site web</span>
+                      <a 
+                        href={selectedCompany.website_url} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-sm font-medium text-primary hover:underline flex items-center gap-1"
+                      >
+                        Visiter <ExternalLink className="h-3 w-3" />
+                      </a>
+                    </div>
+                  )}
+                  
+                  {selectedCompany.libelle_ape && (
+                    <div className="flex items-start justify-between gap-4">
+                      <span className="text-sm text-muted-foreground shrink-0">Secteur</span>
+                      <span className="text-sm font-medium text-right">{selectedCompany.libelle_ape}</span>
+                    </div>
+                  )}
+                  
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">SIREN</span>
+                    <span className="text-sm font-medium font-mono">{selectedCompany.siren}</span>
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">SIRET</span>
+                    <span className="text-sm font-medium font-mono">{selectedCompany.siret}</span>
+                  </div>
+                </div>
+
+                {/* Notes Section */}
+                <div className="space-y-3">
+                  <label className="text-sm font-medium">Notes personnelles</label>
+                  <Textarea
+                    placeholder="Ajoutez vos notes sur cette entreprise..."
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    rows={5}
+                    className="resize-none"
+                  />
+                  <Button 
+                    onClick={saveNotes} 
+                    disabled={savingNotes}
+                    className="w-full gap-2"
+                  >
+                    <Save className="h-4 w-4" />
+                    {savingNotes ? "Sauvegarde..." : "Sauvegarder les notes"}
+                  </Button>
+                </div>
+
+                {/* Delete Action */}
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="outline" className="w-full gap-2 text-destructive hover:text-destructive">
+                      <Trash2 className="h-4 w-4" />
+                      Supprimer de ma liste
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Supprimer cette entreprise ?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Cette action est irréversible. L'entreprise sera retirée de votre liste.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Annuler</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={() => deleteCompany(selectedCompany.id)}
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      >
+                        Supprimer
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
+            </>
+          )}
+        </SheetContent>
+      </Sheet>
     </div>
   );
 };
