@@ -268,14 +268,30 @@ export const EmailComposerSection = () => {
   };
 
   const handleScheduleEmail = async () => {
-    if (recipients.length === 0 || !subject.trim() || !body.trim() || !scheduledDate) {
-      toast({ title: "Champs manquants", variant: "destructive" });
+    if (recipients.length === 0 || !subject.trim() || !body.trim()) {
+      toast({ title: "Champs manquants", description: "Remplissez tous les champs", variant: "destructive" });
       return;
     }
 
-    // Combine date with hour and minute
-    const scheduledDateTime = new Date(scheduledDate);
-    scheduledDateTime.setHours(parseInt(scheduledHour), parseInt(scheduledMinute), 0, 0);
+    if (!scheduledDate) {
+      toast({ title: "Date manquante", description: "Sélectionnez une date d'envoi", variant: "destructive" });
+      return;
+    }
+
+    // Créer la date programmée en combinant date + heure + minutes
+    const year = scheduledDate.getFullYear();
+    const month = scheduledDate.getMonth();
+    const day = scheduledDate.getDate();
+    const hour = parseInt(scheduledHour, 10) || 11;
+    const minute = parseInt(scheduledMinute, 10) || 0;
+    
+    const scheduledDateTime = new Date(year, month, day, hour, minute, 0, 0);
+    
+    // Vérifier que la date est valide
+    if (isNaN(scheduledDateTime.getTime())) {
+      toast({ title: "Date invalide", description: "La date sélectionnée n'est pas valide", variant: "destructive" });
+      return;
+    }
     
     if (scheduledDateTime <= new Date()) {
       toast({ title: "Date invalide", description: "La date doit être dans le futur", variant: "destructive" });
@@ -286,11 +302,17 @@ export const EmailComposerSection = () => {
 
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
+      if (!session) {
+        toast({ title: "Session expirée", description: "Veuillez vous reconnecter", variant: "destructive" });
+        return;
+      }
+
+      const scheduledForISO = scheduledDateTime.toISOString();
+      console.log('Scheduling email for:', scheduledForISO);
 
       const { error } = await supabase.functions.invoke('schedule-gmail-draft', {
         headers: { Authorization: `Bearer ${session.access_token}` },
-        body: { recipients, subject, body, scheduledFor: scheduledDateTime.toISOString(), notifyOnSent },
+        body: { recipients, subject, body, scheduledFor: scheduledForISO, notifyOnSent },
       });
 
       if (error) throw error;
@@ -305,8 +327,9 @@ export const EmailComposerSection = () => {
       setScheduledHour("11");
       setScheduledMinute("00");
       setSendMode('now');
-    } catch {
-      toast({ title: "Erreur", variant: "destructive" });
+    } catch (err: any) {
+      console.error('Schedule error:', err);
+      toast({ title: "Erreur", description: err?.message || "Impossible de programmer l'email", variant: "destructive" });
     } finally {
       setLoading(false);
     }
