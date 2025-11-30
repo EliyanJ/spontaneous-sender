@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { AISearchMode } from "./search/AISearchMode";
@@ -32,7 +33,12 @@ interface Company {
 type SearchMode = "ai" | "manual";
 type SearchStep = "select" | "filters" | "results";
 
-export const SearchCompanies = () => {
+interface SearchCompaniesProps {
+  onNavigateToTab?: (tab: string) => void;
+}
+
+export const SearchCompanies = ({ onNavigateToTab }: SearchCompaniesProps = {}) => {
+  const [, setSearchParams] = useSearchParams();
   const [mode, setMode] = useState<SearchMode>("ai");
   const [step, setStep] = useState<SearchStep>("select");
   const [loading, setLoading] = useState(false);
@@ -205,6 +211,13 @@ export const SearchCompanies = () => {
       window.dispatchEvent(new CustomEvent('companies:updated'));
       toast.success(`${toInsert.length} entreprise(s) sauvegardée(s)`);
       setCompanies([]);
+      
+      // Redirect to entreprises tab
+      if (onNavigateToTab) {
+        onNavigateToTab('entreprises');
+      } else {
+        setSearchParams({ tab: 'entreprises' });
+      }
     } catch (error: any) {
       toast.error('Erreur lors de la sauvegarde');
     } finally {

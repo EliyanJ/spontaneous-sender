@@ -18,7 +18,7 @@ const Index = () => {
   const [slideDirection, setSlideDirection] = useState<"left" | "right">("right");
   const prevTabRef = useRef(activeTab);
 
-  const tabOrder = ["search", "entreprises", "jobs", "emails", "campaigns", "settings"];
+  const tabOrder = ["search", "entreprises", "emails", "campaigns", "jobs", "settings"];
 
   useEffect(() => {
     const tabFromUrl = searchParams.get("tab");
@@ -95,19 +95,19 @@ const Index = () => {
   const renderContent = () => {
     switch (activeTab) {
       case "search":
-        return <SearchCompanies />;
+        return <SearchCompanies onNavigateToTab={handleTabChange} />;
       case "entreprises":
-        return <Entreprises />;
+        return <Entreprises onNavigateToTab={handleTabChange} />;
       case "jobs":
         return <JobOffers />;
       case "emails":
-        return <Emails />;
+        return <Emails onNavigateToTab={handleTabChange} />;
       case "campaigns":
         return <CampaignsHub />;
       case "settings":
         return <Settings />;
       default:
-        return <SearchCompanies />;
+        return <SearchCompanies onNavigateToTab={handleTabChange} />;
     }
   };
 

@@ -70,7 +70,11 @@ interface Stats {
 
 type TabType = "saved" | "history";
 
-export const Entreprises = () => {
+interface EntreprisesProps {
+  onNavigateToTab?: (tab: string) => void;
+}
+
+export const Entreprises = ({ onNavigateToTab }: EntreprisesProps) => {
   const { toast } = useToast();
   const [companies, setCompanies] = useState<Company[]>([]);
   const [loading, setLoading] = useState(true);
@@ -264,15 +268,15 @@ export const Entreprises = () => {
           </p>
         </div>
         
-        {/* Stats Panel Trigger */}
-        <Sheet>
-          <SheetTrigger asChild>
-            <Button variant="outline" className="gap-2">
-              <BarChart3 className="h-4 w-4" />
-              Statistiques
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </SheetTrigger>
+        <div className="flex items-center gap-3">
+          {/* Stats Panel Trigger */}
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button variant="outline" className="gap-2">
+                <BarChart3 className="h-4 w-4" />
+                Statistiques
+              </Button>
+            </SheetTrigger>
           <SheetContent className="w-[400px] sm:w-[540px]">
             <SheetHeader>
               <SheetTitle className="flex items-center gap-2">
@@ -375,6 +379,15 @@ export const Entreprises = () => {
             </div>
           </SheetContent>
         </Sheet>
+        
+        {/* Next Step Button */}
+        {onNavigateToTab && (
+          <Button onClick={() => onNavigateToTab('emails')} className="gap-2">
+            Rechercher des emails
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        )}
+        </div>
       </div>
 
       {/* Sub-tabs */}

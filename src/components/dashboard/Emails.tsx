@@ -1,19 +1,32 @@
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, Send, Mail } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Search, Send, Mail, ChevronRight } from "lucide-react";
 import { EmailSearchSection } from "./EmailSearchSection";
 import { EmailComposerSection } from "./EmailComposerSection";
 
-export const Emails = () => {
+interface EmailsProps {
+  onNavigateToTab?: (tab: string) => void;
+}
+
+export const Emails = ({ onNavigateToTab }: EmailsProps) => {
   const [activeSection, setActiveSection] = useState<"search" | "compose">("search");
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-display font-semibold text-foreground">Emails</h2>
-        <p className="text-muted-foreground text-sm mt-1">
-          Recherchez des contacts et composez vos emails
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-display font-semibold text-foreground">Emails</h2>
+          <p className="text-muted-foreground text-sm mt-1">
+            Recherchez des contacts et composez vos emails
+          </p>
+        </div>
+        {onNavigateToTab && (
+          <Button onClick={() => onNavigateToTab('campaigns')} className="gap-2">
+            Voir les campagnes
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        )}
       </div>
 
       <Tabs value={activeSection} onValueChange={(v) => setActiveSection(v as "search" | "compose")}>

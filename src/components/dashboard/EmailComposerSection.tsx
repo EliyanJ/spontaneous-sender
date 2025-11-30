@@ -1,4 +1,6 @@
 import { useState, useEffect } from "react";
+import { format } from "date-fns";
+import { fr } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,11 +23,18 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Loader2, Mail, Save, Upload, X, Plus, Clock, Send, CheckCircle } from "lucide-react";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { Loader2, Mail, Save, Upload, X, Plus, Clock, Send, CheckCircle, CalendarIcon, Lightbulb } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
+import { cn } from "@/lib/utils";
 
 interface EmailTemplate {
   id: string;
@@ -57,7 +66,9 @@ export const EmailComposerSection = () => {
   const [gmailConnected, setGmailConnected] = useState(false);
   const [checkingGmail, setCheckingGmail] = useState(true);
   const [sendMode, setSendMode] = useState<'now' | 'scheduled'>('now');
-  const [scheduledDate, setScheduledDate] = useState('');
+  const [scheduledDate, setScheduledDate] = useState<Date | undefined>(undefined);
+  const [scheduledHour, setScheduledHour] = useState("11");
+  const [scheduledMinute, setScheduledMinute] = useState("00");
   const [notifyOnSent, setNotifyOnSent] = useState(false);
 
   useEffect(() => {
@@ -262,7 +273,10 @@ export const EmailComposerSection = () => {
       return;
     }
 
+    // Combine date with hour and minute
     const scheduledDateTime = new Date(scheduledDate);
+    scheduledDateTime.setHours(parseInt(scheduledHour), parseInt(scheduledMinute), 0, 0);
+    
     if (scheduledDateTime <= new Date()) {
       toast({ title: "Date invalide", description: "La date doit être dans le futur", variant: "destructive" });
       return;
@@ -287,7 +301,9 @@ export const EmailComposerSection = () => {
       setSubject("");
       setBody("");
       setRecipients([]);
-      setScheduledDate("");
+      setScheduledDate(undefined);
+      setScheduledHour("11");
+      setScheduledMinute("00");
       setSendMode('now');
     } catch {
       toast({ title: "Erreur", variant: "destructive" });
@@ -452,18 +468,76 @@ export const EmailComposerSection = () => {
                 </RadioGroup>
 
                 {sendMode === 'scheduled' && (
-                  <div className="pl-6 border-l-2 border-primary/20 space-y-3">
-                    <div>
-                      <Label htmlFor="scheduled-date" className="text-muted-foreground">Date et heure</Label>
-                      <Input
-                        id="scheduled-date"
-                        type="datetime-local"
-                        value={scheduledDate}
-                        onChange={(e) => setScheduledDate(e.target.value)}
-                        min={new Date().toISOString().slice(0, 16)}
-                        className="mt-1.5"
-                      />
+                  <div className="pl-6 border-l-2 border-primary/20 space-y-4">
+                    {/* Conseil */}
+                    <div className="flex items-start gap-2 p-3 rounded-lg bg-primary/5 border border-primary/10">
+                      <Lightbulb className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                      <p className="text-xs text-muted-foreground">
+                        <span className="font-medium text-foreground">Conseil :</span> Les emails envoyés vers 11h ont un meilleur taux d'ouverture en moyenne.
+                      </p>
                     </div>
+                    
+                    {/* Date picker */}
+                    <div className="space-y-2">
+                      <Label className="text-muted-foreground">Date d'envoi</Label>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className={cn(
+                              "w-full justify-start text-left font-normal",
+                              !scheduledDate && "text-muted-foreground"
+                            )}
+                          >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {scheduledDate ? format(scheduledDate, "PPP", { locale: fr }) : "Choisir une date"}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0 z-50" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={scheduledDate}
+                            onSelect={setScheduledDate}
+                            disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                            initialFocus
+                            className="pointer-events-auto"
+                          />
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+
+                    {/* Time picker */}
+                    <div className="space-y-2">
+                      <Label className="text-muted-foreground">Heure d'envoi</Label>
+                      <div className="flex items-center gap-2">
+                        <Select value={scheduledHour} onValueChange={setScheduledHour}>
+                          <SelectTrigger className="w-[100px]">
+                            <SelectValue placeholder="Heure" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {Array.from({ length: 24 }, (_, i) => (
+                              <SelectItem key={i} value={i.toString().padStart(2, '0')}>
+                                {i.toString().padStart(2, '0')}h
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <span className="text-muted-foreground">:</span>
+                        <Select value={scheduledMinute} onValueChange={setScheduledMinute}>
+                          <SelectTrigger className="w-[100px]">
+                            <SelectValue placeholder="Min" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {['00', '15', '30', '45'].map((min) => (
+                              <SelectItem key={min} value={min}>
+                                {min}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
                     <div className="flex items-center space-x-2">
                       <Checkbox
                         id="notify"

@@ -5,9 +5,9 @@ import { cn } from "@/lib/utils";
 const menuItems = [
   { title: "Recherche", icon: Search, value: "search" },
   { title: "Entreprises", icon: Building2, value: "entreprises" },
-  { title: "Offres d'emploi", icon: Briefcase, value: "jobs" },
   { title: "Emails", icon: Mail, value: "emails" },
   { title: "Campagnes", icon: Send, value: "campaigns" },
+  { title: "Offres d'emploi", icon: Briefcase, value: "jobs" },
   { title: "Paramètres", icon: Settings, value: "settings" },
 ];
 
