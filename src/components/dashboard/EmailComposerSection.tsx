@@ -493,14 +493,15 @@ export const EmailComposerSection = () => {
                             {scheduledDate ? format(scheduledDate, "PPP", { locale: fr }) : "Choisir une date"}
                           </Button>
                         </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0 z-50" align="start">
+                        <PopoverContent className="w-auto p-0 z-[100] bg-popover" align="start" sideOffset={8}>
                           <Calendar
                             mode="single"
                             selected={scheduledDate}
                             onSelect={setScheduledDate}
                             disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
                             initialFocus
-                            className="pointer-events-auto"
+                            locale={fr}
+                            className="pointer-events-auto rounded-md border"
                           />
                         </PopoverContent>
                       </Popover>
