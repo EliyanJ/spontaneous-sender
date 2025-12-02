@@ -134,9 +134,9 @@ export const SearchResultsStep = ({
         </div>
       </div>
 
-      {/* Results Grid - Max 20 visible, no scroll for 1920x1080 */}
+      {/* Results Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-        {companies.slice(0, 20).map((company, index) => (
+        {companies.map((company, index) => (
           <div
             key={company.siret}
             className="group p-4 rounded-xl bg-card border border-border/50 hover:border-primary/50 transition-all duration-300 hover:shadow-lg animate-fade-in"
@@ -184,11 +184,6 @@ export const SearchResultsStep = ({
         ))}
       </div>
 
-      {companies.length > 20 && (
-        <p className="text-center text-sm text-muted-foreground mt-6">
-          +{companies.length - 20} autres résultats disponibles
-        </p>
-      )}
     </div>
   );
 };

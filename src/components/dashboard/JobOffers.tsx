@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Search, MapPin, Briefcase, Clock, ExternalLink, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { CommuneSearch } from "@/components/ui/commune-search";
@@ -14,6 +15,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { CareerSites } from "./CareerSites";
+import { ContactForms } from "./ContactForms";
 
 interface JobOffer {
   id: string;
@@ -182,20 +185,25 @@ export const JobOffers = () => {
   };
 
   return (
-      <div className="space-y-6">
+    <div className="space-y-6">
       <div>
-          <h2 className="font-display text-3xl font-bold mb-2">Offres d'emploi</h2>
-          <p className="text-muted-foreground">
-            {offers.length > 0 && !loading
-              ? `${offers.length} offre${offers.length > 1 ? 's' : ''} disponible${offers.length > 1 ? 's' : ''}`
-              : "Recherchez des offres d'emploi parmi les opportunités disponibles"}
-          </p>
-        </div>
+        <h2 className="font-display text-3xl font-bold mb-2">Offres d'emploi</h2>
+        <p className="text-muted-foreground">
+          Recherchez des offres et consultez les sites carrières des entreprises
+        </p>
+      </div>
 
-        {/* Removed configuration warning section */}
+      <Tabs defaultValue="search" className="w-full">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="search">Recherche d'offres</TabsTrigger>
+          <TabsTrigger value="career-sites">Sites carrières</TabsTrigger>
+          <TabsTrigger value="contact-forms">Formulaires de contact</TabsTrigger>
+        </TabsList>
 
-      {/* Formulaire de recherche */}
-      <Card>
+        <TabsContent value="search" className="space-y-6 mt-6">
+
+          {/* Formulaire de recherche */}
+          <Card>
         <CardHeader>
           <CardTitle>Rechercher des offres</CardTitle>
           <CardDescription>
@@ -297,10 +305,15 @@ export const JobOffers = () => {
             )}
           </Button>
         </CardContent>
-      </Card>
+          </Card>
 
-      {/* Liste des offres */}
-      <div className="space-y-4">
+          {/* Liste des offres */}
+          {offers.length > 0 && !loading && (
+            <p className="text-muted-foreground">
+              {offers.length} offre{offers.length > 1 ? 's' : ''} disponible{offers.length > 1 ? 's' : ''}
+            </p>
+          )}
+          <div className="space-y-4">
         {offers.map((offer) => (
           <Card
             key={offer.id}
@@ -346,7 +359,17 @@ export const JobOffers = () => {
             </CardContent>
           </Card>
         ))}
-      </div>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="career-sites">
+          <CareerSites />
+        </TabsContent>
+
+        <TabsContent value="contact-forms">
+          <ContactForms />
+        </TabsContent>
+      </Tabs>
 
       {/* Dialog pour les détails */}
       <Dialog open={!!selectedOffer} onOpenChange={() => setSelectedOffer(null)}>

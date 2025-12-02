@@ -45,7 +45,7 @@ export const SearchCompanies = ({ onNavigateToTab }: SearchCompaniesProps = {}) 
   const [savingCompany, setSavingCompany] = useState<string | null>(null);
   const [companies, setCompanies] = useState<Company[]>([]);
   const [selectedCodes, setSelectedCodes] = useState<string[]>([]);
-  const [ville, setVille] = useState("");
+  const [villes, setVilles] = useState<string[]>([]);
   const [minResults, setMinResults] = useState("20");
   const [minEmployees, setMinEmployees] = useState("5-100");
 
@@ -60,14 +60,14 @@ export const SearchCompanies = ({ onNavigateToTab }: SearchCompaniesProps = {}) 
   };
 
   const handleSearch = async () => {
-    if (selectedCodes.length === 0 && !ville) {
+    if (selectedCodes.length === 0 && villes.length === 0) {
       toast.error("Sélectionne au moins un secteur ou une ville");
       return;
     }
 
     const minResultsNum = parseInt(minResults) || 20;
-    if (minResultsNum < 1 || minResultsNum > 100) {
-      toast.error("Le nombre de résultats doit être entre 1 et 100");
+    if (minResultsNum < 1 || minResultsNum > 200) {
+      toast.error("Le nombre de résultats doit être entre 1 et 200");
       return;
     }
 
@@ -89,7 +89,7 @@ export const SearchCompanies = ({ onNavigateToTab }: SearchCompaniesProps = {}) 
         };
 
         if (codeApe) searchPayload.codeApe = codeApe;
-        if (ville) searchPayload.location = ville;
+        if (villes.length > 0) searchPayload.locations = villes;
 
         if (minEmployees) {
           const [min, max] = minEmployees.split('-').map(Number);
@@ -276,8 +276,8 @@ export const SearchCompanies = ({ onNavigateToTab }: SearchCompaniesProps = {}) 
         {step === "filters" && (
           <SearchFiltersStep
             selectedCodesCount={selectedCodes.length}
-            ville={ville}
-            setVille={setVille}
+            villes={villes}
+            setVilles={setVilles}
             minResults={minResults}
             setMinResults={setMinResults}
             minEmployees={minEmployees}
