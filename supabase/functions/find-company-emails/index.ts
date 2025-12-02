@@ -829,6 +829,10 @@ serve(async (req) => {
       if (result.emails.length > 0) {
         updateData.selected_email = selectBestEmail(result.emails);
       } else {
+        // IMPORTANT: Marquer comme traité même si aucun email trouvé
+        // pour éviter de re-traiter les mêmes entreprises en boucle
+        updateData.selected_email = 'NOT_FOUND';
+        
         // Si aucun email trouvé, analyser avec l'IA pour détecter site carrière ou formulaire
         if (result.website) {
           console.log(`[AI] No email found, analyzing contact options...`);
@@ -873,11 +877,14 @@ serve(async (req) => {
       await delay(500); // Réduit de 1500ms à 500ms pour éviter timeout
     }
 
+    // Compter les entreprises restantes (non traitées = selected_email IS NULL)
     const { count: remainingCount } = await supabase
       .from("companies")
       .select("*", { count: "exact", head: true })
       .eq("user_id", user.id)
       .is("selected_email", null);
+    
+    console.log(`[Remaining] ${remainingCount || 0} companies still need processing`);
 
     const summary = {
       processed: results.length,

@@ -95,7 +95,9 @@ export const EmailSearchSection = ({ onEmailsFound }: EmailSearchSectionProps) =
         totalProcessed += data.processed || 0;
         totalEmailsFound += data.summary?.found || data.results?.filter((r: SearchResult) => r.emails && r.emails.length > 0).length || 0;
         allResults = [...allResults, ...(data.results || [])];
-        hasMore = data.hasMore || false;
+        hasMore = data.hasMore === true; // S'assurer que c'est bien un boolean true
+        
+        console.log(`[Email Search] Batch completed: ${data.processed} processed, ${data.summary?.found || 0} found, hasMore: ${hasMore}`);
 
         setResults(allResults);
         setSummary({
