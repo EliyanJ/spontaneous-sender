@@ -182,11 +182,19 @@ export const EmailSearchSection = ({ onEmailsFound }: EmailSearchSectionProps) =
               disabled={isSearching}
               size="lg"
               className="bg-primary hover:bg-primary/90"
+              tabIndex={isSearching ? -1 : 0}
+              onKeyDown={(e) => {
+                // Empêcher espace/entrée de déclencher pendant la recherche
+                if (isSearching && (e.key === ' ' || e.key === 'Enter')) {
+                  e.preventDefault();
+                  e.stopPropagation();
+                }
+              }}
             >
               {isSearching ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Recherche...
+                  Recherche en cours...
                 </>
               ) : (
                 <>
