@@ -71,7 +71,7 @@ export const EmailSearchSection = ({ onEmailsFound }: EmailSearchSectionProps) =
 
       while (hasMore) {
         const { data, error } = await supabase.functions.invoke('find-company-emails', {
-          body: { maxCompanies: 20 } // Réduit à 20 pour éviter timeout backend
+          body: { maxCompanies: 25 } // Augmenté avec délais optimisés
         });
 
         if (error) {
@@ -107,7 +107,7 @@ export const EmailSearchSection = ({ onEmailsFound }: EmailSearchSectionProps) =
         });
 
         if (hasMore) {
-          await new Promise(resolve => setTimeout(resolve, 2000));
+          await new Promise(resolve => setTimeout(resolve, 1000)); // Réduit à 1s entre batches
         }
       }
 
