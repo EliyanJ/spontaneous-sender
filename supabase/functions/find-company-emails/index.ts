@@ -8,8 +8,8 @@ const corsHeaders = {
 };
 
 const requestSchema = z.object({
-  maxCompanies: z.number().int().min(1).max(20).optional().default(20), // Réduit pour éviter timeout
-  batchSize: z.number().int().min(5).max(20).optional().default(15) // Réduit à 15 pour sécurité
+  maxCompanies: z.number().int().min(1).max(25).optional().default(25), // Augmenté avec délais réduits
+  batchSize: z.number().int().min(5).max(25).optional().default(20) // 20 entreprises par batch
 });
 
 async function checkRateLimit(supabase: any, userId: string, action: string, limit: number = 10) {
@@ -65,7 +65,7 @@ async function scrapePage(url: string): Promise<{ emails: string[]; hasContactFo
         'User-Agent': 'Mozilla/5.0 (compatible; JobBot/1.0;)',
         'Accept': 'text/html',
       },
-      signal: AbortSignal.timeout(3000),
+      signal: AbortSignal.timeout(2000), // Réduit à 2s
     });
 
     if (!response.ok) return { emails: [], hasContactForm: false };
@@ -874,7 +874,7 @@ serve(async (req) => {
         error: result.error
       });
 
-      await delay(500); // Réduit de 1500ms à 500ms pour éviter timeout
+      await delay(200); // Réduit à 200ms pour accélérer
     }
 
     // Compter les entreprises restantes (non traitées = selected_email IS NULL)
