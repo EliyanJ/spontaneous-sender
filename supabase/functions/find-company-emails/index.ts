@@ -8,7 +8,8 @@ const corsHeaders = {
 };
 
 const requestSchema = z.object({
-  maxCompanies: z.number().int().min(1).max(200).optional().default(10)
+  maxCompanies: z.number().int().min(1).max(20).optional().default(20), // Réduit pour éviter timeout
+  batchSize: z.number().int().min(5).max(20).optional().default(15) // Réduit à 15 pour sécurité
 });
 
 async function checkRateLimit(supabase: any, userId: string, action: string, limit: number = 10) {
@@ -869,7 +870,7 @@ serve(async (req) => {
         error: result.error
       });
 
-      await delay(1500);
+      await delay(500); // Réduit de 1500ms à 500ms pour éviter timeout
     }
 
     const { count: remainingCount } = await supabase

@@ -71,7 +71,7 @@ export const EmailSearchSection = ({ onEmailsFound }: EmailSearchSectionProps) =
 
       while (hasMore) {
         const { data, error } = await supabase.functions.invoke('find-company-emails', {
-          body: { maxCompanies: 50 }
+          body: { maxCompanies: 20 } // Réduit à 20 pour éviter timeout backend
         });
 
         if (error) {
@@ -153,15 +153,14 @@ export const EmailSearchSection = ({ onEmailsFound }: EmailSearchSectionProps) =
 
   // Calcul de l'estimation du temps restant
   const getTimeEstimate = () => {
-    if (!estimatedTotal) return "";
-    const avgTimePerCompany = 8; // ~8 secondes par entreprise en moyenne
-    const totalEstimated = estimatedTotal * avgTimePerCompany;
-    const remaining = Math.max(0, totalEstimated - elapsedTime);
+    if (!summary || !estimatedTotal || summary.processed === 0) return "";
+    const avgTimePerCompany = elapsedTime / summary.processed; // Calculer le temps moyen réel
+    const remaining = Math.max(0, (estimatedTotal - summary.processed) * avgTimePerCompany);
     
     if (remaining > 60) {
       return `~${Math.ceil(remaining / 60)} min restantes`;
     }
-    return `~${remaining}s restantes`;
+    return `~${Math.ceil(remaining)}s restantes`;
   };
 
   return (
