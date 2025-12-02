@@ -39,6 +39,22 @@ const MAX_PER_PAGE = 25;
 const MAX_API_PAGE = 300;
 const ARRONDISSEMENTS_COUNT = 3;
 
+// Régions avec leurs départements (codes à 2 chiffres)
+const REGIONS: Record<string, string[]> = {
+  'ile-de-france': ['75', '77', '78', '91', '92', '93', '94', '95'],
+  'provence-alpes-cote d\'azur': ['04', '05', '06', '13', '83', '84'],
+  'auvergne-rhone-alpes': ['01', '03', '07', '15', '26', '38', '42', '43', '63', '69', '73', '74'],
+  'nouvelle-aquitaine': ['16', '17', '19', '23', '24', '33', '40', '47', '64', '79', '86', '87'],
+  'occitanie': ['09', '11', '12', '30', '31', '32', '34', '46', '48', '65', '66', '81', '82'],
+  'hauts-de-france': ['02', '59', '60', '62', '80'],
+  'grand est': ['08', '10', '51', '52', '54', '55', '57', '67', '68', '88'],
+  'pays de la loire': ['44', '49', '53', '72', '85'],
+  'bretagne': ['22', '29', '35', '56'],
+  'normandie': ['14', '27', '50', '61', '76'],
+  'bourgogne-franche-comte': ['21', '25', '39', '58', '70', '71', '89', '90'],
+  'centre-val de loire': ['18', '28', '36', '37', '41', '45'],
+};
+
 // Villes avec arrondissements (codes postaux à 5 chiffres)
 const VILLES_ARRONDISSEMENTS: Record<string, string[]> = {
   'paris': Array.from({ length: 20 }, (_, i) => `750${(i + 1).toString().padStart(2, '0')}`),
@@ -194,8 +210,25 @@ serve(async (req) => {
         const normalized = normalizeVille(loc);
         
         if (/^\d{5}$/.test(loc)) {
-          // Code postal exact
+          // Code postal exact à 5 chiffres
           allPostalCodes.push(loc);
+        } else if (/^\d{2}$/.test(loc)) {
+          // Code département à 2 chiffres - générer tous les codes postaux du département
+          // Pour chaque département, on couvre tous les codes postaux possibles (XX000-XX999)
+          // L'API accepte les codes postaux, donc on génère des codes représentatifs
+          for (let i = 0; i < 1000; i += 100) {
+            allPostalCodes.push(`${loc}${i.toString().padStart(3, '0')}`);
+          }
+        } else if (REGIONS[normalized]) {
+          // Région : utiliser tous les départements de la région
+          const departments = REGIONS[normalized];
+          for (const dept of departments) {
+            // Pour chaque département, générer des codes postaux représentatifs
+            for (let i = 0; i < 1000; i += 100) {
+              allPostalCodes.push(`${dept}${i.toString().padStart(3, '0')}`);
+            }
+          }
+          console.log(`Région détectée: ${loc} → ${departments.length} départements`);
         } else if (VILLES_ARRONDISSEMENTS[normalized]) {
           // Ville avec arrondissements: TOUS les arrondissements
           const arrondissements = VILLES_ARRONDISSEMENTS[normalized];
