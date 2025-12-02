@@ -8,7 +8,7 @@ const corsHeaders = {
 };
 
 const requestSchema = z.object({
-  maxCompanies: z.number().int().min(1).max(150).optional().default(10)
+  maxCompanies: z.number().int().min(1).max(200).optional().default(10)
 });
 
 async function checkRateLimit(supabase: any, userId: string, action: string, limit: number = 10) {
@@ -302,7 +302,7 @@ Quel numéro correspond au site OFFICIEL de l'entreprise? Réponds avec un chiff
 }
 
 // Recherche d'emails avec Hunter.io
-async function findEmailsWithHunter(websiteUrl: string): Promise<{
+async function findEmailsWithHunter(websiteUrl: string, limit: number = 50): Promise<{
   emails: string[];
   source: string;
   confidence: string;
@@ -314,9 +314,9 @@ async function findEmailsWithHunter(websiteUrl: string): Promise<{
 
   try {
     const domain = new URL(websiteUrl).hostname.replace('www.', '');
-    console.log(`[Hunter.io] 🔍 Searching emails for domain: ${domain}`);
+    console.log(`[Hunter.io] 🔍 Searching emails for domain: ${domain} (limit: ${limit})`);
 
-    const url = `https://api.hunter.io/v2/domain-search?domain=${encodeURIComponent(domain)}&api_key=${HUNTER_API_KEY}&limit=10`;
+    const url = `https://api.hunter.io/v2/domain-search?domain=${encodeURIComponent(domain)}&api_key=${HUNTER_API_KEY}&limit=${limit}`;
     
     const response = await fetch(url);
 
@@ -435,6 +435,99 @@ async function extractEmailFromWebsite(
     emails: emailList,
     alternativeContact: emailList.length === 0 ? "Aucun email trouvé" : undefined
   };
+}
+
+// Analyse IA pour détecter site carrière et formulaire quand aucun email trouvé
+async function analyzeContactOptions(
+  websiteUrl: string,
+  companyName: string
+): Promise<{
+  careerSiteUrl?: string;
+  hasContactForm: boolean;
+}> {
+  if (!LOVABLE_API_KEY) {
+    return { hasContactForm: false };
+  }
+
+  try {
+    console.log(`[AI Analysis] Analyzing contact options for ${companyName}...`);
+
+    // Scraper la page d'accueil
+    const response = await fetch(websiteUrl, {
+      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; JobBot/1.0;)' },
+      signal: AbortSignal.timeout(3000),
+    });
+
+    if (!response.ok) return { hasContactForm: false };
+
+    const html = await response.text();
+    const content = html.substring(0, 3000);
+
+    const systemPrompt = `Tu es un expert en analyse de sites web d'entreprise pour identifier les moyens de contact.
+
+RÈGLES :
+1. Détecte si l'entreprise utilise un site carrière externe (Welcome to the Jungle, LinkedIn Jobs, Indeed, etc.)
+2. Détecte si un formulaire de contact est présent
+3. Retourne UNIQUEMENT ce que tu trouves réellement
+
+Format JSON strict :
+{
+  "career_site_url": "URL complète du site carrière externe" ou null,
+  "has_contact_form": true ou false
+}`;
+
+    const userPrompt = `Analyse ce site web : ${websiteUrl}
+ENTREPRISE : ${companyName}
+
+CONTENU :
+${content}
+
+Cherche :
+- Liens vers sites carrières (Welcome to the Jungle, LinkedIn Jobs, Indeed, etc.)
+- Présence de formulaire de contact (balise <form> avec contact/message)`;
+
+    const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "google/gemini-2.5-flash",
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userPrompt },
+        ],
+        temperature: 0,
+        max_tokens: 200,
+      }),
+    });
+
+    if (!aiResponse.ok) {
+      console.error("[AI Analysis] Error:", aiResponse.status);
+      return { hasContactForm: false };
+    }
+
+    const data = await aiResponse.json();
+    let answer = data.choices?.[0]?.message?.content?.trim() || "";
+    
+    if (answer.startsWith("```json")) {
+      answer = answer.replace(/^```json\s*/, "").replace(/\s*```$/, "");
+    } else if (answer.startsWith("```")) {
+      answer = answer.replace(/^```\s*/, "").replace(/\s*```$/, "");
+    }
+
+    const result = JSON.parse(answer);
+    
+    return {
+      careerSiteUrl: result.career_site_url && result.career_site_url !== "null" ? result.career_site_url : undefined,
+      hasContactForm: result.has_contact_form === true,
+    };
+
+  } catch (error) {
+    console.error("[AI Analysis] Error:", error);
+    return { hasContactForm: false };
+  }
 }
 
 // Extraction IA (fallback uniquement)
@@ -606,7 +699,7 @@ async function findCompanyEmailsNew(company: CompanyRow): Promise<{
     // ÉTAPE 3: Fallback Hunter.io (PAYANT mais plus fiable)
     console.log(`\n[Step 3] 💰 Scraping found 0 emails, trying Hunter.io (paid fallback)...`);
     
-    const hunterResult = await findEmailsWithHunter(website);
+    const hunterResult = await findEmailsWithHunter(website, 50); // Premium plan: 50 results
     
     if (hunterResult.emails.length > 0) {
       console.log(`[Hunter.io] ✅ SUCCESS: Found ${hunterResult.emails.length} email(s)`);
@@ -734,6 +827,22 @@ serve(async (req) => {
 
       if (result.emails.length > 0) {
         updateData.selected_email = selectBestEmail(result.emails);
+      } else {
+        // Si aucun email trouvé, analyser avec l'IA pour détecter site carrière ou formulaire
+        if (result.website) {
+          console.log(`[AI] No email found, analyzing contact options...`);
+          const analysis = await analyzeContactOptions(result.website, company.nom);
+          
+          if (analysis.careerSiteUrl) {
+            updateData.career_site_url = analysis.careerSiteUrl;
+            console.log(`[AI] ✅ Career site found: ${analysis.careerSiteUrl}`);
+          }
+          
+          if (analysis.hasContactForm) {
+            updateData.has_contact_form = true;
+            console.log(`[AI] ✅ Contact form detected`);
+          }
+        }
       }
 
       if (result.careerPageUrl) {

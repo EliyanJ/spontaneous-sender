@@ -9,7 +9,8 @@ const corsHeaders = {
 
 const requestSchema = z.object({
   codeApe: z.string().max(10).optional(),
-  location: z.string().max(100).optional(),
+  locations: z.array(z.string().max(100)).optional(), // Array pour multi-villes
+  location: z.string().max(100).optional(), // Backward compatibility
   nombre: z.number().int().min(1).max(200),
   userId: z.string().uuid(),
   minEmployees: z.number().int().min(0).optional().default(5),
@@ -149,9 +150,12 @@ serve(async (req) => {
       );
     }
 
-    const { codeApe, location, nombre = 20, userId, minEmployees = 5, maxEmployees = 100 } = validationResult.data;
+    const { codeApe, locations, location, nombre = 20, userId, minEmployees = 5, maxEmployees = 100 } = validationResult.data;
+    
+    // Support multi-villes
+    const searchLocations = locations && locations.length > 0 ? locations : (location ? [location] : []);
 
-    console.log('Recherche:', { codeApe, location, nombre, userId, minEmployees, maxEmployees });
+    console.log('Recherche:', { codeApe, locations: searchLocations, nombre, userId, minEmployees, maxEmployees });
 
     // Récupérer la blacklist de l'utilisateur
     let blacklistedSirens: string[] = [];
@@ -181,23 +185,35 @@ serve(async (req) => {
       params.activite_principale = formatCodeApe(codeApe);
     }
 
-    // Gestion de la localisation STRICTE (tous les arrondissements)
-    if (location) {
-      const normalized = normalizeVille(location);
-      
-      if (/^\d{5}$/.test(location)) {
-        // Code postal exact
-        params.code_postal = location;
-      } else if (VILLES_ARRONDISSEMENTS[normalized]) {
-        // Ville avec arrondissements: TOUS les arrondissements (pas aléatoire)
-        const arrondissements = VILLES_ARRONDISSEMENTS[normalized];
-        params.code_postal = arrondissements.join(',');
-        console.log(`Filtrage strict sur tous les arrondissements: ${arrondissements.length} codes postaux`);
-      } else {
-        // Ville normale: utiliser le paramètre q pour recherche textuelle
-        // Le paramètre 'commune' n'existe pas dans l'API, on utilise 'q' pour inclure le nom de ville
-        params.q = location;
-        console.log(`Recherche textuelle par ville: ${location}`);
+    // Gestion multi-localisations
+    if (searchLocations.length > 0) {
+      const allPostalCodes: string[] = [];
+      const textSearchTerms: string[] = [];
+
+      for (const loc of searchLocations) {
+        const normalized = normalizeVille(loc);
+        
+        if (/^\d{5}$/.test(loc)) {
+          // Code postal exact
+          allPostalCodes.push(loc);
+        } else if (VILLES_ARRONDISSEMENTS[normalized]) {
+          // Ville avec arrondissements: TOUS les arrondissements
+          const arrondissements = VILLES_ARRONDISSEMENTS[normalized];
+          allPostalCodes.push(...arrondissements);
+        } else {
+          // Ville normale pour recherche textuelle
+          textSearchTerms.push(loc);
+        }
+      }
+
+      if (allPostalCodes.length > 0) {
+        params.code_postal = allPostalCodes.join(',');
+        console.log(`Multi-localisation: ${allPostalCodes.length} codes postaux`);
+      }
+
+      if (textSearchTerms.length > 0) {
+        params.q = textSearchTerms.join(' OR ');
+        console.log(`Recherche textuelle multi-villes: ${textSearchTerms.join(', ')}`);
       }
     }
 

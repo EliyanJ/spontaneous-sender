@@ -3,12 +3,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Search, Loader2, ArrowLeft, MapPin, Users, Hash } from "lucide-react";
+import { Search, Loader2, ArrowLeft, Users, Hash } from "lucide-react";
+import { RegionSearch } from "@/components/ui/region-search";
 
 interface SearchFiltersStepProps {
   selectedCodesCount: number;
-  ville: string;
-  setVille: (value: string) => void;
+  villes: string[];
+  setVilles: (value: string[]) => void;
   minResults: string;
   setMinResults: (value: string) => void;
   minEmployees: string;
@@ -20,8 +21,8 @@ interface SearchFiltersStepProps {
 
 export const SearchFiltersStep = ({
   selectedCodesCount,
-  ville,
-  setVille,
+  villes,
+  setVilles,
   minResults,
   setMinResults,
   minEmployees,
@@ -55,54 +56,55 @@ export const SearchFiltersStep = ({
       <div className="p-8 rounded-2xl bg-card border border-border/50 space-y-6">
         <h3 className="text-lg font-semibold text-foreground">Affinez votre recherche</h3>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="space-y-6">
           <div className="space-y-2">
-            <Label className="text-sm text-muted-foreground flex items-center gap-2">
-              <MapPin className="h-4 w-4" />
-              Ville ou Code Postal
+            <Label className="text-sm text-muted-foreground">
+              Villes, Codes Postaux ou Régions (plusieurs possibles)
             </Label>
-            <Input
-              placeholder="Paris, 75001..."
-              value={ville}
-              onChange={(e) => setVille(e.target.value)}
-              className="h-12 bg-background border-border/50 focus:border-primary/50 rounded-xl"
+            <RegionSearch
+              value={villes}
+              onChange={setVilles}
+              placeholder="Paris, 75001, Île-de-France..."
             />
           </div>
           
-          <div className="space-y-2">
-            <Label className="text-sm text-muted-foreground flex items-center gap-2">
-              <Hash className="h-4 w-4" />
-              Nombre de résultats
-            </Label>
-            <Input
-              type="number"
-              min="1"
-              max="100"
-              placeholder="20"
-              value={minResults}
-              onChange={(e) => setMinResults(e.target.value)}
-              className="h-12 bg-background border-border/50 focus:border-primary/50 rounded-xl"
-            />
-          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           
-          <div className="space-y-2">
-            <Label className="text-sm text-muted-foreground flex items-center gap-2">
-              <Users className="h-4 w-4" />
-              Effectif
-            </Label>
-            <Select value={minEmployees} onValueChange={setMinEmployees}>
-              <SelectTrigger className="h-12 bg-background border-border/50 focus:border-primary/50 rounded-xl">
-                <SelectValue placeholder="5-100 (recommandé)" />
-              </SelectTrigger>
-              <SelectContent className="bg-card border-border z-50">
-                <SelectItem value="5-100">5-100 (recommandé)</SelectItem>
-                <SelectItem value="5-50">5-50 (PME)</SelectItem>
-                <SelectItem value="10-100">10-100</SelectItem>
-                <SelectItem value="20-100">20-100</SelectItem>
-                <SelectItem value="50-200">50-200 (ETI)</SelectItem>
-                <SelectItem value="0-500">Tous (0-500)</SelectItem>
-              </SelectContent>
-            </Select>
+            <div className="space-y-2">
+              <Label className="text-sm text-muted-foreground flex items-center gap-2">
+                <Hash className="h-4 w-4" />
+                Nombre de résultats
+              </Label>
+              <Input
+                type="number"
+                min="1"
+                max="200"
+                placeholder="20"
+                value={minResults}
+                onChange={(e) => setMinResults(e.target.value)}
+                className="h-12 bg-background border-border/50 focus:border-primary/50 rounded-xl"
+              />
+            </div>
+          
+            <div className="space-y-2">
+              <Label className="text-sm text-muted-foreground flex items-center gap-2">
+                <Users className="h-4 w-4" />
+                Effectif
+              </Label>
+              <Select value={minEmployees} onValueChange={setMinEmployees}>
+                <SelectTrigger className="h-12 bg-background border-border/50 focus:border-primary/50 rounded-xl">
+                  <SelectValue placeholder="5-100 (recommandé)" />
+                </SelectTrigger>
+                <SelectContent className="bg-card border-border z-50">
+                  <SelectItem value="5-100">5-100 (recommandé)</SelectItem>
+                  <SelectItem value="5-50">5-50 (PME)</SelectItem>
+                  <SelectItem value="10-100">10-100</SelectItem>
+                  <SelectItem value="20-100">20-100</SelectItem>
+                  <SelectItem value="50-200">50-200 (ETI)</SelectItem>
+                  <SelectItem value="0-500">Tous (0-500)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </div>
         

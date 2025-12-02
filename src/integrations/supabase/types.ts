@@ -68,10 +68,12 @@ export type Database = {
       companies: {
         Row: {
           adresse: string | null
+          career_site_url: string | null
           code_ape: string | null
           code_postal: string | null
           created_at: string | null
           emails: Json | null
+          has_contact_form: boolean | null
           id: string
           libelle_ape: string | null
           nature_juridique: string | null
@@ -90,10 +92,12 @@ export type Database = {
         }
         Insert: {
           adresse?: string | null
+          career_site_url?: string | null
           code_ape?: string | null
           code_postal?: string | null
           created_at?: string | null
           emails?: Json | null
+          has_contact_form?: boolean | null
           id?: string
           libelle_ape?: string | null
           nature_juridique?: string | null
@@ -112,10 +116,12 @@ export type Database = {
         }
         Update: {
           adresse?: string | null
+          career_site_url?: string | null
           code_ape?: string | null
           code_postal?: string | null
           created_at?: string | null
           emails?: Json | null
+          has_contact_form?: boolean | null
           id?: string
           libelle_ape?: string | null
           nature_juridique?: string | null
