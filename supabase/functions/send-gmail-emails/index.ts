@@ -7,9 +7,9 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Input validation schema
+// Input validation schema - TOLÉRANT pour les emails invalides
 const emailSchema = z.object({
-  recipients: z.array(z.string().email()).min(1).max(500),
+  recipients: z.array(z.string()).min(1).max(500), // Accepte toutes les strings, filtrage plus tard
   subject: z.string().min(1).max(200).refine(
     (s) => !/[\r\n]/.test(s),
     { message: "Subject cannot contain newlines" }
@@ -21,6 +21,51 @@ const emailSchema = z.object({
     data: z.string().max(10485760) // 10MB base64
   })).max(10).optional()
 });
+
+// Fonction pour valider un email - ROBUSTE
+function isValidEmail(email: string): boolean {
+  if (!email || typeof email !== 'string') return false;
+  
+  const lower = email.toLowerCase().trim();
+  
+  // Rejeter NOT_FOUND et valeurs spéciales
+  if (lower === 'not_found' || lower === 'not found' || lower === '') return false;
+  
+  // Rejeter extensions de fichiers
+  if (lower.includes('.webp') || lower.includes('.png') || 
+      lower.includes('.jpg') || lower.includes('.gif') || 
+      lower.includes('.svg') || lower.includes('.jpeg')) {
+    console.log(`[Email Filter] Rejected file extension: ${email}`);
+    return false;
+  }
+  
+  // Rejeter domaines techniques/annuaires
+  const invalidDomains = [
+    'sentry.io', 'sentry-next.wixpress.com', 'wixpress.com',
+    'societeinfo.com', 'infonet.fr', 'linkedin.com', 'facebook.com',
+    'twitter.com', 'instagram.com', 'pappers.fr', 'kompass.com'
+  ];
+  if (invalidDomains.some(d => lower.includes(d))) {
+    console.log(`[Email Filter] Rejected invalid domain: ${email}`);
+    return false;
+  }
+  
+  // Rejeter emails avec UUID/hash
+  const localPart = lower.split('@')[0] || '';
+  if (/^[a-f0-9]{20,}$/.test(localPart)) {
+    console.log(`[Email Filter] Rejected hash-like email: ${email}`);
+    return false;
+  }
+  
+  // Validation regex standard
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    console.log(`[Email Filter] Rejected invalid format: ${email}`);
+    return false;
+  }
+  
+  return true;
+}
 
 // Rate limiting function
 async function checkRateLimit(supabase: any, userId: string, action: string, limit: number = 100) {
@@ -90,7 +135,29 @@ serve(async (req) => {
       );
     }
 
-    const { recipients, subject, body: rawBody, attachments } = validationResult.data;
+    const { recipients: rawRecipients, subject, body: rawBody, attachments } = validationResult.data;
+
+    // FILTRER les emails invalides AVANT l'envoi
+    const recipients = rawRecipients.filter(r => isValidEmail(r));
+    const skippedCount = rawRecipients.length - recipients.length;
+    
+    if (skippedCount > 0) {
+      console.log(`[Email Filter] Skipped ${skippedCount} invalid emails`);
+    }
+    
+    if (recipients.length === 0) {
+      return new Response(
+        JSON.stringify({ 
+          error: "No valid recipients", 
+          message: `All ${rawRecipients.length} recipients were invalid or filtered out`,
+          skippedCount
+        }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 400,
+        }
+      );
+    }
 
     // Formater le body avec des retours à la ligne HTML
     const body = rawBody.replace(/\n/g, '<br>');
