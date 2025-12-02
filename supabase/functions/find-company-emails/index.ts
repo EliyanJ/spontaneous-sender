@@ -87,14 +87,45 @@ async function scrapePage(url: string): Promise<{ emails: string[]; hasContactFo
     const hasContactForm = html.includes('<form') && 
                           (html.toLowerCase().includes('contact') || html.toLowerCase().includes('message'));
 
-    // Filtre emails invalides
+    // Filtre emails invalides - AMÉLIORÉ pour éviter faux positifs
+    const invalidDomains = [
+      'sentry.io', 'sentry-next.wixpress.com', 'wixpress.com',
+      'societeinfo.com', 'infonet.fr', 'linkedin.com', 'facebook.com',
+      'twitter.com', 'instagram.com', 'pappers.fr', 'kompass.com',
+      'verif.com', 'manageo.fr', 'societe.com', 'annuaire-entreprises.fr'
+    ];
+    
     const validEmails = emailsFound.filter((email: string) => {
       const lower = email.toLowerCase();
-      return !lower.includes('noreply') &&
-             !lower.includes('no-reply') &&
-             !lower.includes('example') &&
-             !lower.includes('.png') &&
-             !lower.includes('.jpg');
+      const domain = lower.split('@')[1] || '';
+      
+      // Rejeter extensions de fichiers
+      if (lower.includes('.png') || lower.includes('.jpg') || 
+          lower.includes('.webp') || lower.includes('.gif') ||
+          lower.includes('.svg') || lower.includes('.jpeg')) {
+        console.log(`[Email Filter] Rejected file extension: ${email}`);
+        return false;
+      }
+      
+      // Rejeter noreply
+      if (lower.includes('noreply') || lower.includes('no-reply') || lower.includes('example')) {
+        return false;
+      }
+      
+      // Rejeter domaines d'annuaires/techniques
+      if (invalidDomains.some(d => domain.includes(d))) {
+        console.log(`[Email Filter] Rejected invalid domain: ${email}`);
+        return false;
+      }
+      
+      // Rejeter emails avec UUID/hash (pattern technique)
+      const localPart = lower.split('@')[0] || '';
+      if (/^[a-f0-9]{20,}$/.test(localPart)) {
+        console.log(`[Email Filter] Rejected hash-like email: ${email}`);
+        return false;
+      }
+      
+      return true;
     });
 
     return {
