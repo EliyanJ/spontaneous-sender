@@ -64,6 +64,14 @@ interface UserProfile {
   cvContent: string | null;
 }
 
+interface ProcessLog {
+  id: string;
+  timestamp: Date;
+  type: 'info' | 'success' | 'error' | 'processing';
+  message: string;
+  company?: string;
+}
+
 export const PersonalizedEmailsSection = () => {
   const [companies, setCompanies] = useState<Company[]>([]);
   const [selectedCompanies, setSelectedCompanies] = useState<Set<string>>(new Set());
@@ -82,6 +90,8 @@ export const PersonalizedEmailsSection = () => {
   const [gmailConnected, setGmailConnected] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0);
   const [activeTab, setActiveTab] = useState<"setup" | "results">("setup");
+  const [processLogs, setProcessLogs] = useState<ProcessLog[]>([]);
+  const [currentStep, setCurrentStep] = useState<string>("");
 
   useEffect(() => {
     loadCompanies();
@@ -272,6 +282,17 @@ export const PersonalizedEmailsSection = () => {
     toast({ title: "CV sauvegardé", description: "Votre CV a été sauvegardé dans votre profil" });
   };
 
+  const addLog = (type: ProcessLog['type'], message: string, company?: string) => {
+    const log: ProcessLog = {
+      id: `${Date.now()}-${Math.random()}`,
+      timestamp: new Date(),
+      type,
+      message,
+      company
+    };
+    setProcessLogs(prev => [...prev, log]);
+  };
+
   const handleGenerateEmails = async () => {
     if (selectedCompanies.size === 0) {
       toast({ title: "Sélection vide", description: "Sélectionnez au moins une entreprise", variant: "destructive" });
@@ -282,7 +303,10 @@ export const PersonalizedEmailsSection = () => {
     setProgress(0);
     setElapsedTime(0);
     setGeneratedEmails([]);
+    setProcessLogs([]);
     setActiveTab("results");
+
+    addLog('info', `🚀 Démarrage de la génération pour ${selectedCompanies.size} entreprise(s)`);
 
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -292,9 +316,26 @@ export const PersonalizedEmailsSection = () => {
       const batchSize = 5;
       const allResults: GeneratedEmail[] = [];
 
+      addLog('info', `📋 ${selectedCompanyList.length} entreprises à traiter en lots de ${batchSize}`);
+
       for (let i = 0; i < selectedCompanyList.length; i += batchSize) {
         const batch = selectedCompanyList.slice(i, i + batchSize);
-        setCurrentCompany(`${batch.map(c => c.nom).join(', ')}...`);
+        const batchNumber = Math.floor(i / batchSize) + 1;
+        const totalBatches = Math.ceil(selectedCompanyList.length / batchSize);
+        
+        setCurrentCompany(`Lot ${batchNumber}/${totalBatches}`);
+        setCurrentStep(`Traitement du lot ${batchNumber}/${totalBatches}`);
+        
+        addLog('processing', `📦 Lot ${batchNumber}/${totalBatches} - Traitement de ${batch.length} entreprise(s)...`);
+
+        // Log each company being processed
+        for (const company of batch) {
+          addLog('processing', company.website_url 
+            ? `🔍 Scraping du site web...` 
+            : `📝 Génération basée sur les infos disponibles...`, 
+            company.nom
+          );
+        }
 
         const { data, error } = await supabase.functions.invoke("generate-personalized-emails", {
           body: {
@@ -308,6 +349,7 @@ export const PersonalizedEmailsSection = () => {
 
         if (error) {
           console.error("Generation error:", error);
+          addLog('error', `❌ Erreur sur le lot ${batchNumber}: ${error.message}`);
           batch.forEach(c => {
             allResults.push({
               company_id: c.id,
@@ -315,9 +357,23 @@ export const PersonalizedEmailsSection = () => {
               success: false,
               error: error.message
             });
+            addLog('error', `Échec de la génération`, c.nom);
           });
         } else if (data?.results) {
           allResults.push(...data.results);
+          
+          // Log results for each company
+          data.results.forEach((result: GeneratedEmail) => {
+            if (result.success) {
+              addLog('success', result.scraped_info 
+                ? `✅ Email généré (site web analysé)` 
+                : `✅ Email généré (infos générales)`, 
+                result.company_name
+              );
+            } else {
+              addLog('error', `❌ ${result.error || 'Erreur inconnue'}`, result.company_name);
+            }
+          });
         }
 
         setGeneratedEmails([...allResults]);
@@ -325,11 +381,14 @@ export const PersonalizedEmailsSection = () => {
 
         // Small delay between batches
         if (i + batchSize < selectedCompanyList.length) {
+          addLog('info', `⏳ Pause avant le prochain lot...`);
           await new Promise(resolve => setTimeout(resolve, 1000));
         }
       }
 
       const successCount = allResults.filter(r => r.success).length;
+      addLog('success', `🎉 Terminé! ${successCount}/${selectedCompanyList.length} emails générés avec succès`);
+      
       toast({
         title: "Génération terminée",
         description: `${successCount}/${selectedCompanyList.length} emails générés avec succès`
@@ -337,10 +396,12 @@ export const PersonalizedEmailsSection = () => {
 
     } catch (error) {
       console.error("Generation error:", error);
+      addLog('error', `💥 Erreur critique: ${error instanceof Error ? error.message : 'Erreur inconnue'}`);
       toast({ title: "Erreur", description: "Une erreur est survenue", variant: "destructive" });
     } finally {
       setIsGenerating(false);
       setCurrentCompany("");
+      setCurrentStep("");
     }
   };
 
@@ -605,20 +666,84 @@ export const PersonalizedEmailsSection = () => {
             </Button>
           </div>
 
-          {/* Progress */}
+          {/* Progress with Live Log */}
           {isGenerating && (
-            <Card className="bg-card/50 border-border">
-              <CardContent className="p-6 space-y-4">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">
-                    <Clock className="h-4 w-4 inline mr-1" />
-                    {formatTime(elapsedTime)}
-                  </span>
-                  <span className="font-medium">{progress}%</span>
+            <Card className="bg-card/50 border-border overflow-hidden">
+              <CardHeader className="pb-3 border-b border-border">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="relative">
+                      <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                      <div className="absolute inset-0 animate-ping">
+                        <Loader2 className="h-6 w-6 text-primary/30" />
+                      </div>
+                    </div>
+                    <div>
+                      <CardTitle className="text-base">Génération en cours...</CardTitle>
+                      <CardDescription className="text-xs">
+                        {currentStep || "Initialisation..."}
+                      </CardDescription>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-2xl font-bold text-primary">{progress}%</div>
+                    <div className="text-xs text-muted-foreground flex items-center gap-1">
+                      <Clock className="h-3 w-3" />
+                      {formatTime(elapsedTime)}
+                    </div>
+                  </div>
                 </div>
+              </CardHeader>
+              <CardContent className="p-4 space-y-4">
                 <Progress value={progress} className="h-2" />
-                <p className="text-sm text-muted-foreground text-center">
-                  {currentCompany || "Initialisation..."}
+                
+                {/* Estimated time */}
+                {progress > 0 && progress < 100 && (
+                  <div className="text-center text-xs text-muted-foreground">
+                    Temps estimé restant: ~{formatTime(Math.round((elapsedTime / progress) * (100 - progress)))}
+                  </div>
+                )}
+
+                {/* Live Log */}
+                <div className="bg-background/50 rounded-lg border border-border">
+                  <div className="px-3 py-2 border-b border-border flex items-center gap-2">
+                    <div className="h-2 w-2 rounded-full bg-success animate-pulse" />
+                    <span className="text-xs font-medium text-muted-foreground">Journal en temps réel</span>
+                  </div>
+                  <ScrollArea className="h-[200px]">
+                    <div className="p-3 space-y-1.5 font-mono text-xs">
+                      {processLogs.map((log) => (
+                        <div 
+                          key={log.id} 
+                          className={`flex items-start gap-2 py-1 px-2 rounded ${
+                            log.type === 'error' ? 'bg-destructive/10 text-destructive' :
+                            log.type === 'success' ? 'bg-success/10 text-success' :
+                            log.type === 'processing' ? 'bg-primary/10 text-primary' :
+                            'text-muted-foreground'
+                          }`}
+                        >
+                          <span className="text-muted-foreground/60 shrink-0">
+                            {log.timestamp.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                          </span>
+                          {log.company && (
+                            <Badge variant="outline" className="text-[10px] px-1.5 py-0 shrink-0">
+                              {log.company}
+                            </Badge>
+                          )}
+                          <span className="flex-1">{log.message}</span>
+                        </div>
+                      ))}
+                      {processLogs.length === 0 && (
+                        <div className="text-muted-foreground text-center py-4">
+                          En attente du démarrage...
+                        </div>
+                      )}
+                    </div>
+                  </ScrollArea>
+                </div>
+
+                <p className="text-xs text-muted-foreground text-center">
+                  💡 Le processus scrape chaque site web et génère un email unique avec l'IA
                 </p>
               </CardContent>
             </Card>
