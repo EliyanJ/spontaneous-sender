@@ -180,20 +180,84 @@ export const PersonalizedEmailsSection = () => {
     setSelectedCompanies(newSelected);
   };
 
+  const [isParsingCv, setIsParsingCv] = useState(false);
+
   const handleCvUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.type === 'text/plain') {
+    const supportedTypes = [
+      'application/pdf',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'text/plain'
+    ];
+
+    const isSupported = supportedTypes.includes(file.type) || 
+      file.name.endsWith('.pdf') || 
+      file.name.endsWith('.docx') || 
+      file.name.endsWith('.txt');
+
+    if (!isSupported) {
+      toast({ 
+        title: "Format non supporté", 
+        description: "Formats acceptés: PDF, DOCX, TXT", 
+        variant: "destructive" 
+      });
+      return;
+    }
+
+    // For plain text, read directly
+    if (file.type === 'text/plain' || file.name.endsWith('.txt')) {
       const text = await file.text();
       setCvContent(text);
       toast({ title: "CV chargé", description: "Contenu du CV importé avec succès" });
-    } else {
+      return;
+    }
+
+    // For PDF and DOCX, use the parsing edge function
+    setIsParsingCv(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("Session expirée");
+
+      // Convert file to base64
+      const arrayBuffer = await file.arrayBuffer();
+      const bytes = new Uint8Array(arrayBuffer);
+      let binary = '';
+      for (let i = 0; i < bytes.length; i++) {
+        binary += String.fromCharCode(bytes[i]);
+      }
+      const base64 = btoa(binary);
+
+      const { data, error } = await supabase.functions.invoke("parse-cv-document", {
+        body: {
+          fileBase64: base64,
+          fileName: file.name,
+          fileType: file.type
+        },
+        headers: { Authorization: `Bearer ${session.access_token}` }
+      });
+
+      if (error) throw error;
+
+      if (data?.success && data?.text) {
+        setCvContent(data.text);
+        toast({ 
+          title: "CV analysé", 
+          description: `${file.name} importé avec succès` 
+        });
+      } else {
+        throw new Error(data?.error || "Échec de l'analyse");
+      }
+    } catch (error) {
+      console.error("CV parsing error:", error);
       toast({ 
-        title: "Format non supporté", 
-        description: "Veuillez uploader un fichier texte (.txt) ou coller votre CV directement", 
+        title: "Erreur d'analyse", 
+        description: "Impossible de lire le fichier. Essayez de coller le texte directement.", 
         variant: "destructive" 
       });
+    } finally {
+      setIsParsingCv(false);
     }
   };
 
@@ -423,7 +487,7 @@ export const PersonalizedEmailsSection = () => {
                 <div>
                   <Input
                     type="file"
-                    accept=".txt"
+                    accept=".pdf,.docx,.txt,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
                     onChange={handleCvUpload}
                     className="hidden"
                     id="cv-upload"
@@ -431,10 +495,15 @@ export const PersonalizedEmailsSection = () => {
                   <Button
                     variant="outline"
                     onClick={() => document.getElementById("cv-upload")?.click()}
+                    disabled={isParsingCv}
                     className="w-full border-dashed"
                   >
-                    <Upload className="mr-2 h-4 w-4" />
-                    Importer un fichier .txt
+                    {isParsingCv ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <Upload className="mr-2 h-4 w-4" />
+                    )}
+                    {isParsingCv ? "Analyse en cours..." : "Importer CV (PDF, DOCX, TXT)"}
                   </Button>
                 </div>
                 <Textarea
