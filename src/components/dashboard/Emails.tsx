@@ -1,32 +1,16 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Search, Send, Mail, ChevronRight, Sparkles } from "lucide-react";
+import { Search, Send, Mail, ChevronRight } from "lucide-react";
 import { EmailSearchSection } from "./EmailSearchSection";
 import { EmailComposerSection } from "./EmailComposerSection";
-import { PersonalizedEmailGenerator } from "./PersonalizedEmailGenerator";
 
 interface EmailsProps {
   onNavigateToTab?: (tab: string) => void;
 }
 
 export const Emails = ({ onNavigateToTab }: EmailsProps) => {
-  const [activeSection, setActiveSection] = useState<"search" | "compose" | "personalized">("search");
-
-  // Listen for personalized email load events
-  useEffect(() => {
-    const handleLoadPersonalizedEmail = (event: CustomEvent) => {
-      const { subject, body, recipient } = event.detail;
-      // Dispatch to composer
-      window.dispatchEvent(new CustomEvent('set-composer-content', {
-        detail: { subject, body, recipient }
-      }));
-      setActiveSection("compose");
-    };
-
-    window.addEventListener('load-personalized-email', handleLoadPersonalizedEmail as EventListener);
-    return () => window.removeEventListener('load-personalized-email', handleLoadPersonalizedEmail as EventListener);
-  }, []);
+  const [activeSection, setActiveSection] = useState<"search" | "compose">("search");
 
   return (
     <div className="space-y-6">
@@ -45,28 +29,20 @@ export const Emails = ({ onNavigateToTab }: EmailsProps) => {
         )}
       </div>
 
-      <Tabs value={activeSection} onValueChange={(v) => setActiveSection(v as "search" | "compose" | "personalized")}>
+      <Tabs value={activeSection} onValueChange={(v) => setActiveSection(v as "search" | "compose")}>
         <TabsList className="bg-card/50 border border-border">
           <TabsTrigger value="search" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
             <Search className="h-4 w-4" />
             Recherche d'emails
           </TabsTrigger>
-          <TabsTrigger value="personalized" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-            <Sparkles className="h-4 w-4" />
-            Email personnalisé
-          </TabsTrigger>
           <TabsTrigger value="compose" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
             <Send className="h-4 w-4" />
-            Composer
+            Composer un email
           </TabsTrigger>
         </TabsList>
 
         <TabsContent value="search" className="mt-6">
           <EmailSearchSection onEmailsFound={() => setActiveSection("compose")} />
-        </TabsContent>
-
-        <TabsContent value="personalized" className="mt-6">
-          <PersonalizedEmailGenerator />
         </TabsContent>
 
         <TabsContent value="compose" className="mt-6">

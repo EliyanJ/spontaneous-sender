@@ -78,23 +78,8 @@ export const EmailComposerSection = () => {
 
     const handleCompaniesUpdate = () => loadCompanies();
     window.addEventListener('companies:updated', handleCompaniesUpdate);
-
-    // Listen for personalized email content
-    const handleSetComposerContent = (event: CustomEvent) => {
-      const { subject: newSubject, body: newBody, recipient } = event.detail;
-      if (newSubject) setSubject(newSubject);
-      if (newBody) setBody(newBody);
-      if (recipient && !recipients.includes(recipient)) {
-        setRecipients(prev => [...prev, recipient]);
-      }
-    };
-    window.addEventListener('set-composer-content', handleSetComposerContent as EventListener);
-
-    return () => {
-      window.removeEventListener('companies:updated', handleCompaniesUpdate);
-      window.removeEventListener('set-composer-content', handleSetComposerContent as EventListener);
-    };
-  }, [recipients]);
+    return () => window.removeEventListener('companies:updated', handleCompaniesUpdate);
+  }, []);
 
   const loadTemplates = async () => {
     const { data } = await supabase
