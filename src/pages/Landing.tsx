@@ -6,19 +6,33 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 
 const Landing = () => {
+  console.log("[Landing] Component rendering...");
+  
   const [authOpen, setAuthOpen] = useState(false);
   const [isDark, setIsDark] = useState(() => {
-    const saved = localStorage.getItem('theme');
-    return saved ? saved === 'dark' : true;
+    try {
+      const saved = localStorage.getItem('theme');
+      return saved ? saved === 'dark' : true;
+    } catch (e) {
+      console.error("[Landing] localStorage error:", e);
+      return true;
+    }
   });
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
+
+  console.log("[Landing] Auth state:", { user: !!user, loading });
 
   useEffect(() => {
-    if (user) navigate("/dashboard");
-  }, [user, navigate]);
+    console.log("[Landing] User effect triggered:", { user: !!user, loading });
+    if (!loading && user) {
+      console.log("[Landing] Redirecting to dashboard...");
+      navigate("/dashboard");
+    }
+  }, [user, loading, navigate]);
 
   useEffect(() => {
+    console.log("[Landing] Theme effect:", isDark);
     if (isDark) {
       document.documentElement.classList.add('dark');
       localStorage.setItem('theme', 'dark');
@@ -27,6 +41,18 @@ const Landing = () => {
       localStorage.setItem('theme', 'light');
     }
   }, [isDark]);
+
+  // Show loading while checking auth
+  if (loading) {
+    console.log("[Landing] Showing loading state...");
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  console.log("[Landing] Rendering full page...");
 
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
