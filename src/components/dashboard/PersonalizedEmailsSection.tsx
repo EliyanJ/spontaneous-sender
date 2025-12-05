@@ -329,8 +329,8 @@ export const PersonalizedEmailsSection = () => {
     setElapsedTime(0);
     setGeneratedEmails([]);
     setProcessLogs([]);
-    setActiveTab("results");
-
+    // Don't switch tab immediately - stay on setup to show progress
+    // setActiveTab("results");
     addLog('info', `🚀 Démarrage de la génération pour ${selectedCompanies.size} entreprise(s)`);
 
     try {
@@ -413,6 +413,9 @@ export const PersonalizedEmailsSection = () => {
 
       const successCount = allResults.filter(r => r.success).length;
       addLog('success', `🎉 Terminé! ${successCount}/${selectedCompanyList.length} emails générés avec succès`);
+      
+      // Switch to results tab after completion
+      setActiveTab("results");
       
       toast({
         title: "Génération terminée",
