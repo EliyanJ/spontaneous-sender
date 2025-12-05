@@ -36,6 +36,9 @@ verify_jwt = true
 [functions.ai-sector-guide]
 verify_jwt = true
 
+[functions.generate-personalized-emails]
+verify_jwt = true
+
 [functions.process-scheduled-emails]
 verify_jwt = false
 
