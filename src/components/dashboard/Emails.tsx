@@ -1,16 +1,17 @@
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Search, Send, Mail, ChevronRight } from "lucide-react";
+import { Search, Send, Mail, ChevronRight, Sparkles } from "lucide-react";
 import { EmailSearchSection } from "./EmailSearchSection";
 import { EmailComposerSection } from "./EmailComposerSection";
+import { PersonalizedEmailsSection } from "./PersonalizedEmailsSection";
 
 interface EmailsProps {
   onNavigateToTab?: (tab: string) => void;
 }
 
 export const Emails = ({ onNavigateToTab }: EmailsProps) => {
-  const [activeSection, setActiveSection] = useState<"search" | "compose">("search");
+  const [activeSection, setActiveSection] = useState<"search" | "compose" | "personalized">("search");
 
   return (
     <div className="space-y-6">
@@ -29,7 +30,7 @@ export const Emails = ({ onNavigateToTab }: EmailsProps) => {
         )}
       </div>
 
-      <Tabs value={activeSection} onValueChange={(v) => setActiveSection(v as "search" | "compose")}>
+      <Tabs value={activeSection} onValueChange={(v) => setActiveSection(v as "search" | "compose" | "personalized")}>
         <TabsList className="bg-card/50 border border-border">
           <TabsTrigger value="search" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
             <Search className="h-4 w-4" />
@@ -39,6 +40,10 @@ export const Emails = ({ onNavigateToTab }: EmailsProps) => {
             <Send className="h-4 w-4" />
             Composer un email
           </TabsTrigger>
+          <TabsTrigger value="personalized" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+            <Sparkles className="h-4 w-4" />
+            Emails personnalisés
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="search" className="mt-6">
@@ -47,6 +52,10 @@ export const Emails = ({ onNavigateToTab }: EmailsProps) => {
 
         <TabsContent value="compose" className="mt-6">
           <EmailComposerSection />
+        </TabsContent>
+
+        <TabsContent value="personalized" className="mt-6">
+          <PersonalizedEmailsSection />
         </TabsContent>
       </Tabs>
     </div>
