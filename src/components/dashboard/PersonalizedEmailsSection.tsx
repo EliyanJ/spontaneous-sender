@@ -19,6 +19,23 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Calendar } from "@/components/ui/calendar";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { format } from "date-fns";
+import { fr } from "date-fns/locale";
+import { cn } from "@/lib/utils";
+import {
   Loader2,
   Sparkles,
   FileText,
@@ -33,7 +50,9 @@ import {
   RefreshCw,
   Globe,
   Clock,
-  Wand2
+  Wand2,
+  CalendarIcon,
+  Lightbulb
 } from "lucide-react";
 
 interface Company {
@@ -92,6 +111,12 @@ export const PersonalizedEmailsSection = () => {
   const [activeTab, setActiveTab] = useState<"setup" | "results">("setup");
   const [processLogs, setProcessLogs] = useState<ProcessLog[]>([]);
   const [currentStep, setCurrentStep] = useState<string>("");
+  
+  // Send mode states
+  const [sendMode, setSendMode] = useState<'now' | 'scheduled'>('now');
+  const [scheduledDate, setScheduledDate] = useState<Date | undefined>(undefined);
+  const [scheduledHour, setScheduledHour] = useState("11");
+  const [scheduledMinute, setScheduledMinute] = useState("00");
 
   useEffect(() => {
     loadCompanies();
@@ -461,6 +486,58 @@ export const PersonalizedEmailsSection = () => {
     }
   };
 
+  const handleScheduleEmail = async (email: GeneratedEmail) => {
+    if (!email.company_email || !email.subject || !email.body || !scheduledDate) {
+      toast({ title: "Date manquante", description: "Sélectionnez une date d'envoi", variant: "destructive" });
+      return;
+    }
+
+    const year = scheduledDate.getFullYear();
+    const month = scheduledDate.getMonth();
+    const day = scheduledDate.getDate();
+    const hour = parseInt(scheduledHour, 10) || 11;
+    const minute = parseInt(scheduledMinute, 10) || 0;
+    
+    const scheduledDateTime = new Date(year, month, day, hour, minute, 0, 0);
+    
+    if (scheduledDateTime <= new Date()) {
+      toast({ title: "Date invalide", description: "La date doit être dans le futur", variant: "destructive" });
+      return;
+    }
+
+    setIsSending(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("Session expirée");
+
+      const { error } = await supabase.functions.invoke('schedule-gmail-draft', {
+        headers: { Authorization: `Bearer ${session.access_token}` },
+        body: { 
+          recipients: [email.company_email], 
+          subject: email.subject, 
+          body: email.body, 
+          scheduledFor: scheduledDateTime.toISOString(),
+          notifyOnSent: true
+        },
+      });
+
+      if (error) throw error;
+
+      toast({ 
+        title: "Email programmé", 
+        description: `Envoi prévu le ${scheduledDateTime.toLocaleString('fr-FR')} pour ${email.company_name}` 
+      });
+      
+      // Remove from list
+      setGeneratedEmails(prev => prev.filter(e => e.company_id !== email.company_id));
+    } catch (error) {
+      console.error("Schedule error:", error);
+      toast({ title: "Erreur de programmation", variant: "destructive" });
+    } finally {
+      setIsSending(false);
+    }
+  };
+
   const handleSendAllEmails = async () => {
     const validEmails = generatedEmails.filter(e => e.success && e.company_email);
     if (validEmails.length === 0) {
@@ -471,20 +548,44 @@ export const PersonalizedEmailsSection = () => {
     setIsSending(true);
     let sentCount = 0;
 
-    for (const email of validEmails) {
-      try {
-        await handleSendEmail(email);
-        sentCount++;
-        await new Promise(resolve => setTimeout(resolve, 500)); // Delay between sends
-      } catch (error) {
-        console.error(`Failed to send to ${email.company_name}:`, error);
+    if (sendMode === 'scheduled') {
+      if (!scheduledDate) {
+        toast({ title: "Date manquante", description: "Sélectionnez une date d'envoi", variant: "destructive" });
+        setIsSending(false);
+        return;
       }
-    }
 
-    toast({
-      title: "Envoi terminé",
-      description: `${sentCount}/${validEmails.length} emails envoyés`
-    });
+      for (const email of validEmails) {
+        try {
+          await handleScheduleEmail(email);
+          sentCount++;
+          await new Promise(resolve => setTimeout(resolve, 300));
+        } catch (error) {
+          console.error(`Failed to schedule ${email.company_name}:`, error);
+        }
+      }
+
+      toast({
+        title: "Programmation terminée",
+        description: `${sentCount}/${validEmails.length} emails programmés`
+      });
+    } else {
+      for (const email of validEmails) {
+        try {
+          await handleSendEmail(email);
+          sentCount++;
+          await new Promise(resolve => setTimeout(resolve, 500));
+        } catch (error) {
+          console.error(`Failed to send to ${email.company_name}:`, error);
+        }
+      }
+
+      toast({
+        title: "Envoi terminé",
+        description: `${sentCount}/${validEmails.length} emails envoyés`
+      });
+    }
+    
     setIsSending(false);
   };
 
@@ -751,13 +852,108 @@ export const PersonalizedEmailsSection = () => {
         </TabsContent>
 
         <TabsContent value="results" className="mt-6 space-y-6">
+          {/* Send Mode Options */}
+          {successfulEmails.length > 0 && !isGenerating && (
+            <Card className="bg-card/50 border-border">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Clock className="h-4 w-4 text-primary" />
+                  Mode d'envoi
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <RadioGroup value={sendMode} onValueChange={(v: 'now' | 'scheduled') => setSendMode(v)}>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="now" id="send-now" />
+                    <Label htmlFor="send-now" className="font-normal cursor-pointer">Envoyer maintenant</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="scheduled" id="send-scheduled" />
+                    <Label htmlFor="send-scheduled" className="font-normal cursor-pointer">Programmer l'envoi</Label>
+                  </div>
+                </RadioGroup>
+
+                {sendMode === 'scheduled' && (
+                  <div className="pl-6 border-l-2 border-primary/20 space-y-4">
+                    <div className="flex items-start gap-2 p-3 rounded-lg bg-primary/5 border border-primary/10">
+                      <Lightbulb className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                      <p className="text-xs text-muted-foreground">
+                        <span className="font-medium text-foreground">Conseil :</span> Les emails envoyés vers 11h ont un meilleur taux d'ouverture.
+                      </p>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label className="text-muted-foreground">Date d'envoi</Label>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className={cn(
+                              "w-full justify-start text-left font-normal",
+                              !scheduledDate && "text-muted-foreground"
+                            )}
+                          >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {scheduledDate ? format(scheduledDate, "PPP", { locale: fr }) : "Choisir une date"}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0 z-[100] bg-popover" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={scheduledDate}
+                            onSelect={setScheduledDate}
+                            disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                            initialFocus
+                            locale={fr}
+                            className="pointer-events-auto rounded-md border"
+                          />
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="text-muted-foreground">Heure d'envoi</Label>
+                      <div className="flex items-center gap-2">
+                        <Select value={scheduledHour} onValueChange={setScheduledHour}>
+                          <SelectTrigger className="w-[100px]">
+                            <SelectValue placeholder="Heure" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {Array.from({ length: 24 }, (_, i) => (
+                              <SelectItem key={i} value={i.toString().padStart(2, '0')}>
+                                {i.toString().padStart(2, '0')}h
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <span className="text-muted-foreground">:</span>
+                        <Select value={scheduledMinute} onValueChange={setScheduledMinute}>
+                          <SelectTrigger className="w-[100px]">
+                            <SelectValue placeholder="Min" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {['00', '15', '30', '45'].map((min) => (
+                              <SelectItem key={min} value={min}>
+                                {min}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
           {/* Actions */}
           {successfulEmails.length > 0 && (
             <Card className="bg-card/50 border-border">
               <CardContent className="p-4 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <CheckCircle className="h-5 w-5 text-success" />
-                  <span className="font-medium">{successfulEmails.length} emails prêts à envoyer</span>
+                  <span className="font-medium">{successfulEmails.length} emails prêts</span>
                 </div>
                 <div className="flex gap-2">
                   <Button
@@ -769,14 +965,16 @@ export const PersonalizedEmailsSection = () => {
                   </Button>
                   <Button
                     onClick={handleSendAllEmails}
-                    disabled={isSending || !gmailConnected}
+                    disabled={isSending || !gmailConnected || (sendMode === 'scheduled' && !scheduledDate)}
                   >
                     {isSending ? (
                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    ) : sendMode === 'scheduled' ? (
+                      <CalendarIcon className="h-4 w-4 mr-2" />
                     ) : (
                       <Send className="h-4 w-4 mr-2" />
                     )}
-                    Tout envoyer
+                    {sendMode === 'scheduled' ? 'Tout programmer' : 'Tout envoyer'}
                   </Button>
                 </div>
               </CardContent>
@@ -826,6 +1024,7 @@ export const PersonalizedEmailsSection = () => {
                           variant="ghost"
                           size="icon"
                           onClick={() => setPreviewEmail(email)}
+                          title="Aperçu"
                         >
                           <Eye className="h-4 w-4" />
                         </Button>
@@ -833,16 +1032,30 @@ export const PersonalizedEmailsSection = () => {
                           variant="ghost"
                           size="icon"
                           onClick={() => handleEditEmail(email)}
+                          title="Modifier"
                         >
                           <Edit3 className="h-4 w-4" />
                         </Button>
-                        <Button
-                          size="sm"
-                          onClick={() => handleSendEmail(email)}
-                          disabled={isSending || !gmailConnected}
-                        >
-                          <Send className="h-4 w-4" />
-                        </Button>
+                        {sendMode === 'scheduled' && scheduledDate ? (
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            onClick={() => handleScheduleEmail(email)}
+                            disabled={isSending || !gmailConnected}
+                            title="Programmer"
+                          >
+                            <CalendarIcon className="h-4 w-4" />
+                          </Button>
+                        ) : (
+                          <Button
+                            size="sm"
+                            onClick={() => handleSendEmail(email)}
+                            disabled={isSending || !gmailConnected}
+                            title="Envoyer"
+                          >
+                            <Send className="h-4 w-4" />
+                          </Button>
+                        )}
                       </div>
                     )}
                   </div>
