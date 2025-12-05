@@ -36,7 +36,7 @@ serve(async (req) => {
       });
     }
 
-    const { companyId, template, userProfile } = await req.json();
+    const { companyId, template, userProfile, cvContent } = await req.json();
 
     if (!companyId) {
       return new Response(JSON.stringify({ error: "companyId required" }), {
@@ -105,6 +105,13 @@ PROFIL DU CANDIDAT:
 - LinkedIn: ${profile.linkedin_url || "Non renseigné"}
 ` : "";
 
+    const cvContext = cvContent ? `
+CV DU CANDIDAT:
+${cvContent.substring(0, 3000)}
+
+INSTRUCTIONS CV: Utilise les compétences, expériences et formations du CV pour créer un argumentaire convaincant montrant l'adéquation avec l'entreprise.
+` : "";
+
     const templateContext = template ? `
 TEMPLATE DE BASE FOURNI PAR L'UTILISATEUR:
 ${template}
@@ -137,6 +144,8 @@ FORMAT DE SORTIE (JSON):
     const userPrompt = `${companyContext}
 
 ${userContext}
+
+${cvContext}
 
 ${templateContext}
 
