@@ -71,6 +71,7 @@ export type Database = {
           career_site_url: string | null
           code_ape: string | null
           code_postal: string | null
+          company_insights: Json | null
           created_at: string | null
           emails: Json | null
           has_contact_form: boolean | null
@@ -95,6 +96,7 @@ export type Database = {
           career_site_url?: string | null
           code_ape?: string | null
           code_postal?: string | null
+          company_insights?: Json | null
           created_at?: string | null
           emails?: Json | null
           has_contact_form?: boolean | null
@@ -119,6 +121,7 @@ export type Database = {
           career_site_url?: string | null
           code_ape?: string | null
           code_postal?: string | null
+          company_insights?: Json | null
           created_at?: string | null
           emails?: Json | null
           has_contact_form?: boolean | null

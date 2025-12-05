@@ -50,3 +50,9 @@ verify_jwt = false
 
 [functions.check-email-bounces]
 verify_jwt = false
+
+[functions.scrape-company-deep]
+verify_jwt = true
+
+[functions.generate-personalized-email]
+verify_jwt = true
