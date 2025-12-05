@@ -12,9 +12,7 @@ const Auth = () => {
   const [googleLoading, setGoogleLoading] = useState(false);
   const [processingCallback, setProcessingCallback] = useState(false);
   
-  // Decode the next path to handle URL-encoded characters
-  const rawNextPath = searchParams.get('next') || '/dashboard';
-  const nextPath = decodeURIComponent(rawNextPath);
+  const nextPath = searchParams.get('next') || '/dashboard';
 
   useEffect(() => {
     if (nextPath !== '/dashboard') {
