@@ -37,12 +37,26 @@ const Auth = () => {
       setProcessingCallback(true);
 
       // Timeout de sécurité pour éviter le blocage infini
+      // Fonction pour décoder proprement une URL (évite les erreurs d'encodage double)
+      const decodeReturnPath = (path: string): string => {
+        try {
+          // Décoder si nécessaire (gère les cas où ? est encodé en %3F)
+          let decoded = path;
+          while (decoded !== decodeURIComponent(decoded)) {
+            decoded = decodeURIComponent(decoded);
+          }
+          return decoded;
+        } catch {
+          return path;
+        }
+      };
+
       const timeout = setTimeout(() => {
         console.error('OAuth callback timeout - redirecting to dashboard');
         setProcessingCallback(false);
         const returnPath = sessionStorage.getItem("post_login_redirect") || "/dashboard";
         sessionStorage.removeItem("post_login_redirect");
-        navigate(returnPath, { replace: true });
+        navigate(decodeReturnPath(returnPath), { replace: true });
       }, 10000); // 10 secondes max
 
       try {
@@ -87,7 +101,7 @@ const Auth = () => {
           clearTimeout(timeout);
           const returnPath = sessionStorage.getItem("post_login_redirect") || "/dashboard";
           sessionStorage.removeItem("post_login_redirect");
-          navigate(returnPath, { replace: true });
+          navigate(decodeReturnPath(returnPath), { replace: true });
         } else {
           // Pas de session trouvée malgré le hash - erreur
           console.error('No session found after OAuth callback');
