@@ -16,6 +16,7 @@ export const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 
   if (!user) {
     // Capturer la page actuelle pour y revenir après connexion
+    // Only encode once - the pathname and search are already in correct format
     const redirectTo = location.pathname + location.search;
     return <Navigate to={`/auth?next=${encodeURIComponent(redirectTo)}`} replace />;
   }
