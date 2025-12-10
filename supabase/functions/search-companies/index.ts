@@ -62,10 +62,74 @@ const VILLES_ARRONDISSEMENTS: Record<string, string[]> = {
   'marseille': Array.from({ length: 16 }, (_, i) => `130${(i + 1).toString().padStart(2, '0')}`),
 };
 
+// Mapping villes principales vers leurs codes postaux (pour les villes sans arrondissements)
+const VILLES_CODE_POSTAL: Record<string, string[]> = {
+  'toulouse': ['31000', '31100', '31200', '31300', '31400', '31500'],
+  'nice': ['06000', '06100', '06200', '06300'],
+  'nantes': ['44000', '44100', '44200', '44300'],
+  'montpellier': ['34000', '34070', '34080', '34090'],
+  'strasbourg': ['67000', '67100', '67200'],
+  'bordeaux': ['33000', '33100', '33200', '33300', '33800'],
+  'lille': ['59000', '59160', '59260', '59777', '59800'],
+  'rennes': ['35000', '35200', '35700'],
+  'reims': ['51100'],
+  'saint-etienne': ['42000', '42100'],
+  'toulon': ['83000', '83100', '83200'],
+  'grenoble': ['38000', '38100'],
+  'dijon': ['21000'],
+  'angers': ['49000', '49100'],
+  'nimes': ['30000', '30900'],
+  'villeurbanne': ['69100'],
+  'le havre': ['76600'],
+  'clermont-ferrand': ['63000', '63100'],
+  'saint-denis': ['93200', '93210'],
+  'amiens': ['80000', '80080', '80090'],
+  'limoges': ['87000', '87100', '87280'],
+  'tours': ['37000', '37100', '37200'],
+  'metz': ['57000', '57050', '57070'],
+  'besancon': ['25000'],
+  'perpignan': ['66000', '66100'],
+  'orleans': ['45000', '45100'],
+  'mulhouse': ['68100', '68200'],
+  'rouen': ['76000', '76100'],
+  'caen': ['14000'],
+  'nancy': ['54000', '54100'],
+  'argenteuil': ['95100'],
+  'montreuil': ['93100'],
+  'saint-paul': ['97460'],
+  'roubaix': ['59100'],
+  'tourcoing': ['59200'],
+  'dunkerque': ['59140', '59240', '59430'],
+  'avignon': ['84000'],
+  'asnieres-sur-seine': ['92600'],
+  'poitiers': ['86000'],
+  'versailles': ['78000'],
+  'colombes': ['92700'],
+  'boulogne-billancourt': ['92100'],
+  'vitry-sur-seine': ['94400'],
+  'aulnay-sous-bois': ['93600'],
+  'saint-maur-des-fosses': ['94100', '94210'],
+  'courbevoie': ['92400'],
+  'rueil-malmaison': ['92500'],
+  'aubervilliers': ['93300'],
+  'champigny-sur-marne': ['94500'],
+  'bezons': ['95870'],
+  'cergy': ['95000', '95800'],
+  'issy-les-moulineaux': ['92130'],
+  'levallois-perret': ['92300'],
+  'neuilly-sur-seine': ['92200'],
+  'puteaux': ['92800'],
+  'nanterre': ['92000'],
+  'la defense': ['92060', '92081'],
+  'creteil': ['94000'],
+  'evry': ['91000'],
+};
+
 function normalizeVille(ville: string): string {
   return ville.toLowerCase()
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9\s-]/g, '')
     .trim();
 }
 
@@ -214,8 +278,6 @@ serve(async (req) => {
           allPostalCodes.push(loc);
         } else if (/^\d{2}$/.test(loc)) {
           // Code département à 2 chiffres - générer tous les codes postaux du département
-          // Pour chaque département, on couvre tous les codes postaux possibles (XX000-XX999)
-          // L'API accepte les codes postaux, donc on génère des codes représentatifs
           for (let i = 0; i < 1000; i += 100) {
             allPostalCodes.push(`${loc}${i.toString().padStart(3, '0')}`);
           }
@@ -223,7 +285,6 @@ serve(async (req) => {
           // Région : utiliser tous les départements de la région
           const departments = REGIONS[normalized];
           for (const dept of departments) {
-            // Pour chaque département, générer des codes postaux représentatifs
             for (let i = 0; i < 1000; i += 100) {
               allPostalCodes.push(`${dept}${i.toString().padStart(3, '0')}`);
             }
@@ -233,9 +294,27 @@ serve(async (req) => {
           // Ville avec arrondissements: TOUS les arrondissements
           const arrondissements = VILLES_ARRONDISSEMENTS[normalized];
           allPostalCodes.push(...arrondissements);
+          console.log(`Ville arrondissements détectée: ${loc} → ${arrondissements.length} codes`);
+        } else if (VILLES_CODE_POSTAL[normalized]) {
+          // Ville connue avec codes postaux mappés
+          const cps = VILLES_CODE_POSTAL[normalized];
+          allPostalCodes.push(...cps);
+          console.log(`Ville connue détectée: ${loc} → ${cps.length} codes postaux`);
         } else {
-          // Ville normale pour recherche textuelle
-          textSearchTerms.push(loc);
+          // Ville inconnue: essayer de déduire le département du nom
+          // Si le nom contient un code département (ex: "Cergy 95"), l'extraire
+          const deptMatch = loc.match(/\b(\d{2})\b/);
+          if (deptMatch) {
+            const dept = deptMatch[1];
+            for (let i = 0; i < 1000; i += 100) {
+              allPostalCodes.push(`${dept}${i.toString().padStart(3, '0')}`);
+            }
+            console.log(`Département extrait de "${loc}": ${dept}`);
+          } else {
+            // Recherche textuelle en dernier recours
+            textSearchTerms.push(loc);
+            console.log(`Recherche textuelle pour: ${loc}`);
+          }
         }
       }
 
@@ -348,20 +427,26 @@ serve(async (req) => {
       let etablissement = c.siege;
       
       // Si on a filtré par localisation, chercher l'établissement correspondant
-      if (location && params.code_postal) {
+      if (searchLocations.length > 0 && params.code_postal) {
         const allowedPostalCodes = params.code_postal.split(',').map((cp: string) => cp.trim());
         
         // Chercher dans matching_etablissements un établissement avec le bon code postal
         if (c.matching_etablissements && Array.isArray(c.matching_etablissements)) {
           const matching = c.matching_etablissements.find((etab: any) => 
-            allowedPostalCodes.includes(etab.code_postal)
+            allowedPostalCodes.some((cp: string) => etab.code_postal?.startsWith(cp.substring(0, 2)))
           );
           if (matching) etablissement = matching;
         }
         
-        // Sinon vérifier si le siège correspond
-        if (!allowedPostalCodes.includes(etablissement?.code_postal || '')) {
-          // Si le siège ne correspond pas, on skip cette entreprise
+        // Vérifier si l'établissement correspond aux codes postaux demandés
+        const etabCp = etablissement?.code_postal || '';
+        const matchesLocation = allowedPostalCodes.some((cp: string) => {
+          // Match exact ou par préfixe département
+          return etabCp === cp || etabCp.startsWith(cp.substring(0, 2));
+        });
+        
+        if (!matchesLocation) {
+          // L'établissement ne correspond pas à la localisation demandée
           return null;
         }
       }
