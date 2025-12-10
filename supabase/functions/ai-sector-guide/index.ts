@@ -20,16 +20,15 @@ serve(async (req) => {
 
     console.log(`[AI Sector Guide] Analyzing keyword: ${keyword}`);
 
-    const systemPrompt = `Tu es un assistant IA spécialisé dans l'orientation professionnelle pour alternances et stages en France.
+    const systemPrompt = `Tu es un assistant IA spécialisé dans la recherche d'entreprises pour alternances et stages en France.
 
-TON RÔLE PRINCIPAL :
-L'utilisateur tape un mot-clé (ex: "marketing", "finance", "développement web"). Tu dois retourner 3 MÉGA-CATÉGORIES diversifiées avec chacune 10-15 codes APE.
+TON RÔLE : Retourner DIRECTEMENT une liste diversifiée et ALÉATOIRE de 15-25 codes APE pertinents pour le mot-clé donné.
 
 OBJECTIF STRATÉGIQUE :
-- NE PAS retourner uniquement les secteurs "évidents" (ex: pour "marketing" → pas que des agences de pub !)
-- DIVERSIFIER les résultats pour accéder au "marché caché" des PME qui cherchent des alternants
-- INCLURE des secteurs inattendus mais pertinents (ex: e-commerce, startups tech, cabinets conseil)
-- RANDOMISER légèrement les codes pour éviter que tous les utilisateurs obtiennent les mêmes entreprises
+- NE PAS retourner uniquement les secteurs "évidents" (ex: pour "finance" → pas que banques !)
+- DIVERSIFIER les résultats pour accéder au "marché caché" des PME
+- MÉLANGER secteurs évidents + secteurs connexes + secteurs inattendus
+- RANDOMISER l'ordre et la sélection pour que chaque recherche soit unique
 
 BANQUE DE CODES APE PAR DOMAINE :
 
@@ -63,48 +62,21 @@ BANQUE DE CODES APE PAR DOMAINE :
 📊 CONSEIL & SERVICES :
 70.22Z (Conseil gestion), 82.99Z (Services divers), 82.11Z (Secrétariat), 82.19Z (Services admin)
 
-RÈGLES DE GÉNÉRATION DES 3 MÉGA-CATÉGORIES :
+RÈGLES DE GÉNÉRATION :
+1. Sélectionne 15-25 codes APE pertinents pour le mot-clé
+2. MÉLANGE : 40% secteurs évidents + 30% secteurs connexes + 30% marché caché
+3. RANDOMISE l'ordre des codes à chaque requête
+4. JAMAIS de codes 84.xx (administration publique)
+5. Ajoute une courte description inspirante du mix retourné
 
-1. **Catégorie "Cœur de métier"** : Les secteurs les plus directement liés au mot-clé (agences, cabinets spécialisés)
-   → 10-15 codes APE du domaine principal
-
-2. **Catégorie "Écosystème élargi"** : Secteurs connexes où ce métier existe (tech, e-commerce, startups)
-   → 10-15 codes APE de secteurs qui emploient ce profil
-
-3. **Catégorie "Marché caché"** : PME, commerces, services B2B qui recrutent ces profils sans être spécialisés
-   → 10-15 codes APE diversifiés (commerce, conseil, services)
-
-RÈGLES CRITIQUES :
-- JAMAIS de codes 84.xx (administration publique) sauf demande explicite
-- TOUJOURS diversifier les codes dans chaque catégorie
-- AJOUTER un peu d'aléatoire en variant l'ordre des codes
-- MINIMUM 10 codes par catégorie, MAXIMUM 15
-- Les descriptions doivent être inspirantes et courtes (1 phrase)
-
-FORMAT DE RÉPONSE JSON OBLIGATOIRE :
+FORMAT JSON OBLIGATOIRE :
 {
-  "question": "Dans quel environnement [domaine] souhaitez-vous évoluer ?",
-  "options": [
-    {
-      "label": "Nom accrocheur catégorie 1",
-      "description": "Description inspirante en 1 phrase",
-      "codes": ["73.11Z", "73.12Z", "70.21Z", "74.10Z", "59.11A", "59.11B", "58.14Z", "58.29A", "63.12Z", "62.01Z", "70.22Z", "82.99Z"]
-    },
-    {
-      "label": "Nom accrocheur catégorie 2",
-      "description": "Description inspirante en 1 phrase",
-      "codes": ["47.91A", "47.91B", "62.01Z", "62.02A", "63.11Z", "70.22Z", "82.19Z", "46.90Z", "47.19A", "47.19B"]
-    },
-    {
-      "label": "Nom accrocheur catégorie 3",
-      "description": "Description inspirante en 1 phrase",
-      "codes": ["70.22Z", "69.20Z", "82.99Z", "82.11Z", "64.19Z", "66.22Z", "78.10Z", "85.59A", "85.59B", "71.12A"]
-    }
-  ]
+  "codes": ["73.11Z", "70.22Z", "47.91A", "62.01Z", ...],
+  "description": "Mix diversifié couvrant agences, conseil, e-commerce et tech"
 }
 
-Si le mot-clé est trop vague, retourne :
-{"clarification": "Pouvez-vous préciser votre recherche ? (ex: marketing digital, développement web, comptabilité...)"}`;
+Si le mot-clé est vraiment incompréhensible :
+{"clarification": "Pouvez-vous préciser votre recherche ? (ex: marketing, finance, développement web...)"}`;
 
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
@@ -116,13 +88,12 @@ Si le mot-clé est trop vague, retourne :
         model: 'google/gemini-2.5-flash',
         messages: [
           { role: 'system', content: systemPrompt },
-          { role: 'user', content: `Mot-clé de l'utilisateur: "${keyword}"
+          { role: 'user', content: `Mot-clé: "${keyword}"
 
-Génère 3 méga-catégories diversifiées avec 10-15 codes APE chacune.
-Rappel: Diversifie les secteurs pour ne pas renvoyer toujours les mêmes entreprises !` }
+Retourne DIRECTEMENT 15-25 codes APE diversifiés et randomisés. Pas de question, pas d'options à choisir.` }
         ],
         response_format: { type: "json_object" },
-        temperature: 0.5, // Un peu de variabilité pour diversifier
+        temperature: 0.8, // Plus de variabilité pour maximiser l'aléatoire
       }),
     });
 
@@ -137,8 +108,8 @@ Rappel: Diversifie les secteurs pour ne pas renvoyer toujours les mêmes entrepr
     const result = JSON.parse(content);
 
     // Log pour debug
-    console.log('[AI Sector Guide] ✅ Generated mega-categories:', 
-      result.options?.map((o: any) => `${o.label}: ${o.codes?.length} codes`) || 'clarification'
+    console.log('[AI Sector Guide] ✅ Generated codes:', 
+      result.codes?.length || 'clarification needed'
     );
 
     return new Response(JSON.stringify(result), {
