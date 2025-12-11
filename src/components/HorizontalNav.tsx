@@ -1,5 +1,5 @@
 import React from "react";
-import { Search, Building2, Briefcase, Mail, Send, Settings } from "lucide-react";
+import { Search, Building2, Briefcase, Mail, Send, Settings, TrendingUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const menuItems = [
@@ -8,6 +8,7 @@ const menuItems = [
   { title: "Emails", icon: Mail, value: "emails" },
   { title: "Campagnes", icon: Send, value: "campaigns" },
   { title: "Offres d'emploi", icon: Briefcase, value: "jobs" },
+  { title: "Suivi", icon: TrendingUp, value: "suivi" },
   { title: "Paramètres", icon: Settings, value: "settings" },
 ];
 
