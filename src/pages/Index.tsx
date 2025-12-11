@@ -8,6 +8,7 @@ import { Entreprises } from "@/components/dashboard/Entreprises";
 import { Emails } from "@/components/dashboard/Emails";
 import { CampaignsHub } from "@/components/dashboard/CampaignsHub";
 import { Settings } from "@/components/dashboard/Settings";
+import { Pipeline } from "@/components/dashboard/Pipeline";
 import { HorizontalNav } from "@/components/HorizontalNav";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
@@ -18,7 +19,7 @@ const Index = () => {
   const [slideDirection, setSlideDirection] = useState<"left" | "right">("right");
   const prevTabRef = useRef(activeTab);
 
-  const tabOrder = ["search", "entreprises", "emails", "campaigns", "jobs", "settings"];
+  const tabOrder = ["search", "entreprises", "emails", "campaigns", "jobs", "suivi", "settings"];
 
   useEffect(() => {
     const tabFromUrl = searchParams.get("tab");
@@ -104,6 +105,8 @@ const Index = () => {
         return <Emails onNavigateToTab={handleTabChange} />;
       case "campaigns":
         return <CampaignsHub />;
+      case "suivi":
+        return <Pipeline />;
       case "settings":
         return <Settings />;
       default:
