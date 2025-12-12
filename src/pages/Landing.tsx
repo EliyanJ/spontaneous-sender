@@ -157,6 +157,7 @@ const Landing = () => {
               <div className="flex gap-6 text-sm text-muted-foreground">
                 <a href="/privacy-policy" className="hover:text-primary transition-colors duration-300">Confidentialité</a>
                 <a href="/terms-of-service" className="hover:text-primary transition-colors duration-300">Conditions</a>
+                <a href="/mentions-legales" className="hover:text-primary transition-colors duration-300">Mentions légales</a>
               </div>
               <p className="text-sm text-muted-foreground">© 2025 Connexions</p>
             </div>

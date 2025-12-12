@@ -578,6 +578,67 @@ const PrivacyPolicy = () => {
             </p>
           </section>
 
+          <section className="mb-8">
+            <h2 className="text-2xl font-semibold text-gray-900 mb-4">
+              17. Utilisation des API Google (Limited Use Disclosure)
+            </h2>
+            <p className="text-gray-700 mb-4">
+              Cette Application utilise l'API Gmail de Google pour vous permettre 
+              d'envoyer des emails directement depuis votre compte Gmail. L'accès 
+              à vos données Gmail est strictement limité aux fonctionnalités suivantes :
+            </p>
+            <ul className="list-disc list-inside text-gray-700 space-y-2 ml-4 mb-4">
+              <li>Envoi d'emails de candidature en votre nom</li>
+              <li>Création de brouillons d'emails</li>
+              <li>Programmation d'envois différés</li>
+            </ul>
+            
+            <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4">
+              <p className="text-gray-700 font-semibold mb-2">
+                Google API Services User Data Policy Compliance
+              </p>
+              <p className="text-gray-700">
+                App Sender's use and transfer of information received from Google APIs 
+                will adhere to{" "}
+                <a
+                  href="https://developers.google.com/terms/api-services-user-data-policy"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-600 hover:underline"
+                >
+                  Google API Services User Data Policy
+                </a>
+                , including the Limited Use requirements.
+              </p>
+            </div>
+
+            <h3 className="text-xl font-semibold text-gray-800 mb-3 mt-6">
+              17.1 Ce que nous ne faisons PAS avec vos données Gmail
+            </h3>
+            <ul className="list-disc list-inside text-gray-700 space-y-2 ml-4 mb-4">
+              <li>Nous ne lisons pas le contenu de vos emails reçus à des fins autres que la détection de réponses à vos candidatures</li>
+              <li>Nous ne partageons pas vos données Gmail avec des tiers</li>
+              <li>Nous n'utilisons pas vos données Gmail à des fins publicitaires</li>
+              <li>Nous ne stockons pas le contenu complet de vos emails au-delà de ce qui est nécessaire au fonctionnement du service</li>
+            </ul>
+
+            <h3 className="text-xl font-semibold text-gray-800 mb-3 mt-6">
+              17.2 Révocation de l'accès
+            </h3>
+            <p className="text-gray-700">
+              Vous pouvez révoquer l'accès de notre Application à votre compte Gmail 
+              à tout moment via les paramètres de sécurité de votre compte Google :{" "}
+              <a
+                href="https://myaccount.google.com/permissions"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 hover:underline"
+              >
+                https://myaccount.google.com/permissions
+              </a>
+            </p>
+          </section>
+
           <hr className="my-8" />
 
           <div className="text-center text-gray-600">
