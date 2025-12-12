@@ -782,18 +782,27 @@ export const EmailComposer = () => {
                 </RadioGroup>
 
                 {sendMode === 'scheduled' && (
-                  <div className="space-y-3 pl-6 border-l-2 border-primary/20">
-                    <div>
-                      <Label htmlFor="scheduled-date">Date et heure d'envoi</Label>
+                  <div className="space-y-4 pl-6 border-l-2 border-primary/20">
+                    <div className="flex items-start gap-2 p-3 rounded-lg bg-primary/5 border border-primary/10">
+                      <Clock className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                      <p className="text-xs text-muted-foreground">
+                        <span className="font-medium text-foreground">Conseil :</span> Les emails envoyés vers 11h ont un meilleur taux d'ouverture.
+                      </p>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="scheduled-date">Date et heure d'envoi (précis à la minute)</Label>
                       <Input
                         id="scheduled-date"
                         type="datetime-local"
                         value={scheduledDate}
                         onChange={(e) => setScheduledDate(e.target.value)}
                         min={new Date().toISOString().slice(0, 16)}
-                        className="mt-1"
+                        className="mt-1 w-full"
+                        step="60"
                       />
                     </div>
+                    
                     <div className="flex items-center space-x-2">
                       <Checkbox
                         id="notify"
