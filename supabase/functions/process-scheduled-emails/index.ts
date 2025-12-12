@@ -203,18 +203,54 @@ async function sendEmailViaGmail(supabase: any, emailData: any): Promise<{ succe
       }
     }
 
-    // Construire et envoyer l'email directement (pas de brouillon)
-    const emailLines = [
-      `To: ${emailData.recipients.join(', ')}`,
-      `Subject: ${emailData.subject}`,
-      'MIME-Version: 1.0',
-      'Content-Type: text/html; charset=utf-8',
-      '',
-      emailData.body,
-    ];
+    // FIX: Encoder le sujet en UTF-8 Base64 pour les caractères spéciaux
+    const encodedSubject = `=?UTF-8?B?${btoa(unescape(encodeURIComponent(emailData.subject)))}?=`;
+    
+    const attachments = emailData.attachments || [];
+    let emailContent: string;
 
-    const email = emailLines.join('\r\n');
-    const encodedEmail = btoa(unescape(encodeURIComponent(email)))
+    if (attachments.length > 0) {
+      // Construire un email multipart avec pièces jointes
+      const boundary = "boundary_" + Math.random().toString(36).substring(7);
+      emailContent = [
+        `To: ${emailData.recipients.join(', ')}`,
+        `Subject: ${encodedSubject}`,
+        'MIME-Version: 1.0',
+        `Content-Type: multipart/mixed; boundary="${boundary}"`,
+        '',
+        `--${boundary}`,
+        'Content-Type: text/html; charset=utf-8',
+        '',
+        emailData.body,
+        '',
+      ].join('\r\n');
+
+      for (const attachment of attachments) {
+        emailContent += [
+          `--${boundary}`,
+          `Content-Type: ${attachment.contentType}`,
+          'Content-Transfer-Encoding: base64',
+          `Content-Disposition: attachment; filename="${attachment.filename}"`,
+          '',
+          attachment.data,
+          '',
+        ].join('\r\n');
+      }
+
+      emailContent += `--${boundary}--`;
+    } else {
+      // Email simple sans pièces jointes
+      emailContent = [
+        `To: ${emailData.recipients.join(', ')}`,
+        `Subject: ${encodedSubject}`,
+        'MIME-Version: 1.0',
+        'Content-Type: text/html; charset=utf-8',
+        '',
+        emailData.body,
+      ].join('\r\n');
+    }
+
+    const encodedEmail = btoa(unescape(encodeURIComponent(emailContent)))
       .replace(/\+/g, '-')
       .replace(/\//g, '_')
       .replace(/=+$/, '');
@@ -238,7 +274,7 @@ async function sendEmailViaGmail(supabase: any, emailData: any): Promise<{ succe
       return { success: false, error: errorText };
     }
 
-    console.log(`Email envoyé avec succès à ${emailData.recipients.join(', ')}`);
+    console.log(`Email envoyé avec succès à ${emailData.recipients.join(', ')} (${attachments.length} pièces jointes)`);
     return { success: true };
 
   } catch (error: any) {

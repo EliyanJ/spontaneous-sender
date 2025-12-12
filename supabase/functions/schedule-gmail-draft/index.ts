@@ -33,9 +33,9 @@ serve(async (req) => {
     }
 
     const requestBody = await req.json();
-    const { recipients, subject, body: rawBody, scheduledFor, notifyOnSent } = requestBody;
+    const { recipients, subject, body: rawBody, scheduledFor, notifyOnSent, attachments } = requestBody;
 
-    console.log('Received request:', { recipients, subject, scheduledFor, notifyOnSent });
+    console.log('Received request:', { recipients, subject, scheduledFor, notifyOnSent, hasAttachments: !!attachments?.length });
 
     // Valider scheduledFor
     if (!scheduledFor) {
@@ -57,7 +57,7 @@ serve(async (req) => {
     // Formater le body avec des retours à la ligne HTML
     const body = rawBody ? rawBody.replace(/\n/g, '<br>') : '';
 
-    // Créer le message pour la queue avec toutes les infos nécessaires
+    // Créer le message pour la queue avec toutes les infos nécessaires (incluant attachments)
     const queueMessage = {
       user_id: user.id,
       recipients,
@@ -65,6 +65,7 @@ serve(async (req) => {
       body,
       notify_on_sent: notifyOnSent || false,
       scheduled_for: scheduledDate.toISOString(),
+      attachments: attachments || [], // AJOUT: inclure les pièces jointes
     };
 
     // Ajouter le message à la queue pgmq avec le délai calculé
