@@ -36,11 +36,29 @@ const Auth = () => {
 
       setProcessingCallback(true);
 
-      // Timeout de sécurité pour éviter le blocage infini
-      // Fonction pour décoder proprement une URL (évite les erreurs d'encodage double)
+      // ========== CRITICAL FIX: Extraire les tokens AVANT de nettoyer le hash ==========
+      // Supabase ne persiste PAS provider_token dans la session, on doit le lire du hash
+      let providerTokenFromHash: string | null = null;
+      let providerRefreshTokenFromHash: string | null = null;
+
+      try {
+        const hashParams = new URLSearchParams(hash.substring(1));
+        providerTokenFromHash = hashParams.get('provider_token');
+        providerRefreshTokenFromHash = hashParams.get('provider_refresh_token');
+        
+        console.log('=== Gmail Token Extraction ===');
+        console.log('Hash contains provider_token:', !!providerTokenFromHash);
+        console.log('Hash contains provider_refresh_token:', !!providerRefreshTokenFromHash);
+        if (providerTokenFromHash) {
+          console.log('Provider token length:', providerTokenFromHash.length);
+        }
+      } catch (parseError) {
+        console.error('Error parsing hash params:', parseError);
+      }
+
+      // Fonction pour décoder proprement une URL
       const decodeReturnPath = (path: string): string => {
         try {
-          // Décoder si nécessaire (gère les cas où ? est encodé en %3F)
           let decoded = path;
           while (decoded !== decodeURIComponent(decoded)) {
             decoded = decodeURIComponent(decoded);
@@ -57,10 +75,10 @@ const Auth = () => {
         const returnPath = sessionStorage.getItem("post_login_redirect") || "/dashboard";
         sessionStorage.removeItem("post_login_redirect");
         navigate(decodeReturnPath(returnPath), { replace: true });
-      }, 10000); // 10 secondes max
+      }, 10000);
 
       try {
-        // Nettoyer le hash de l'URL immédiatement
+        // Nettoyer le hash de l'URL APRES avoir extrait les tokens
         window.history.replaceState({}, "", window.location.pathname + window.location.search);
         
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
@@ -74,16 +92,20 @@ const Auth = () => {
         }
         
         if (session) {
-          const anySession = session as any;
-          const providerToken = anySession?.provider_token || null;
-          const providerRefreshToken = anySession?.provider_refresh_token || null;
+          console.log('=== Session Retrieved ===');
+          console.log('User ID:', session.user?.id);
+          console.log('User email:', session.user?.email);
 
-          if (providerToken) {
-            const { error } = await supabase.functions.invoke('store-gmail-tokens', {
+          // Utiliser les tokens extraits du hash (pas de session.provider_token)
+          if (providerTokenFromHash) {
+            console.log('=== Storing Gmail Tokens ===');
+            console.log('Calling store-gmail-tokens edge function...');
+            
+            const { data, error } = await supabase.functions.invoke('store-gmail-tokens', {
               headers: { Authorization: `Bearer ${session.access_token}` },
               body: {
-                provider_token: providerToken,
-                provider_refresh_token: providerRefreshToken,
+                provider_token: providerTokenFromHash,
+                provider_refresh_token: providerRefreshTokenFromHash,
               },
             });
 
@@ -91,10 +113,11 @@ const Auth = () => {
               console.error('Error storing Gmail tokens:', error);
               toast.error("Erreur lors de la configuration Gmail");
             } else {
+              console.log('Gmail tokens stored successfully:', data);
               toast.success("Connexion Google et Gmail réussie !");
             }
           } else {
-            // Session existe mais pas de provider token - connexion normale sans Gmail
+            console.log('No provider_token in hash - Gmail not configured');
             toast.success("Connexion réussie !");
           }
 
@@ -103,7 +126,6 @@ const Auth = () => {
           sessionStorage.removeItem("post_login_redirect");
           navigate(decodeReturnPath(returnPath), { replace: true });
         } else {
-          // Pas de session trouvée malgré le hash - erreur
           console.error('No session found after OAuth callback');
           clearTimeout(timeout);
           toast.error("Erreur: session non trouvée");
