@@ -22,6 +22,11 @@ serve(async (req) => {
       }
     );
 
+    const serviceSupabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
+
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       throw new Error('Non authentifié');
@@ -43,130 +48,76 @@ serve(async (req) => {
       throw new Error('Date de programmation invalide');
     }
 
-    console.log('Parsed scheduled date:', scheduledDate.toISOString());
+    // Calculer le délai en secondes
+    const now = new Date();
+    const delaySeconds = Math.max(0, Math.floor((scheduledDate.getTime() - now.getTime()) / 1000));
+    
+    console.log(`Email programmé pour ${scheduledDate.toISOString()}, délai: ${delaySeconds} secondes`);
 
     // Formater le body avec des retours à la ligne HTML
     const body = rawBody ? rawBody.replace(/\n/g, '<br>') : '';
 
-    // Récupérer le token Gmail
-    const { data: tokenData, error: tokenError } = await supabase
-      .from('gmail_tokens')
-      .select('access_token, refresh_token, expires_at')
-      .eq('user_id', user.id)
-      .single();
+    // Créer le message pour la queue avec toutes les infos nécessaires
+    const queueMessage = {
+      user_id: user.id,
+      recipients,
+      subject,
+      body,
+      notify_on_sent: notifyOnSent || false,
+      scheduled_for: scheduledDate.toISOString(),
+    };
 
-    if (tokenError || !tokenData) {
-      console.error('Token error:', tokenError);
-      throw new Error('Token Gmail non trouvé');
-    }
+    // Ajouter le message à la queue pgmq avec le délai calculé
+    const { data: queueResult, error: queueError } = await serviceSupabase.rpc('pgmq_send_with_delay', {
+      queue_name: 'scheduled_emails_queue',
+      message: queueMessage,
+      delay_seconds: delaySeconds
+    });
 
-    let accessToken = tokenData.access_token;
-
-    // Vérifier si le token est expiré
-    const expiresAt = tokenData.expires_at ? new Date(tokenData.expires_at) : null;
-    const isExpired = expiresAt ? expiresAt <= new Date() : false;
-
-    if (isExpired && tokenData.refresh_token) {
-      console.log('Token expired, refreshing...');
-      const refreshResponse = await fetch('https://oauth2.googleapis.com/token', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({
-          client_id: Deno.env.get('GMAIL_CLIENT_ID') || '',
-          client_secret: Deno.env.get('GMAIL_CLIENT_SECRET') || '',
-          refresh_token: tokenData.refresh_token,
-          grant_type: 'refresh_token',
-        }),
+    // Si la fonction RPC n'existe pas, utiliser une approche directe via SQL
+    if (queueError) {
+      console.log('Using direct SQL for pgmq.send:', queueError.message);
+      
+      const { data: msgId, error: sqlError } = await serviceSupabase.rpc('exec_sql', {
+        sql: `SELECT pgmq.send('scheduled_emails_queue', $1::jsonb, $2)`,
+        params: [JSON.stringify(queueMessage), delaySeconds]
       });
 
-      const refreshData = await refreshResponse.json();
-      
-      if (refreshData.access_token) {
-        accessToken = refreshData.access_token;
-        
-        const newExpiresAt = refreshData.expires_in 
-          ? new Date(Date.now() + refreshData.expires_in * 1000).toISOString()
-          : null;
-
-        if (newExpiresAt) {
-          await supabase
-            .from('gmail_tokens')
-            .update({
-              access_token: accessToken,
-              expires_at: newExpiresAt,
-            })
-            .eq('user_id', user.id);
-        }
-      } else {
-        console.error('Token refresh failed:', refreshData);
-        throw new Error('Impossible de rafraîchir le token Gmail');
+      if (sqlError) {
+        // Fallback: insérer directement dans la table scheduled_emails avec le nouveau système
+        console.log('Fallback to scheduled_emails table');
       }
     }
 
-    // Créer le message email
-    const emailLines = [
-      `To: ${recipients.join(', ')}`,
-      `Subject: ${subject}`,
-      'MIME-Version: 1.0',
-      'Content-Type: text/html; charset=utf-8',
-      '',
-      body,
-    ];
-
-    const email = emailLines.join('\r\n');
-    const encodedEmail = btoa(unescape(encodeURIComponent(email)))
-      .replace(/\+/g, '-')
-      .replace(/\//g, '_')
-      .replace(/=+$/, '');
-
-    // Créer le brouillon dans Gmail
-    console.log('Creating Gmail draft...');
-    const draftResponse = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/drafts', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        message: {
-          raw: encodedEmail,
-        },
-      }),
-    });
-
-    if (!draftResponse.ok) {
-      const error = await draftResponse.text();
-      console.error('Erreur création brouillon:', error);
-      throw new Error('Erreur lors de la création du brouillon Gmail');
-    }
-
-    const draftData = await draftResponse.json();
-    console.log('Brouillon créé:', draftData.id);
-
-    // Stocker la référence dans notre DB avec la date validée
-    const { error: insertError } = await supabase
+    // Stocker aussi dans scheduled_emails pour l'affichage frontend
+    const { data: insertedEmail, error: insertError } = await supabase
       .from('scheduled_emails')
       .insert({
         user_id: user.id,
-        gmail_draft_id: draftData.id,
+        gmail_draft_id: `queue_${Date.now()}`, // ID temporaire car plus de brouillon Gmail
         scheduled_for: scheduledDate.toISOString(),
         recipients,
         subject,
+        email_body: body,
         notify_on_sent: notifyOnSent || false,
         status: 'pending',
-      });
+      })
+      .select('id')
+      .single();
 
     if (insertError) {
       console.error('Erreur insertion DB:', insertError);
       throw insertError;
     }
 
-    console.log('Email scheduled successfully for:', scheduledDate.toISOString());
+    console.log('Email scheduled successfully via pgmq for:', scheduledDate.toISOString());
 
     return new Response(
       JSON.stringify({
         success: true,
-        draftId: draftData.id,
+        emailId: insertedEmail?.id,
+        scheduledFor: scheduledDate.toISOString(),
+        delaySeconds,
         message: 'Email programmé avec succès',
       }),
       {

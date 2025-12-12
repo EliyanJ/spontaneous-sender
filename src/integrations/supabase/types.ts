@@ -480,10 +480,12 @@ export type Database = {
       scheduled_emails: {
         Row: {
           created_at: string
+          email_body: string | null
           error_message: string | null
           gmail_draft_id: string
           id: string
           notify_on_sent: boolean | null
+          queue_msg_id: number | null
           recipients: string[]
           scheduled_for: string
           sent_at: string | null
@@ -494,10 +496,12 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          email_body?: string | null
           error_message?: string | null
           gmail_draft_id: string
           id?: string
           notify_on_sent?: boolean | null
+          queue_msg_id?: number | null
           recipients: string[]
           scheduled_for: string
           sent_at?: string | null
@@ -508,10 +512,12 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          email_body?: string | null
           error_message?: string | null
           gmail_draft_id?: string
           id?: string
           notify_on_sent?: boolean | null
+          queue_msg_id?: number | null
           recipients?: string[]
           scheduled_for?: string
           sent_at?: string | null
