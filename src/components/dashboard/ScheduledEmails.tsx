@@ -1,10 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
-import { Loader2, Clock, Mail, Trash2, Calendar } from "lucide-react";
+import { Loader2, Clock, Mail, Trash2, Calendar, CheckCircle, AlertCircle } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -26,49 +26,21 @@ interface ScheduledEmail {
   status: string;
   created_at: string;
   notify_on_sent: boolean;
+  email_body?: string;
 }
 
 export const ScheduledEmails = () => {
   const [emails, setEmails] = useState<ScheduledEmail[]>([]);
   const [loading, setLoading] = useState(true);
   const [cancelling, setCancelling] = useState<string | null>(null);
+  const [timeLeft, setTimeLeft] = useState<Record<string, string>>({});
 
-  useEffect(() => {
-    loadScheduledEmails();
-    processScheduledEmails();
-
-    // Écouter les nouveaux emails programmés
-    const handleEmailScheduled = () => {
-      loadScheduledEmails();
-    };
-    window.addEventListener('email-scheduled', handleEmailScheduled);
-
-    // Recharger et traiter les emails toutes les 30 secondes
-    const interval = setInterval(() => {
-      loadScheduledEmails();
-      processScheduledEmails();
-    }, 30000);
-
-    return () => {
-      clearInterval(interval);
-      window.removeEventListener('email-scheduled', handleEmailScheduled);
-    };
-  }, []);
-
-  const processScheduledEmails = async () => {
-    try {
-      await supabase.functions.invoke('process-scheduled-emails');
-    } catch (error) {
-      console.error('Erreur lors du traitement des emails programmés:', error);
-    }
-  };
-
-  const loadScheduledEmails = async () => {
+  const loadScheduledEmails = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from('scheduled_emails')
         .select('*')
-        .in('status', ['pending'])
+        .eq('status', 'pending')
         .order('scheduled_for', { ascending: true });
 
       if (error) throw error;
@@ -83,33 +55,69 @@ export const ScheduledEmails = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const handleCancelEmail = async (emailId: string, draftId: string) => {
+  // Calculer le temps restant pour chaque email
+  const updateTimeLeft = useCallback(() => {
+    const newTimeLeft: Record<string, string> = {};
+    
+    emails.forEach(email => {
+      const now = new Date();
+      const scheduled = new Date(email.scheduled_for);
+      const diff = scheduled.getTime() - now.getTime();
+
+      if (diff <= 0) {
+        newTimeLeft[email.id] = "Envoi en cours...";
+      } else {
+        const hours = Math.floor(diff / (1000 * 60 * 60));
+        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+        if (hours > 24) {
+          const days = Math.floor(hours / 24);
+          newTimeLeft[email.id] = `${days}j ${hours % 24}h`;
+        } else if (hours > 0) {
+          newTimeLeft[email.id] = `${hours}h ${minutes}min`;
+        } else if (minutes > 0) {
+          newTimeLeft[email.id] = `${minutes}min ${seconds}s`;
+        } else {
+          newTimeLeft[email.id] = `${seconds}s`;
+        }
+      }
+    });
+
+    setTimeLeft(newTimeLeft);
+  }, [emails]);
+
+  useEffect(() => {
+    loadScheduledEmails();
+
+    // Écouter les nouveaux emails programmés
+    const handleEmailScheduled = () => {
+      loadScheduledEmails();
+    };
+    window.addEventListener('email-scheduled', handleEmailScheduled);
+
+    // Recharger les emails toutes les 30 secondes
+    const reloadInterval = setInterval(loadScheduledEmails, 30000);
+
+    return () => {
+      clearInterval(reloadInterval);
+      window.removeEventListener('email-scheduled', handleEmailScheduled);
+    };
+  }, [loadScheduledEmails]);
+
+  // Mettre à jour le temps restant chaque seconde
+  useEffect(() => {
+    updateTimeLeft();
+    const interval = setInterval(updateTimeLeft, 1000);
+    return () => clearInterval(interval);
+  }, [updateTimeLeft]);
+
+  const handleCancelEmail = async (emailId: string) => {
     setCancelling(emailId);
     try {
-      // Supprimer le brouillon Gmail
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error('Non authentifié');
-
-      const { data: tokenData } = await supabase
-        .from('gmail_tokens')
-        .select('access_token')
-        .single();
-
-      if (tokenData) {
-        await fetch(
-          `https://gmail.googleapis.com/gmail/v1/users/me/drafts/${draftId}`,
-          {
-            method: 'DELETE',
-            headers: {
-              Authorization: `Bearer ${tokenData.access_token}`,
-            },
-          }
-        );
-      }
-
-      // Mettre à jour le statut
+      // Mettre à jour le statut dans la DB
       const { error } = await supabase
         .from('scheduled_emails')
         .update({ status: 'cancelled' })
@@ -119,7 +127,7 @@ export const ScheduledEmails = () => {
 
       toast({
         title: "Email annulé",
-        description: "L'email programmé a été annulé.",
+        description: "L'email programmé a été annulé avec succès.",
       });
 
       loadScheduledEmails();
@@ -135,34 +143,34 @@ export const ScheduledEmails = () => {
     }
   };
 
-  const getTimeUntilSend = (scheduledFor: string) => {
+  const getStatusBadge = (status: string, scheduledFor: string) => {
     const now = new Date();
     const scheduled = new Date(scheduledFor);
-    const diff = scheduled.getTime() - now.getTime();
+    const isImminent = scheduled.getTime() - now.getTime() < 60000; // Moins d'1 minute
 
-    if (diff < 0) return "En cours d'envoi...";
-
-    const hours = Math.floor(diff / (1000 * 60 * 60));
-    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-
-    if (hours > 24) {
-      const days = Math.floor(hours / 24);
-      return `Dans ${days} jour${days > 1 ? 's' : ''}`;
+    if (isImminent && status === 'pending') {
+      return (
+        <Badge variant="default" className="gap-1 bg-green-500/20 text-green-400 border-green-500/30">
+          <CheckCircle className="h-3 w-3 animate-pulse" />
+          Envoi imminent
+        </Badge>
+      );
     }
 
-    if (hours > 0) {
-      return `Dans ${hours}h ${minutes}min`;
-    }
-
-    return `Dans ${minutes} minute${minutes > 1 ? 's' : ''}`;
+    return (
+      <Badge variant="outline" className="gap-1">
+        <Clock className="h-3 w-3" />
+        {timeLeft[scheduledFor] || 'Calcul...'}
+      </Badge>
+    );
   };
 
   if (loading) {
     return (
-      <Card>
+      <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
         <CardContent className="pt-6">
-          <div className="flex items-center justify-center">
-            <Loader2 className="h-6 w-6 animate-spin" />
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
           </div>
         </CardContent>
       </Card>
@@ -170,50 +178,81 @@ export const ScheduledEmails = () => {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Clock className="h-5 w-5" />
-          Emails programmés ({emails.length})
+    <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
+      <CardHeader className="pb-4">
+        <CardTitle className="flex items-center gap-2 text-lg">
+          <div className="p-2 rounded-lg bg-primary/10">
+            <Clock className="h-5 w-5 text-primary" />
+          </div>
+          Emails programmés
+          {emails.length > 0 && (
+            <Badge variant="secondary" className="ml-2">
+              {emails.length}
+            </Badge>
+          )}
         </CardTitle>
       </CardHeader>
       <CardContent>
         {emails.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">
-            <Calendar className="h-12 w-12 mx-auto mb-3 opacity-50" />
-            <p>Aucun email programmé</p>
+          <div className="text-center py-12">
+            <div className="mx-auto w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center mb-4">
+              <Calendar className="h-8 w-8 text-muted-foreground/50" />
+            </div>
+            <p className="text-muted-foreground">Aucun email programmé</p>
+            <p className="text-sm text-muted-foreground/70 mt-1">
+              Les emails programmés apparaîtront ici
+            </p>
           </div>
         ) : (
           <div className="space-y-3">
             {emails.map((email) => (
               <div
                 key={email.id}
-                className="flex items-start justify-between p-4 border rounded-lg hover:bg-accent/5 transition-colors"
+                className="group flex items-start justify-between p-4 border border-border/50 rounded-xl hover:bg-accent/5 transition-all duration-200"
               >
-                <div className="flex-1 space-y-1">
+                <div className="flex-1 space-y-2 min-w-0">
                   <div className="flex items-center gap-2">
-                    <Mail className="h-4 w-4 text-muted-foreground" />
-                    <span className="font-medium">{email.subject}</span>
+                    <Mail className="h-4 w-4 text-primary shrink-0" />
+                    <span className="font-medium truncate">{email.subject}</span>
                   </div>
-                  <p className="text-sm text-muted-foreground">
-                    Destinataires: {email.recipients.join(', ')}
+                  
+                  <p className="text-sm text-muted-foreground truncate pl-6">
+                    → {email.recipients.join(', ')}
                   </p>
-                  <div className="flex items-center gap-2 text-xs">
-                    <Badge variant="outline" className="gap-1">
+                  
+                  <div className="flex items-center gap-3 pl-6">
+                    <Badge 
+                      variant="outline" 
+                      className="gap-1 bg-primary/5 border-primary/20 text-primary"
+                    >
                       <Clock className="h-3 w-3" />
-                      {getTimeUntilSend(email.scheduled_for)}
+                      {timeLeft[email.id] || 'Calcul...'}
                     </Badge>
-                    <span className="text-muted-foreground">
-                      {new Date(email.scheduled_for).toLocaleString('fr-FR')}
+                    
+                    <span className="text-xs text-muted-foreground">
+                      {new Date(email.scheduled_for).toLocaleString('fr-FR', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
                     </span>
+
+                    {email.notify_on_sent && (
+                      <Badge variant="secondary" className="text-xs">
+                        Notification
+                      </Badge>
+                    )}
                   </div>
                 </div>
+
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
                     <Button
                       variant="ghost"
-                      size="sm"
+                      size="icon"
                       disabled={cancelling === email.id}
+                      className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0 ml-2"
                     >
                       {cancelling === email.id ? (
                         <Loader2 className="h-4 w-4 animate-spin" />
@@ -224,16 +263,19 @@ export const ScheduledEmails = () => {
                   </AlertDialogTrigger>
                   <AlertDialogContent>
                     <AlertDialogHeader>
-                      <AlertDialogTitle>Annuler cet email ?</AlertDialogTitle>
+                      <AlertDialogTitle className="flex items-center gap-2">
+                        <AlertCircle className="h-5 w-5 text-destructive" />
+                        Annuler cet email ?
+                      </AlertDialogTitle>
                       <AlertDialogDescription>
-                        L'email programmé "{email.subject}" ne sera pas envoyé.
+                        L'email programmé "<span className="font-medium">{email.subject}</span>" ne sera pas envoyé.
                         Cette action est irréversible.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                       <AlertDialogCancel>Retour</AlertDialogCancel>
                       <AlertDialogAction
-                        onClick={() => handleCancelEmail(email.id, email.gmail_draft_id)}
+                        onClick={() => handleCancelEmail(email.id)}
                         className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                       >
                         Annuler l'email
