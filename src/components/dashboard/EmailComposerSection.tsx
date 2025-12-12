@@ -536,19 +536,36 @@ export const EmailComposerSection = () => {
                       </Popover>
                     </div>
 
-                    {/* Time picker - Précision à la minute */}
+                    {/* Time picker - Taper directement */}
                     <div className="space-y-2">
-                      <Label className="text-muted-foreground">Heure d'envoi (précis à la minute)</Label>
-                      <Input
-                        type="time"
-                        value={`${scheduledHour.padStart(2, '0')}:${scheduledMinute.padStart(2, '0')}`}
-                        onChange={(e) => {
-                          const [h, m] = e.target.value.split(':');
-                          setScheduledHour(h || '11');
-                          setScheduledMinute(m || '00');
-                        }}
-                        className="w-full max-w-[200px]"
-                      />
+                      <Label className="text-muted-foreground">Heure d'envoi</Label>
+                      <div className="flex items-center gap-2">
+                        <Input
+                          type="number"
+                          min="0"
+                          max="23"
+                          value={scheduledHour}
+                          onChange={(e) => {
+                            const val = Math.min(23, Math.max(0, parseInt(e.target.value) || 0));
+                            setScheduledHour(val.toString().padStart(2, '0'));
+                          }}
+                          className="w-[70px] text-center"
+                          placeholder="HH"
+                        />
+                        <span className="text-lg font-medium text-muted-foreground">:</span>
+                        <Input
+                          type="number"
+                          min="0"
+                          max="59"
+                          value={scheduledMinute}
+                          onChange={(e) => {
+                            const val = Math.min(59, Math.max(0, parseInt(e.target.value) || 0));
+                            setScheduledMinute(val.toString().padStart(2, '0'));
+                          }}
+                          className="w-[70px] text-center"
+                          placeholder="MM"
+                        />
+                      </div>
                     </div>
 
                     <div className="flex items-center space-x-2">
