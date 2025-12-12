@@ -313,12 +313,22 @@ export const EmailComposerSection = () => {
         return;
       }
 
+      // FIX: Upload et convertir les pièces jointes en base64 avant programmation
+      const uploadedAttachments = await uploadAttachments();
+
       const scheduledForISO = scheduledDateTime.toISOString();
-      console.log('Scheduling email for:', scheduledForISO);
+      console.log('Scheduling email for:', scheduledForISO, 'with', uploadedAttachments.length, 'attachments');
 
       const { error } = await supabase.functions.invoke('schedule-gmail-draft', {
         headers: { Authorization: `Bearer ${session.access_token}` },
-        body: { recipients, subject, body, scheduledFor: scheduledForISO, notifyOnSent },
+        body: { 
+          recipients, 
+          subject, 
+          body, 
+          scheduledFor: scheduledForISO, 
+          notifyOnSent,
+          attachments: uploadedAttachments  // AJOUT: inclure les pièces jointes
+        },
       });
 
       if (error) throw error;
@@ -329,6 +339,7 @@ export const EmailComposerSection = () => {
       setSubject("");
       setBody("");
       setRecipients([]);
+      setAttachments([]);  // Reset pièces jointes
       setScheduledDate(undefined);
       setScheduledHour("11");
       setScheduledMinute("00");
