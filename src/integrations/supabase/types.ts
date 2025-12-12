@@ -479,6 +479,7 @@ export type Database = {
       }
       scheduled_emails: {
         Row: {
+          attachments: Json | null
           created_at: string
           email_body: string | null
           error_message: string | null
@@ -495,6 +496,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          attachments?: Json | null
           created_at?: string
           email_body?: string | null
           error_message?: string | null
@@ -511,6 +513,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          attachments?: Json | null
           created_at?: string
           email_body?: string | null
           error_message?: string | null
