@@ -312,6 +312,7 @@ async function processWithFallback(supabase: any, now: string) {
           subject: email.subject,
           body: email.email_body,
           notify_on_sent: email.notify_on_sent,
+          attachments: email.attachments || [], // FIX: Inclure les pièces jointes
         };
 
         const sendResult = await sendEmailViaGmail(supabase, emailData);

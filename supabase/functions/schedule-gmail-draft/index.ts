@@ -90,7 +90,7 @@ serve(async (req) => {
       }
     }
 
-    // Stocker aussi dans scheduled_emails pour l'affichage frontend
+    // Stocker aussi dans scheduled_emails pour l'affichage frontend (AVEC attachments)
     const { data: insertedEmail, error: insertError } = await supabase
       .from('scheduled_emails')
       .insert({
@@ -102,6 +102,7 @@ serve(async (req) => {
         email_body: body,
         notify_on_sent: notifyOnSent || false,
         status: 'pending',
+        attachments: attachments || [], // FIX: Sauvegarder les pièces jointes
       })
       .select('id')
       .single();
