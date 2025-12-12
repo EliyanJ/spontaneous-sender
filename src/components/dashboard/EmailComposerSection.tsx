@@ -536,36 +536,19 @@ export const EmailComposerSection = () => {
                       </Popover>
                     </div>
 
-                    {/* Time picker */}
+                    {/* Time picker - Précision à la minute */}
                     <div className="space-y-2">
-                      <Label className="text-muted-foreground">Heure d'envoi</Label>
-                      <div className="flex items-center gap-2">
-                        <Select value={scheduledHour} onValueChange={setScheduledHour}>
-                          <SelectTrigger className="w-[100px]">
-                            <SelectValue placeholder="Heure" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {Array.from({ length: 24 }, (_, i) => (
-                              <SelectItem key={i} value={i.toString().padStart(2, '0')}>
-                                {i.toString().padStart(2, '0')}h
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <span className="text-muted-foreground">:</span>
-                        <Select value={scheduledMinute} onValueChange={setScheduledMinute}>
-                          <SelectTrigger className="w-[100px]">
-                            <SelectValue placeholder="Min" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {['00', '15', '30', '45'].map((min) => (
-                              <SelectItem key={min} value={min}>
-                                {min}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
+                      <Label className="text-muted-foreground">Heure d'envoi (précis à la minute)</Label>
+                      <Input
+                        type="time"
+                        value={`${scheduledHour.padStart(2, '0')}:${scheduledMinute.padStart(2, '0')}`}
+                        onChange={(e) => {
+                          const [h, m] = e.target.value.split(':');
+                          setScheduledHour(h || '11');
+                          setScheduledMinute(m || '00');
+                        }}
+                        className="w-full max-w-[200px]"
+                      />
                     </div>
 
                     <div className="flex items-center space-x-2">
