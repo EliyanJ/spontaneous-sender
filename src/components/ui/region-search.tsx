@@ -77,10 +77,14 @@ export const RegionSearch: React.FC<RegionSearchProps> = ({
           type="button"
           onClick={handleAddCity}
           disabled={!inputValue.trim()}
-          variant="outline"
-          className="h-12 px-4 rounded-xl"
+          variant={inputValue.trim() ? "default" : "outline"}
+          className={`h-12 px-4 rounded-xl transition-all duration-300 ${
+            inputValue.trim() 
+              ? "animate-pulse bg-primary text-primary-foreground shadow-lg shadow-primary/30 ring-2 ring-primary/50" 
+              : ""
+          }`}
         >
-          Ajouter
+          {inputValue.trim() ? "👆 Ajouter" : "Ajouter"}
         </Button>
         <Popover open={open} onOpenChange={setOpen}>
           <PopoverTrigger asChild>
