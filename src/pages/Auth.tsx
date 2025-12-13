@@ -175,67 +175,28 @@ const Auth = () => {
     }
   };
 
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-primary/5 p-4">
-      {processingCallback ? (
-        <Card className="w-full max-w-md">
-          <CardContent className="pt-6">
-            <div className="flex flex-col items-center space-y-4">
-              <Loader2 className="h-12 w-12 animate-spin text-primary" />
-              <p className="text-center text-lg font-medium">Connexion en cours...</p>
-              <p className="text-center text-sm text-muted-foreground">
-                Veuillez patienter pendant que nous finalisons votre connexion.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      ) : (
-        <Card className="w-full max-w-md shadow-xl">
-          <CardHeader className="space-y-3 text-center">
-            <div className="flex justify-center mb-2">
-              <div className="p-3 bg-primary/10 rounded-full">
-                <Mail className="h-8 w-8 text-primary" />
-              </div>
-            </div>
-            <CardTitle className="text-3xl font-bold">Cronos</CardTitle>
-            <CardDescription className="text-base">
-              Automatisez vos candidatures spontanées avec l'IA
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <Button
-              variant="default"
-              size="lg"
-              className="w-full h-12 text-base"
-              onClick={handleGoogleSignIn}
-              disabled={googleLoading}
-            >
-              {googleLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                  Connexion en cours...
-                </>
-              ) : (
-                <>
-                  <Mail className="mr-2 h-5 w-5" />
-                  Se connecter avec Google
-                </>
-              )}
-            </Button>
+  // Auto-redirect to Google OAuth if not processing callback
+  useEffect(() => {
+    const hash = window.location.hash;
+    if (!hash || !hash.includes('access_token')) {
+      // No callback in progress, auto-start Google OAuth
+      if (!googleLoading && !processingCallback) {
+        handleGoogleSignIn();
+      }
+    }
+  }, []);
 
-            <p className="text-xs text-center text-muted-foreground">
-              En vous connectant, vous acceptez nos{" "}
-              <a href="/terms-of-service" className="underline hover:text-foreground">
-                conditions d'utilisation
-              </a>{" "}
-              et notre{" "}
-              <a href="/privacy-policy" className="underline hover:text-foreground">
-                politique de confidentialité
-              </a>
-            </p>
-          </CardContent>
-        </Card>
-      )}
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-primary/5">
+      <div className="flex flex-col items-center space-y-4">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        <p className="text-lg font-medium text-foreground">
+          {processingCallback ? "Finalisation de la connexion..." : "Redirection vers Google..."}
+        </p>
+        <p className="text-sm text-muted-foreground">
+          Veuillez patienter
+        </p>
+      </div>
     </div>
   );
 };
