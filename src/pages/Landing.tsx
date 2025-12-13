@@ -44,7 +44,7 @@ const Landing = () => {
             <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center shadow-lg shadow-primary/20">
               <Building2 className="h-5 w-5 text-primary-foreground" />
             </div>
-            <span className="font-display text-xl font-bold text-foreground">Connexions</span>
+            <span className="font-display text-xl font-bold text-foreground">Cronos</span>
           </div>
           <nav className="flex items-center gap-3">
             {/* Theme Toggle */}
@@ -152,7 +152,7 @@ const Landing = () => {
             <div className="flex flex-col md:flex-row items-center justify-between gap-4">
               <div className="flex items-center gap-2">
                 <Building2 className="h-5 w-5 text-primary" />
-                <span className="font-display font-semibold text-foreground">Connexions</span>
+                <span className="font-display font-semibold text-foreground">Cronos</span>
               </div>
               <div className="flex gap-6 text-sm text-muted-foreground">
                 <a href="/privacy-policy" className="hover:text-primary transition-colors duration-300">Confidentialité</a>
@@ -160,7 +160,7 @@ const Landing = () => {
                 <a href="/terms-of-service" className="hover:text-primary transition-colors duration-300">Conditions</a>
                 <a href="/mentions-legales" className="hover:text-primary transition-colors duration-300">Mentions légales</a>
               </div>
-              <p className="text-sm text-muted-foreground">© 2025 Connexions</p>
+              <p className="text-sm text-muted-foreground">© 2025 Cronos</p>
             </div>
           </div>
         </footer>

@@ -124,7 +124,7 @@ const Index = () => {
             <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center">
               <span className="text-primary font-bold">C</span>
             </div>
-            <span className="font-semibold text-foreground hidden sm:inline">Connexions</span>
+            <span className="font-semibold text-foreground hidden sm:inline">Cronos</span>
           </div>
 
           {/* Navigation */}
