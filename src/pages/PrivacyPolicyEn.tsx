@@ -22,7 +22,7 @@ const PrivacyPolicyEn = () => {
             Privacy Policy
           </h1>
           <p className="text-gray-600 mb-8">
-            <strong>Last updated:</strong> November 12, 2025
+            <strong>Last updated:</strong> December 13, 2025
           </p>
 
           <section className="mb-8">
@@ -30,9 +30,17 @@ const PrivacyPolicyEn = () => {
               1. Introduction
             </h2>
             <p className="text-gray-700 leading-relaxed">
-              This privacy policy explains how <strong>APP SENDER</strong>
-              (hereinafter "the Application") collects, uses, stores, and
-              protects your personal data. The Application is a job search
+              This privacy policy explains how <strong>Cronos</strong>
+              (hereinafter "the Application"), accessible at{" "}
+              <a
+                href="https://getcronos.fr"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 hover:underline"
+              >
+                https://getcronos.fr
+              </a>
+              , collects, uses, stores, and protects your personal data. The Application is a job search
               and email automation platform for job applications.
             </p>
             <p className="text-gray-700 leading-relaxed mt-4">
@@ -47,6 +55,20 @@ const PrivacyPolicyEn = () => {
               2. Data Controller
             </h2>
             <div className="bg-blue-50 p-4 rounded-lg">
+              <p className="text-gray-700">
+                <strong>Application:</strong> Cronos
+              </p>
+              <p className="text-gray-700">
+                <strong>Website:</strong>{" "}
+                <a
+                  href="https://getcronos.fr"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-600 hover:underline"
+                >
+                  https://getcronos.fr
+                </a>
+              </p>
               <p className="text-gray-700">
                 <strong>Controller:</strong> Eliyan JACQUET
               </p>
@@ -342,7 +364,7 @@ const PrivacyPolicyEn = () => {
                 Google API Services User Data Policy Compliance
               </p>
               <p className="text-gray-700">
-                App Sender's use and transfer of information received from Google APIs
+                Cronos's use and transfer of information received from Google APIs
                 will adhere to{" "}
                 <a
                   href="https://developers.google.com/terms/api-services-user-data-policy"
@@ -435,86 +457,112 @@ const PrivacyPolicyEn = () => {
             <h2 className="text-2xl font-semibold text-gray-900 mb-4">
               13. Changes to This Policy
             </h2>
-            <p className="text-gray-700">
-              We may update this privacy policy at any time. Any material changes
-              will be communicated via the Application, and we will request your
-              consent if necessary. Your continued use of the Application after
-              changes means you accept the new policy.
+            <p className="text-gray-700 mb-3">
+              We may modify this policy at any time. You will be informed by:
+            </p>
+            <ul className="list-disc list-inside text-gray-700 space-y-2 ml-4">
+              <li>Notification in the Application</li>
+              <li>Email to your registered address</li>
+              <li>
+                Update of the "Last updated" date at the top of this page
+              </li>
+            </ul>
+            <p className="text-gray-700 mt-3">
+              Your continued use of the Application after any modification means
+              you accept the new policy.
             </p>
           </section>
 
           <section className="mb-8">
             <h2 className="text-2xl font-semibold text-gray-900 mb-4">
-              14. Contact and Complaints
+              14. Contact
             </h2>
-
-            <h3 className="text-xl font-semibold text-gray-800 mb-3 mt-6">
-              14.1 Contact Us
-            </h3>
-            <p className="text-gray-700 mb-2">
-              For any questions about this policy or to exercise your rights:
-            </p>
             <div className="bg-blue-50 p-4 rounded-lg">
+              <p className="text-gray-700 mb-2">
+                For any questions about this privacy policy, contact us:
+              </p>
               <p className="text-gray-700">
                 <strong>Email:</strong> eliyanjacquet99@gmail.com
               </p>
               <p className="text-gray-700">
-                <strong>Response time:</strong> We will respond within 30 days
-              </p>
-            </div>
-
-            <h3 className="text-xl font-semibold text-gray-800 mb-3 mt-6">
-              14.2 Complaints to the Supervisory Authority
-            </h3>
-            <p className="text-gray-700 mb-2">
-              If you believe your rights are not being respected, you can file a
-              complaint with the{" "}
-              <strong>
-                Commission Nationale de l'Informatique et des Libertés (CNIL)
-              </strong>
-              :
-            </p>
-            <div className="bg-blue-50 p-4 rounded-lg">
-              <p className="text-gray-700">
-                <strong>CNIL</strong>
-              </p>
-              <p className="text-gray-700">3 Place de Fontenoy</p>
-              <p className="text-gray-700">75007 Paris, France</p>
-              <p className="text-gray-700">
                 <strong>Website:</strong>{" "}
                 <a
-                  href="https://www.cnil.fr"
+                  href="https://getcronos.fr"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-blue-600 hover:underline"
                 >
-                  https://www.cnil.fr
+                  https://getcronos.fr
                 </a>
+              </p>
+              <p className="text-gray-700">
+                <strong>Address:</strong> 41 rue Parmentier, 95870 Bezons, France
               </p>
             </div>
           </section>
 
           <section className="mb-8">
             <h2 className="text-2xl font-semibold text-gray-900 mb-4">
-              15. GDPR Compliance
+              15. Complaints
             </h2>
             <p className="text-gray-700">
-              This Application fully complies with the General Data Protection
-              Regulation (GDPR) and French data protection legislation.
+              If you believe your rights are not being respected, you can file a
+              complaint with the{" "}
+              <a
+                href="https://www.cnil.fr"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 hover:underline"
+              >
+                CNIL (French Data Protection Authority)
+              </a>
+              .
             </p>
           </section>
 
-          <hr className="my-8" />
+          <section className="mb-8">
+            <h2 className="text-2xl font-semibold text-gray-900 mb-4">
+              16. GDPR Compliance
+            </h2>
+            <p className="text-gray-700 mb-3">
+              This policy complies with the General Data Protection Regulation
+              (GDPR) of the European Union and the French Data Protection Act.
+            </p>
+            <p className="text-gray-700">
+              We commit to respecting the principles of:
+            </p>
+            <ul className="list-disc list-inside text-gray-700 space-y-2 ml-4 mt-2">
+              <li>
+                <strong>Data minimization</strong>: We only collect necessary data
+              </li>
+              <li>
+                <strong>Purpose limitation</strong>: Your data is used only for
+                declared purposes
+              </li>
+              <li>
+                <strong>Transparency</strong>: You are informed about data usage
+              </li>
+              <li>
+                <strong>Security</strong>: Your data is protected
+              </li>
+              <li>
+                <strong>Individual rights</strong>: You can exercise your rights
+                at any time
+              </li>
+            </ul>
+          </section>
+
+          <hr className="my-8 border-gray-200" />
 
           <div className="text-center text-gray-600">
             <p>
-              <strong>Version:</strong> 1.0
+              <strong>Version:</strong> 2.1
             </p>
             <p>
-              <strong>Effective date:</strong> November 12, 2025
+              <strong>Effective date:</strong> December 13, 2025
             </p>
             <p>
-              <strong>Next scheduled review:</strong> November 12, 2026
+              <strong>Last review:</strong> December 13, 2025
             </p>
           </div>
         </div>

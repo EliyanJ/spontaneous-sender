@@ -22,7 +22,7 @@ const LegalNotice = () => {
             Mentions Légales
           </h1>
           <p className="text-gray-600 dark:text-muted-foreground mb-8">
-            <strong>Dernière mise à jour :</strong> 12 décembre 2025
+            <strong>Dernière mise à jour :</strong> 13 décembre 2025
           </p>
 
           <section className="mb-8">
@@ -31,7 +31,21 @@ const LegalNotice = () => {
             </h2>
             <div className="bg-blue-50 dark:bg-primary/10 p-4 rounded-lg">
               <p className="text-gray-700 dark:text-foreground">
-                <strong>Nom :</strong> Eliyan JACQUET
+                <strong>Nom de l'application :</strong> Cronos
+              </p>
+              <p className="text-gray-700 dark:text-foreground">
+                <strong>Site web :</strong>{" "}
+                <a
+                  href="https://getcronos.fr"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-600 dark:text-primary hover:underline"
+                >
+                  https://getcronos.fr
+                </a>
+              </p>
+              <p className="text-gray-700 dark:text-foreground">
+                <strong>Éditeur :</strong> Eliyan JACQUET
               </p>
               <p className="text-gray-700 dark:text-foreground">
                 <strong>Statut :</strong> Personne physique - Site édité à titre personnel
@@ -214,6 +228,17 @@ const LegalNotice = () => {
               <p className="text-gray-700 dark:text-foreground mt-2">
                 <strong>Email :</strong> eliyanjacquet99@gmail.com
               </p>
+              <p className="text-gray-700 dark:text-foreground mt-1">
+                <strong>Site web :</strong>{" "}
+                <a
+                  href="https://getcronos.fr"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-600 dark:text-primary hover:underline"
+                >
+                  https://getcronos.fr
+                </a>
+              </p>
             </div>
           </section>
 
@@ -221,10 +246,10 @@ const LegalNotice = () => {
 
           <div className="text-center text-gray-600 dark:text-muted-foreground">
             <p>
-              <strong>Version :</strong> 1.0
+              <strong>Version :</strong> 1.1
             </p>
             <p>
-              <strong>Date d'entrée en vigueur :</strong> 12 décembre 2025
+              <strong>Date d'entrée en vigueur :</strong> 13 décembre 2025
             </p>
           </div>
         </div>
