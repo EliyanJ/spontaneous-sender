@@ -22,7 +22,7 @@ const PrivacyPolicy = () => {
             Politique de Confidentialité
           </h1>
           <p className="text-gray-600 mb-8">
-            <strong>Dernière mise à jour :</strong> 12 novembre 2025
+            <strong>Dernière mise à jour :</strong> 13 décembre 2025
           </p>
 
           <section className="mb-8">
@@ -31,8 +31,16 @@ const PrivacyPolicy = () => {
             </h2>
             <p className="text-gray-700 leading-relaxed">
               Cette politique de confidentialité explique comment{" "}
-              <strong>APP SENDER</strong> (ci-après « l'Application ») collecte,
-              utilise, stocke et protège vos données personnelles. L'Application
+              <strong>Cronos</strong> (ci-après « l'Application »), accessible sur{" "}
+              <a
+                href="https://getcronos.fr"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 hover:underline"
+              >
+                https://getcronos.fr
+              </a>
+              , collecte, utilise, stocke et protège vos données personnelles. L'Application
               est une plateforme de recherche d'offres d'emploi et
               d'automatisation de candidatures par email.
             </p>
@@ -49,6 +57,20 @@ const PrivacyPolicy = () => {
               2. Responsable du Traitement
             </h2>
             <div className="bg-blue-50 p-4 rounded-lg">
+              <p className="text-gray-700">
+                <strong>Application :</strong> Cronos
+              </p>
+              <p className="text-gray-700">
+                <strong>Site web :</strong>{" "}
+                <a
+                  href="https://getcronos.fr"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-600 hover:underline"
+                >
+                  https://getcronos.fr
+                </a>
+              </p>
               <p className="text-gray-700">
                 <strong>Responsable :</strong> Eliyan JACQUET
               </p>
@@ -432,202 +454,76 @@ const PrivacyPolicy = () => {
                 l'Application accède à vos emails
               </li>
               <li>
-                Vous comprenez que l'Application pourra lire, envoyer et créer
-                des brouillons d'emails
+                Vous pouvez <strong>révoquer cet accès</strong> à tout moment via
+                votre compte Google
               </li>
               <li>
-                Vous pouvez <strong>révoquer cet accès à tout moment</strong> via
-                les paramètres de sécurité Google
-              </li>
-              <li>
-                L'Application stockera une copie de vos emails sur nos serveurs
-                pour les fonctionnalités d'automatisation
-              </li>
-              <li>
-                Nous nous engageons à{" "}
-                <strong>ne jamais partager vos emails</strong> avec des tiers
-                sans votre permission
+                Nous n'utilisons ces données <strong>que pour les fonctionnalités</strong>{" "}
+                que vous avez activées
               </li>
             </ul>
           </section>
 
           <section className="mb-8">
             <h2 className="text-2xl font-semibold text-gray-900 mb-4">
-              11. Cookies et Tracking
+              11. Google API Services - Limited Use Disclosure
             </h2>
-            <p className="text-gray-700 mb-3">
-              L'Application peut utiliser des cookies ou des technologies
-              similaires pour :
-            </p>
-            <ul className="list-disc list-inside text-gray-700 space-y-2 ml-4">
-              <li>Vous maintenir connecté</li>
-              <li>Mémoriser vos préférences</li>
-              <li>Analyser l'utilisation de l'Application</li>
-              <li>Améliorer les performances</li>
-            </ul>
-            <p className="text-gray-700 mt-3">
-              <strong>Vous pouvez refuser les cookies de tracking</strong> via
-              les paramètres de l'Application ou votre navigateur, bien que cela
-              puisse affecter certaines fonctionnalités.
-            </p>
-          </section>
-
-          <section className="mb-8">
-            <h2 className="text-2xl font-semibold text-gray-900 mb-4">
-              12. Tiers et Liens Externes
-            </h2>
-            <p className="text-gray-700">
-              L'Application peut contenir des liens vers des sites externes (par
-              exemple, vers les offres d'emploi du gouvernement).{" "}
-              <strong>
-                Nous ne sommes pas responsables de la politique de
-                confidentialité de ces sites externes.
-              </strong>{" "}
-              Consultez leur politique de confidentialité avant de partager vos
-              données.
-            </p>
-          </section>
-
-          <section className="mb-8">
-            <h2 className="text-2xl font-semibold text-gray-900 mb-4">
-              13. Mineurs
-            </h2>
-            <p className="text-gray-700">
-              L'Application n'est <strong>pas destinée aux mineurs</strong>{" "}
-              (moins de 16 ans). Nous ne collectons pas intentionnellement de
-              données personnelles auprès de mineurs. Si vous découvrez qu'un
-              mineur a utilisé l'Application, veuillez nous le signaler
-              immédiatement.
-            </p>
-          </section>
-
-          <section className="mb-8">
-            <h2 className="text-2xl font-semibold text-gray-900 mb-4">
-              14. Modifications de cette Politique
-            </h2>
-            <p className="text-gray-700">
-              Nous pouvons mettre à jour cette politique de confidentialité à
-              tout moment. Toute modification matérielle sera communiquée via
-              l'Application, et nous demanderons votre consentement si
-              nécessaire. Votre utilisation continue de l'Application après les
-              modifications signifie que vous acceptez la nouvelle politique.
-            </p>
-          </section>
-
-          <section className="mb-8">
-            <h2 className="text-2xl font-semibold text-gray-900 mb-4">
-              15. Contact et Réclamations
-            </h2>
-
-            <h3 className="text-xl font-semibold text-gray-800 mb-3 mt-6">
-              15.1 Nous Contacter
-            </h3>
-            <p className="text-gray-700 mb-2">
-              Pour toute question sur cette politique ou pour exercer vos droits
-              :
-            </p>
-            <div className="bg-blue-50 p-4 rounded-lg">
-              <p className="text-gray-700">
-                <strong>Email :</strong> eliyanjacquet99@gmail.com
-              </p>
-              <p className="text-gray-700">
-                <strong>Délai de réponse :</strong> Nous répondrons dans les 30
-                jours
-              </p>
-            </div>
-
-            <h3 className="text-xl font-semibold text-gray-800 mb-3 mt-6">
-              15.2 Recours Auprès de l'Autorité de Contrôle
-            </h3>
-            <p className="text-gray-700 mb-2">
-              Si vous estimez que vos droits ne sont pas respectés, vous pouvez
-              déposer une plainte auprès de la{" "}
-              <strong>
-                Commission Nationale de l'Informatique et des Libertés (CNIL)
-              </strong>{" "}
-              :
-            </p>
-            <div className="bg-blue-50 p-4 rounded-lg">
-              <p className="text-gray-700">
-                <strong>CNIL</strong>
-              </p>
-              <p className="text-gray-700">3 Place de Fontenoy</p>
-              <p className="text-gray-700">75007 Paris</p>
-              <p className="text-gray-700">
-                <strong>Site :</strong>{" "}
-                <a
-                  href="https://www.cnil.fr"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-blue-600 hover:underline"
-                >
-                  https://www.cnil.fr
-                </a>
-              </p>
-            </div>
-          </section>
-
-          <section className="mb-8">
-            <h2 className="text-2xl font-semibold text-gray-900 mb-4">
-              16. Conformité RGPD
-            </h2>
-            <p className="text-gray-700">
-              Cette Application respecte entièrement le Règlement Général sur la
-              Protection des Données (RGPD) et la loi française relative à la
-              protection des données personnelles.
-            </p>
-          </section>
-
-          <section className="mb-8">
-            <h2 className="text-2xl font-semibold text-gray-900 mb-4">
-              17. Utilisation des API Google (Limited Use Disclosure)
-            </h2>
-            <p className="text-gray-700 mb-4">
-              Cette Application utilise l'API Gmail de Google pour vous permettre 
-              d'envoyer des emails directement depuis votre compte Gmail. L'accès 
-              à vos données Gmail est strictement limité aux fonctionnalités suivantes :
-            </p>
-            <ul className="list-disc list-inside text-gray-700 space-y-2 ml-4 mb-4">
-              <li>Envoi d'emails de candidature en votre nom</li>
-              <li>Création de brouillons d'emails</li>
-              <li>Programmation d'envois différés</li>
-            </ul>
-            
             <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4">
               <p className="text-gray-700 font-semibold mb-2">
-                Google API Services User Data Policy Compliance
+                Conformité à la Politique de Données Utilisateur des Services API Google
               </p>
               <p className="text-gray-700">
-                App Sender's use and transfer of information received from Google APIs 
-                will adhere to{" "}
+                L'utilisation et le transfert des informations reçues des API Google par Cronos
+                respectent la{" "}
                 <a
                   href="https://developers.google.com/terms/api-services-user-data-policy"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-blue-600 hover:underline"
                 >
-                  Google API Services User Data Policy
+                  Politique de Données Utilisateur des Services API Google
                 </a>
-                , including the Limited Use requirements.
+                , y compris les exigences d'Utilisation Limitée.
               </p>
             </div>
 
-            <h3 className="text-xl font-semibold text-gray-800 mb-3 mt-6">
-              17.1 Ce que nous ne faisons PAS avec vos données Gmail
-            </h3>
+            <p className="text-gray-700 mb-4">
+              Cette Application utilise l'API Gmail de Google pour vous permettre
+              d'envoyer des emails directement depuis votre compte Gmail. L'accès
+              à vos données Gmail est strictement limité aux fonctionnalités
+              suivantes :
+            </p>
             <ul className="list-disc list-inside text-gray-700 space-y-2 ml-4 mb-4">
-              <li>Nous ne lisons pas le contenu de vos emails reçus à des fins autres que la détection de réponses à vos candidatures</li>
-              <li>Nous ne partageons pas vos données Gmail avec des tiers</li>
-              <li>Nous n'utilisons pas vos données Gmail à des fins publicitaires</li>
-              <li>Nous ne stockons pas le contenu complet de vos emails au-delà de ce qui est nécessaire au fonctionnement du service</li>
+              <li>Envoi d'emails de candidature en votre nom</li>
+              <li>Programmation d'emails pour envoi ultérieur</li>
+              <li>Détection des réponses à vos emails envoyés</li>
             </ul>
 
             <h3 className="text-xl font-semibold text-gray-800 mb-3 mt-6">
-              17.2 Révocation de l'accès
+              11.1 Ce que nous NE FAISONS PAS avec vos données Gmail
+            </h3>
+            <ul className="list-disc list-inside text-gray-700 space-y-2 ml-4 mb-4">
+              <li>
+                Nous ne lisons pas le contenu de vos emails reçus à des fins
+                autres que la détection des réponses à vos candidatures
+              </li>
+              <li>Nous ne partageons pas vos données Gmail avec des tiers</li>
+              <li>
+                Nous n'utilisons pas vos données Gmail à des fins publicitaires
+              </li>
+              <li>
+                Nous ne stockons pas le contenu complet de vos emails au-delà de
+                ce qui est nécessaire au fonctionnement du service
+              </li>
+            </ul>
+
+            <h3 className="text-xl font-semibold text-gray-800 mb-3 mt-6">
+              11.2 Révocation de l'accès
             </h3>
             <p className="text-gray-700">
-              Vous pouvez révoquer l'accès de notre Application à votre compte Gmail 
-              à tout moment via les paramètres de sécurité de votre compte Google :{" "}
+              Vous pouvez révoquer l'accès de notre Application à votre compte
+              Gmail à tout moment via les paramètres de sécurité de votre compte
+              Google :{" "}
               <a
                 href="https://myaccount.google.com/permissions"
                 target="_blank"
@@ -639,17 +535,167 @@ const PrivacyPolicy = () => {
             </p>
           </section>
 
-          <hr className="my-8" />
+          <section className="mb-8">
+            <h2 className="text-2xl font-semibold text-gray-900 mb-4">
+              12. Cookies
+            </h2>
+            <p className="text-gray-700 mb-3">
+              L'Application peut utiliser des cookies ou des technologies
+              similaires pour :
+            </p>
+            <ul className="list-disc list-inside text-gray-700 space-y-2 ml-4">
+              <li>Maintenir votre connexion</li>
+              <li>Mémoriser vos préférences</li>
+              <li>Analyser l'utilisation de l'Application</li>
+              <li>Améliorer les performances</li>
+            </ul>
+            <p className="text-gray-700 mt-3">
+              <strong>Vous pouvez refuser les cookies de tracking</strong> via les
+              paramètres de l'Application ou de votre navigateur, bien que cela
+              puisse affecter certaines fonctionnalités.
+            </p>
+          </section>
+
+          <section className="mb-8">
+            <h2 className="text-2xl font-semibold text-gray-900 mb-4">
+              13. Liens Externes
+            </h2>
+            <p className="text-gray-700">
+              L'Application peut contenir des liens vers des sites tiers. Nous ne
+              sommes pas responsables de leur contenu ou de leur politique de
+              confidentialité. Consultez leur politique avant de partager vos
+              données.
+            </p>
+          </section>
+
+          <section className="mb-8">
+            <h2 className="text-2xl font-semibold text-gray-900 mb-4">
+              14. Mineurs
+            </h2>
+            <p className="text-gray-700">
+              L'Application <strong>n'est pas destinée aux mineurs</strong> (moins
+              de 16 ans). Nous ne collectons pas sciemment les données
+              personnelles de mineurs. Si vous découvrez qu'un mineur a utilisé
+              l'Application, veuillez nous en informer immédiatement.
+            </p>
+          </section>
+
+          <section className="mb-8">
+            <h2 className="text-2xl font-semibold text-gray-900 mb-4">
+              15. Modifications de cette Politique
+            </h2>
+            <p className="text-gray-700 mb-3">
+              Nous pouvons modifier cette politique à tout moment. Vous serez
+              informé(e) par :
+            </p>
+            <ul className="list-disc list-inside text-gray-700 space-y-2 ml-4">
+              <li>Notification dans l'Application</li>
+              <li>Email à votre adresse enregistrée</li>
+              <li>
+                Mise à jour de la date « Dernière mise à jour » en haut de cette
+                page
+              </li>
+            </ul>
+            <p className="text-gray-700 mt-3">
+              Votre utilisation continue de l'Application après toute modification
+              signifie que vous acceptez la nouvelle politique.
+            </p>
+          </section>
+
+          <section className="mb-8">
+            <h2 className="text-2xl font-semibold text-gray-900 mb-4">
+              16. Contact
+            </h2>
+            <div className="bg-blue-50 p-4 rounded-lg">
+              <p className="text-gray-700 mb-2">
+                Pour toute question concernant cette politique de
+                confidentialité, contactez-nous :
+              </p>
+              <p className="text-gray-700">
+                <strong>Email :</strong> eliyanjacquet99@gmail.com
+              </p>
+              <p className="text-gray-700">
+                <strong>Site web :</strong>{" "}
+                <a
+                  href="https://getcronos.fr"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-600 hover:underline"
+                >
+                  https://getcronos.fr
+                </a>
+              </p>
+              <p className="text-gray-700">
+                <strong>Adresse :</strong> 41 rue Parmentier, 95870 Bezons, France
+              </p>
+            </div>
+          </section>
+
+          <section className="mb-8">
+            <h2 className="text-2xl font-semibold text-gray-900 mb-4">
+              17. Réclamation
+            </h2>
+            <p className="text-gray-700">
+              Si vous estimez que vos droits ne sont pas respectés, vous pouvez
+              déposer une réclamation auprès de la{" "}
+              <a
+                href="https://www.cnil.fr"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 hover:underline"
+              >
+                CNIL (Commission Nationale de l'Informatique et des Libertés)
+              </a>
+              .
+            </p>
+          </section>
+
+          <section className="mb-8">
+            <h2 className="text-2xl font-semibold text-gray-900 mb-4">
+              18. Conformité RGPD
+            </h2>
+            <p className="text-gray-700 mb-3">
+              Cette politique est conforme au Règlement Général sur la Protection
+              des Données (RGPD) de l'Union Européenne et à la loi française
+              Informatique et Libertés.
+            </p>
+            <p className="text-gray-700">
+              Nous nous engageons à respecter les principes de :
+            </p>
+            <ul className="list-disc list-inside text-gray-700 space-y-2 ml-4 mt-2">
+              <li>
+                <strong>Minimisation des données</strong> : Nous ne collectons que
+                les données nécessaires
+              </li>
+              <li>
+                <strong>Finalité limitée</strong> : Vos données sont utilisées
+                uniquement pour les objectifs déclarés
+              </li>
+              <li>
+                <strong>Transparence</strong> : Vous êtes informé(e) de
+                l'utilisation de vos données
+              </li>
+              <li>
+                <strong>Sécurité</strong> : Vos données sont protégées
+              </li>
+              <li>
+                <strong>Droits individuels</strong> : Vous pouvez exercer vos
+                droits à tout moment
+              </li>
+            </ul>
+          </section>
+
+          <hr className="my-8 border-gray-200" />
 
           <div className="text-center text-gray-600">
             <p>
-              <strong>Version :</strong> 1.0
+              <strong>Version :</strong> 2.1
             </p>
             <p>
-              <strong>Date d'entrée en vigueur :</strong> 12 novembre 2025
+              <strong>Date d'entrée en vigueur :</strong> 13 décembre 2025
             </p>
             <p>
-              <strong>Prochaine révision prévue :</strong> 12 novembre 2026
+              <strong>Dernière révision :</strong> 13 décembre 2025
             </p>
           </div>
         </div>

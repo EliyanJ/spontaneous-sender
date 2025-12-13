@@ -22,7 +22,7 @@ const TermsOfService = () => {
             Conditions d'Utilisation
           </h1>
           <p className="text-gray-600 mb-8">
-            <strong>Dernière mise à jour :</strong> 12 novembre 2025
+            <strong>Dernière mise à jour :</strong> 13 décembre 2025
           </p>
 
           <section className="mb-8">
@@ -30,7 +30,16 @@ const TermsOfService = () => {
               1. Acceptation des Conditions
             </h2>
             <p className="text-gray-700 leading-relaxed mb-3">
-              En accédant et en utilisant <strong>APP SENDER</strong> (ci-après « l'Application »), vous acceptez sans réserve l'intégralité de ces Conditions d'Utilisation. Si vous n'acceptez pas ces conditions, veuillez ne pas utiliser l'Application.
+              En accédant et en utilisant <strong>Cronos</strong> (ci-après « l'Application »), accessible sur{" "}
+              <a
+                href="https://getcronos.fr"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 hover:underline"
+              >
+                https://getcronos.fr
+              </a>
+              , vous acceptez sans réserve l'intégralité de ces Conditions d'Utilisation. Si vous n'acceptez pas ces conditions, veuillez ne pas utiliser l'Application.
             </p>
             <p className="text-gray-700 leading-relaxed">
               L'utilisation continue de l'Application après toute modification de ces conditions signifie que vous acceptez les nouvelles conditions.
@@ -42,7 +51,7 @@ const TermsOfService = () => {
               2. Description du Service
             </h2>
             <p className="text-gray-700 mb-3">
-              APP SENDER est une application web qui vous permet de :
+              Cronos est une application web qui vous permet de :
             </p>
             <ul className="list-disc list-inside text-gray-700 space-y-2 ml-4 mb-4">
               <li>Rechercher des offres d'emploi via l'API du gouvernement français</li>
@@ -85,7 +94,7 @@ const TermsOfService = () => {
             </h3>
             <ul className="list-disc list-inside text-gray-700 space-y-2 ml-4">
               <li>Vous vous engagez à ne pas partager votre mot de passe avec d'autres personnes</li>
-              <li>Vous acceptez de notifier immédiatement APP SENDER de tout accès non autorisé à votre compte</li>
+              <li>Vous acceptez de notifier immédiatement Cronos de tout accès non autorisé à votre compte</li>
               <li>Vous acceptez de vous déconnecter de l'Application après chaque session, particulièrement sur des appareils partagés</li>
             </ul>
           </section>
@@ -143,7 +152,7 @@ const TermsOfService = () => {
               5.1 Consentement Explicite
             </h3>
             <p className="text-gray-700 mb-2">
-              En connectant votre compte Gmail à APP SENDER, vous consentez explicitement à ce que l'Application :
+              En connectant votre compte Gmail à Cronos, vous consentez explicitement à ce que l'Application :
             </p>
             <ul className="list-disc list-inside text-gray-700 space-y-2 ml-4">
               <li>Accède à vos emails, brouillons et contacts</li>
@@ -157,8 +166,8 @@ const TermsOfService = () => {
             </h3>
             <ul className="list-disc list-inside text-gray-700 space-y-2 ml-4">
               <li>Vous êtes entièrement responsable de tous les emails envoyés via l'Application</li>
-              <li>APP SENDER n'est pas responsable du contenu que vous envoyez</li>
-              <li>APP SENDER n'est pas responsable de la réception ou du non-reçu de vos emails</li>
+              <li>Cronos n'est pas responsable du contenu que vous envoyez</li>
+              <li>Cronos n'est pas responsable de la réception ou du non-reçu de vos emails</li>
               <li>Vous acceptez que Gmail puisse classifier vos emails comme spam</li>
             </ul>
 
@@ -205,15 +214,15 @@ const TermsOfService = () => {
             </h3>
             <ul className="list-disc list-inside text-gray-700 space-y-2 ml-4">
               <li>Tout contenu que vous créez dans l'Application (candidatures, brouillons, etc.) vous appartient</li>
-              <li>Vous accordez à APP SENDER le droit de stocker et de traiter ce contenu pour fournir le service</li>
-              <li>APP SENDER peut utiliser des données anonymisées et agrégées pour améliorer le service (jamais vos données personnelles)</li>
+              <li>Vous accordez à Cronos le droit de stocker et de traiter ce contenu pour fournir le service</li>
+              <li>Cronos peut utiliser des données anonymisées et agrégées pour améliorer le service (jamais vos données personnelles)</li>
             </ul>
 
             <h3 className="text-xl font-semibold text-gray-800 mb-3 mt-6">
               6.3 Propriété Intellectuelle de l'Application
             </h3>
             <ul className="list-disc list-inside text-gray-700 space-y-2 ml-4">
-              <li>APP SENDER, son code, son design, et son contenu sont la propriété exclusive d'Eliyan JACQUET</li>
+              <li>Cronos, son code, son design, et son contenu sont la propriété exclusive d'Eliyan JACQUET</li>
               <li>Vous n'avez pas le droit de reproduire, modifier, distribuer ou revendre l'Application</li>
               <li>Vous ne devez pas tenter de décompiler, désassembler ou effectuer d'ingénierie inverse</li>
             </ul>
@@ -228,7 +237,7 @@ const TermsOfService = () => {
               7.1 Accès et Disponibilité
             </h3>
             <ul className="list-disc list-inside text-gray-700 space-y-2 ml-4">
-              <li>APP SENDER est fournie "telle quelle" sans garantie de disponibilité continue</li>
+              <li>Cronos est fournie "telle quelle" sans garantie de disponibilité continue</li>
               <li>Nous ne sommes pas responsables des interruptions de service, pannes ou indisponibilités</li>
               <li>L'Application peut être indisponible pour maintenance, mises à jour ou raisons techniques</li>
             </ul>
@@ -249,7 +258,7 @@ const TermsOfService = () => {
               7.3 Limitation de Dommages
             </h3>
             <p className="text-gray-700 mb-2">
-              EN AUCUN CAS, Eliyan JACQUET ou APP SENDER ne sera responsable pour :
+              EN AUCUN CAS, Eliyan JACQUET ou Cronos ne sera responsable pour :
             </p>
             <ul className="list-disc list-inside text-gray-700 space-y-2 ml-4 mb-3">
               <li>Les pertes de données, emails ou candidatures</li>
@@ -266,7 +275,7 @@ const TermsOfService = () => {
               7.4 Limitation de Responsabilité Globale
             </h3>
             <p className="text-gray-700">
-              La responsabilité totale d'APP SENDER ne peut en aucun cas dépasser 100 euros ou le montant payé (actuellement gratuit pour le prototype).
+              La responsabilité totale de Cronos ne peut en aucun cas dépasser 100 euros ou le montant payé (actuellement gratuit pour le prototype).
             </p>
           </section>
 
@@ -311,7 +320,7 @@ const TermsOfService = () => {
             </h3>
             <ul className="list-disc list-inside text-gray-700 space-y-2 ml-4">
               <li>Les offres d'emploi proviennent de sources publiques gouvernementales</li>
-              <li>APP SENDER n'est pas responsable de la pertinence, de l'exactitude ou de la disponibilité de ces données</li>
+              <li>Cronos n'est pas responsable de la pertinence, de l'exactitude ou de la disponibilité de ces données</li>
               <li>Vous acceptez les conditions d'utilisation de l'API gouvernementale</li>
             </ul>
 
@@ -320,7 +329,7 @@ const TermsOfService = () => {
             </h3>
             <ul className="list-disc list-inside text-gray-700 space-y-2 ml-4">
               <li>L'Application peut contenir des liens vers des sites externes</li>
-              <li>APP SENDER n'est pas responsable du contenu de ces sites externes</li>
+              <li>Cronos n'est pas responsable du contenu de ces sites externes</li>
               <li>Consultez leur politique de confidentialité avant de partager vos données</li>
             </ul>
           </section>
@@ -334,17 +343,17 @@ const TermsOfService = () => {
               10.1 Gratuité du Prototype
             </h3>
             <ul className="list-disc list-inside text-gray-700 space-y-2 ml-4">
-              <li>APP SENDER est actuellement gratuite pendant la phase de prototype</li>
+              <li>Cronos est actuellement gratuite pendant la phase de prototype</li>
               <li>Nous nous réservons le droit de monétiser le service à l'avenir</li>
               <li>Tout changement de tarification sera communiqué au minimum 30 jours avant</li>
             </ul>
 
             <h3 className="text-xl font-semibold text-gray-800 mb-3 mt-6">
-              10.2 Pas de Frais Cachés
+              10.2 Coûts Tiers
             </h3>
             <ul className="list-disc list-inside text-gray-700 space-y-2 ml-4">
-              <li>Il n'y a pas de frais cachés</li>
-              <li>Vous n'êtes pas responsable des frais générés par votre utilisation (connexion, stockage, etc.)</li>
+              <li>Vous êtes responsable de tout coût de connexion Internet pour accéder à l'Application</li>
+              <li>L'Application utilise les services gratuits de Gmail et de l'API gouvernementale</li>
             </ul>
           </section>
 
@@ -352,14 +361,11 @@ const TermsOfService = () => {
             <h2 className="text-2xl font-semibold text-gray-900 mb-4">
               11. Modifications des Conditions
             </h2>
-            <p className="text-gray-700 mb-3">
-              Nous pouvons modifier ces Conditions d'Utilisation à tout moment. Les modifications entrent en vigueur immédiatement après publication. Votre utilisation continue de l'Application signifie que vous acceptez les modifications.
-            </p>
-            <p className="text-gray-700 mb-2">Les modifications majeures seront communiquées via :</p>
             <ul className="list-disc list-inside text-gray-700 space-y-2 ml-4">
-              <li>Un email à l'adresse associée à votre compte</li>
-              <li>Un bandeau dans l'Application</li>
-              <li>Un avis 30 jours avant l'entrée en vigueur (le cas échéant)</li>
+              <li>Nous pouvons modifier ces conditions à tout moment</li>
+              <li>Vous serez notifié(e) par email ou par notification dans l'Application</li>
+              <li>Les modifications majeures seront communiquées au minimum 30 jours avant</li>
+              <li>Votre utilisation continue de l'Application après les modifications signifie que vous acceptez les nouvelles conditions</li>
             </ul>
           </section>
 
@@ -369,37 +375,27 @@ const TermsOfService = () => {
             </h2>
 
             <h3 className="text-xl font-semibold text-gray-800 mb-3">
-              12.1 Résiliation par Vous
+              12.1 Par Vous
             </h3>
-            <p className="text-gray-700 mb-2">
-              Vous pouvez cesser d'utiliser l'Application à tout moment. Pour supprimer définitivement votre compte :
-            </p>
-            <ul className="list-disc list-inside text-gray-700 space-y-2 ml-4 mb-3">
-              <li>Accédez aux paramètres de votre compte</li>
-              <li>Cliquez sur "Supprimer mon compte"</li>
+            <ul className="list-disc list-inside text-gray-700 space-y-2 ml-4">
+              <li>Vous pouvez supprimer votre compte à tout moment via les paramètres</li>
               <li>Vos données seront supprimées conformément à notre Politique de Confidentialité</li>
             </ul>
 
             <h3 className="text-xl font-semibold text-gray-800 mb-3 mt-6">
-              12.2 Résiliation par APP SENDER
+              12.2 Par Nous
             </h3>
-            <p className="text-gray-700 mb-2">Nous pouvons suspendre ou résilier votre compte si :</p>
             <ul className="list-disc list-inside text-gray-700 space-y-2 ml-4">
-              <li>Vous violez ces conditions</li>
-              <li>Vous utilisez l'Application à des fins illégales</li>
-              <li>Vous menacez ou harcelez d'autres utilisateurs</li>
-              <li>Vous tentez d'accéder à des données non autorisées</li>
-              <li>Pour des raisons techniques ou de sécurité</li>
+              <li>Nous pouvons suspendre ou supprimer votre compte en cas de violation de ces conditions</li>
+              <li>Nous pouvons cesser le service à tout moment, avec préavis raisonnable si possible</li>
             </ul>
 
             <h3 className="text-xl font-semibold text-gray-800 mb-3 mt-6">
-              12.3 Conséquences
+              12.3 Après Résiliation
             </h3>
-            <p className="text-gray-700 mb-2">En cas de résiliation :</p>
             <ul className="list-disc list-inside text-gray-700 space-y-2 ml-4">
-              <li>Vous perdez l'accès à l'Application</li>
-              <li>Vos données seront supprimées selon le calendrier de notre Politique de Confidentialité</li>
-              <li>Les articles qui survivent à la résiliation restent en vigueur</li>
+              <li>Vos droits d'accès à l'Application cessent immédiatement</li>
+              <li>Certaines clauses de ces conditions restent en vigueur (responsabilité, propriété intellectuelle, etc.)</li>
             </ul>
           </section>
 
@@ -408,61 +404,61 @@ const TermsOfService = () => {
               13. Indemnisation
             </h2>
             <p className="text-gray-700">
-              Vous acceptez d'indemniser et de dégager de responsabilité APP SENDER et Eliyan JACQUET de tout :
+              Vous acceptez d'indemniser et de dégager de toute responsabilité Eliyan JACQUET et Cronos contre toute réclamation, dommage, coût ou dépense résultant de votre violation de ces conditions ou de votre utilisation de l'Application.
             </p>
-            <ul className="list-disc list-inside text-gray-700 space-y-2 ml-4 mt-2">
-              <li>Réclamation, demande ou action en justice</li>
-              <li>Dommages, perte ou dépense</li>
-              <li>Découlant de votre utilisation de l'Application ou de votre violation de ces conditions</li>
-            </ul>
           </section>
 
           <section className="mb-8">
             <h2 className="text-2xl font-semibold text-gray-900 mb-4">
-              14. Litige et Juridiction
+              14. Litiges et Juridiction
             </h2>
 
             <h3 className="text-xl font-semibold text-gray-800 mb-3">
               14.1 Droit Applicable
             </h3>
             <p className="text-gray-700">
-              Ces Conditions d'Utilisation sont régies par la loi française et le droit de l'Union Européenne, notamment le RGPD.
+              Ces conditions sont régies par le droit français.
             </p>
 
             <h3 className="text-xl font-semibold text-gray-800 mb-3 mt-6">
-              14.2 Juridiction
+              14.2 Résolution Amiable
             </h3>
             <p className="text-gray-700">
-              Tout litige découlant de ces conditions sera soumis à la juridiction des tribunaux compétents de Paris, France.
+              Tout différend sera d'abord soumis à une tentative de résolution amiable. Veuillez nous contacter à eliyanjacquet99@gmail.com.
             </p>
 
             <h3 className="text-xl font-semibold text-gray-800 mb-3 mt-6">
-              14.3 Résolution Alternative
+              14.3 Juridiction
             </h3>
-            <p className="text-gray-700 mb-2">Avant d'engager des poursuites judiciaires, nous vous encourageons à :</p>
-            <ul className="list-disc list-inside text-gray-700 space-y-2 ml-4">
-              <li>Nous contacter à eliyanjacquet99@gmail.com pour résoudre le différend à l'amiable</li>
-              <li>Attendre 30 jours pour une réponse</li>
-              <li>Recourir à la médiation si nécessaire</li>
-            </ul>
+            <p className="text-gray-700">
+              En cas d'échec de la résolution amiable, les tribunaux français compétents auront juridiction exclusive.
+            </p>
           </section>
 
           <section className="mb-8">
             <h2 className="text-2xl font-semibold text-gray-900 mb-4">
               15. Contact et Support
             </h2>
-            <p className="text-gray-700 mb-3">
-              Pour toute question sur ces Conditions d'Utilisation ou pour signaler une violation :
-            </p>
             <div className="bg-blue-50 p-4 rounded-lg">
+              <p className="text-gray-700 mb-2">
+                Pour toute question concernant ces conditions, contactez-nous :
+              </p>
               <p className="text-gray-700">
                 <strong>Email :</strong> eliyanjacquet99@gmail.com
               </p>
               <p className="text-gray-700">
-                <strong>Adresse :</strong> 41 rue Parmentier, 95870 Bezons
+                <strong>Site web :</strong>{" "}
+                <a
+                  href="https://getcronos.fr"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-600 hover:underline"
+                >
+                  https://getcronos.fr
+                </a>
               </p>
               <p className="text-gray-700">
-                <strong>Délai de réponse :</strong> Nous répondrons dans les 30 jours
+                <strong>Adresse :</strong> 41 rue Parmentier, 95870 Bezons, France
               </p>
             </div>
           </section>
@@ -476,51 +472,53 @@ const TermsOfService = () => {
               16.1 Intégralité de l'Accord
             </h3>
             <p className="text-gray-700">
-              Ces Conditions d'Utilisation, conjointement avec notre Politique de Confidentialité, constituent l'intégralité de l'accord entre vous et APP SENDER concernant l'utilisation de l'Application.
+              Ces conditions, combinées à notre Politique de Confidentialité, constituent l'intégralité de l'accord entre vous et Cronos.
             </p>
 
             <h3 className="text-xl font-semibold text-gray-800 mb-3 mt-6">
               16.2 Divisibilité
             </h3>
             <p className="text-gray-700">
-              Si une partie de ces conditions est jugée invalide ou inapplicable, les autres dispositions restent en vigueur.
+              Si une clause est jugée invalide ou inapplicable, les autres clauses restent en vigueur.
             </p>
 
             <h3 className="text-xl font-semibold text-gray-800 mb-3 mt-6">
-              16.3 Pas de Renonciation
+              16.3 Non-Renonciation
             </h3>
             <p className="text-gray-700">
-              Le fait que nous n'appliquions pas une disposition ne signifie pas que nous y renoncions définitivement.
+              Le fait de ne pas exercer un droit ne constitue pas une renonciation à ce droit.
             </p>
 
             <h3 className="text-xl font-semibold text-gray-800 mb-3 mt-6">
               16.4 Cession
             </h3>
             <p className="text-gray-700">
-              Vous ne pouvez pas céder vos droits ou obligations en vertu de ces conditions sans notre consentement écrit préalable.
+              Vous ne pouvez pas céder vos droits ou obligations sans notre consentement écrit. Nous pouvons céder ces conditions à tout moment.
             </p>
           </section>
 
-          <hr className="my-8" />
+          <hr className="my-8 border-gray-200" />
 
           <div className="text-center text-gray-600">
             <p>
-              <strong>Version :</strong> 1.0
+              <strong>Version :</strong> 2.1
             </p>
             <p>
-              <strong>Date d'entrée en vigueur :</strong> 12 novembre 2025
-            </p>
-            <p>
-              <strong>Dernière mise à jour :</strong> 12 novembre 2025
+              <strong>Date d'entrée en vigueur :</strong> 13 décembre 2025
             </p>
             <p className="mt-4">
-              <strong>Responsable :</strong> Eliyan JACQUET
+              <strong>Contact :</strong> eliyanjacquet99@gmail.com
             </p>
             <p>
-              <strong>Email :</strong> eliyanjacquet99@gmail.com
-            </p>
-            <p>
-              <strong>Adresse :</strong> 41 rue Parmentier, 95870 Bezons
+              <strong>Site web :</strong>{" "}
+              <a
+                href="https://getcronos.fr"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 hover:underline"
+              >
+                https://getcronos.fr
+              </a>
             </p>
           </div>
         </div>
