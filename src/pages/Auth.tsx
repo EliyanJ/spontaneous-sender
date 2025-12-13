@@ -157,7 +157,7 @@ const Auth = () => {
         provider: 'google',
         options: {
           redirectTo: redirectUrl,
-          scopes: 'https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/gmail.modify https://www.googleapis.com/auth/gmail.compose',
+          scopes: 'https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/gmail.modify',
           queryParams: {
             access_type: 'offline',
             prompt: 'consent',

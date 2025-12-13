@@ -15,9 +15,6 @@ verify_jwt = true
 [functions.france-travail]
 verify_jwt = true
 
-[functions.create-gmail-drafts]
-verify_jwt = true
-
 [functions.send-gmail-emails]
 verify_jwt = true
 

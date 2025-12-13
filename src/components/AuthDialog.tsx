@@ -76,7 +76,7 @@ export const AuthDialog = ({ open, onOpenChange }: AuthDialogProps) => {
         provider: 'google',
         options: {
           redirectTo: 'https://spontaneous-sender.lovable.app/dashboard',
-          scopes: 'https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/gmail.compose https://www.googleapis.com/auth/gmail.modify',
+          scopes: 'https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/gmail.modify',
           queryParams: {
             access_type: 'offline',
             prompt: 'consent',
