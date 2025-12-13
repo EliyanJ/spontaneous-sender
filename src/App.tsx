@@ -9,6 +9,7 @@ import Landing from "./pages/Landing";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
+import PrivacyPolicyEn from "./pages/PrivacyPolicyEn";
 import TermsOfService from "./pages/TermsOfService";
 import LegalNotice from "./pages/LegalNotice";
 import { ProtectedRoute } from "./components/ProtectedRoute";
@@ -25,6 +26,7 @@ const App = () => (
           <Route path="/" element={<Landing />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+          <Route path="/privacy-policy-en" element={<PrivacyPolicyEn />} />
           <Route path="/terms-of-service" element={<TermsOfService />} />
           <Route path="/mentions-legales" element={<LegalNotice />} />
           <Route path="/dashboard" element={<ProtectedRoute><Index /></ProtectedRoute>} />

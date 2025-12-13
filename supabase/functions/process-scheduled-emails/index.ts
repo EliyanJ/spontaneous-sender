@@ -349,87 +349,8 @@ async function processWithFallback(supabase: any, now: string) {
           throw new Error(sendResult.error);
         }
       } else {
-        // Ancien système avec brouillon Gmail
-        const { data: tokenData } = await supabase
-          .from('gmail_tokens')
-          .select('access_token, refresh_token, expires_at')
-          .eq('user_id', email.user_id)
-          .single();
-
-        if (!tokenData) {
-          throw new Error('Token Gmail non trouvé');
-        }
-
-        let accessToken = tokenData.access_token;
-
-        if (tokenData.expires_at && new Date(tokenData.expires_at) <= new Date()) {
-          const refreshResponse = await fetch('https://oauth2.googleapis.com/token', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: new URLSearchParams({
-              client_id: Deno.env.get('GMAIL_CLIENT_ID') || '',
-              client_secret: Deno.env.get('GMAIL_CLIENT_SECRET') || '',
-              refresh_token: tokenData.refresh_token || '',
-              grant_type: 'refresh_token',
-            }),
-          });
-
-          const refreshData = await refreshResponse.json();
-          accessToken = refreshData.access_token;
-
-          await supabase
-            .from('gmail_tokens')
-            .update({
-              access_token: accessToken,
-              expires_at: new Date(Date.now() + refreshData.expires_in * 1000).toISOString(),
-            })
-            .eq('user_id', email.user_id);
-        }
-
-        const sendResponse = await fetch(
-          'https://gmail.googleapis.com/gmail/v1/users/me/drafts/send',
-          {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${accessToken}`,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ id: email.gmail_draft_id }),
-          }
-        );
-
-        if (!sendResponse.ok) {
-          const errorText = await sendResponse.text();
-          throw new Error(errorText);
-        }
-
-        successCount++;
-        await supabase
-          .from('scheduled_emails')
-          .update({ status: 'sent', sent_at: new Date().toISOString() })
-          .eq('id', email.id);
-
-        if (email.notify_on_sent) {
-          await supabase
-            .from('user_notifications')
-            .insert({
-              user_id: email.user_id,
-              type: 'email_sent',
-              title: 'Email envoyé',
-              message: `Votre email "${email.subject}" a été envoyé avec succès.`,
-            });
-        }
-
-        await supabase
-          .from('email_campaigns')
-          .insert({
-            user_id: email.user_id,
-            recipient: email.recipients[0],
-            subject: email.subject,
-            body: '',
-            status: 'sent',
-            sent_at: new Date().toISOString(),
-          });
+        // Email sans body - ne peut pas être traité
+        throw new Error('Email programmé sans contenu');
       }
     } catch (error: any) {
       console.error(`Erreur traitement email ${email.id}:`, error);

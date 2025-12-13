@@ -155,18 +155,9 @@ export const CampaignsHub = () => {
     }
   };
 
-  const handleCancelScheduled = async (emailId: string, draftId: string) => {
+  const handleCancelScheduled = async (emailId: string) => {
     setCancelling(emailId);
     try {
-      const { data: tokenData } = await supabase.from('gmail_tokens').select('access_token').single();
-
-      if (tokenData) {
-        await fetch(`https://gmail.googleapis.com/gmail/v1/users/me/drafts/${draftId}`, {
-          method: 'DELETE',
-          headers: { Authorization: `Bearer ${tokenData.access_token}` },
-        });
-      }
-
       await supabase.from('scheduled_emails').update({ status: 'cancelled' }).eq('id', emailId);
       toast({ title: "Email annulé" });
       loadData();
@@ -408,7 +399,7 @@ export const CampaignsHub = () => {
                         <AlertDialogFooter>
                           <AlertDialogCancel>Retour</AlertDialogCancel>
                           <AlertDialogAction
-                            onClick={() => handleCancelScheduled(email.id, email.gmail_draft_id)}
+                            onClick={() => handleCancelScheduled(email.id)}
                             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                           >
                             Annuler

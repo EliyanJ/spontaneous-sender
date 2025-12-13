@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Mail, Eye, Send } from "lucide-react";
+import { Loader2, Mail, Eye } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -11,12 +11,12 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { Button } from "@/components/ui/button";
 
 interface CompanyEmail {
   id: string;
@@ -29,7 +29,6 @@ interface CompanyEmail {
 export const ContactEmails = () => {
   const [companies, setCompanies] = useState<CompanyEmail[]>([]);
   const [loading, setLoading] = useState(true);
-  const [creatingDrafts, setCreatingDrafts] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -68,61 +67,6 @@ export const ContactEmails = () => {
     }
   };
 
-  const handleCreateGmailDrafts = async () => {
-    try {
-      setCreatingDrafts(true);
-
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        toast({
-          title: "Erreur",
-          description: "Vous devez être connecté",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Appeler l'edge function pour obtenir l'URL d'autorisation
-      const { data, error } = await supabase.functions.invoke("create-gmail-drafts", {
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-        },
-      });
-
-      if (error) throw error;
-
-      if (data.authUrl) {
-        // Rediriger hors de l'iframe (Google bloque l'auth dans un iframe)
-        try {
-          if (window.top && window.top !== window.self) {
-            window.top.location.href = data.authUrl;
-          } else {
-            window.location.href = data.authUrl;
-          }
-        } catch {
-          // Fallback: ouvrir dans un nouvel onglet
-          window.open(data.authUrl, "_blank", "noopener,noreferrer");
-        }
-      } else if (data.results) {
-        // Les brouillons ont été créés
-        toast({
-          title: "Succès",
-          description: data.message,
-        });
-        await loadCompanies();
-      }
-    } catch (error) {
-      console.error("Erreur création brouillons:", error);
-      toast({
-        title: "Erreur",
-        description: "Impossible de créer les brouillons Gmail",
-        variant: "destructive",
-      });
-    } finally {
-      setCreatingDrafts(false);
-    }
-  };
-
   const getStatusBadge = (status: string | null) => {
     if (!status) return <Badge variant="secondary">Non défini</Badge>;
 
@@ -130,7 +74,6 @@ export const ContactEmails = () => {
       "not sent": { label: "Non envoyé", variant: "secondary" },
       "sent": { label: "Envoyé", variant: "default" },
       "replied": { label: "Répondu", variant: "outline" },
-      "draft created": { label: "Brouillon créé", variant: "outline" },
     };
 
     const config = statusConfig[status] || { label: status, variant: "secondary" };
@@ -154,23 +97,6 @@ export const ContactEmails = () => {
             Liste des entreprises avec leurs emails de contact
           </p>
         </div>
-        <Button
-          onClick={handleCreateGmailDrafts}
-          disabled={creatingDrafts || companies.filter(c => c.status === "not sent" && c.selected_email).length === 0}
-          className="gap-2"
-        >
-          {creatingDrafts ? (
-            <>
-              <Loader2 className="h-4 w-4 animate-spin" />
-              Création en cours...
-            </>
-          ) : (
-            <>
-              <Send className="h-4 w-4" />
-              Créer les brouillons Gmail
-            </>
-          )}
-        </Button>
       </div>
 
       <div className="rounded-md border">

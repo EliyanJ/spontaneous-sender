@@ -302,72 +302,6 @@ export const EmailComposer = () => {
     return uploadedAttachments;
   };
 
-  const handleCreateDrafts = async () => {
-    if (!subject.trim() || !body.trim() || recipients.length === 0) {
-      toast({
-        title: "Champs manquants",
-        description:
-          "Veuillez remplir l'objet, le corps et ajouter au moins un destinataire.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      const uploadedAttachments = await uploadAttachments();
-
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-
-      if (!session) {
-        throw new Error("Session non trouvée");
-      }
-
-      const { data, error } = await supabase.functions.invoke(
-        "create-gmail-drafts",
-        {
-          body: {
-            recipients,
-            subject,
-            body,
-            attachments: uploadedAttachments,
-          },
-          headers: {
-            Authorization: `Bearer ${session.access_token}`,
-          },
-        }
-      );
-
-      if (error) throw error;
-
-      if (data.error === "Gmail not connected") {
-        toast({
-          title: "Gmail non connecté",
-          description: "Veuillez vous reconnecter avec Google pour activer Gmail",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      toast({
-        title: "Brouillons créés",
-        description: data.message || `${recipients.length} brouillon(s) Gmail ont été créés avec succès.`,
-      });
-    } catch (error: any) {
-      console.error("Error creating drafts:", error);
-      toast({
-        title: "Erreur",
-        description: "Impossible de créer les brouillons Gmail.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleSendEmails = async () => {
     if (!subject.trim() || !body.trim() || recipients.length === 0) {
       toast({
@@ -819,22 +753,11 @@ export const EmailComposer = () => {
 
               <div className="flex gap-2 pt-4">
                 {sendMode === 'now' ? (
-                  <>
-                    <Button onClick={handleSendEmails} disabled={loading} className="flex-1">
-                      {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                      <Send className="mr-2 h-4 w-4" />
-                      Envoyer maintenant
-                    </Button>
-                    <Button
-                      onClick={handleCreateDrafts}
-                      disabled={loading}
-                      variant="outline"
-                      className="flex-1"
-                    >
-                      {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                      Créer les brouillons
-                    </Button>
-                  </>
+                  <Button onClick={handleSendEmails} disabled={loading} className="w-full">
+                    {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    <Send className="mr-2 h-4 w-4" />
+                    Envoyer maintenant
+                  </Button>
                 ) : (
                   <Button onClick={handleScheduleEmail} disabled={loading} className="w-full">
                     {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
