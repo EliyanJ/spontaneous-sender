@@ -24,7 +24,7 @@ async function checkRateLimit(supabase: any, userId: string, action: string, lim
     
   if (error) {
     console.error('Rate limit check error:', error);
-    return;
+    throw new Error('Rate limiting unavailable - please try again later');
   }
   
   if (count && count >= limit) {
