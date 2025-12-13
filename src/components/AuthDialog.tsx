@@ -75,8 +75,8 @@ export const AuthDialog = ({ open, onOpenChange }: AuthDialogProps) => {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: 'https://spontaneous-sender.lovable.app/dashboard',
-          scopes: 'https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/gmail.modify',
+          redirectTo: `${window.location.origin}/auth`,
+          scopes: 'https://www.googleapis.com/auth/gmail.send',
           queryParams: {
             access_type: 'offline',
             prompt: 'consent',

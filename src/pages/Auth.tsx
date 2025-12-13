@@ -157,7 +157,7 @@ const Auth = () => {
         provider: 'google',
         options: {
           redirectTo: redirectUrl,
-          scopes: 'https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/gmail.modify',
+          scopes: 'https://www.googleapis.com/auth/gmail.send',
           queryParams: {
             access_type: 'offline',
             prompt: 'consent',
@@ -197,7 +197,7 @@ const Auth = () => {
                 <Mail className="h-8 w-8 text-primary" />
               </div>
             </div>
-            <CardTitle className="text-3xl font-bold">Spontaneous Sender</CardTitle>
+            <CardTitle className="text-3xl font-bold">Cronos</CardTitle>
             <CardDescription className="text-base">
               Automatisez vos candidatures spontanées avec l'IA
             </CardDescription>
