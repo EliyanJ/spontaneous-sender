@@ -1,19 +1,69 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Loader2, Mail } from "lucide-react";
+import { Loader2 } from "lucide-react";
 
 const Auth = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [googleLoading, setGoogleLoading] = useState(false);
   const [processingCallback, setProcessingCallback] = useState(false);
+  const hasAttemptedAuth = useRef(false);
   
   const nextPath = searchParams.get('next') || '/dashboard';
 
+  // Fonction pour décoder proprement une URL
+  const decodeReturnPath = (path: string): string => {
+    try {
+      let decoded = path;
+      while (decoded !== decodeURIComponent(decoded)) {
+        decoded = decodeURIComponent(decoded);
+      }
+      return decoded;
+    } catch {
+      return path;
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    if (hasAttemptedAuth.current) return;
+    hasAttemptedAuth.current = true;
+    
+    setGoogleLoading(true);
+    try {
+      if (nextPath !== '/dashboard') {
+        sessionStorage.setItem('post_login_redirect', nextPath);
+      }
+
+      const redirectUrl = `${window.location.origin}/auth`;
+      console.log('OAuth redirect URL:', redirectUrl);
+
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: redirectUrl,
+          scopes: 'https://www.googleapis.com/auth/gmail.send',
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          },
+        },
+      });
+
+      if (error) {
+        toast.error(error.message);
+        setGoogleLoading(false);
+        hasAttemptedAuth.current = false;
+      }
+    } catch (error: any) {
+      toast.error(error.message || "Une erreur est survenue");
+      setGoogleLoading(false);
+      hasAttemptedAuth.current = false;
+    }
+  };
+
+  // Premier useEffect: vérifier session existante ou traiter callback OAuth
   useEffect(() => {
     if (nextPath !== '/dashboard') {
       sessionStorage.setItem("post_login_redirect", nextPath);
@@ -142,48 +192,32 @@ const Auth = () => {
     handleGoogleCallback();
   }, [navigate, nextPath]);
 
-  const handleGoogleSignIn = async () => {
-    setGoogleLoading(true);
-    try {
-      if (nextPath !== '/dashboard') {
-        sessionStorage.setItem('post_login_redirect', nextPath);
-      }
-
-      // Utiliser l'URL d'origine pour le redirect (preview ou production)
-      const redirectUrl = `${window.location.origin}/auth`;
-      console.log('OAuth redirect URL:', redirectUrl);
-
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: redirectUrl,
-          scopes: 'https://www.googleapis.com/auth/gmail.send',
-          queryParams: {
-            access_type: 'offline',
-            prompt: 'consent',
-          },
-        },
-      });
-
-      if (error) {
-        toast.error(error.message);
-        setGoogleLoading(false);
-      }
-    } catch (error: any) {
-      toast.error(error.message || "Une erreur est survenue");
-      setGoogleLoading(false);
-    }
-  };
-
-  // Auto-redirect to Google OAuth if not processing callback
+  // Deuxième useEffect: vérifier session existante et lancer OAuth si nécessaire
   useEffect(() => {
-    const hash = window.location.hash;
-    if (!hash || !hash.includes('access_token')) {
-      // No callback in progress, auto-start Google OAuth
+    const checkAndInitAuth = async () => {
+      const hash = window.location.hash;
+      
+      // Si callback OAuth en cours, ne rien faire
+      if (hash && hash.includes('access_token')) {
+        return;
+      }
+      
+      // Vérifier si déjà connecté
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        const returnPath = sessionStorage.getItem("post_login_redirect") || "/dashboard";
+        sessionStorage.removeItem("post_login_redirect");
+        navigate(decodeReturnPath(returnPath), { replace: true });
+        return;
+      }
+      
+      // Pas de session, pas de callback → lancer OAuth (une seule fois)
       if (!googleLoading && !processingCallback) {
         handleGoogleSignIn();
       }
-    }
+    };
+    
+    checkAndInitAuth();
   }, []);
 
   return (
