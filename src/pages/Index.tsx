@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { Building2 } from "lucide-react";
 import { SearchCompanies } from "@/components/dashboard/SearchCompanies";
 import { JobOffers } from "@/components/dashboard/JobOffers";
 import { Entreprises } from "@/components/dashboard/Entreprises";
@@ -146,16 +147,22 @@ const Index = () => {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-border/50 bg-card/30 backdrop-blur-sm">
+      <footer className="border-t border-border/50 bg-card/30 backdrop-blur-sm mt-auto">
         <div className="container mx-auto px-4 py-6">
-          <div className="flex flex-wrap justify-center gap-4 text-xs text-muted-foreground">
-            <a href="/privacy-policy" className="hover:text-primary transition-colors">Confidentialité</a>
-            <a href="/privacy-policy-en" className="hover:text-primary transition-colors">Privacy</a>
-            <a href="/terms-of-service" className="hover:text-primary transition-colors">Conditions</a>
-            <a href="/terms-of-service-en" className="hover:text-primary transition-colors">Terms</a>
-            <a href="/mentions-legales" className="hover:text-primary transition-colors">Mentions légales</a>
-            <a href="/legal-notice" className="hover:text-primary transition-colors">Legal Notice</a>
-            <span>© 2025 Cronos</span>
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-2">
+              <Building2 className="h-5 w-5 text-primary" />
+              <span className="font-display font-semibold text-foreground">Cronos</span>
+            </div>
+            <div className="flex flex-wrap justify-center gap-4 md:gap-6 text-sm text-muted-foreground">
+              <a href="/privacy-policy" className="hover:text-primary transition-colors duration-300">Confidentialité</a>
+              <a href="/privacy-policy-en" className="hover:text-primary transition-colors duration-300">Privacy</a>
+              <a href="/terms-of-service" className="hover:text-primary transition-colors duration-300">Conditions</a>
+              <a href="/terms-of-service-en" className="hover:text-primary transition-colors duration-300">Terms</a>
+              <a href="/mentions-legales" className="hover:text-primary transition-colors duration-300">Mentions légales</a>
+              <a href="/legal-notice" className="hover:text-primary transition-colors duration-300">Legal Notice</a>
+            </div>
+            <p className="text-sm text-muted-foreground">© 2025 Cronos</p>
           </div>
         </div>
       </footer>
