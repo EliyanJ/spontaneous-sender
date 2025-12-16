@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { AuthDialog } from "@/components/AuthDialog";
-import { ArrowRight, Building2, Mail, Search, Zap, Moon, Sun } from "lucide-react";
+import { ArrowRight, Mail, Search, Zap, Moon, Sun } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import cronosLogo from "@/assets/cronos-logo.png";
 
 const Landing = () => {
   const [authOpen, setAuthOpen] = useState(false);
@@ -41,9 +42,7 @@ const Landing = () => {
         {/* Header */}
         <header className="container mx-auto flex items-center justify-between px-6 py-6">
           <div className="flex items-center gap-3">
-            <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center shadow-lg shadow-primary/20">
-              <Building2 className="h-5 w-5 text-primary-foreground" />
-            </div>
+            <img src={cronosLogo} alt="Cronos" className="h-9 w-9 rounded-xl" />
             <span className="font-display text-xl font-bold text-foreground">Cronos</span>
           </div>
           <nav className="flex items-center gap-3">
@@ -151,7 +150,7 @@ const Landing = () => {
           <div className="container mx-auto px-6 py-10">
             <div className="flex flex-col md:flex-row items-center justify-between gap-4">
               <div className="flex items-center gap-2">
-                <Building2 className="h-5 w-5 text-primary" />
+                <img src={cronosLogo} alt="Cronos" className="h-5 w-5" />
                 <span className="font-display font-semibold text-foreground">Cronos</span>
               </div>
               <div className="flex flex-wrap justify-center gap-4 md:gap-6 text-sm text-muted-foreground">

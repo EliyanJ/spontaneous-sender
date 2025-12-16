@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Building2 } from "lucide-react";
 import { SearchCompanies } from "@/components/dashboard/SearchCompanies";
 import { JobOffers } from "@/components/dashboard/JobOffers";
 import { Entreprises } from "@/components/dashboard/Entreprises";
@@ -12,6 +11,7 @@ import { Settings } from "@/components/dashboard/Settings";
 import { Pipeline } from "@/components/dashboard/Pipeline";
 import { HorizontalNav } from "@/components/HorizontalNav";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import cronosLogo from "@/assets/cronos-logo.png";
 
 const Index = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -122,9 +122,7 @@ const Index = () => {
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           {/* Logo */}
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center">
-              <span className="text-primary font-bold">C</span>
-            </div>
+            <img src={cronosLogo} alt="Cronos" className="w-8 h-8 rounded-lg" />
             <span className="font-semibold text-foreground hidden sm:inline">Cronos</span>
           </div>
 
@@ -151,7 +149,7 @@ const Index = () => {
         <div className="container mx-auto px-4 py-6">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-2">
-              <Building2 className="h-5 w-5 text-primary" />
+              <img src={cronosLogo} alt="Cronos" className="h-5 w-5" />
               <span className="font-display font-semibold text-foreground">Cronos</span>
             </div>
             <div className="flex flex-wrap justify-center gap-4 md:gap-6 text-sm text-muted-foreground">
