@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
+import cronosLogo from "@/assets/cronos-logo.png";
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -222,8 +223,10 @@ const Auth = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">
-      <div className="flex flex-col items-center space-y-4">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      <div className="flex flex-col items-center space-y-6">
+        <img src={cronosLogo} alt="Cronos" className="h-20 w-20" />
+        <span className="text-2xl font-bold text-foreground">Cronos</span>
+        <Loader2 className="h-10 w-10 animate-spin text-primary" />
         <p className="text-lg font-medium text-foreground">
           {processingCallback ? "Finalisation de la connexion..." : "Redirection vers Google..."}
         </p>
