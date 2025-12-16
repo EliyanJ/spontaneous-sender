@@ -11,7 +11,9 @@ import Auth from "./pages/Auth";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import PrivacyPolicyEn from "./pages/PrivacyPolicyEn";
 import TermsOfService from "./pages/TermsOfService";
+import TermsOfServiceEn from "./pages/TermsOfServiceEn";
 import LegalNotice from "./pages/LegalNotice";
+import LegalNoticeEn from "./pages/LegalNoticeEn";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 
 const queryClient = new QueryClient();
@@ -28,7 +30,9 @@ const App = () => (
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
           <Route path="/privacy-policy-en" element={<PrivacyPolicyEn />} />
           <Route path="/terms-of-service" element={<TermsOfService />} />
+          <Route path="/terms-of-service-en" element={<TermsOfServiceEn />} />
           <Route path="/mentions-legales" element={<LegalNotice />} />
+          <Route path="/legal-notice" element={<LegalNoticeEn />} />
           <Route path="/dashboard" element={<ProtectedRoute><Index /></ProtectedRoute>} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
