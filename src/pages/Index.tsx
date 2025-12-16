@@ -136,7 +136,7 @@ const Index = () => {
       </header>
 
       {/* Main Content */}
-      <main className="container mx-auto px-4 py-6">
+      <main className="container mx-auto px-4 py-6 pb-20">
         <div 
           key={activeTab}
           className={slideDirection === "right" ? "animate-slide-in-right" : "animate-slide-in-left"}
@@ -144,6 +144,21 @@ const Index = () => {
           {renderContent()}
         </div>
       </main>
+
+      {/* Footer */}
+      <footer className="border-t border-border/50 bg-card/30 backdrop-blur-sm">
+        <div className="container mx-auto px-4 py-6">
+          <div className="flex flex-wrap justify-center gap-4 text-xs text-muted-foreground">
+            <a href="/privacy-policy" className="hover:text-primary transition-colors">Confidentialité</a>
+            <a href="/privacy-policy-en" className="hover:text-primary transition-colors">Privacy</a>
+            <a href="/terms-of-service" className="hover:text-primary transition-colors">Conditions</a>
+            <a href="/terms-of-service-en" className="hover:text-primary transition-colors">Terms</a>
+            <a href="/mentions-legales" className="hover:text-primary transition-colors">Mentions légales</a>
+            <a href="/legal-notice" className="hover:text-primary transition-colors">Legal Notice</a>
+            <span>© 2025 Cronos</span>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 };
