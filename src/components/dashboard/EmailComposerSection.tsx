@@ -376,12 +376,11 @@ export const EmailComposerSection = () => {
                   size="sm" 
                   className="mt-2"
                   onClick={() => {
-                    sessionStorage.setItem('post_login_redirect', '/dashboard');
-                    window.location.href = '/auth';
+                    window.location.href = '/connect-gmail?returnTo=' + encodeURIComponent('/dashboard?tab=emails&emailsSection=compose');
                   }}
                 >
                   <Mail className="mr-2 h-4 w-4" />
-                  Reconnecter Gmail
+                  Connecter Gmail
                 </Button>
               </AlertDescription>
             </Alert>

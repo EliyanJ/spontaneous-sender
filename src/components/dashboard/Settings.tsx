@@ -255,15 +255,9 @@ export const Settings = () => {
                             variant="outline" 
                             size="sm"
                             onClick={async () => {
-                              try {
-                                // Supprimer les tokens Gmail existants
-                                await supabase.from('gmail_tokens').delete().eq('user_id', user?.id);
-                                // Rediriger vers l'auth pour reconnecter
-                                sessionStorage.setItem('post_login_redirect', '/dashboard?tab=settings');
-                                window.location.href = '/auth';
-                              } catch (error) {
-                                toast({ title: "Erreur", description: "Impossible de déconnecter Gmail", variant: "destructive" });
-                              }
+                              // Supprimer les tokens Gmail existants puis rediriger vers /connect-gmail
+                              await supabase.from('gmail_tokens').delete().eq('user_id', user?.id);
+                              window.location.href = '/connect-gmail?returnTo=' + encodeURIComponent('/dashboard?tab=settings');
                             }}
                           >
                             <RefreshCw className="h-4 w-4 mr-2" />
@@ -287,8 +281,7 @@ export const Settings = () => {
                           size="sm"
                           className="w-fit"
                           onClick={() => {
-                            sessionStorage.setItem('post_login_redirect', '/dashboard?tab=settings');
-                            window.location.href = '/auth';
+                            window.location.href = '/connect-gmail?returnTo=' + encodeURIComponent('/dashboard?tab=settings');
                           }}
                         >
                           <Mail className="h-4 w-4 mr-2" />

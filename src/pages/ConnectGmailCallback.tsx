@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -9,17 +9,26 @@ const ConnectGmailCallback = () => {
   const navigate = useNavigate();
   const [status, setStatus] = useState<"processing" | "success" | "error">("processing");
   const [message, setMessage] = useState("Connexion Gmail en cours...");
+  const processedRef = useRef(false);
 
   useEffect(() => {
+    // Prevent double execution
+    if (processedRef.current) return;
+    processedRef.current = true;
+
     const handleCallback = async () => {
-      // Extraire les tokens du hash
+      // Get returnTo from sessionStorage
+      const returnTo = sessionStorage.getItem('gmail_connect_return_to') || '/dashboard';
+      sessionStorage.removeItem('gmail_connect_return_to');
+
+      // Extract tokens from hash
       const hash = window.location.hash;
       
       if (!hash || !hash.includes('access_token')) {
         console.error('[GmailCallback] No access token in hash');
         setStatus("error");
         setMessage("Erreur: tokens non trouvés dans la réponse");
-        setTimeout(() => navigate("/dashboard"), 3000);
+        setTimeout(() => navigate(returnTo, { replace: true }), 3000);
         return;
       }
 
@@ -38,110 +47,92 @@ const ConnectGmailCallback = () => {
         console.error('[GmailCallback] Error parsing hash:', parseError);
       }
 
+      // Clear the hash from URL
+      window.history.replaceState({}, '', window.location.pathname);
+
       if (!providerToken) {
         setStatus("error");
         setMessage("Erreur: token Gmail non reçu");
-        setTimeout(() => navigate("/dashboard"), 3000);
+        setTimeout(() => navigate(returnTo, { replace: true }), 3000);
         return;
       }
 
-      // Attendre que Supabase traite le callback OAuth
       setMessage("Vérification de la session...");
       
-      // Écouter les changements d'authentification
-      const { data: { subscription } } = supabase.auth.onAuthStateChange(
-        async (event, session) => {
-          console.log('[GmailCallback] Auth event:', event);
-          
-          if (session) {
-            setMessage("Stockage des tokens Gmail...");
-
-            try {
-              const { error } = await supabase.functions.invoke('store-gmail-tokens', {
-                headers: { Authorization: `Bearer ${session.access_token}` },
-                body: {
-                  provider_token: providerToken,
-                  provider_refresh_token: providerRefreshToken,
-                },
-              });
-
-              if (error) {
-                console.error('[GmailCallback] Error storing tokens:', error);
-                setStatus("error");
-                setMessage("Erreur lors du stockage des tokens");
-                toast.error("Erreur de connexion Gmail");
-              } else {
-                console.log('[GmailCallback] Tokens stored successfully');
-                setStatus("success");
-                setMessage("Gmail connecté avec succès !");
-                toast.success("Gmail connecté avec succès !");
-              }
-            } catch (err) {
-              console.error('[GmailCallback] Exception:', err);
-              setStatus("error");
-              setMessage("Erreur inattendue");
-            }
-
-            // Rediriger après un court délai
-            setTimeout(() => {
-              navigate("/dashboard", { replace: true });
-            }, 2000);
-          }
-        }
-      );
-
-      // Vérifier si une session existe déjà
+      // Wait for session to be available
       const { data: { session } } = await supabase.auth.getSession();
       
-      if (session && providerToken) {
-        // Session existante, stocker directement les tokens
-        setMessage("Stockage des tokens Gmail...");
-
-        try {
-          const { error } = await supabase.functions.invoke('store-gmail-tokens', {
-            headers: { Authorization: `Bearer ${session.access_token}` },
-            body: {
-              provider_token: providerToken,
-              provider_refresh_token: providerRefreshToken,
-            },
-          });
-
-          if (error) {
-            console.error('[GmailCallback] Error storing tokens:', error);
-            setStatus("error");
-            setMessage("Erreur lors du stockage des tokens");
-            toast.error("Erreur de connexion Gmail");
-          } else {
-            console.log('[GmailCallback] Tokens stored successfully');
-            setStatus("success");
-            setMessage("Gmail connecté avec succès !");
-            toast.success("Gmail connecté avec succès !");
+      if (!session) {
+        // Session might not be ready yet, wait for auth state change
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(
+          async (event, newSession) => {
+            console.log('[GmailCallback] Auth event:', event);
+            
+            if (newSession && providerToken) {
+              subscription.unsubscribe();
+              await storeTokensAndRedirect(newSession, providerToken, providerRefreshToken, returnTo);
+            }
           }
-        } catch (err) {
-          console.error('[GmailCallback] Exception:', err);
-          setStatus("error");
-          setMessage("Erreur inattendue");
-        }
+        );
 
+        // Timeout de sécurité
         setTimeout(() => {
-          navigate("/dashboard", { replace: true });
-        }, 2000);
+          subscription.unsubscribe();
+          if (status === "processing") {
+            setStatus("error");
+            setMessage("Délai dépassé, veuillez réessayer");
+            setTimeout(() => navigate(returnTo, { replace: true }), 2000);
+          }
+        }, 10000);
+      } else {
+        // Session already available
+        await storeTokensAndRedirect(session, providerToken, providerRefreshToken, returnTo);
+      }
+    };
+
+    const storeTokensAndRedirect = async (
+      session: any, 
+      providerToken: string, 
+      providerRefreshToken: string | null, 
+      returnTo: string
+    ) => {
+      setMessage("Stockage des tokens Gmail...");
+
+      try {
+        const { error } = await supabase.functions.invoke('store-gmail-tokens', {
+          headers: { Authorization: `Bearer ${session.access_token}` },
+          body: {
+            provider_token: providerToken,
+            provider_refresh_token: providerRefreshToken,
+          },
+        });
+
+        if (error) {
+          console.error('[GmailCallback] Error storing tokens:', error);
+          setStatus("error");
+          setMessage("Erreur lors du stockage des tokens");
+          toast.error("Erreur de connexion Gmail");
+        } else {
+          console.log('[GmailCallback] Tokens stored successfully');
+          setStatus("success");
+          setMessage("Gmail connecté avec succès !");
+          toast.success("Gmail connecté avec succès !");
+        }
+      } catch (err) {
+        console.error('[GmailCallback] Exception:', err);
+        setStatus("error");
+        setMessage("Erreur inattendue");
+        toast.error("Erreur inattendue");
       }
 
-      // Timeout de sécurité
+      // Redirect after a short delay
       setTimeout(() => {
-        if (status === "processing") {
-          setStatus("error");
-          setMessage("Délai dépassé, veuillez réessayer");
-          setTimeout(() => navigate("/dashboard"), 2000);
-        }
-      }, 10000);
-
-      return () => subscription.unsubscribe();
+        navigate(returnTo, { replace: true });
+      }, 2000);
     };
 
     handleCallback();
-  }, [navigate, status]);
+  }, [navigate]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">
@@ -164,7 +155,7 @@ const ConnectGmailCallback = () => {
         </p>
         <p className="text-sm text-muted-foreground">
           {status === "processing" && "Veuillez patienter..."}
-          {status === "success" && "Redirection vers le dashboard..."}
+          {status === "success" && "Redirection..."}
           {status === "error" && "Redirection..."}
         </p>
       </div>

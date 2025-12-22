@@ -24,8 +24,13 @@ const Index = () => {
 
   useEffect(() => {
     const tabFromUrl = searchParams.get("tab");
+    const emailsSectionFromUrl = searchParams.get("emailsSection");
     if (tabFromUrl) {
       setActiveTab(tabFromUrl);
+    }
+    // Store emailsSection for Emails component
+    if (emailsSectionFromUrl) {
+      sessionStorage.setItem('emails_initial_section', emailsSectionFromUrl);
     }
   }, [searchParams]);
 
