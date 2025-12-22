@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Search, Send, ChevronRight, Sparkles, Users } from "lucide-react";
@@ -12,6 +12,15 @@ interface EmailsProps {
 
 export const Emails = ({ onNavigateToTab }: EmailsProps) => {
   const [activeSection, setActiveSection] = useState<"search" | "compose" | "personalized">("search");
+
+  // Read initial section from sessionStorage (set by Index.tsx from URL params)
+  useEffect(() => {
+    const initialSection = sessionStorage.getItem('emails_initial_section');
+    if (initialSection && ['search', 'compose', 'personalized'].includes(initialSection)) {
+      setActiveSection(initialSection as "search" | "compose" | "personalized");
+      sessionStorage.removeItem('emails_initial_section');
+    }
+  }, []);
 
   return (
     <div className="space-y-6">

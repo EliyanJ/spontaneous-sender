@@ -54,9 +54,11 @@ import {
   Lightbulb,
   Save,
   Trash2,
-  FolderOpen
+  FolderOpen,
+  AlertCircle
 } from "lucide-react";
 import { GenerationOverlay } from "./GenerationOverlay";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 
 interface Company {
   id: string;
@@ -708,6 +710,37 @@ export const PersonalizedEmailsSection = () => {
       />
 
       <div className="space-y-6">
+        {/* Gmail Status */}
+        {!gmailConnected && (
+          <Alert variant="destructive" className="border-0 bg-destructive/10">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Gmail non connecté</AlertTitle>
+            <AlertDescription className="flex items-center gap-4">
+              <span>Connectez votre compte Gmail pour envoyer des emails personnalisés.</span>
+              <Button 
+                variant="default" 
+                size="sm"
+                onClick={() => {
+                  window.location.href = '/connect-gmail?returnTo=' + encodeURIComponent('/dashboard?tab=emails&emailsSection=personalized');
+                }}
+              >
+                <Mail className="mr-2 h-4 w-4" />
+                Connecter Gmail
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
+        
+        {gmailConnected && (
+          <Card className="bg-card/50 border-border">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
+                <CheckCircle className="h-4 w-4" />
+                <span className="font-medium">Gmail connecté</span>
+              </div>
+            </CardContent>
+          </Card>
+        )}
         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "setup" | "results")}>
           <TabsList className="bg-card/50 border border-border">
             <TabsTrigger value="setup" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Loader2, Mail, Shield, Check, X } from "lucide-react";
@@ -7,15 +7,15 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import cronosLogo from "@/assets/cronos-logo.png";
 
-let gmailAuthAttempted = false;
-
 const ConnectGmail = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [checking, setChecking] = useState(true);
 
+  const returnTo = searchParams.get("returnTo") || "/dashboard";
+
   useEffect(() => {
-    // Vérifier si l'utilisateur est connecté
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       
@@ -25,19 +25,8 @@ const ConnectGmail = () => {
         return;
       }
 
-      // Vérifier si Gmail est déjà connecté
-      const { data: tokens } = await supabase
-        .from("gmail_tokens")
-        .select("access_token, refresh_token")
-        .eq("user_id", session.user.id)
-        .maybeSingle();
-
-      if (tokens?.access_token && tokens?.refresh_token) {
-        toast.info("Gmail est déjà connecté");
-        navigate("/dashboard");
-        return;
-      }
-
+      // Ne pas auto-rediriger si Gmail est déjà connecté
+      // L'utilisateur peut vouloir "reconnecter" pour rafraîchir les tokens
       setChecking(false);
     };
 
@@ -45,11 +34,13 @@ const ConnectGmail = () => {
   }, [navigate]);
 
   const handleConnectGmail = async () => {
-    if (gmailAuthAttempted) return;
-    gmailAuthAttempted = true;
+    if (loading) return;
     setLoading(true);
 
     try {
+      // Stocker le returnTo pour le callback
+      sessionStorage.setItem('gmail_connect_return_to', returnTo);
+      
       const redirectUrl = `${window.location.origin}/connect-gmail/callback`;
       console.log('[ConnectGmail] Starting Gmail OAuth with redirect:', redirectUrl);
 
@@ -57,7 +48,7 @@ const ConnectGmail = () => {
         provider: 'google',
         options: {
           redirectTo: redirectUrl,
-          scopes: 'https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/gmail.readonly',
+          scopes: 'https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/gmail.modify',
           queryParams: {
             access_type: 'offline',
             prompt: 'consent',
@@ -68,19 +59,18 @@ const ConnectGmail = () => {
       if (error) {
         console.error('[ConnectGmail] OAuth error:', error);
         toast.error(error.message);
-        gmailAuthAttempted = false;
+        setLoading(false);
       }
+      // Si pas d'erreur, l'utilisateur est redirigé vers Google
     } catch (error: any) {
       console.error('[ConnectGmail] Exception:', error);
       toast.error(error.message || "Une erreur est survenue");
-      gmailAuthAttempted = false;
-    } finally {
       setLoading(false);
     }
   };
 
   const handleCancel = () => {
-    navigate("/dashboard");
+    navigate(returnTo);
   };
 
   if (checking) {
