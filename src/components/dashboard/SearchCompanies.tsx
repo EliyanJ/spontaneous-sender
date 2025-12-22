@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -6,6 +6,8 @@ import { AISearchMode } from "./search/AISearchMode";
 import { ManualSearchMode } from "./search/ManualSearchMode";
 import { SearchFiltersStep } from "./search/SearchFiltersStep";
 import { SearchResultsStep } from "./search/SearchResultsStep";
+import { JobProgressCard } from "./JobProgressCard";
+import { useJobQueue } from "@/hooks/useJobQueue";
 import { Sparkles, Grid3X3 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -31,7 +33,7 @@ interface Company {
 }
 
 type SearchMode = "ai" | "manual";
-type SearchStep = "select" | "filters" | "results";
+type SearchStep = "select" | "filters" | "results" | "processing";
 
 interface SearchCompaniesProps {
   onNavigateToTab?: (tab: string) => void;
@@ -48,6 +50,22 @@ export const SearchCompanies = ({ onNavigateToTab }: SearchCompaniesProps = {}) 
   const [villes, setVilles] = useState<string[]>([]);
   const [minResults, setMinResults] = useState("20");
   const [minEmployees, setMinEmployees] = useState("5-100");
+
+  // Job queue hook
+  const handleJobComplete = useCallback((job: any) => {
+    // Auto-redirect to results when job completes
+    if (job.results && job.results.length > 0) {
+      setCompanies(job.results);
+      setStep("results");
+    }
+  }, []);
+
+  const { currentJob, isLoading: jobLoading, createJob, subscribeToJob, unsubscribe } = useJobQueue(handleJobComplete);
+
+  // Cleanup subscription on unmount
+  useEffect(() => {
+    return () => unsubscribe();
+  }, [unsubscribe]);
 
   const handleSectorsValidated = (codes: string[]) => {
     setSelectedCodes(codes);
@@ -79,6 +97,7 @@ export const SearchCompanies = ({ onNavigateToTab }: SearchCompaniesProps = {}) 
         return;
       }
 
+      // Step 1: Fetch companies from API (quick search)
       const allResults: Company[] = [];
       const codesToSearch = selectedCodes.length > 0 ? selectedCodes : [''];
 
@@ -116,9 +135,35 @@ export const SearchCompanies = ({ onNavigateToTab }: SearchCompaniesProps = {}) 
         new Map(allResults.map(c => [c.siren, c])).values()
       ).slice(0, minResultsNum);
 
-      setCompanies(uniqueResults);
-      setStep("results");
-      toast.success(`${uniqueResults.length} entreprise(s) trouvée(s)`);
+      if (uniqueResults.length === 0) {
+        toast.error("Aucune entreprise trouvée");
+        setLoading(false);
+        return;
+      }
+
+      // Step 2: Create job in queue for further processing (emails, websites)
+      const searchParams = {
+        selectedCodes,
+        villes,
+        minResults: minResultsNum,
+        minEmployees,
+      };
+
+      const jobId = await createJob(uniqueResults, searchParams);
+      
+      if (jobId) {
+        subscribeToJob(jobId);
+        setStep("processing");
+        
+        // Trigger the worker to start processing
+        supabase.functions.invoke('job-worker', { body: {} }).catch(console.error);
+      } else {
+        // Fallback: show results directly if job creation fails
+        setCompanies(uniqueResults);
+        setStep("results");
+      }
+
+      toast.success(`${uniqueResults.length} entreprise(s) trouvée(s), traitement en cours...`);
 
     } catch (error) {
       console.error('Erreur recherche:', error);
@@ -286,6 +331,20 @@ export const SearchCompanies = ({ onNavigateToTab }: SearchCompaniesProps = {}) 
             onSearch={handleSearch}
             onBack={handleBackToSelect}
           />
+        )}
+
+        {step === "processing" && currentJob && (
+          <div className="max-w-2xl mx-auto animate-fade-in">
+            <JobProgressCard 
+              job={currentJob} 
+              onViewResults={() => {
+                if (currentJob.results && currentJob.results.length > 0) {
+                  setCompanies(currentJob.results);
+                }
+                setStep("results");
+              }}
+            />
+          </div>
         )}
 
         {step === "results" && (

@@ -143,6 +143,42 @@ export type Database = {
         }
         Relationships: []
       }
+      company_blacklist: {
+        Row: {
+          blacklist_reason: Database["public"]["Enums"]["blacklist_reason"]
+          company_name: string | null
+          company_siren: string
+          created_at: string
+          expires_at: string | null
+          hit_count: number
+          id: string
+          is_permanent: boolean
+          updated_at: string
+        }
+        Insert: {
+          blacklist_reason: Database["public"]["Enums"]["blacklist_reason"]
+          company_name?: string | null
+          company_siren: string
+          created_at?: string
+          expires_at?: string | null
+          hit_count?: number
+          id?: string
+          is_permanent?: boolean
+          updated_at?: string
+        }
+        Update: {
+          blacklist_reason?: Database["public"]["Enums"]["blacklist_reason"]
+          company_name?: string | null
+          company_siren?: string
+          created_at?: string
+          expires_at?: string | null
+          hit_count?: number
+          id?: string
+          is_permanent?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
       email_campaigns: {
         Row: {
           attachments: Json | null
@@ -415,6 +451,69 @@ export type Database = {
           expires_at?: string | null
           history_id?: string | null
           last_check_at?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      job_queue: {
+        Row: {
+          company_sirens: string[]
+          completed_at: string | null
+          created_at: string
+          error_count: number
+          errors: Json | null
+          id: string
+          is_premium: boolean
+          priority: number
+          processed_count: number
+          results: Json | null
+          search_params: Json
+          skipped_count: number
+          started_at: string | null
+          status: Database["public"]["Enums"]["job_status"]
+          success_count: number
+          total_count: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          company_sirens?: string[]
+          completed_at?: string | null
+          created_at?: string
+          error_count?: number
+          errors?: Json | null
+          id?: string
+          is_premium?: boolean
+          priority?: number
+          processed_count?: number
+          results?: Json | null
+          search_params: Json
+          skipped_count?: number
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["job_status"]
+          success_count?: number
+          total_count?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          company_sirens?: string[]
+          completed_at?: string | null
+          created_at?: string
+          error_count?: number
+          errors?: Json | null
+          id?: string
+          is_premium?: boolean
+          priority?: number
+          processed_count?: number
+          results?: Json | null
+          search_params?: Json
+          skipped_count?: number
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["job_status"]
+          success_count?: number
+          total_count?: number
           updated_at?: string
           user_id?: string
         }
@@ -697,10 +796,21 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      add_to_blacklist: {
+        Args: {
+          p_name: string
+          p_permanent?: boolean
+          p_reason: Database["public"]["Enums"]["blacklist_reason"]
+          p_siren: string
+        }
+        Returns: undefined
+      }
       cleanup_old_rate_limits: { Args: never; Returns: undefined }
+      is_company_blacklisted: { Args: { p_siren: string }; Returns: boolean }
     }
     Enums: {
-      [_ in never]: never
+      blacklist_reason: "no_email_found" | "api_error" | "invalid_company"
+      job_status: "pending" | "processing" | "completed" | "failed"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -827,6 +937,9 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      blacklist_reason: ["no_email_found", "api_error", "invalid_company"],
+      job_status: ["pending", "processing", "completed", "failed"],
+    },
   },
 } as const
