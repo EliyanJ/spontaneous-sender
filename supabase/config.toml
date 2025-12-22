@@ -53,3 +53,6 @@ verify_jwt = false
 
 [functions.check-email-bounces]
 verify_jwt = false
+
+[functions.job-worker]
+verify_jwt = false
