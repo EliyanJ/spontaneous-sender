@@ -76,12 +76,7 @@ export const AuthDialog = ({ open, onOpenChange }: AuthDialogProps) => {
         provider: 'google',
         options: {
           redirectTo: `${window.location.origin}/auth`,
-          scopes: 'https://www.googleapis.com/auth/gmail.send',
-          queryParams: {
-            access_type: 'offline',
-            prompt: 'consent',
-          },
-          // Pas de skipBrowserRedirect - Supabase redirige automatiquement dans le même onglet
+          // Pas de scopes Gmail - connexion simple uniquement
         },
       });
 
@@ -89,8 +84,6 @@ export const AuthDialog = ({ open, onOpenChange }: AuthDialogProps) => {
         console.error('OAuth error:', error);
         toast.error(error.message || "Erreur lors de la connexion Google");
       }
-      
-      // Pas besoin de gérer data.url, Supabase redirige automatiquement
     } catch (error: any) {
       console.error('OAuth error:', error);
       toast.error(error?.message || "Erreur lors de la connexion Google");

@@ -36,24 +36,7 @@ const Auth = () => {
       sessionStorage.setItem("post_login_redirect", nextPath);
     }
 
-    // ========== CRITICAL: Extraire les tokens du hash IMMÉDIATEMENT ==========
     const hash = window.location.hash;
-    let providerTokenFromHash: string | null = null;
-    let providerRefreshTokenFromHash: string | null = null;
-    
-    if (hash && hash.includes('access_token')) {
-      try {
-        const hashParams = new URLSearchParams(hash.substring(1));
-        providerTokenFromHash = hashParams.get('provider_token');
-        providerRefreshTokenFromHash = hashParams.get('provider_refresh_token');
-        
-        console.log('[Auth] === Gmail Token Extraction ===');
-        console.log('[Auth] provider_token present:', !!providerTokenFromHash);
-        console.log('[Auth] provider_refresh_token present:', !!providerRefreshTokenFromHash);
-      } catch (parseError) {
-        console.error('[Auth] Error parsing hash params:', parseError);
-      }
-    }
 
     // ========== Écouter les changements d'authentification ==========
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -62,45 +45,12 @@ const Auth = () => {
         
         if (event === 'SIGNED_IN' && session) {
           setStatusMessage("Connexion réussie...");
+          toast.success("Connexion réussie !");
           
-          // Stocker les tokens Gmail si présents
-          if (providerTokenFromHash) {
-            setStatusMessage("Configuration Gmail...");
-            console.log('[Auth] Storing Gmail tokens...');
-            
-            // Utiliser setTimeout pour éviter le deadlock Supabase
-            setTimeout(async () => {
-              try {
-                const { data, error } = await supabase.functions.invoke('store-gmail-tokens', {
-                  headers: { Authorization: `Bearer ${session.access_token}` },
-                  body: {
-                    provider_token: providerTokenFromHash,
-                    provider_refresh_token: providerRefreshTokenFromHash,
-                  },
-                });
-
-                if (error) {
-                  console.error('[Auth] Error storing Gmail tokens:', error);
-                  toast.error("Erreur configuration Gmail");
-                } else {
-                  console.log('[Auth] Gmail tokens stored:', data);
-                  toast.success("Connexion Google et Gmail réussie !");
-                }
-              } catch (err) {
-                console.error('[Auth] Exception storing tokens:', err);
-              }
-              
-              // Rediriger après stockage des tokens
-              const returnPath = sessionStorage.getItem("post_login_redirect") || "/dashboard";
-              sessionStorage.removeItem("post_login_redirect");
-              navigate(decodeReturnPath(returnPath), { replace: true });
-            }, 100);
-          } else {
-            toast.success("Connexion réussie !");
-            const returnPath = sessionStorage.getItem("post_login_redirect") || "/dashboard";
-            sessionStorage.removeItem("post_login_redirect");
-            navigate(decodeReturnPath(returnPath), { replace: true });
-          }
+          // Redirection simple - pas de stockage de tokens Gmail ici
+          const returnPath = sessionStorage.getItem("post_login_redirect") || "/dashboard";
+          sessionStorage.removeItem("post_login_redirect");
+          navigate(decodeReturnPath(returnPath), { replace: true });
         }
       }
     );
@@ -164,11 +114,7 @@ const Auth = () => {
           provider: 'google',
           options: {
             redirectTo: redirectUrl,
-            scopes: 'https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/gmail.readonly',
-            queryParams: {
-              access_type: 'offline',
-              prompt: 'consent',
-            },
+            // Pas de scopes Gmail - connexion simple
           },
         });
 

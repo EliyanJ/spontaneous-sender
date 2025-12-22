@@ -8,6 +8,8 @@ import Index from "./pages/Index";
 import Landing from "./pages/Landing";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
+import ConnectGmail from "./pages/ConnectGmail";
+import ConnectGmailCallback from "./pages/ConnectGmailCallback";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import PrivacyPolicyEn from "./pages/PrivacyPolicyEn";
 import TermsOfService from "./pages/TermsOfService";
@@ -27,6 +29,8 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Landing />} />
           <Route path="/auth" element={<Auth />} />
+          <Route path="/connect-gmail" element={<ProtectedRoute><ConnectGmail /></ProtectedRoute>} />
+          <Route path="/connect-gmail/callback" element={<ConnectGmailCallback />} />
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
           <Route path="/privacy-policy-en" element={<PrivacyPolicyEn />} />
           <Route path="/terms-of-service" element={<TermsOfService />} />
