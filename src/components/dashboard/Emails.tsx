@@ -40,18 +40,21 @@ export const Emails = ({ onNavigateToTab }: EmailsProps) => {
       </div>
 
       <Tabs value={activeSection} onValueChange={(v) => setActiveSection(v as "search" | "compose" | "personalized")}>
-        <TabsList className="bg-card/50 border border-border">
-          <TabsTrigger value="search" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-            <Users className="h-4 w-4" />
-            Trouver des contacts
+        <TabsList className="bg-card/50 border border-border w-full flex-wrap h-auto gap-1 p-1">
+          <TabsTrigger value="search" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground flex-1 min-w-fit text-xs sm:text-sm">
+            <Users className="h-4 w-4 shrink-0" />
+            <span className="hidden sm:inline">Trouver des contacts</span>
+            <span className="sm:hidden">Contacts</span>
           </TabsTrigger>
-          <TabsTrigger value="compose" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-            <Send className="h-4 w-4" />
-            Email manuel
+          <TabsTrigger value="compose" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground flex-1 min-w-fit text-xs sm:text-sm">
+            <Send className="h-4 w-4 shrink-0" />
+            <span className="hidden sm:inline">Email manuel</span>
+            <span className="sm:hidden">Manuel</span>
           </TabsTrigger>
-          <TabsTrigger value="personalized" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-            <Sparkles className="h-4 w-4" />
-            Email IA personnalisé
+          <TabsTrigger value="personalized" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground flex-1 min-w-fit text-xs sm:text-sm">
+            <Sparkles className="h-4 w-4 shrink-0" />
+            <span className="hidden sm:inline">Email IA personnalisé</span>
+            <span className="sm:hidden">IA</span>
           </TabsTrigger>
         </TabsList>
 
