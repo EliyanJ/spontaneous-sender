@@ -630,6 +630,36 @@ export type Database = {
         }
         Relationships: []
       }
+      user_activity_logs: {
+        Row: {
+          action_data: Json | null
+          action_type: string
+          created_at: string | null
+          duration_ms: number | null
+          id: string
+          session_id: string
+          user_id: string
+        }
+        Insert: {
+          action_data?: Json | null
+          action_type: string
+          created_at?: string | null
+          duration_ms?: number | null
+          id?: string
+          session_id: string
+          user_id: string
+        }
+        Update: {
+          action_data?: Json | null
+          action_type?: string
+          created_at?: string | null
+          duration_ms?: number | null
+          id?: string
+          session_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_company_blacklist: {
         Row: {
           company_siren: string
@@ -791,6 +821,30 @@ export type Database = {
         }
         Relationships: []
       }
+      user_roles: {
+        Row: {
+          created_at: string | null
+          granted_by: string | null
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          granted_by?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          granted_by?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -806,9 +860,17 @@ export type Database = {
         Returns: undefined
       }
       cleanup_old_rate_limits: { Args: never; Returns: undefined }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
       is_company_blacklisted: { Args: { p_siren: string }; Returns: boolean }
     }
     Enums: {
+      app_role: "admin" | "support" | "analyst" | "user"
       blacklist_reason: "no_email_found" | "api_error" | "invalid_company"
       job_status: "pending" | "processing" | "completed" | "failed"
     }
@@ -938,6 +1000,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      app_role: ["admin", "support", "analyst", "user"],
       blacklist_reason: ["no_email_found", "api_error", "invalid_company"],
       job_status: ["pending", "processing", "completed", "failed"],
     },
