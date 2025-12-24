@@ -521,33 +521,48 @@ export type Database = {
       }
       profiles: {
         Row: {
+          age: number | null
           created_at: string | null
           cv_content: string | null
           education: string | null
+          education_level: string | null
+          first_name: string | null
           full_name: string | null
           id: string
+          last_name: string | null
           linkedin_url: string | null
           phone: string | null
+          terms_accepted_at: string | null
           updated_at: string | null
         }
         Insert: {
+          age?: number | null
           created_at?: string | null
           cv_content?: string | null
           education?: string | null
+          education_level?: string | null
+          first_name?: string | null
           full_name?: string | null
           id: string
+          last_name?: string | null
           linkedin_url?: string | null
           phone?: string | null
+          terms_accepted_at?: string | null
           updated_at?: string | null
         }
         Update: {
+          age?: number | null
           created_at?: string | null
           cv_content?: string | null
           education?: string | null
+          education_level?: string | null
+          first_name?: string | null
           full_name?: string | null
           id?: string
+          last_name?: string | null
           linkedin_url?: string | null
           phone?: string | null
+          terms_accepted_at?: string | null
           updated_at?: string | null
         }
         Relationships: []
@@ -623,6 +638,48 @@ export type Database = {
           recipients?: string[]
           scheduled_for?: string
           sent_at?: string | null
+          status?: string
+          subject?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      support_tickets: {
+        Row: {
+          admin_response: string | null
+          created_at: string
+          current_page: string | null
+          description: string
+          id: string
+          responded_at: string | null
+          screenshot_url: string | null
+          status: string
+          subject: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          admin_response?: string | null
+          created_at?: string
+          current_page?: string | null
+          description: string
+          id?: string
+          responded_at?: string | null
+          screenshot_url?: string | null
+          status?: string
+          subject: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          admin_response?: string | null
+          created_at?: string
+          current_page?: string | null
+          description?: string
+          id?: string
+          responded_at?: string | null
+          screenshot_url?: string | null
           status?: string
           subject?: string
           updated_at?: string
