@@ -75,7 +75,7 @@ export const AISearchMode = ({ onSectorsValidated }: AISearchModeProps) => {
   };
 
   return (
-    <div className="max-w-3xl mx-auto space-y-8">
+    <div className="max-w-3xl mx-auto space-y-6 sm:space-y-8 px-2 sm:px-0">
       {/* Search Bar - Centered OpenAI style */}
       <div className="space-y-4">
         <div className="text-center space-y-2">
@@ -83,28 +83,28 @@ export const AISearchMode = ({ onSectorsValidated }: AISearchModeProps) => {
             <Sparkles className="h-5 w-5" />
             <span className="text-sm font-medium">Recherche IA intelligente</span>
           </div>
-          <p className="text-muted-foreground text-sm">
+          <p className="text-muted-foreground text-xs sm:text-sm">
             Tapez un domaine et l'IA sélectionnera automatiquement des secteurs diversifiés
           </p>
         </div>
 
-        <div className="flex gap-3">
+        <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
           <div className="relative flex-1">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+            <Search className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 h-4 sm:h-5 w-4 sm:w-5 text-muted-foreground" />
             <Input
-              placeholder="Ex: marketing, finance, développement web, RH..."
+              placeholder="Ex: marketing, finance, RH..."
               value={keyword}
               onChange={(e) => setKeyword(e.target.value)}
               onKeyDown={handleKeyDown}
               disabled={isLoading}
-              className="pl-12 h-14 text-lg bg-card border-border/50 focus:border-primary/50 rounded-xl"
+              className="pl-10 sm:pl-12 h-12 sm:h-14 text-base sm:text-lg bg-card border-border/50 focus:border-primary/50 rounded-xl"
             />
           </div>
           <Button 
             onClick={handleSearch} 
             size="lg" 
             disabled={isLoading || !keyword.trim()}
-            className="h-14 px-8 btn-premium rounded-xl"
+            className="h-12 sm:h-14 px-6 sm:px-8 btn-premium rounded-xl whitespace-nowrap shrink-0"
             tabIndex={isLoading ? -1 : 0}
           >
             {isLoading ? (

@@ -194,10 +194,10 @@ export const JobOffers = () => {
       </div>
 
       <Tabs defaultValue="search" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="search">Recherche d'offres</TabsTrigger>
-          <TabsTrigger value="career-sites">Sites carrières</TabsTrigger>
-          <TabsTrigger value="contact-forms">Formulaires de contact</TabsTrigger>
+        <TabsList className="w-full overflow-x-auto scrollbar-hide flex">
+          <TabsTrigger value="search" className="flex-1 shrink-0 text-xs sm:text-sm whitespace-nowrap px-2 sm:px-4">Offres</TabsTrigger>
+          <TabsTrigger value="career-sites" className="flex-1 shrink-0 text-xs sm:text-sm whitespace-nowrap px-2 sm:px-4">Carrières</TabsTrigger>
+          <TabsTrigger value="contact-forms" className="flex-1 shrink-0 text-xs sm:text-sm whitespace-nowrap px-2 sm:px-4">Formulaires</TabsTrigger>
         </TabsList>
 
         <TabsContent value="search" className="space-y-6 mt-6">

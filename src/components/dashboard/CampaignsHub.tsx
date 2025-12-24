@@ -205,18 +205,18 @@ export const CampaignsHub = () => {
       </div>
 
       <Tabs value={filter} onValueChange={(v) => setFilter(v as any)}>
-        <TabsList className="bg-card/50 border border-border">
-          <TabsTrigger value="all" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-            Toutes ({campaigns.length})
+        <TabsList className="bg-card/50 border border-border overflow-x-auto scrollbar-hide flex w-full">
+          <TabsTrigger value="all" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground shrink-0 text-xs sm:text-sm px-2 sm:px-3 whitespace-nowrap">
+            Toutes <span className="hidden sm:inline">({campaigns.length})</span>
           </TabsTrigger>
-          <TabsTrigger value="pending" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-            Relances ({pendingCampaigns.length})
+          <TabsTrigger value="pending" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground shrink-0 text-xs sm:text-sm px-2 sm:px-3 whitespace-nowrap">
+            Relances <span className="hidden sm:inline">({pendingCampaigns.length})</span>
           </TabsTrigger>
-          <TabsTrigger value="responded" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-            Réponses ({respondedCampaigns.length})
+          <TabsTrigger value="responded" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground shrink-0 text-xs sm:text-sm px-2 sm:px-3 whitespace-nowrap">
+            Réponses <span className="hidden sm:inline">({respondedCampaigns.length})</span>
           </TabsTrigger>
-          <TabsTrigger value="scheduled" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-            Programmés ({scheduledEmails.length})
+          <TabsTrigger value="scheduled" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground shrink-0 text-xs sm:text-sm px-2 sm:px-3 whitespace-nowrap">
+            Programmés <span className="hidden sm:inline">({scheduledEmails.length})</span>
           </TabsTrigger>
         </TabsList>
 
