@@ -1,6 +1,7 @@
 import { useRef, useCallback, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import type { Json } from "@/integrations/supabase/types";
 
 type ActionType = 
   | 'session_start'
@@ -20,10 +21,6 @@ type ActionType =
   | 'page_view'
   | 'error';
 
-interface ActionData {
-  [key: string]: string | number | boolean | null | undefined | object;
-}
-
 export const useActivityTracking = () => {
   const { user } = useAuth();
   const sessionId = useRef<string>(crypto.randomUUID());
@@ -31,7 +28,7 @@ export const useActivityTracking = () => {
 
   const trackAction = useCallback(async (
     actionType: ActionType | string,
-    actionData?: ActionData,
+    actionData?: Record<string, string | number | boolean | null>,
     durationMs?: number
   ) => {
     if (!user) return;
@@ -41,7 +38,7 @@ export const useActivityTracking = () => {
         user_id: user.id,
         session_id: sessionId.current,
         action_type: actionType,
-        action_data: actionData || null,
+        action_data: (actionData as Json) || null,
         duration_ms: durationMs || null
       }]);
 
