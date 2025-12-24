@@ -18,8 +18,7 @@ const translations = {
     canDoTitle: "Ce que Cronos pourra faire :",
     canDo: [
       "Envoyer des emails de prospection en votre nom",
-      "Consulter vos emails pour détecter les réponses",
-      "Marquer des emails comme lus"
+      "Voir votre profil Gmail (adresse email et informations publiques)"
     ],
     cantDoTitle: "Ce que Cronos ne fera PAS :",
     cantDo: [
@@ -40,8 +39,7 @@ const translations = {
     canDoTitle: "What Cronos can do:",
     canDo: [
       "Send prospecting emails on your behalf",
-      "Read your emails to detect responses",
-      "Mark emails as read"
+      "View your Gmail profile (email address and public info)"
     ],
     cantDoTitle: "What Cronos will NOT do:",
     cantDo: [
