@@ -10,7 +10,9 @@ import { CampaignsHub } from "@/components/dashboard/CampaignsHub";
 import { Settings } from "@/components/dashboard/Settings";
 import { Pipeline } from "@/components/dashboard/Pipeline";
 import { HorizontalNav } from "@/components/HorizontalNav";
+import { MobileNav } from "@/components/MobileNav";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { useIsMobile } from "@/hooks/use-mobile";
 import cronosLogo from "@/assets/cronos-logo.png";
 
 const Index = () => {
@@ -19,6 +21,7 @@ const Index = () => {
   const [isDark, setIsDark] = useState(true);
   const [slideDirection, setSlideDirection] = useState<"left" | "right">("right");
   const prevTabRef = useRef(activeTab);
+  const isMobile = useIsMobile();
 
   const tabOrder = ["search", "entreprises", "emails", "campaigns", "jobs", "suivi", "settings"];
 
@@ -125,24 +128,38 @@ const Index = () => {
       {/* Fixed Header */}
       <header className="sticky top-0 z-50 w-full border-b border-border/50 bg-background/80 backdrop-blur-xl">
         <div className="container mx-auto px-2 sm:px-4 h-14 sm:h-16 flex items-center justify-between gap-2">
+          {/* Mobile Menu */}
+          {isMobile && (
+            <MobileNav 
+              activeTab={activeTab} 
+              onTabChange={handleTabChange} 
+              isDark={isDark}
+              onToggleTheme={() => setIsDark(!isDark)}
+            />
+          )}
+
           {/* Logo */}
           <div className="flex items-center gap-2 shrink-0">
             <img src={cronosLogo} alt="Cronos" className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg" />
-            <span className="font-semibold text-foreground hidden md:inline">Cronos</span>
+            <span className="font-semibold text-foreground hidden sm:inline">Cronos</span>
           </div>
 
-          {/* Navigation */}
-          <HorizontalNav activeTab={activeTab} onTabChange={handleTabChange} />
+          {/* Navigation - Desktop only */}
+          {!isMobile && (
+            <HorizontalNav activeTab={activeTab} onTabChange={handleTabChange} />
+          )}
 
-          {/* Theme Toggle */}
-          <div className="shrink-0">
-            <ThemeToggle isDark={isDark} onToggle={() => setIsDark(!isDark)} />
-          </div>
+          {/* Theme Toggle - Desktop only */}
+          {!isMobile && (
+            <div className="shrink-0">
+              <ThemeToggle isDark={isDark} onToggle={() => setIsDark(!isDark)} />
+            </div>
+          )}
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 pb-20 flex-1 overflow-x-hidden">
+      <main className="container mx-auto px-3 sm:px-4 py-3 sm:py-6 pb-4 flex-1 overflow-x-hidden">
         <div 
           key={activeTab}
           className={slideDirection === "right" ? "animate-slide-in-right" : "animate-slide-in-left"}
@@ -151,23 +168,20 @@ const Index = () => {
         </div>
       </main>
 
-      {/* Footer */}
+      {/* Footer - Compact on mobile */}
       <footer className="border-t border-border/50 bg-card/30 backdrop-blur-sm mt-auto">
-        <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6">
-          <div className="flex flex-col items-center gap-4">
+        <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4">
+          <div className="flex flex-col items-center gap-2 sm:gap-4">
             <div className="flex items-center gap-2">
-              <img src={cronosLogo} alt="Cronos" className="h-5 w-5" />
-              <span className="font-display font-semibold text-foreground">Cronos</span>
+              <img src={cronosLogo} alt="Cronos" className="h-4 w-4 sm:h-5 sm:w-5" />
+              <span className="font-display font-semibold text-foreground text-sm sm:text-base">Cronos</span>
             </div>
-            <div className="flex flex-wrap justify-center gap-3 sm:gap-4 md:gap-6 text-xs sm:text-sm text-muted-foreground">
+            <div className="flex flex-wrap justify-center gap-2 sm:gap-4 md:gap-6 text-[10px] sm:text-sm text-muted-foreground">
               <a href="/privacy-policy" className="hover:text-primary transition-colors duration-300">Confidentialité</a>
-              <a href="/privacy-policy-en" className="hover:text-primary transition-colors duration-300">Privacy</a>
               <a href="/terms-of-service" className="hover:text-primary transition-colors duration-300">Conditions</a>
-              <a href="/terms-of-service-en" className="hover:text-primary transition-colors duration-300">Terms</a>
               <a href="/mentions-legales" className="hover:text-primary transition-colors duration-300">Mentions légales</a>
-              <a href="/legal-notice" className="hover:text-primary transition-colors duration-300">Legal Notice</a>
             </div>
-            <p className="text-xs sm:text-sm text-muted-foreground">© 2025 Cronos</p>
+            <p className="text-[10px] sm:text-sm text-muted-foreground">© 2025 Cronos</p>
           </div>
         </div>
       </footer>

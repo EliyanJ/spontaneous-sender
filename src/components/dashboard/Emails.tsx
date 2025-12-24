@@ -40,21 +40,21 @@ export const Emails = ({ onNavigateToTab }: EmailsProps) => {
       </div>
 
       <Tabs value={activeSection} onValueChange={(v) => setActiveSection(v as "search" | "compose" | "personalized")}>
-        <TabsList className="bg-card/50 border border-border w-full flex-wrap h-auto gap-1 p-1">
-          <TabsTrigger value="search" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground flex-1 min-w-fit text-xs sm:text-sm">
-            <Users className="h-4 w-4 shrink-0" />
-            <span className="hidden sm:inline">Trouver des contacts</span>
-            <span className="sm:hidden">Contacts</span>
+        <TabsList className="bg-card/50 border border-border w-full h-auto p-1 overflow-x-auto scrollbar-hide flex">
+          <TabsTrigger value="search" className="gap-1.5 sm:gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground flex-1 min-w-fit text-xs sm:text-sm px-2 sm:px-3 shrink-0 whitespace-nowrap">
+            <Users className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
+            <span className="hidden xs:inline sm:hidden">Contacts</span>
+            <span className="xs:hidden sm:inline">Contacts</span>
           </TabsTrigger>
-          <TabsTrigger value="compose" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground flex-1 min-w-fit text-xs sm:text-sm">
-            <Send className="h-4 w-4 shrink-0" />
-            <span className="hidden sm:inline">Email manuel</span>
-            <span className="sm:hidden">Manuel</span>
+          <TabsTrigger value="compose" className="gap-1.5 sm:gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground flex-1 min-w-fit text-xs sm:text-sm px-2 sm:px-3 shrink-0 whitespace-nowrap">
+            <Send className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
+            <span className="hidden xs:inline sm:hidden">Manuel</span>
+            <span className="xs:hidden sm:inline">Manuel</span>
           </TabsTrigger>
-          <TabsTrigger value="personalized" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground flex-1 min-w-fit text-xs sm:text-sm">
-            <Sparkles className="h-4 w-4 shrink-0" />
-            <span className="hidden sm:inline">Email IA personnalisé</span>
-            <span className="sm:hidden">IA</span>
+          <TabsTrigger value="personalized" className="gap-1.5 sm:gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground flex-1 min-w-fit text-xs sm:text-sm px-2 sm:px-3 shrink-0 whitespace-nowrap">
+            <Sparkles className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
+            <span className="hidden xs:inline sm:hidden">IA</span>
+            <span className="xs:hidden sm:inline">IA</span>
           </TabsTrigger>
         </TabsList>
 
