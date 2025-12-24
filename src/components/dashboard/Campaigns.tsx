@@ -42,9 +42,13 @@ export const Campaigns = () => {
 
   const loadUserPreferences = async () => {
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
       const { data, error } = await supabase
         .from('user_preferences')
         .select('follow_up_delay_days')
+        .eq('user_id', user.id)
         .single();
 
       if (error) throw error;
@@ -58,9 +62,16 @@ export const Campaigns = () => {
 
   const loadCampaigns = async () => {
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setLoading(false);
+        return;
+      }
+
       let query = supabase
         .from('email_campaigns')
         .select('*')
+        .eq('user_id', user.id)
         .order('sent_at', { ascending: false });
 
       if (filter === 'pending') {
