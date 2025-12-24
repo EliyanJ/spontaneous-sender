@@ -132,23 +132,21 @@ serve(async (req) => {
         }
 
         // Step 2: Generate personalized email using AI
-        const systemPrompt = `Tu es un expert en rédaction d'emails de candidature spontanée personnalisés et professionnels.
+        const systemPrompt = `Tu es un expert en rédaction d'emails de candidature spontanée.
 
 RÈGLES STRICTES:
 - Écris UNIQUEMENT l'email, sans introduction ni explication
-- L'email doit être authentique, pas générique
-- Mentionne des éléments SPÉCIFIQUES de l'entreprise trouvés dans les informations fournies
-- Si aucune info spécifique n'est disponible, utilise le secteur d'activité (${company.libelle_ape || 'non spécifié'})
-- L'email doit être concis (200-300 mots max)
-- Utilise un ton professionnel mais chaleureux
-- Ne commence JAMAIS par "Madame, Monsieur" - trouve une accroche originale
-- Fais le lien entre les compétences du candidat et les besoins de l'entreprise
-- Termine par une invitation à un échange
+- Email COURT: 100-150 mots maximum
+- Mentionne des éléments SPÉCIFIQUES de l'entreprise
+- Ne laisse AUCUN placeholder [XXX] - personnalise tout
+- Ton professionnel mais direct
+- Une seule accroche percutante, pas de formule bateau
+- Termine par une invitation simple à échanger
 
 FORMAT DE SORTIE:
-Sujet: [ligne d'objet percutante]
+Sujet: [ligne d'objet courte et percutante]
 
-[corps de l'email]`;
+[corps de l'email - 100-150 mots max]`;
 
         const userPrompt = `ENTREPRISE CIBLE:
 - Nom: ${company.nom}

@@ -8,6 +8,7 @@ import Index from "./pages/Index";
 import Landing from "./pages/Landing";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
+import Register from "./pages/Register";
 import ConnectGmail from "./pages/ConnectGmail";
 import ConnectGmailCallback from "./pages/ConnectGmailCallback";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
@@ -18,6 +19,7 @@ import LegalNotice from "./pages/LegalNotice";
 import LegalNoticeEn from "./pages/LegalNoticeEn";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { AdminRoute } from "./components/AdminRoute";
+import { HelpBubble } from "./components/HelpBubble";
 import { 
   AdminLayout, 
   AdminDashboard, 
@@ -27,6 +29,7 @@ import {
   AdminActivity, 
   AdminTeam 
 } from "./pages/Admin";
+import AdminTickets from "./pages/Admin/AdminTickets";
 
 const queryClient = new QueryClient();
 
@@ -39,6 +42,7 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Landing />} />
           <Route path="/auth" element={<Auth />} />
+          <Route path="/register" element={<Register />} />
           <Route path="/connect-gmail" element={<ProtectedRoute><ConnectGmail /></ProtectedRoute>} />
           <Route path="/connect-gmail/callback" element={<ConnectGmailCallback />} />
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
@@ -57,11 +61,13 @@ const App = () => (
             <Route path="analytics" element={<AdminAnalytics />} />
             <Route path="activity" element={<AdminActivity />} />
             <Route path="team" element={<AdminTeam />} />
+            <Route path="tickets" element={<AdminTickets />} />
           </Route>
           
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
+        <HelpBubble />
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>

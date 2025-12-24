@@ -180,42 +180,20 @@ export const AuthDialog = ({ open, onOpenChange }: AuthDialogProps) => {
           </TabsContent>
           
           <TabsContent value="signup">
-            <form onSubmit={handleSignUp} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="signup-email">Email</Label>
-                <Input
-                  id="signup-email"
-                  type="email"
-                  placeholder="votre@email.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  disabled={loading}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="signup-password">Mot de passe</Label>
-                <Input
-                  id="signup-password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  disabled={loading}
-                  minLength={6}
-                />
-              </div>
-              <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Création...
-                  </>
-                ) : (
-                  "Créer un compte"
-                )}
+            <div className="space-y-4 py-4 text-center">
+              <p className="text-muted-foreground">
+                Créez un compte complet avec toutes vos informations
+              </p>
+              <Button 
+                className="w-full" 
+                onClick={() => {
+                  onOpenChange(false);
+                  navigate("/register");
+                }}
+              >
+                Créer un compte
               </Button>
-            </form>
+            </div>
           </TabsContent>
         </Tabs>
       </DialogContent>
