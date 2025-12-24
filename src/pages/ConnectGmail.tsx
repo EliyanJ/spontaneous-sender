@@ -7,38 +7,86 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import cronosLogo from "@/assets/cronos-logo.png";
 
+type Language = 'fr' | 'en';
+
+const translations = {
+  fr: {
+    checking: "Vérification...",
+    authError: "Vous devez être connecté pour autoriser Gmail",
+    title: "Connecter Gmail",
+    description: "Pour envoyer des emails de prospection, Cronos a besoin d'accéder à votre compte Gmail",
+    canDoTitle: "Ce que Cronos pourra faire :",
+    canDo: [
+      "Envoyer des emails de prospection en votre nom",
+      "Consulter vos emails pour détecter les réponses",
+      "Marquer des emails comme lus"
+    ],
+    cantDoTitle: "Ce que Cronos ne fera PAS :",
+    cantDo: [
+      "Accéder à vos contacts personnels",
+      "Modifier vos paramètres Gmail",
+      "Utiliser vos données à d'autres fins"
+    ],
+    security: "Vos identifiants sont sécurisés par Google. Vous pouvez révoquer l'accès à tout moment depuis les paramètres de votre compte Google.",
+    authorize: "Autoriser l'accès Gmail",
+    later: "Plus tard",
+    redirecting: "Redirection vers Google..."
+  },
+  en: {
+    checking: "Checking...",
+    authError: "You must be logged in to authorize Gmail",
+    title: "Connect Gmail",
+    description: "To send prospecting emails, Cronos needs access to your Gmail account",
+    canDoTitle: "What Cronos can do:",
+    canDo: [
+      "Send prospecting emails on your behalf",
+      "Read your emails to detect responses",
+      "Mark emails as read"
+    ],
+    cantDoTitle: "What Cronos will NOT do:",
+    cantDo: [
+      "Access your personal contacts",
+      "Modify your Gmail settings",
+      "Use your data for other purposes"
+    ],
+    security: "Your credentials are secured by Google. You can revoke access at any time from your Google account settings.",
+    authorize: "Authorize Gmail access",
+    later: "Later",
+    redirecting: "Redirecting to Google..."
+  }
+};
+
 const ConnectGmail = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [checking, setChecking] = useState(true);
+  const [language, setLanguage] = useState<Language>('fr');
 
   const returnTo = searchParams.get("returnTo") || "/dashboard";
+  const t = translations[language];
 
   useEffect(() => {
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session) {
-        toast.error("Vous devez être connecté pour autoriser Gmail");
+        toast.error(t.authError);
         navigate("/auth?next=/connect-gmail");
         return;
       }
 
-      // Ne pas auto-rediriger si Gmail est déjà connecté
-      // L'utilisateur peut vouloir "reconnecter" pour rafraîchir les tokens
       setChecking(false);
     };
 
     checkAuth();
-  }, [navigate]);
+  }, [navigate, t.authError]);
 
   const handleConnectGmail = async () => {
     if (loading) return;
     setLoading(true);
 
     try {
-      // Stocker le returnTo pour le callback
       sessionStorage.setItem('gmail_connect_return_to', returnTo);
       
       const redirectUrl = `${window.location.origin}/connect-gmail/callback`;
@@ -61,7 +109,6 @@ const ConnectGmail = () => {
         toast.error(error.message);
         setLoading(false);
       }
-      // Si pas d'erreur, l'utilisateur est redirigé vers Google
     } catch (error: any) {
       console.error('[ConnectGmail] Exception:', error);
       toast.error(error.message || "Une erreur est survenue");
@@ -78,7 +125,7 @@ const ConnectGmail = () => {
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="flex flex-col items-center space-y-4">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-muted-foreground">Vérification...</p>
+          <p className="text-muted-foreground">{t.checking}</p>
         </div>
       </div>
     );
@@ -86,8 +133,28 @@ const ConnectGmail = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <Card className="max-w-lg w-full">
-        <CardHeader className="text-center space-y-4">
+      <Card className="max-w-lg w-full relative">
+        {/* Language toggle */}
+        <div className="absolute top-4 right-4 flex gap-1">
+          <Button 
+            variant={language === 'fr' ? 'default' : 'ghost'} 
+            size="sm"
+            className="h-7 px-2 text-xs"
+            onClick={() => setLanguage('fr')}
+          >
+            FR
+          </Button>
+          <Button 
+            variant={language === 'en' ? 'default' : 'ghost'} 
+            size="sm"
+            className="h-7 px-2 text-xs"
+            onClick={() => setLanguage('en')}
+          >
+            EN
+          </Button>
+        </div>
+
+        <CardHeader className="text-center space-y-4 pt-12">
           <div className="flex justify-center">
             <div className="relative">
               <img src={cronosLogo} alt="Cronos" className="h-16 w-16" />
@@ -96,9 +163,9 @@ const ConnectGmail = () => {
               </div>
             </div>
           </div>
-          <CardTitle className="text-2xl">Connecter Gmail</CardTitle>
+          <CardTitle className="text-2xl">{t.title}</CardTitle>
           <CardDescription className="text-base">
-            Pour envoyer des emails de prospection, Cronos a besoin d'accéder à votre compte Gmail
+            {t.description}
           </CardDescription>
         </CardHeader>
 
@@ -107,25 +174,25 @@ const ConnectGmail = () => {
           <div className="space-y-3">
             <h3 className="font-semibold text-sm flex items-center gap-2">
               <Check className="h-4 w-4 text-green-500" />
-              Ce que Cronos pourra faire :
+              {t.canDoTitle}
             </h3>
             <ul className="text-sm text-muted-foreground space-y-2 ml-6">
-              <li>• Envoyer des emails en votre nom</li>
-              <li>• Lire vos emails pour détecter les réponses</li>
-              <li>• Créer des brouillons d'emails</li>
+              {t.canDo.map((item, index) => (
+                <li key={index}>• {item}</li>
+              ))}
             </ul>
           </div>
 
-          {/* Ce que Cronos ne peut PAS faire */}
+          {/* Ce que Cronos ne fera PAS */}
           <div className="space-y-3">
             <h3 className="font-semibold text-sm flex items-center gap-2">
               <X className="h-4 w-4 text-red-500" />
-              Ce que Cronos ne peut PAS faire :
+              {t.cantDoTitle}
             </h3>
             <ul className="text-sm text-muted-foreground space-y-2 ml-6">
-              <li>• Supprimer vos emails</li>
-              <li>• Accéder à vos contacts personnels</li>
-              <li>• Modifier vos paramètres Gmail</li>
+              {t.cantDo.map((item, index) => (
+                <li key={index}>• {item}</li>
+              ))}
             </ul>
           </div>
 
@@ -133,7 +200,7 @@ const ConnectGmail = () => {
           <div className="bg-muted/50 rounded-lg p-4 flex items-start gap-3">
             <Shield className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
             <p className="text-sm text-muted-foreground">
-              Vos identifiants sont sécurisés par Google. Vous pouvez révoquer l'accès à tout moment depuis les paramètres de votre compte Google.
+              {t.security}
             </p>
           </div>
 
@@ -148,12 +215,12 @@ const ConnectGmail = () => {
               {loading ? (
                 <>
                   <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                  Redirection vers Google...
+                  {t.redirecting}
                 </>
               ) : (
                 <>
                   <Mail className="mr-2 h-5 w-5" />
-                  Autoriser l'accès Gmail
+                  {t.authorize}
                 </>
               )}
             </Button>
@@ -164,7 +231,7 @@ const ConnectGmail = () => {
               disabled={loading}
               className="w-full"
             >
-              Plus tard
+              {t.later}
             </Button>
           </div>
         </CardContent>
