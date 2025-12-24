@@ -58,17 +58,26 @@ export const CampaignsHub = () => {
 
   const loadData = async () => {
     try {
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setLoading(false);
+        return;
+      }
+
       // Load preferences
       const { data: prefData } = await supabase
         .from('user_preferences')
         .select('follow_up_delay_days')
+        .eq('user_id', user.id)
         .single();
       if (prefData) setFollowUpDelay(prefData.follow_up_delay_days || 10);
 
-      // Load campaigns
+      // Load campaigns - filter by user_id explicitly
       let query = supabase
         .from('email_campaigns')
         .select('*')
+        .eq('user_id', user.id)
         .order('sent_at', { ascending: false });
 
       if (filter === 'pending') {
@@ -80,10 +89,11 @@ export const CampaignsHub = () => {
       const { data: campaignsData } = await query;
       setCampaigns(campaignsData || []);
 
-      // Load scheduled emails
+      // Load scheduled emails - filter by user_id explicitly
       const { data: scheduledData } = await supabase
         .from('scheduled_emails')
         .select('*')
+        .eq('user_id', user.id)
         .eq('status', 'pending')
         .order('scheduled_for', { ascending: true });
       setScheduledEmails(scheduledData || []);
