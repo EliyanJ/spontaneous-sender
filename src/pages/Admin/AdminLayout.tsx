@@ -7,7 +7,8 @@ import {
   Activity, 
   UserCog, 
   ArrowLeft,
-  Shield
+  Shield,
+  MessageSquare
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import cronosLogo from "@/assets/cronos-logo.png";
@@ -17,6 +18,7 @@ import { useState, useEffect } from "react";
 const adminNavItems = [
   { title: "Dashboard", icon: LayoutDashboard, path: "/admin" },
   { title: "Utilisateurs", icon: Users, path: "/admin/users" },
+  { title: "Tickets", icon: MessageSquare, path: "/admin/tickets" },
   { title: "Analytics", icon: BarChart3, path: "/admin/analytics" },
   { title: "Activité", icon: Activity, path: "/admin/activity" },
   { title: "Équipe", icon: UserCog, path: "/admin/team" },

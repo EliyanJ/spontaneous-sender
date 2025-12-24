@@ -156,7 +156,19 @@ export const AuthDialog = ({ open, onOpenChange }: AuthDialogProps) => {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="signin-password">Mot de passe</Label>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="signin-password">Mot de passe</Label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onOpenChange(false);
+                      navigate("/forgot-password");
+                    }}
+                    className="text-xs text-primary hover:underline"
+                  >
+                    Mot de passe oublié ?
+                  </button>
+                </div>
                 <Input
                   id="signin-password"
                   type="password"

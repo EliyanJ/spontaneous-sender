@@ -9,6 +9,8 @@ import Landing from "./pages/Landing";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
 import Register from "./pages/Register";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 import ConnectGmail from "./pages/ConnectGmail";
 import ConnectGmailCallback from "./pages/ConnectGmailCallback";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
@@ -27,9 +29,9 @@ import {
   AdminUserDetail, 
   AdminAnalytics, 
   AdminActivity, 
-  AdminTeam 
+  AdminTeam,
+  AdminTickets
 } from "./pages/Admin";
-import AdminTickets from "./pages/Admin/AdminTickets";
 
 const queryClient = new QueryClient();
 
@@ -43,6 +45,8 @@ const App = () => (
           <Route path="/" element={<Landing />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/connect-gmail" element={<ProtectedRoute><ConnectGmail /></ProtectedRoute>} />
           <Route path="/connect-gmail/callback" element={<ConnectGmailCallback />} />
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
