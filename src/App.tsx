@@ -17,6 +17,16 @@ import TermsOfServiceEn from "./pages/TermsOfServiceEn";
 import LegalNotice from "./pages/LegalNotice";
 import LegalNoticeEn from "./pages/LegalNoticeEn";
 import { ProtectedRoute } from "./components/ProtectedRoute";
+import { AdminRoute } from "./components/AdminRoute";
+import { 
+  AdminLayout, 
+  AdminDashboard, 
+  AdminUsers, 
+  AdminUserDetail, 
+  AdminAnalytics, 
+  AdminActivity, 
+  AdminTeam 
+} from "./pages/Admin";
 
 const queryClient = new QueryClient();
 
@@ -38,6 +48,17 @@ const App = () => (
           <Route path="/mentions-legales" element={<LegalNotice />} />
           <Route path="/legal-notice" element={<LegalNoticeEn />} />
           <Route path="/dashboard" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+          
+          {/* Admin Routes */}
+          <Route path="/admin" element={<AdminRoute><AdminLayout /></AdminRoute>}>
+            <Route index element={<AdminDashboard />} />
+            <Route path="users" element={<AdminUsers />} />
+            <Route path="users/:userId" element={<AdminUserDetail />} />
+            <Route path="analytics" element={<AdminAnalytics />} />
+            <Route path="activity" element={<AdminActivity />} />
+            <Route path="team" element={<AdminTeam />} />
+          </Route>
+          
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
