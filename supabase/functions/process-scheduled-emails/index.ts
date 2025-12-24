@@ -11,15 +11,25 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  // Validate CRON_SECRET for security
+  // Support multiple authentication methods:
+  // 1. x-cron-secret header (for cron jobs)
+  // 2. Authorization header with CRON_SECRET (for pg_cron via net.http_post)
   const cronSecret = req.headers.get('x-cron-secret');
-  if (cronSecret !== Deno.env.get('CRON_SECRET')) {
+  const authHeader = req.headers.get('Authorization');
+  const expectedSecret = Deno.env.get('CRON_SECRET');
+  
+  const isValidCronSecret = cronSecret === expectedSecret;
+  const isValidAuthHeader = authHeader === `Bearer ${expectedSecret}`;
+  
+  if (!isValidCronSecret && !isValidAuthHeader) {
     console.error('Unauthorized cron request - invalid or missing secret');
     return new Response(JSON.stringify({ error: 'Unauthorized' }), {
       status: 401,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }
+  
+  console.log('Cron job authenticated successfully');
 
   try {
     const supabase = createClient(
