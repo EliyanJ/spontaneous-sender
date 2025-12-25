@@ -126,6 +126,13 @@ serve(async (req) => {
           const subscription = await stripe.subscriptions.retrieve(session.subscription as string);
           const productId = subscription.items.data[0]?.price?.product as string;
           
+          logStep("Subscription retrieved", { 
+            subscriptionId: subscription.id,
+            productId,
+            currentPeriodStart: subscription.current_period_start,
+            currentPeriodEnd: subscription.current_period_end
+          });
+          
           let planType: "simple" | "plus" = "simple";
           let sendsLimit = 200;
 
@@ -134,27 +141,37 @@ serve(async (req) => {
             sendsLimit = 400;
           }
 
-          logStep("Updating subscription", { planType, sendsLimit });
+          logStep("Updating subscription", { planType, sendsLimit, userId: user.id });
 
-          const { error: subError } = await supabase
+          // Build update object with safe date handling
+          const updateData: Record<string, any> = {
+            plan_type: planType,
+            status: "active",
+            sends_remaining: sendsLimit,
+            sends_limit: sendsLimit,
+            stripe_subscription_id: session.subscription as string,
+            stripe_customer_id: session.customer as string,
+            updated_at: new Date().toISOString()
+          };
+          
+          // Only add dates if they are valid numbers
+          if (typeof subscription.current_period_start === 'number' && subscription.current_period_start > 0) {
+            updateData.current_period_start = new Date(subscription.current_period_start * 1000).toISOString();
+          }
+          if (typeof subscription.current_period_end === 'number' && subscription.current_period_end > 0) {
+            updateData.current_period_end = new Date(subscription.current_period_end * 1000).toISOString();
+          }
+
+          const { error: subError, data: subData } = await supabase
             .from("subscriptions")
-            .update({
-              plan_type: planType,
-              status: "active",
-              sends_remaining: sendsLimit,
-              sends_limit: sendsLimit,
-              stripe_subscription_id: session.subscription as string,
-              stripe_customer_id: session.customer as string,
-              current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
-              current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
-              updated_at: new Date().toISOString()
-            })
-            .eq("user_id", user.id);
+            .update(updateData)
+            .eq("user_id", user.id)
+            .select();
 
           if (subError) {
             logStep("Error updating subscription", { error: subError.message });
           } else {
-            logStep("Subscription updated successfully");
+            logStep("Subscription updated successfully", { userId: user.id, planType, sendsLimit, updated: subData });
           }
         } else if (session.mode === "payment") {
           // Handle token pack purchase
@@ -250,15 +267,23 @@ serve(async (req) => {
           sendsLimit = 400;
         }
 
+        // Build update object with safe date handling
+        const updateData: Record<string, any> = {
+          sends_remaining: sendsLimit,
+          updated_at: new Date().toISOString()
+        };
+        
+        if (typeof subscription.current_period_start === 'number' && subscription.current_period_start > 0) {
+          updateData.current_period_start = new Date(subscription.current_period_start * 1000).toISOString();
+        }
+        if (typeof subscription.current_period_end === 'number' && subscription.current_period_end > 0) {
+          updateData.current_period_end = new Date(subscription.current_period_end * 1000).toISOString();
+        }
+
         // Reset monthly credits
         const { error } = await supabase
           .from("subscriptions")
-          .update({
-            sends_remaining: sendsLimit,
-            current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
-            current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
-            updated_at: new Date().toISOString()
-          })
+          .update(updateData)
           .eq("user_id", user.id);
 
         if (error) {
