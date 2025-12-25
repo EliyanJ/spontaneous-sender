@@ -1,8 +1,9 @@
 // Stripe product and price configuration
+// NOTE: These are TEST mode IDs. Update to live mode IDs for production.
 export const STRIPE_PRODUCTS = {
   PLAN_SIMPLE: {
-    product_id: "prod_Tfbyp2POhagRwc",
-    price_id: "price_1SiGk5KkkIHh6CiwgtT585N8",
+    product_id: "prod_TfcggrdvMApvwb",
+    price_id: "price_1SiHQsKkkIHh6Ciw0GNQyKqa",
     name: "Simple",
     price: 24,
     sends_limit: 200,
@@ -16,8 +17,8 @@ export const STRIPE_PRODUCTS = {
     ]
   },
   PLAN_PLUS: {
-    product_id: "prod_TfbyAGlkrpQCUE",
-    price_id: "price_1SiGkGKkkIHh6CiwsTek7M1f",
+    product_id: "prod_TfcgvmNBq9q0Ey",
+    price_id: "price_1SiHR4KkkIHh6CiwAM6trrO4",
     name: "Plus",
     price: 39,
     sends_limit: 400,
@@ -32,15 +33,15 @@ export const STRIPE_PRODUCTS = {
     ]
   },
   PACK_50_TOKENS: {
-    product_id: "prod_TfbzOex2KTEYcJ",
-    price_id: "price_1SiGl7KkkIHh6CiwbdTxZ5pd",
+    product_id: "prod_Tfcgjrr4dczx18",
+    price_id: "price_1SiHRPKkkIHh6CiwLLZhqmQP",
     name: "Pack 50 Tokens",
     price: 5,
     tokens: 50
   },
   PACK_100_TOKENS: {
-    product_id: "prod_TfbzIxumQAOVne",
-    price_id: "price_1SiGlJKkkIHh6CiwzKjAjPeb",
+    product_id: "prod_Tfcgt8kBYS7YpN",
+    price_id: "price_1SiHRZKkkIHh6CiwgBGkvm0U",
     name: "Pack 100 Tokens",
     price: 9,
     tokens: 100
