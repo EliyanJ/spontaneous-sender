@@ -19,6 +19,7 @@ import TermsOfService from "./pages/TermsOfService";
 import TermsOfServiceEn from "./pages/TermsOfServiceEn";
 import LegalNotice from "./pages/LegalNotice";
 import LegalNoticeEn from "./pages/LegalNoticeEn";
+import Pricing from "./pages/Pricing";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { AdminRoute } from "./components/AdminRoute";
 import { HelpBubble } from "./components/HelpBubble";
@@ -55,6 +56,7 @@ const App = () => (
           <Route path="/terms-of-service-en" element={<TermsOfServiceEn />} />
           <Route path="/mentions-legales" element={<LegalNotice />} />
           <Route path="/legal-notice" element={<LegalNoticeEn />} />
+          <Route path="/pricing" element={<Pricing />} />
           <Route path="/dashboard" element={<ProtectedRoute><Index /></ProtectedRoute>} />
           
           {/* Admin Routes */}
