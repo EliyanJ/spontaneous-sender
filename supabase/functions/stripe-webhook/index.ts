@@ -7,28 +7,28 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, stripe-signature",
 };
 
-// Stripe product/price IDs
+// Stripe product/price IDs (TEST MODE)
 const STRIPE_PRODUCTS = {
   PLAN_SIMPLE: {
-    product_id: "prod_Tfbyp2POhagRwc",
-    price_id: "price_1SiGk5KkkIHh6CiwgtT585N8",
+    product_id: "prod_TfceKlYqYUybTX",
+    price_id: "price_1SiHQsKkkIHh6Ciw0GNQyKqa",
     sends_limit: 200,
     plan_type: "simple"
   },
   PLAN_PLUS: {
-    product_id: "prod_TfbyAGlkrpQCUE",
-    price_id: "price_1SiGkGKkkIHh6CiwsTek7M1f",
+    product_id: "prod_TfcfNT7h92l8Zh",
+    price_id: "price_1SiHR4KkkIHh6CiwAM6trrO4",
     sends_limit: 400,
     plan_type: "plus"
   },
   PACK_50_TOKENS: {
-    product_id: "prod_TfbzOex2KTEYcJ",
-    price_id: "price_1SiGl7KkkIHh6CiwbdTxZ5pd",
+    product_id: "prod_Tfcfe6vhDGvqQr",
+    price_id: "price_1SiHRPKkkIHh6CiwLLZhqmQP",
     tokens: 50
   },
   PACK_100_TOKENS: {
-    product_id: "prod_TfbzIxumQAOVne",
-    price_id: "price_1SiGlJKkkIHh6CiwzKjAjPeb",
+    product_id: "prod_TfcfJFZBwUC39F",
+    price_id: "price_1SiHRZKkkIHh6CiwgBGkvm0U",
     tokens: 100
   }
 };
