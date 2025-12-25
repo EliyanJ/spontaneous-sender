@@ -243,17 +243,6 @@ export const Settings = () => {
                   <RefreshCw className="h-4 w-4" />
                   Préférences
                 </button>
-                <button
-                  onClick={() => setActiveSection('preferences')}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
-                    activeSection === 'preferences' 
-                      ? 'bg-primary/10 text-primary' 
-                      : 'text-muted-foreground hover:bg-muted'
-                  }`}
-                >
-                  <RefreshCw className="h-4 w-4" />
-                  Préférences
-                </button>
               </nav>
 
               <Separator className="my-4" />
