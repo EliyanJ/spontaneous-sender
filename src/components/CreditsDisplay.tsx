@@ -24,6 +24,46 @@ export const CreditsDisplay = () => {
 
   useEffect(() => {
     loadSubscription();
+
+    // Subscribe to realtime updates for subscriptions
+    const setupRealtimeSubscription = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const channel = supabase
+        .channel('subscription-credits')
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'subscriptions',
+            filter: `user_id=eq.${user.id}`
+          },
+          (payload) => {
+            console.log('[Realtime] Subscription updated:', payload.new);
+            const newData = payload.new as any;
+            setSubscription({
+              plan_type: newData.plan_type,
+              sends_remaining: newData.sends_remaining,
+              sends_limit: newData.sends_limit,
+              tokens_remaining: newData.tokens_remaining,
+            });
+          }
+        )
+        .subscribe();
+
+      return channel;
+    };
+
+    let channel: ReturnType<typeof supabase.channel> | undefined;
+    setupRealtimeSubscription().then(ch => { channel = ch; });
+
+    return () => {
+      if (channel) {
+        supabase.removeChannel(channel);
+      }
+    };
   }, []);
 
   const loadSubscription = async () => {
