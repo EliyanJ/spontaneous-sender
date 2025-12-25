@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -8,12 +9,14 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "@/hooks/use-toast";
 import { Separator } from "@/components/ui/separator";
+import { Progress } from "@/components/ui/progress";
 import { 
   User, Bell, LogOut, Mail, Loader2, Save, 
-  RefreshCw, CheckCircle, AlertCircle 
+  RefreshCw, CheckCircle, AlertCircle, CreditCard, Zap, Crown
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Notifications } from "./Notifications";
+import { STRIPE_PRODUCTS, FREE_PLAN } from "@/lib/stripe-config";
 
 interface UserProfile {
   full_name: string | null;
@@ -29,12 +32,21 @@ interface UserPreferences {
   auto_follow_up: boolean;
 }
 
+interface SubscriptionData {
+  plan_type: string;
+  sends_remaining: number;
+  sends_limit: number;
+  tokens_remaining: number;
+  current_period_end: string | null;
+}
+
 export const Settings = () => {
   const { user, signOut } = useAuth();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [gmailConnected, setGmailConnected] = useState(false);
-  const [activeSection, setActiveSection] = useState<'profile' | 'notifications' | 'preferences'>('profile');
+  const [activeSection, setActiveSection] = useState<'profile' | 'subscription' | 'notifications' | 'preferences'>('profile');
   
   const [profile, setProfile] = useState<UserProfile>({
     full_name: '',
@@ -48,6 +60,14 @@ export const Settings = () => {
     notify_on_email_sent: false,
     follow_up_delay_days: 10,
     auto_follow_up: false,
+  });
+
+  const [subscription, setSubscription] = useState<SubscriptionData>({
+    plan_type: 'free',
+    sends_remaining: 5,
+    sends_limit: 5,
+    tokens_remaining: 0,
+    current_period_end: null,
   });
 
   useEffect(() => {
@@ -92,6 +112,22 @@ export const Settings = () => {
         .select('id')
         .maybeSingle();
       setGmailConnected(!!gmailData);
+
+      // Load subscription
+      const { data: subData } = await supabase
+        .from('subscriptions')
+        .select('plan_type, sends_remaining, sends_limit, tokens_remaining, current_period_end')
+        .single();
+
+      if (subData) {
+        setSubscription({
+          plan_type: subData.plan_type || 'free',
+          sends_remaining: subData.sends_remaining || 0,
+          sends_limit: subData.sends_limit || 5,
+          tokens_remaining: subData.tokens_remaining || 0,
+          current_period_end: subData.current_period_end,
+        });
+      }
 
     } catch (error) {
       console.error('Error loading settings:', error);
@@ -175,6 +211,17 @@ export const Settings = () => {
                   Profil
                 </button>
                 <button
+                  onClick={() => setActiveSection('subscription')}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
+                    activeSection === 'subscription' 
+                      ? 'bg-primary/10 text-primary' 
+                      : 'text-muted-foreground hover:bg-muted'
+                  }`}
+                >
+                  <CreditCard className="h-4 w-4" />
+                  Abonnement
+                </button>
+                <button
                   onClick={() => setActiveSection('notifications')}
                   className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
                     activeSection === 'notifications' 
@@ -184,6 +231,17 @@ export const Settings = () => {
                 >
                   <Bell className="h-4 w-4" />
                   Notifications
+                </button>
+                <button
+                  onClick={() => setActiveSection('preferences')}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
+                    activeSection === 'preferences' 
+                      ? 'bg-primary/10 text-primary' 
+                      : 'text-muted-foreground hover:bg-muted'
+                  }`}
+                >
+                  <RefreshCw className="h-4 w-4" />
+                  Préférences
                 </button>
                 <button
                   onClick={() => setActiveSection('preferences')}
@@ -332,6 +390,71 @@ export const Settings = () => {
                   {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   <Save className="mr-2 h-4 w-4" />
                   Sauvegarder
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+
+          {activeSection === 'subscription' && (
+            <Card className="bg-card/50 border-border">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <CreditCard className="h-5 w-5 text-primary" />
+                  Mon abonnement
+                </CardTitle>
+                <CardDescription>
+                  Gérez votre plan et vos crédits
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Current Plan */}
+                <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    {subscription.plan_type === 'plus' ? (
+                      <Crown className="h-6 w-6 text-yellow-500" />
+                    ) : subscription.plan_type === 'simple' ? (
+                      <Zap className="h-6 w-6 text-primary" />
+                    ) : (
+                      <User className="h-6 w-6 text-muted-foreground" />
+                    )}
+                    <div>
+                      <p className="font-semibold capitalize">Plan {subscription.plan_type}</p>
+                      {subscription.current_period_end && (
+                        <p className="text-xs text-muted-foreground">
+                          Renouvellement: {new Date(subscription.current_period_end).toLocaleDateString('fr-FR')}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  <Button onClick={() => navigate('/pricing')}>
+                    {subscription.plan_type === 'free' ? 'Upgrade' : 'Changer de plan'}
+                  </Button>
+                </div>
+
+                <Separator />
+
+                {/* Credits */}
+                <div className="space-y-4">
+                  <Label className="text-sm font-medium">Crédits mensuels</Label>
+                  <div>
+                    <div className="flex justify-between text-sm mb-2">
+                      <span>Envois restants</span>
+                      <span className="font-medium">{subscription.sends_remaining} / {subscription.sends_limit}</span>
+                    </div>
+                    <Progress value={(subscription.sends_remaining / subscription.sends_limit) * 100} />
+                  </div>
+                </div>
+
+                {subscription.tokens_remaining > 0 && (
+                  <div className="p-3 bg-primary/10 rounded-lg">
+                    <p className="text-sm">
+                      <span className="font-medium">Tokens bonus:</span> {subscription.tokens_remaining} crédits
+                    </p>
+                  </div>
+                )}
+
+                <Button variant="outline" className="w-full" onClick={() => navigate('/pricing')}>
+                  Acheter des crédits supplémentaires
                 </Button>
               </CardContent>
             </Card>
