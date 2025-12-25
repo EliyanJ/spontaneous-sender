@@ -7,27 +7,27 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, stripe-signature",
 };
 
-// Stripe product/price IDs (TEST MODE)
+// Stripe product/price IDs (TEST MODE - CORRECT IDs)
 const STRIPE_PRODUCTS = {
   PLAN_SIMPLE: {
-    product_id: "prod_TfceKlYqYUybTX",
+    product_id: "prod_TfcggrdvMApvwb",
     price_id: "price_1SiHQsKkkIHh6Ciw0GNQyKqa",
     sends_limit: 200,
     plan_type: "simple"
   },
   PLAN_PLUS: {
-    product_id: "prod_TfcfNT7h92l8Zh",
+    product_id: "prod_TfcgvmNBq9q0Ey",
     price_id: "price_1SiHR4KkkIHh6CiwAM6trrO4",
     sends_limit: 400,
     plan_type: "plus"
   },
   PACK_50_TOKENS: {
-    product_id: "prod_Tfcfe6vhDGvqQr",
+    product_id: "prod_Tfcgjrr4dczx18",
     price_id: "price_1SiHRPKkkIHh6CiwLLZhqmQP",
     tokens: 50
   },
   PACK_100_TOKENS: {
-    product_id: "prod_TfcfJFZBwUC39F",
+    product_id: "prod_Tfcgt8kBYS7YpN",
     price_id: "price_1SiHRZKkkIHh6CiwgBGkvm0U",
     tokens: 100
   }
