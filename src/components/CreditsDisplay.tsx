@@ -28,10 +28,36 @@ export const CreditsDisplay = () => {
 
   const loadSubscription = async () => {
     try {
-      const { data } = await supabase
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setLoading(false);
+        return;
+      }
+
+      // Try to get existing subscription
+      let { data, error } = await supabase
         .from("subscriptions")
         .select("plan_type, sends_remaining, sends_limit, tokens_remaining")
-        .single();
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      // If no subscription exists, create a default one
+      if (!data && !error) {
+        const { data: newSub } = await supabase
+          .from("subscriptions")
+          .insert({
+            user_id: user.id,
+            plan_type: "free",
+            status: "active",
+            sends_remaining: 5,
+            sends_limit: 5,
+            tokens_remaining: 0,
+          })
+          .select("plan_type, sends_remaining, sends_limit, tokens_remaining")
+          .single();
+        
+        data = newSub;
+      }
 
       if (data) {
         setSubscription(data);
@@ -43,7 +69,16 @@ export const CreditsDisplay = () => {
     }
   };
 
-  if (loading || !subscription) return null;
+  if (loading) {
+    return (
+      <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-muted/50 border border-border/50 animate-pulse">
+        <div className="w-12 h-4 bg-muted rounded" />
+        <div className="w-16 h-4 bg-muted rounded" />
+      </div>
+    );
+  }
+
+  if (!subscription) return null;
 
   const creditsPercent = Math.round((subscription.sends_remaining / subscription.sends_limit) * 100);
   const isLow = creditsPercent < 20;
