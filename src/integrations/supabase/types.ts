@@ -591,6 +591,39 @@ export type Database = {
         }
         Relationships: []
       }
+      referrals: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          id: string
+          referral_code: string
+          referred_id: string | null
+          referrer_id: string
+          reward_tokens: number
+          status: Database["public"]["Enums"]["referral_status"]
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          referral_code: string
+          referred_id?: string | null
+          referrer_id: string
+          reward_tokens?: number
+          status?: Database["public"]["Enums"]["referral_status"]
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          referral_code?: string
+          referred_id?: string | null
+          referrer_id?: string
+          reward_tokens?: number
+          status?: Database["public"]["Enums"]["referral_status"]
+        }
+        Relationships: []
+      }
       scheduled_emails: {
         Row: {
           attachments: Json | null
@@ -645,6 +678,54 @@ export type Database = {
         }
         Relationships: []
       }
+      subscriptions: {
+        Row: {
+          created_at: string
+          current_period_end: string | null
+          current_period_start: string | null
+          id: string
+          plan_type: Database["public"]["Enums"]["plan_type"]
+          sends_limit: number
+          sends_remaining: number
+          status: Database["public"]["Enums"]["subscription_status"]
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
+          tokens_remaining: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          current_period_end?: string | null
+          current_period_start?: string | null
+          id?: string
+          plan_type?: Database["public"]["Enums"]["plan_type"]
+          sends_limit?: number
+          sends_remaining?: number
+          status?: Database["public"]["Enums"]["subscription_status"]
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          tokens_remaining?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          current_period_end?: string | null
+          current_period_start?: string | null
+          id?: string
+          plan_type?: Database["public"]["Enums"]["plan_type"]
+          sends_limit?: number
+          sends_remaining?: number
+          status?: Database["public"]["Enums"]["subscription_status"]
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          tokens_remaining?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       support_tickets: {
         Row: {
           admin_response: string | null
@@ -683,6 +764,36 @@ export type Database = {
           status?: string
           subject?: string
           updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      token_transactions: {
+        Row: {
+          amount: number
+          created_at: string
+          description: string | null
+          id: string
+          metadata: Json | null
+          type: Database["public"]["Enums"]["token_transaction_type"]
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          metadata?: Json | null
+          type: Database["public"]["Enums"]["token_transaction_type"]
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          metadata?: Json | null
+          type?: Database["public"]["Enums"]["token_transaction_type"]
           user_id?: string
         }
         Relationships: []
@@ -916,7 +1027,21 @@ export type Database = {
         }
         Returns: undefined
       }
+      add_tokens: {
+        Args: {
+          p_amount: number
+          p_description?: string
+          p_type: Database["public"]["Enums"]["token_transaction_type"]
+          p_user_id: string
+        }
+        Returns: undefined
+      }
       cleanup_old_rate_limits: { Args: never; Returns: undefined }
+      complete_referral: {
+        Args: { p_referral_code: string; p_referred_id: string }
+        Returns: boolean
+      }
+      generate_referral_code: { Args: { p_user_id: string }; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -925,11 +1050,29 @@ export type Database = {
         Returns: boolean
       }
       is_company_blacklisted: { Args: { p_siren: string }; Returns: boolean }
+      use_send_credit: {
+        Args: { p_count?: number; p_user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       app_role: "admin" | "support" | "analyst" | "user"
       blacklist_reason: "no_email_found" | "api_error" | "invalid_company"
       job_status: "pending" | "processing" | "completed" | "failed"
+      plan_type: "free" | "simple" | "plus"
+      referral_status: "pending" | "completed" | "expired"
+      subscription_status:
+        | "active"
+        | "canceled"
+        | "past_due"
+        | "trialing"
+        | "incomplete"
+      token_transaction_type:
+        | "purchase"
+        | "usage"
+        | "bonus"
+        | "referral"
+        | "monthly_reset"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1060,6 +1203,22 @@ export const Constants = {
       app_role: ["admin", "support", "analyst", "user"],
       blacklist_reason: ["no_email_found", "api_error", "invalid_company"],
       job_status: ["pending", "processing", "completed", "failed"],
+      plan_type: ["free", "simple", "plus"],
+      referral_status: ["pending", "completed", "expired"],
+      subscription_status: [
+        "active",
+        "canceled",
+        "past_due",
+        "trialing",
+        "incomplete",
+      ],
+      token_transaction_type: [
+        "purchase",
+        "usage",
+        "bonus",
+        "referral",
+        "monthly_reset",
+      ],
     },
   },
 } as const
