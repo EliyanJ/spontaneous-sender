@@ -12,6 +12,7 @@ import { Pipeline } from "@/components/dashboard/Pipeline";
 import { HorizontalNav } from "@/components/HorizontalNav";
 import { MobileNav } from "@/components/MobileNav";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { CreditsDisplay } from "@/components/CreditsDisplay";
 import { useIsMobile } from "@/hooks/use-mobile";
 import cronosLogo from "@/assets/cronos-logo.png";
 
@@ -149,9 +150,10 @@ const Index = () => {
             <HorizontalNav activeTab={activeTab} onTabChange={handleTabChange} />
           )}
 
-          {/* Theme Toggle - Desktop only */}
+          {/* Credits Display & Theme Toggle - Desktop only */}
           {!isMobile && (
-            <div className="shrink-0">
+            <div className="flex items-center gap-2 shrink-0">
+              <CreditsDisplay />
               <ThemeToggle isDark={isDark} onToggle={() => setIsDark(!isDark)} />
             </div>
           )}
