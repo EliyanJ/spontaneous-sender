@@ -7,12 +7,12 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Stripe price IDs
+// Stripe price IDs (TEST MODE)
 const STRIPE_PRICES = {
-  PLAN_SIMPLE: "price_1SiGk5KkkIHh6CiwgtT585N8",
-  PLAN_PLUS: "price_1SiGkGKkkIHh6CiwsTek7M1f",
-  PACK_50_TOKENS: "price_1SiGl7KkkIHh6CiwbdTxZ5pd",
-  PACK_100_TOKENS: "price_1SiGlJKkkIHh6CiwzKjAjPeb",
+  PLAN_SIMPLE: "price_1SiHQsKkkIHh6Ciw0GNQyKqa",
+  PLAN_PLUS: "price_1SiHR4KkkIHh6CiwAM6trrO4",
+  PACK_50_TOKENS: "price_1SiHRPKkkIHh6CiwLLZhqmQP",
+  PACK_100_TOKENS: "price_1SiHRZKkkIHh6CiwgBGkvm0U",
 };
 
 const logStep = (step: string, details?: any) => {
