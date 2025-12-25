@@ -808,7 +808,35 @@ serve(async (req) => {
     const requestData = await req.json();
     const { maxCompanies } = requestSchema.parse(requestData);
 
-    // Rate limit désactivé pour permettre le traitement de toutes les entreprises
+    // Vérifier les crédits disponibles avant de lancer la recherche
+    const { data: subscription, error: subError } = await supabase
+      .from("subscriptions")
+      .select("sends_remaining, tokens_remaining")
+      .eq("user_id", user.id)
+      .single();
+
+    if (subError) {
+      console.error("Error fetching subscription:", subError);
+      throw new Error("Could not verify credits");
+    }
+
+    const totalCredits = (subscription?.sends_remaining || 0) + (subscription?.tokens_remaining || 0);
+    if (totalCredits <= 0) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: "Crédits insuffisants",
+          message: "Vous n'avez plus de crédits. Veuillez upgrader votre abonnement.",
+          creditsNeeded: true
+        }),
+        { 
+          status: 402,
+          headers: { ...corsHeaders, "Content-Type": "application/json" } 
+        }
+      );
+    }
+
+    console.log(`[Credits] User has ${totalCredits} credits available (${subscription?.sends_remaining} sends + ${subscription?.tokens_remaining} tokens)`);
 
     // Fetch companies without selected_email
     const { data: companies, error: fetchError } = await supabase
@@ -928,11 +956,37 @@ serve(async (req) => {
       }
     };
 
+    // Débiter les crédits pour les emails trouvés (1 crédit par email trouvé)
+    const emailsFound = summary.found;
+    let creditsDebited = 0;
+    
+    if (emailsFound > 0) {
+      console.log(`[Credits] Debiting ${emailsFound} credits for found emails...`);
+      
+      // Utiliser la fonction use_send_credit pour débiter les crédits
+      const { data: creditResult, error: creditError } = await supabase
+        .rpc('use_send_credit', { 
+          p_user_id: user.id, 
+          p_count: emailsFound 
+        });
+
+      if (creditError) {
+        console.error(`[Credits] Error debiting credits:`, creditError);
+        // On ne bloque pas le résultat, on log juste l'erreur
+      } else if (creditResult === false) {
+        console.warn(`[Credits] Not enough credits to debit ${emailsFound}`);
+      } else {
+        creditsDebited = emailsFound;
+        console.log(`[Credits] ✅ Successfully debited ${emailsFound} credits`);
+      }
+    }
+
     console.log(`\n========================================`);
     console.log(`[Summary]`);
     console.log(`  Processed: ${summary.processed}`);
     console.log(`  Found: ${summary.found}`);
     console.log(`  Not found: ${summary.notFound}`);
+    console.log(`  Credits debited: ${creditsDebited}`);
     console.log(`  Sources: Scraping=${summary.sources.scraping}, Hunter.io=${summary.sources.hunterIo}, None=${summary.sources.none}`);
     console.log(`========================================`);
 
@@ -941,9 +995,9 @@ serve(async (req) => {
         success: true,
         processed: summary.processed,
         results,
-        summary,
+        summary: { ...summary, creditsDebited },
         hasMore: (remainingCount || 0) > 0,
-        message: `${summary.found} emails trouvés sur ${summary.processed} entreprises`
+        message: `${summary.found} emails trouvés sur ${summary.processed} entreprises (${creditsDebited} crédits utilisés)`
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
