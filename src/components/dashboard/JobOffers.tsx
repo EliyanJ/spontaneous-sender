@@ -3,7 +3,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Search, MapPin, Briefcase, Clock, ExternalLink, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { CommuneSearch } from "@/components/ui/commune-search";
@@ -15,8 +14,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { CareerSites } from "./CareerSites";
-import { ContactForms } from "./ContactForms";
 
 interface JobOffer {
   id: string;
@@ -58,7 +55,6 @@ export const JobOffers = () => {
   const [loading, setLoading] = useState(false);
   const [offers, setOffers] = useState<JobOffer[]>([]);
   const [selectedOffer, setSelectedOffer] = useState<JobOffer | null>(null);
-  const [initialLoadDone, setInitialLoadDone] = useState(false);
   
   const [searchParams, setSearchParams] = useState({
     motsCles: "",
@@ -68,12 +64,9 @@ export const JobOffers = () => {
     distance: "10",
   });
 
-  // Note: Chargement automatique désactivé pour éviter les erreurs si l'API n'est pas configurée
-
   const handleSearch = async () => {
     setLoading(true);
     try {
-      // Get session token
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         throw new Error('Vous devez être connecté pour rechercher des offres');
@@ -84,16 +77,13 @@ export const JobOffers = () => {
         distance: searchParams.distance,
       };
       
-      // Only add parameters if they have values
       if (searchParams.motsCles.trim()) {
         params.motsCles = searchParams.motsCles.trim();
       }
       
-      // Utiliser le code postal si disponible, sinon utiliser commune
       if (searchParams.codePostal.trim()) {
         params.location = searchParams.codePostal.trim();
       } else if (searchParams.commune.trim()) {
-        // Extraire le code postal du format "Ville (code)"
         const match = searchParams.commune.match(/\((\d{5})\)/);
         if (match) {
           params.location = match[1];
@@ -102,7 +92,6 @@ export const JobOffers = () => {
         }
       }
       
-      // Only add typeContrat if it's not "all"
       if (searchParams.typeContrat && searchParams.typeContrat !== 'all') {
         params.typeContrat = searchParams.typeContrat;
       }
@@ -148,7 +137,6 @@ export const JobOffers = () => {
 
   const loadOfferDetails = async (offerId: string) => {
     try {
-      // Get session token
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         throw new Error('Vous devez être connecté pour voir les détails');
@@ -189,21 +177,12 @@ export const JobOffers = () => {
       <div>
         <h2 className="font-display text-3xl font-bold mb-2">Offres d'emploi</h2>
         <p className="text-muted-foreground">
-          Recherchez des offres et consultez les sites carrières des entreprises
+          Recherchez des offres d'emploi via France Travail
         </p>
       </div>
 
-      <Tabs defaultValue="search" className="w-full">
-        <TabsList className="w-full overflow-x-auto scrollbar-hide flex">
-          <TabsTrigger value="search" className="flex-1 shrink-0 text-xs sm:text-sm whitespace-nowrap px-2 sm:px-4">Offres</TabsTrigger>
-          <TabsTrigger value="career-sites" className="flex-1 shrink-0 text-xs sm:text-sm whitespace-nowrap px-2 sm:px-4">Carrières</TabsTrigger>
-          <TabsTrigger value="contact-forms" className="flex-1 shrink-0 text-xs sm:text-sm whitespace-nowrap px-2 sm:px-4">Formulaires</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="search" className="space-y-6 mt-6">
-
-          {/* Formulaire de recherche */}
-          <Card>
+      {/* Formulaire de recherche */}
+      <Card>
         <CardHeader>
           <CardTitle>Rechercher des offres</CardTitle>
           <CardDescription>
@@ -305,15 +284,15 @@ export const JobOffers = () => {
             )}
           </Button>
         </CardContent>
-          </Card>
+      </Card>
 
-          {/* Liste des offres */}
-          {offers.length > 0 && !loading && (
-            <p className="text-muted-foreground">
-              {offers.length} offre{offers.length > 1 ? 's' : ''} disponible{offers.length > 1 ? 's' : ''}
-            </p>
-          )}
-          <div className="space-y-4">
+      {/* Liste des offres */}
+      {offers.length > 0 && !loading && (
+        <p className="text-muted-foreground">
+          {offers.length} offre{offers.length > 1 ? 's' : ''} disponible{offers.length > 1 ? 's' : ''}
+        </p>
+      )}
+      <div className="space-y-4">
         {offers.map((offer) => (
           <Card
             key={offer.id}
@@ -359,17 +338,7 @@ export const JobOffers = () => {
             </CardContent>
           </Card>
         ))}
-          </div>
-        </TabsContent>
-
-        <TabsContent value="career-sites">
-          <CareerSites />
-        </TabsContent>
-
-        <TabsContent value="contact-forms">
-          <ContactForms />
-        </TabsContent>
-      </Tabs>
+      </div>
 
       {/* Dialog pour les détails */}
       <Dialog open={!!selectedOffer} onOpenChange={() => setSelectedOffer(null)}>

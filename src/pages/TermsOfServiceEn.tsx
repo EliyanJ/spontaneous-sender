@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Globe } from "lucide-react";
 
 const TermsOfServiceEn = () => {
   const navigate = useNavigate();
@@ -8,14 +8,23 @@ const TermsOfServiceEn = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-background dark:via-background dark:to-background">
       <div className="container mx-auto px-4 py-8 max-w-4xl">
-        <Button
-          variant="ghost"
-          onClick={() => navigate("/")}
-          className="mb-6"
-        >
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to Home
-        </Button>
+        <div className="flex items-center justify-between mb-6">
+          <Button
+            variant="ghost"
+            onClick={() => navigate("/")}
+          >
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Home
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => navigate("/terms-of-service")}
+            className="gap-2"
+          >
+            <Globe className="h-4 w-4" />
+            FR
+          </Button>
+        </div>
 
         <div className="bg-white dark:bg-card rounded-lg shadow-lg p-8 md:p-12">
           <h1 className="text-4xl font-bold text-gray-900 dark:text-foreground mb-2">
