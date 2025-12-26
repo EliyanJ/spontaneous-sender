@@ -180,7 +180,7 @@ const Index = () => {
             </div>
             <div className="flex flex-wrap justify-center gap-2 sm:gap-4 md:gap-6 text-[10px] sm:text-sm text-muted-foreground">
               <a href="/privacy-policy" className="hover:text-primary transition-colors duration-300">Confidentialité</a>
-              <a href="/terms-of-service" className="hover:text-primary transition-colors duration-300">Conditions</a>
+              <a href="/terms-of-service" className="hover:text-primary transition-colors duration-300">Conditions d'Utilisation</a>
               <a href="/mentions-legales" className="hover:text-primary transition-colors duration-300">Mentions légales</a>
             </div>
             <p className="text-[10px] sm:text-sm text-muted-foreground">© 2025 Cronos</p>
