@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Mail, Globe, Search, CheckCircle2, ArrowRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { CreditsNeededModal } from "./CreditsNeededModal";
 
 interface SearchResult {
   company: string;
@@ -24,6 +25,8 @@ export const EmailSearch = ({ onNavigateToContacts }: EmailSearchProps) => {
   const [isSearching, setIsSearching] = useState(false);
   const [results, setResults] = useState<SearchResult[]>([]);
   const [summary, setSummary] = useState<{ processed: number; total: number; emailsFound: number } | null>(null);
+  const [showCreditsModal, setShowCreditsModal] = useState(false);
+  const [creditsInfo, setCreditsInfo] = useState<{ planType?: string; creditsAvailable?: number }>({});
   const { toast } = useToast();
 
   const handleSearch = async () => {
@@ -50,6 +53,16 @@ export const EmailSearch = ({ onNavigateToContacts }: EmailSearchProps) => {
         if (error) {
           console.error('Error searching emails:', error);
           
+          // Gérer erreur de crédits insuffisants (402)
+          if (error.message?.includes('Crédits insuffisants') || error.message?.includes('402')) {
+            setCreditsInfo({
+              planType: 'free',
+              creditsAvailable: 0
+            });
+            setShowCreditsModal(true);
+            break;
+          }
+          
           // Si erreur de rate limit, on arrête et on affiche ce qu'on a trouvé
           if (error.message?.includes('Rate limit')) {
             toast({
@@ -65,6 +78,16 @@ export const EmailSearch = ({ onNavigateToContacts }: EmailSearchProps) => {
             description: error.message || "Impossible de rechercher les emails. Veuillez réessayer.",
             variant: "destructive",
           });
+          break;
+        }
+
+        // Vérifier si la réponse contient creditsNeeded (insuffisance de crédits)
+        if (data?.creditsNeeded === true) {
+          setCreditsInfo({
+            planType: data.planType,
+            creditsAvailable: data.creditsAvailable
+          });
+          setShowCreditsModal(true);
           break;
         }
 
@@ -302,6 +325,14 @@ export const EmailSearch = ({ onNavigateToContacts }: EmailSearchProps) => {
           </CardContent>
         </Card>
       )}
+
+      {/* Modal de crédits insuffisants */}
+      <CreditsNeededModal
+        isOpen={showCreditsModal}
+        onClose={() => setShowCreditsModal(false)}
+        planType={creditsInfo.planType}
+        creditsAvailable={creditsInfo.creditsAvailable}
+      />
     </div>
   );
 };

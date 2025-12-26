@@ -6,6 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2, Mail, Globe, Search, CheckCircle2, ArrowRight, Clock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { CreditsNeededModal } from "./CreditsNeededModal";
 
 interface SearchResult {
   company: string;
@@ -28,6 +29,8 @@ export const EmailSearchSection = ({ onEmailsFound }: EmailSearchSectionProps) =
   const [summary, setSummary] = useState<{ processed: number; total: number; emailsFound: number } | null>(null);
   const [elapsedTime, setElapsedTime] = useState(0);
   const [estimatedTotal, setEstimatedTotal] = useState(0);
+  const [showCreditsModal, setShowCreditsModal] = useState(false);
+  const [creditsInfo, setCreditsInfo] = useState<{ planType?: string; creditsAvailable?: number }>({});
   const { toast } = useToast();
 
   // Timer pour le temps écoulé
@@ -75,6 +78,16 @@ export const EmailSearchSection = ({ onEmailsFound }: EmailSearchSectionProps) =
         });
 
         if (error) {
+          // Gérer erreur de crédits insuffisants (402)
+          if (error.message?.includes('Crédits insuffisants') || error.message?.includes('402')) {
+            setCreditsInfo({
+              planType: 'free',
+              creditsAvailable: 0
+            });
+            setShowCreditsModal(true);
+            break;
+          }
+          
           if (error.message?.includes('Rate limit')) {
             toast({
               title: "Limite atteinte",
@@ -88,6 +101,16 @@ export const EmailSearchSection = ({ onEmailsFound }: EmailSearchSectionProps) =
             description: error.message || "Impossible de rechercher les emails.",
             variant: "destructive",
           });
+          break;
+        }
+
+        // Vérifier si la réponse contient creditsNeeded (insuffisance de crédits)
+        if (data?.creditsNeeded === true) {
+          setCreditsInfo({
+            planType: data.planType,
+            creditsAvailable: data.creditsAvailable
+          });
+          setShowCreditsModal(true);
           break;
         }
 
@@ -333,6 +356,14 @@ export const EmailSearchSection = ({ onEmailsFound }: EmailSearchSectionProps) =
           ))}
         </div>
       )}
+
+      {/* Modal de crédits insuffisants */}
+      <CreditsNeededModal
+        isOpen={showCreditsModal}
+        onClose={() => setShowCreditsModal(false)}
+        planType={creditsInfo.planType}
+        creditsAvailable={creditsInfo.creditsAvailable}
+      />
     </div>
   );
 };
