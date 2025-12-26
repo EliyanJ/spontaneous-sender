@@ -1,6 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, Building2, Briefcase, Mail, Send, Settings, TrendingUp, Shield } from "lucide-react";
+import { Search, Building2, Briefcase, Mail, Send, Settings, Shield } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAdminCheck } from "@/hooks/useAdminCheck";
 
@@ -10,8 +10,6 @@ const menuItems = [
   { title: "Emails", icon: Mail, value: "emails" },
   { title: "Campagnes", icon: Send, value: "campaigns" },
   { title: "Offres d'emploi", icon: Briefcase, value: "jobs" },
-  { title: "Suivi", icon: TrendingUp, value: "suivi" },
-  { title: "Paramètres", icon: Settings, value: "settings" },
 ];
 
 interface HorizontalNavProps {
@@ -44,6 +42,21 @@ export const HorizontalNav = ({ activeTab, onTabChange }: HorizontalNavProps) =>
           </button>
         );
       })}
+      
+      {/* Settings button - gear icon */}
+      <button
+        onClick={() => onTabChange('settings')}
+        className={cn(
+          "flex items-center justify-center p-2 md:p-2.5 rounded-xl font-medium text-sm transition-all duration-300 shrink-0 ml-auto",
+          activeTab === 'settings'
+            ? "bg-primary text-primary-foreground shadow-lg" 
+            : "text-muted-foreground hover:text-foreground hover:bg-accent"
+        )}
+        style={activeTab === 'settings' ? { boxShadow: '0 0 20px hsl(var(--primary) / 0.3)' } : {}}
+        title="Paramètres"
+      >
+        <Settings className="h-4 w-4" />
+      </button>
       
       {/* Admin button - only visible for admins */}
       {isAdmin && (

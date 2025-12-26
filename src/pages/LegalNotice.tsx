@@ -8,14 +8,23 @@ const LegalNotice = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-background dark:via-background dark:to-background">
       <div className="container mx-auto px-4 py-8 max-w-4xl">
-        <Button
-          variant="ghost"
-          onClick={() => navigate("/")}
-          className="mb-6"
-        >
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Retour à l'accueil
-        </Button>
+        <div className="flex items-center justify-between mb-6">
+          <Button
+            variant="ghost"
+            onClick={() => navigate("/")}
+          >
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Retour à l'accueil
+          </Button>
+          <div className="flex gap-2">
+            <Button variant="default" size="sm" disabled>
+              🇫🇷 Français
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => navigate("/legal-notice-en")}>
+              🇬🇧 English
+            </Button>
+          </div>
+        </div>
 
         <div className="bg-white dark:bg-card rounded-lg shadow-lg p-8 md:p-12">
           <h1 className="text-4xl font-bold text-gray-900 dark:text-foreground mb-2">
