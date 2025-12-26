@@ -806,12 +806,12 @@ serve(async (req) => {
     }
 
     const requestData = await req.json();
-    const { maxCompanies } = requestSchema.parse(requestData);
+    const { maxCompanies: requestedMax } = requestSchema.parse(requestData);
 
     // Vérifier les crédits disponibles avant de lancer la recherche
     const { data: subscription, error: subError } = await supabase
       .from("subscriptions")
-      .select("sends_remaining, tokens_remaining")
+      .select("sends_remaining, tokens_remaining, plan_type")
       .eq("user_id", user.id)
       .single();
 
@@ -821,13 +821,16 @@ serve(async (req) => {
     }
 
     const totalCredits = (subscription?.sends_remaining || 0) + (subscription?.tokens_remaining || 0);
+    
     if (totalCredits <= 0) {
       return new Response(
         JSON.stringify({
           success: false,
           error: "Crédits insuffisants",
-          message: "Vous n'avez plus de crédits. Veuillez upgrader votre abonnement.",
-          creditsNeeded: true
+          message: "Vous n'avez plus de crédits. Veuillez upgrader votre abonnement ou acheter des tokens.",
+          creditsNeeded: true,
+          creditsAvailable: 0,
+          planType: subscription?.plan_type || 'free'
         }),
         { 
           status: 402,
@@ -836,7 +839,12 @@ serve(async (req) => {
       );
     }
 
+    // IMPORTANT: Limiter le nombre d'entreprises aux crédits disponibles
+    // On ne peut pas traiter plus d'entreprises qu'on n'a de crédits
+    const maxCompanies = Math.min(requestedMax, totalCredits);
+    
     console.log(`[Credits] User has ${totalCredits} credits available (${subscription?.sends_remaining} sends + ${subscription?.tokens_remaining} tokens)`);
+    console.log(`[Credits] Limiting maxCompanies to ${maxCompanies} (requested: ${requestedMax})`);
 
     // Fetch companies without selected_email
     const { data: companies, error: fetchError } = await supabase
@@ -957,11 +965,12 @@ serve(async (req) => {
     };
 
     // Débiter les crédits pour les emails trouvés (1 crédit par email trouvé)
+    // IMPORTANT: On débite AVANT de retourner les résultats
     const emailsFound = summary.found;
     let creditsDebited = 0;
     
     if (emailsFound > 0) {
-      console.log(`[Credits] Debiting ${emailsFound} credits for found emails...`);
+      console.log(`[Credits] Attempting to debit ${emailsFound} credits for found emails...`);
       
       // Utiliser la fonction use_send_credit pour débiter les crédits
       const { data: creditResult, error: creditError } = await supabase
@@ -972,9 +981,38 @@ serve(async (req) => {
 
       if (creditError) {
         console.error(`[Credits] Error debiting credits:`, creditError);
-        // On ne bloque pas le résultat, on log juste l'erreur
+        // En cas d'erreur technique, on retourne une erreur
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: "Erreur lors du débit des crédits",
+            message: "Une erreur est survenue lors du traitement. Veuillez réessayer.",
+            processed: summary.processed,
+            results: [] // Ne pas retourner les résultats si on n'a pas pu débiter
+          }),
+          { 
+            status: 500,
+            headers: { ...corsHeaders, "Content-Type": "application/json" } 
+          }
+        );
       } else if (creditResult === false) {
+        // Pas assez de crédits - ne devrait pas arriver car on a limité maxCompanies
         console.warn(`[Credits] Not enough credits to debit ${emailsFound}`);
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: "Crédits insuffisants",
+            message: "Vous n'avez pas assez de crédits pour cette recherche.",
+            creditsNeeded: true,
+            creditsAvailable: 0,
+            emailsFound: emailsFound,
+            planType: subscription?.plan_type || 'free'
+          }),
+          { 
+            status: 402,
+            headers: { ...corsHeaders, "Content-Type": "application/json" } 
+          }
+        );
       } else {
         creditsDebited = emailsFound;
         console.log(`[Credits] ✅ Successfully debited ${emailsFound} credits`);
