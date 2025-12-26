@@ -167,6 +167,12 @@ export const CampaignsHub = () => {
     setPipelineStats({ total: companiesData.length, parPhase });
   };
 
+  // Helper functions - defined before useMemo hooks that use them
+  const getDaysSinceSent = (sentAt: string) => {
+    const diff = new Date().getTime() - new Date(sentAt).getTime();
+    return Math.floor(diff / (1000 * 60 * 60 * 24));
+  };
+
   // Group campaigns into batches
   const campaignBatches = useMemo(() => {
     const batches: CampaignBatch[] = [];
@@ -247,11 +253,6 @@ export const CampaignsHub = () => {
       fill: stage.color,
     }));
   }, [pipelineStats]);
-
-  const getDaysSinceSent = (sentAt: string) => {
-    const diff = new Date().getTime() - new Date(sentAt).getTime();
-    return Math.floor(diff / (1000 * 60 * 60 * 24));
-  };
 
   const getTimeUntilSend = (scheduledFor: string) => {
     const diff = new Date(scheduledFor).getTime() - new Date().getTime();
