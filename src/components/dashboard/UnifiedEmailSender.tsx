@@ -35,6 +35,7 @@ import {
 import { Calendar } from "@/components/ui/calendar";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { cn } from "@/lib/utils";
+import { z } from "zod";
 import {
   Loader2,
   Sparkles,
@@ -121,6 +122,10 @@ export const UnifiedEmailSender = () => {
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
   const [attachments, setAttachments] = useState<File[]>([]);
+
+  // Manual recipients (optional)
+  const [manualEmail, setManualEmail] = useState("");
+  const [manualRecipients, setManualRecipients] = useState<string[]>([]);
 
   // AI configuration
   const [template, setTemplate] = useState("");
@@ -253,6 +258,24 @@ export const UnifiedEmailSender = () => {
     else setSelectedCompanies(new Set(companies.map(c => c.id)));
   };
 
+  const manualRecipientSchema = z.string().trim().email().max(255);
+
+  const handleAddManualRecipient = () => {
+    const parsed = manualRecipientSchema.safeParse(manualEmail);
+    if (!parsed.success) {
+      toast({ title: "Email invalide", variant: "destructive" });
+      return;
+    }
+
+    const normalized = parsed.data.toLowerCase();
+    setManualRecipients((prev) => (prev.includes(normalized) ? prev : [...prev, normalized]));
+    setManualEmail("");
+  };
+
+  const handleRemoveManualRecipient = (email: string) => {
+    setManualRecipients((prev) => prev.filter((e) => e !== email));
+  };
+
   const handleCvUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -380,23 +403,41 @@ export const UnifiedEmailSender = () => {
   };
 
   const handleGenerate = async () => {
-    if (selectedCompanies.size === 0) {
-      toast({ title: "Sélectionnez au moins une entreprise", variant: "destructive" });
+    // Manual mode: allow sending either to selected companies OR to manual recipient emails
+    if (!enableAIEmails && !enableCoverLetter) {
+      if (selectedCompanies.size === 0 && manualRecipients.length === 0) {
+        toast({ title: "Ajoutez au moins un destinataire", variant: "destructive" });
+        return;
+      }
+
+      const selectedList = companies.filter(c => selectedCompanies.has(c.id));
+      const manualList: GeneratedEmail[] = manualRecipients.map((email) => ({
+        company_id: `manual:${email}`,
+        company_name: email,
+        company_email: email,
+        success: true,
+        subject,
+        body,
+      }));
+
+      setGeneratedEmails([
+        ...selectedList.map(c => ({
+          company_id: c.id,
+          company_name: c.nom,
+          company_email: c.selected_email || undefined,
+          success: true,
+          subject,
+          body,
+        })),
+        ...manualList,
+      ]);
+      setActiveTab("preview");
       return;
     }
 
-    if (!enableAIEmails && !enableCoverLetter) {
-      // Manual mode - prepare emails directly
-      const selectedList = companies.filter(c => selectedCompanies.has(c.id));
-      setGeneratedEmails(selectedList.map(c => ({
-        company_id: c.id,
-        company_name: c.nom,
-        company_email: c.selected_email || undefined,
-        success: true,
-        subject,
-        body
-      })));
-      setActiveTab("preview");
+    // AI modes require selecting companies
+    if (selectedCompanies.size === 0) {
+      toast({ title: "Sélectionnez au moins une entreprise", variant: "destructive" });
       return;
     }
 
@@ -662,7 +703,60 @@ export const UnifiedEmailSender = () => {
                   </Button>
                 </div>
               </CardHeader>
-              <CardContent>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="manual-recipient">Ajouter un email manuellement</Label>
+                  <div className="flex items-end gap-2">
+                    <Input
+                      id="manual-recipient"
+                      type="email"
+                      value={manualEmail}
+                      onChange={(e) => setManualEmail(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          handleAddManualRecipient();
+                        }
+                      }}
+                      placeholder="email@exemple.com"
+                      className="bg-background"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={handleAddManualRecipient}
+                      className="shrink-0"
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Ajouter
+                    </Button>
+                  </div>
+
+                  <p className="text-xs text-muted-foreground">
+                    Disponible en mode email manuel (Options IA désactivées).
+                  </p>
+
+                  {manualRecipients.length > 0 && (
+                    <div className="flex flex-wrap gap-2 pt-1">
+                      {manualRecipients.map((email) => (
+                        <Badge key={email} variant="secondary" className="gap-1">
+                          <span className="max-w-[240px] truncate">{email}</span>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-5 w-5"
+                            onClick={() => handleRemoveManualRecipient(email)}
+                            aria-label={`Retirer ${email}`}
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
                 <ScrollArea className="h-[200px] border rounded-lg p-3">
                   {companies.length === 0 ? (
                     <p className="text-muted-foreground text-center py-8">
