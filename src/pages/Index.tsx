@@ -51,52 +51,9 @@ const Index = () => {
     }
   }, [searchParams, setSearchParams]);
 
-  // Handle OAuth callback
-  useEffect(() => {
-    const expectedReturn = sessionStorage.getItem("oauth_return_expected");
-    const hash = window.location.hash;
-    if (!expectedReturn || !hash) return;
+  // Note: OAuth callback/token extraction for Gmail is handled exclusively by /connect-gmail/callback.
+  // We intentionally do not store any Gmail/provider tokens on regular app login to keep the flows separated.
 
-    let providerToken: string | null = null;
-    let providerRefreshToken: string | null = null;
-    try {
-      const hashParams = new URLSearchParams(hash.startsWith('#') ? hash.substring(1) : hash);
-      providerToken = hashParams.get('provider_token');
-      providerRefreshToken = hashParams.get('provider_refresh_token');
-    } catch (e) {
-      console.warn('Impossible de parser le hash OAuth:', e);
-    } finally {
-      window.history.replaceState({}, '', window.location.pathname + window.location.search);
-    }
-
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (!session) return;
-
-      const anySession = session as any;
-      const token = providerToken || anySession?.provider_token || null;
-      const refresh = providerRefreshToken || anySession?.provider_refresh_token || null;
-
-      if (token) {
-        const { error } = await supabase.functions.invoke('store-gmail-tokens', {
-          headers: { Authorization: `Bearer ${session.access_token}` },
-          body: {
-            provider_token: token,
-            provider_refresh_token: refresh,
-          },
-        });
-        if (error) {
-          console.error('Erreur stockage tokens:', error);
-          toast.error('Erreur lors de la configuration Gmail');
-        } else {
-          toast.success('Connexion Google réussie !');
-        }
-      }
-
-      sessionStorage.removeItem('oauth_return_expected');
-      sessionStorage.removeItem('post_oauth_redirect');
-      sessionStorage.removeItem('post_login_redirect');
-    });
-  }, []);
 
   // Theme toggle
   useEffect(() => {
