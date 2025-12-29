@@ -18,17 +18,17 @@ const ConnectGmailCallback = () => {
 
     const handleCallback = async () => {
       // Get returnTo from sessionStorage
-      const returnTo = sessionStorage.getItem('gmail_connect_return_to') || '/dashboard';
+      const returnTo = sessionStorage.getItem('gmail_connect_return_to') || '/dashboard?tab=settings';
       sessionStorage.removeItem('gmail_connect_return_to');
 
-      // Extract tokens from hash
+      // Extract tokens from hash BEFORE any cleanup
       const hash = window.location.hash;
       
       if (!hash || !hash.includes('access_token')) {
         console.error('[GmailCallback] No access token in hash');
         setStatus("error");
         setMessage("Erreur: tokens non trouvés dans la réponse");
-        setTimeout(() => navigate(returnTo, { replace: true }), 3000);
+        setTimeout(() => navigateWithRefresh(returnTo), 3000);
         return;
       }
 
@@ -47,47 +47,50 @@ const ConnectGmailCallback = () => {
         console.error('[GmailCallback] Error parsing hash:', parseError);
       }
 
-      // Clear the hash from URL
-      window.history.replaceState({}, '', window.location.pathname);
-
       if (!providerToken) {
+        // Clean hash only if we have an error
+        window.history.replaceState({}, '', window.location.pathname);
         setStatus("error");
         setMessage("Erreur: token Gmail non reçu");
-        setTimeout(() => navigate(returnTo, { replace: true }), 3000);
+        setTimeout(() => navigateWithRefresh(returnTo), 3000);
         return;
       }
 
-      setMessage("Vérification de la session...");
+      setMessage("Attente de la session...");
       
-      // Wait for session to be available
-      const { data: { session } } = await supabase.auth.getSession();
+      // Wait for session with retry loop - DO NOT clean hash yet
+      let session = null;
+      const maxRetries = 20;
+      const retryDelay = 500;
       
-      if (!session) {
-        // Session might not be ready yet, wait for auth state change
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(
-          async (event, newSession) => {
-            console.log('[GmailCallback] Auth event:', event);
-            
-            if (newSession && providerToken) {
-              subscription.unsubscribe();
-              await storeTokensAndRedirect(newSession, providerToken, providerRefreshToken, returnTo);
-            }
-          }
-        );
-
-        // Timeout de sécurité
-        setTimeout(() => {
-          subscription.unsubscribe();
-          if (status === "processing") {
-            setStatus("error");
-            setMessage("Délai dépassé, veuillez réessayer");
-            setTimeout(() => navigate(returnTo, { replace: true }), 2000);
-          }
-        }, 10000);
-      } else {
-        // Session already available
-        await storeTokensAndRedirect(session, providerToken, providerRefreshToken, returnTo);
+      for (let i = 0; i < maxRetries; i++) {
+        console.log(`[GmailCallback] Session check attempt ${i + 1}/${maxRetries}`);
+        const { data } = await supabase.auth.getSession();
+        
+        if (data.session) {
+          session = data.session;
+          console.log('[GmailCallback] Session found!', session.user?.email);
+          break;
+        }
+        
+        // Wait before next retry
+        await new Promise(resolve => setTimeout(resolve, retryDelay));
       }
+
+      // NOW we can clean the hash since we've extracted what we need
+      window.history.replaceState({}, '', window.location.pathname);
+
+      if (!session) {
+        console.error('[GmailCallback] No session after retries');
+        setStatus("error");
+        setMessage("Session expirée, veuillez vous reconnecter");
+        toast.error("Session expirée");
+        setTimeout(() => navigate('/auth', { replace: true }), 2000);
+        return;
+      }
+
+      // Store tokens
+      await storeTokensAndRedirect(session, providerToken, providerRefreshToken, returnTo);
     };
 
     const storeTokensAndRedirect = async (
@@ -130,9 +133,13 @@ const ConnectGmailCallback = () => {
 
       // Redirect after a short delay with refresh parameter
       setTimeout(() => {
-        const separator = returnTo.includes('?') ? '&' : '?';
-        navigate(`${returnTo}${separator}gmailRefresh=true`, { replace: true });
-      }, 2000);
+        navigateWithRefresh(returnTo);
+      }, 1500);
+    };
+
+    const navigateWithRefresh = (returnTo: string) => {
+      const separator = returnTo.includes('?') ? '&' : '?';
+      navigate(`${returnTo}${separator}gmailRefresh=true`, { replace: true });
     };
 
     handleCallback();

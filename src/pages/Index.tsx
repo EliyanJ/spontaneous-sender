@@ -29,6 +29,8 @@ const Index = () => {
   useEffect(() => {
     const tabFromUrl = searchParams.get("tab");
     const emailsSectionFromUrl = searchParams.get("emailsSection");
+    const gmailRefresh = searchParams.get("gmailRefresh");
+    
     if (tabFromUrl) {
       setActiveTab(tabFromUrl);
     }
@@ -36,7 +38,18 @@ const Index = () => {
     if (emailsSectionFromUrl) {
       sessionStorage.setItem('emails_initial_section', emailsSectionFromUrl);
     }
-  }, [searchParams]);
+    
+    // Handle Gmail refresh parameter - dispatch event and clean URL
+    if (gmailRefresh === 'true') {
+      console.log('[Index] Gmail refresh detected, dispatching event');
+      window.dispatchEvent(new CustomEvent('gmail-connected'));
+      
+      // Clean the URL parameter
+      const newParams = new URLSearchParams(searchParams);
+      newParams.delete('gmailRefresh');
+      setSearchParams(newParams, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
 
   // Handle OAuth callback
   useEffect(() => {
