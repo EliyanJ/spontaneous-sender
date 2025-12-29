@@ -20,7 +20,7 @@ const LegalNotice = () => {
             <Button variant="default" size="sm" disabled>
               🇫🇷 Français
             </Button>
-            <Button variant="outline" size="sm" onClick={() => navigate("/legal-notice-en")}>
+            <Button variant="outline" size="sm" onClick={() => navigate("/legal-notice")}>
               🇬🇧 English
             </Button>
           </div>
