@@ -70,6 +70,36 @@ export const Settings = () => {
     current_period_end: null,
   });
 
+  // Check for Gmail refresh parameter and listen for gmail-connected event
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('gmailRefresh') === 'true') {
+      params.delete('gmailRefresh');
+      const newUrl = window.location.pathname + (params.toString() ? '?' + params.toString() : '');
+      window.history.replaceState({}, '', newUrl);
+      // Force reload Gmail status
+      const checkGmail = async () => {
+        const { data: gmailData } = await supabase
+          .from('gmail_tokens')
+          .select('id')
+          .maybeSingle();
+        setGmailConnected(!!gmailData);
+      };
+      checkGmail();
+    }
+
+    const handleGmailConnected = async () => {
+      const { data: gmailData } = await supabase
+        .from('gmail_tokens')
+        .select('id')
+        .maybeSingle();
+      setGmailConnected(!!gmailData);
+    };
+
+    window.addEventListener('gmail-connected', handleGmailConnected);
+    return () => window.removeEventListener('gmail-connected', handleGmailConnected);
+  }, []);
+
   useEffect(() => {
     loadData();
   }, []);

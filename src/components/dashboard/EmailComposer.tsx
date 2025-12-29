@@ -74,9 +74,27 @@ export const EmailComposer = () => {
     };
     window.addEventListener('companies:updated', handleCompaniesUpdate);
 
+    // Listen for Gmail connection event
+    const handleGmailConnected = () => {
+      checkGmailConnection();
+    };
+    window.addEventListener('gmail-connected', handleGmailConnected);
+
     return () => {
       window.removeEventListener('companies:updated', handleCompaniesUpdate);
+      window.removeEventListener('gmail-connected', handleGmailConnected);
     };
+  }, []);
+
+  // Check for Gmail refresh parameter
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('gmailRefresh') === 'true') {
+      params.delete('gmailRefresh');
+      const newUrl = window.location.pathname + (params.toString() ? '?' + params.toString() : '');
+      window.history.replaceState({}, '', newUrl);
+      checkGmailConnection();
+    }
   }, []);
 
   const loadTemplates = async () => {
