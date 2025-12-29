@@ -651,6 +651,11 @@ export const UnifiedEmailSender = () => {
   };
 
   const successfulEmails = generatedEmails.filter(e => e.success);
+  const selectedCount = selectedCompanies.size;
+  const manualCount = manualRecipients.length;
+  const prepareCount = selectedCount + manualCount;
+  const isAiMode = enableAIEmails || enableCoverLetter;
+  const isPrepareDisabled = isGenerating || !gmailConnected || (isAiMode ? selectedCount === 0 : prepareCount === 0);
 
   return (
     <>
@@ -716,7 +721,10 @@ export const UnifiedEmailSender = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <CardTitle className="text-lg">Destinataires</CardTitle>
-                    <CardDescription>{selectedCompanies.size}/{companies.length} entreprise(s) sélectionnée(s)</CardDescription>
+                    <CardDescription>
+                      {selectedCount}/{companies.length} entreprise(s) sélectionnée(s)
+                      {manualCount > 0 ? ` • ${manualCount} email(s) manuel(s)` : ""}
+                    </CardDescription>
                   </div>
                   <Button variant="outline" size="sm" onClick={handleSelectAll}>
                     {selectedCompanies.size === companies.length ? "Désélectionner tout" : "Tout sélectionner"}
@@ -951,9 +959,9 @@ export const UnifiedEmailSender = () => {
             )}
 
             {/* Generate Button */}
-            <Button onClick={handleGenerate} disabled={isGenerating || selectedCompanies.size === 0 || !gmailConnected} className="w-full gap-2" size="lg">
+            <Button onClick={handleGenerate} disabled={isPrepareDisabled} className="w-full gap-2" size="lg">
               {isGenerating ? <Loader2 className="h-5 w-5 animate-spin" /> : <Sparkles className="h-5 w-5" />}
-              {enableAIEmails || enableCoverLetter ? `Générer pour ${selectedCompanies.size} entreprise(s)` : `Préparer ${selectedCompanies.size} email(s)`}
+              {isAiMode ? `Générer pour ${selectedCount} entreprise(s)` : `Préparer ${prepareCount} email(s)`}
             </Button>
           </TabsContent>
 
