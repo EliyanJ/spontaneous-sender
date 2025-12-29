@@ -70,35 +70,56 @@ export const Settings = () => {
     current_period_end: null,
   });
 
+  const [debugInfo, setDebugInfo] = useState<string | null>(null);
+  const showDebug = new URLSearchParams(window.location.search).get('debug') === 'gmail';
+
   // Check for Gmail refresh parameter and listen for gmail-connected event
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
+    
+    const checkGmailStatus = async () => {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const userId = sessionData?.session?.user?.id;
+      
+      if (showDebug) {
+        setDebugInfo(`User ID: ${userId || 'none'}`);
+      }
+      
+      if (!userId) {
+        console.log('[Settings] No user session, cannot check Gmail tokens');
+        setGmailConnected(false);
+        return;
+      }
+      
+      const { data: gmailData, error } = await supabase
+        .from('gmail_tokens')
+        .select('id, updated_at')
+        .eq('user_id', userId)
+        .maybeSingle();
+      
+      if (showDebug) {
+        setDebugInfo(prev => `${prev}\nGmail query: ${gmailData ? 'found' : 'not found'} ${error ? `(err: ${error.message})` : ''}`);
+      }
+      
+      console.log('[Settings] Gmail check result:', { found: !!gmailData, error });
+      setGmailConnected(!!gmailData);
+    };
+    
     if (params.get('gmailRefresh') === 'true') {
       params.delete('gmailRefresh');
       const newUrl = window.location.pathname + (params.toString() ? '?' + params.toString() : '');
       window.history.replaceState({}, '', newUrl);
       // Force reload Gmail status
-      const checkGmail = async () => {
-        const { data: gmailData } = await supabase
-          .from('gmail_tokens')
-          .select('id')
-          .maybeSingle();
-        setGmailConnected(!!gmailData);
-      };
-      checkGmail();
+      checkGmailStatus();
     }
 
-    const handleGmailConnected = async () => {
-      const { data: gmailData } = await supabase
-        .from('gmail_tokens')
-        .select('id')
-        .maybeSingle();
-      setGmailConnected(!!gmailData);
+    const handleGmailConnected = () => {
+      checkGmailStatus();
     };
 
     window.addEventListener('gmail-connected', handleGmailConnected);
     return () => window.removeEventListener('gmail-connected', handleGmailConnected);
-  }, []);
+  }, [showDebug]);
 
   useEffect(() => {
     loadData();
@@ -216,6 +237,13 @@ export const Settings = () => {
 
   return (
     <div className="space-y-6">
+      {showDebug && debugInfo && (
+        <Card className="bg-yellow-500/10 border-yellow-500/50">
+          <CardContent className="p-4">
+            <pre className="text-xs whitespace-pre-wrap font-mono text-yellow-600 dark:text-yellow-400">{debugInfo}</pre>
+          </CardContent>
+        </Card>
+      )}
       <div>
         <h2 className="text-2xl font-display font-semibold text-foreground">Paramètres</h2>
         <p className="text-muted-foreground text-sm mt-1">
