@@ -34,13 +34,23 @@ const ConnectGmailCallback = () => {
 
       let providerToken: string | null = null;
       let providerRefreshToken: string | null = null;
+      let supabaseAccessToken: string | null = null;
+      let supabaseRefreshToken: string | null = null;
 
       try {
         const hashParams = new URLSearchParams(hash.substring(1));
+
+        // Supabase session tokens
+        supabaseAccessToken = hashParams.get('access_token');
+        supabaseRefreshToken = hashParams.get('refresh_token');
+
+        // Google provider tokens
         providerToken = hashParams.get('provider_token');
         providerRefreshToken = hashParams.get('provider_refresh_token');
 
         console.log('[GmailCallback] Tokens extracted:');
+        console.log('[GmailCallback] supabase access_token present:', !!supabaseAccessToken);
+        console.log('[GmailCallback] supabase refresh_token present:', !!supabaseRefreshToken);
         console.log('[GmailCallback] provider_token present:', !!providerToken);
         console.log('[GmailCallback] provider_refresh_token present:', !!providerRefreshToken);
       } catch (parseError) {
@@ -53,6 +63,55 @@ const ConnectGmailCallback = () => {
         setStatus("error");
         setMessage("Erreur: token Gmail non reçu");
         setTimeout(() => navigateWithRefresh(returnTo), 3000);
+        return;
+      }
+
+      // Ensure session is persisted BEFORE we clean the hash.
+      // This avoids landing back on /auth after Gmail connect.
+      let session = null as any;
+      if (supabaseAccessToken && supabaseRefreshToken) {
+        try {
+          setMessage("Finalisation de la connexion...");
+          const { data, error } = await supabase.auth.setSession({
+            access_token: supabaseAccessToken,
+            refresh_token: supabaseRefreshToken,
+          });
+          if (error) {
+            console.warn('[GmailCallback] setSession error:', error);
+          }
+          session = data.session ?? null;
+        } catch (e) {
+          console.warn('[GmailCallback] setSession exception:', e);
+        }
+      }
+
+      setMessage("Attente de la session...");
+
+      // If still not available, fallback to retries
+      if (!session) {
+        const maxRetries = 20;
+        const retryDelay = 500;
+        for (let i = 0; i < maxRetries; i++) {
+          console.log(`[GmailCallback] Session check attempt ${i + 1}/${maxRetries}`);
+          const { data } = await supabase.auth.getSession();
+          if (data.session) {
+            session = data.session;
+            console.log('[GmailCallback] Session found!', session.user?.email);
+            break;
+          }
+          await new Promise(resolve => setTimeout(resolve, retryDelay));
+        }
+      }
+
+      // NOW we can clean the hash since Supabase has had a chance to persist the session
+      window.history.replaceState({}, '', window.location.pathname);
+
+      if (!session) {
+        console.error('[GmailCallback] No session after setSession+retries');
+        setStatus("error");
+        setMessage("Session expirée, veuillez vous reconnecter");
+        toast.error("Session expirée");
+        setTimeout(() => navigate('/auth', { replace: true }), 2000);
         return;
       }
 
