@@ -157,12 +157,26 @@ export const Settings = () => {
         });
       }
 
-      // Check Gmail connection
-      const { data: gmailData } = await supabase
-        .from('gmail_tokens')
-        .select('id')
-        .maybeSingle();
-      setGmailConnected(!!gmailData);
+      // Check Gmail connection (RLS-safe: query by session user_id)
+      const { data: sessionData } = await supabase.auth.getSession();
+      const userId = sessionData?.session?.user?.id;
+
+      if (!userId) {
+        setGmailConnected(false);
+      } else {
+        const { data: gmailData, error: gmailError } = await supabase
+          .from('gmail_tokens')
+          .select('id')
+          .eq('user_id', userId)
+          .maybeSingle();
+
+        if (gmailError) {
+          console.warn('[Settings] Gmail token check error:', gmailError);
+        }
+
+        setGmailConnected(!!gmailData);
+      }
+
 
       // Load subscription
       const { data: subData } = await supabase
