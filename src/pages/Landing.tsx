@@ -155,11 +155,8 @@ const Landing = () => {
               </div>
               <div className="flex flex-wrap justify-center gap-4 md:gap-6 text-sm text-muted-foreground">
                 <a href="/privacy-policy" className="hover:text-primary transition-colors duration-300">Confidentialité</a>
-                <a href="/privacy-policy-en" className="hover:text-primary transition-colors duration-300">Privacy</a>
                 <a href="/terms-of-service" className="hover:text-primary transition-colors duration-300">Conditions</a>
-                <a href="/terms-of-service-en" className="hover:text-primary transition-colors duration-300">Terms</a>
                 <a href="/mentions-legales" className="hover:text-primary transition-colors duration-300">Mentions légales</a>
-                <a href="/legal-notice" className="hover:text-primary transition-colors duration-300">Legal Notice</a>
               </div>
               <p className="text-sm text-muted-foreground">© 2025 Cronos</p>
             </div>
