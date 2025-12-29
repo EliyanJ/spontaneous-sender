@@ -115,38 +115,6 @@ const ConnectGmailCallback = () => {
         return;
       }
 
-      setMessage("Attente de la session...");
-      
-      // Wait for session with retry loop - DO NOT clean hash yet
-      let session = null;
-      const maxRetries = 20;
-      const retryDelay = 500;
-      
-      for (let i = 0; i < maxRetries; i++) {
-        console.log(`[GmailCallback] Session check attempt ${i + 1}/${maxRetries}`);
-        const { data } = await supabase.auth.getSession();
-        
-        if (data.session) {
-          session = data.session;
-          console.log('[GmailCallback] Session found!', session.user?.email);
-          break;
-        }
-        
-        // Wait before next retry
-        await new Promise(resolve => setTimeout(resolve, retryDelay));
-      }
-
-      // NOW we can clean the hash since we've extracted what we need
-      window.history.replaceState({}, '', window.location.pathname);
-
-      if (!session) {
-        console.error('[GmailCallback] No session after retries');
-        setStatus("error");
-        setMessage("Session expirée, veuillez vous reconnecter");
-        toast.error("Session expirée");
-        setTimeout(() => navigate('/auth', { replace: true }), 2000);
-        return;
-      }
 
       // Store tokens
       await storeTokensAndRedirect(session, providerToken, providerRefreshToken, returnTo);
