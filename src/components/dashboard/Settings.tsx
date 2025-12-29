@@ -238,9 +238,9 @@ export const Settings = () => {
   return (
     <div className="space-y-6">
       {showDebug && debugInfo && (
-        <Card className="bg-yellow-500/10 border-yellow-500/50">
+        <Card className="bg-muted/40 border-border">
           <CardContent className="p-4">
-            <pre className="text-xs whitespace-pre-wrap font-mono text-yellow-600 dark:text-yellow-400">{debugInfo}</pre>
+            <pre className="text-xs whitespace-pre-wrap font-mono text-muted-foreground">{debugInfo}</pre>
           </CardContent>
         </Card>
       )}

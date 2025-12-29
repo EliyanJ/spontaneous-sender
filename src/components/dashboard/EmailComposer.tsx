@@ -153,10 +153,25 @@ export const EmailComposer = () => {
   const checkGmailConnection = async () => {
     try {
       setCheckingGmail(true);
-      const { data } = await supabase
+
+      const { data: sessionData } = await supabase.auth.getSession();
+      const userId = sessionData.session?.user?.id;
+
+      if (!userId) {
+        setGmailConnected(false);
+        return;
+      }
+
+      const { data, error } = await supabase
         .from("gmail_tokens")
         .select("id")
+        .eq("user_id", userId)
         .maybeSingle();
+
+      if (error) {
+        console.error("Error checking Gmail connection:", error);
+      }
+
       setGmailConnected(!!data);
     } catch (e) {
       console.error("Error checking Gmail connection:", e);
