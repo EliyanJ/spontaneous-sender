@@ -117,6 +117,9 @@ const ConnectGmailCallback = () => {
           setStatus("success");
           setMessage("Gmail connecté avec succès !");
           toast.success("Gmail connecté avec succès !");
+          
+          // Dispatch event to notify other components
+          window.dispatchEvent(new CustomEvent('gmail-connected'));
         }
       } catch (err) {
         console.error('[GmailCallback] Exception:', err);
@@ -125,9 +128,10 @@ const ConnectGmailCallback = () => {
         toast.error("Erreur inattendue");
       }
 
-      // Redirect after a short delay
+      // Redirect after a short delay with refresh parameter
       setTimeout(() => {
-        navigate(returnTo, { replace: true });
+        const separator = returnTo.includes('?') ? '&' : '?';
+        navigate(`${returnTo}${separator}gmailRefresh=true`, { replace: true });
       }, 2000);
     };
 
