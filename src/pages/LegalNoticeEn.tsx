@@ -10,17 +10,18 @@ const LegalNoticeEn = () => {
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         <div className="flex items-center justify-between mb-6">
           <Button
-            variant="ghost"
+            variant="outline"
             onClick={() => navigate("/")}
+            className="gap-2"
           >
-            <ArrowLeft className="mr-2 h-4 w-4" />
+            <ArrowLeft className="h-4 w-4" />
             Back to Home
           </Button>
           <div className="flex gap-2">
             <Button variant="outline" size="sm" onClick={() => navigate("/mentions-legales")}>
               🇫🇷 Français
             </Button>
-            <Button variant="default" size="sm" disabled>
+            <Button variant="secondary" size="sm" disabled>
               🇬🇧 English
             </Button>
           </div>
