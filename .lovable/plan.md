@@ -1,203 +1,164 @@
 
 
-# Plan de Refonte: Navigation Landing + Nouvelle Page Connexion
+# Plan: Redesign Page Login Style Shopify
 
-## Resume des changements demandes
+## Objectif
 
-1. **Navigation horizontale en haut de la landing** (style Shopify)
-   - Liens ancres: Fonctionnalites, Comment ca marche, Tarification
-   - Boutons: Se connecter, Commencer
-
-2. **Nouvelle page de connexion dediee** (remplacer le popup)
-   - Page complete `/login` (pas de fond assombri)
-   - Bouton Email, Bouton Passkey, Bouton Google avec logo
-   - Lien "Nouveau ? Creer votre compte"
-   - Liens en bas: Aide, Confidentialite, Conditions
-   - Encart de redirection Google avec logo Cronos
-
-3. **Synchronisation des prix sur la landing**
-   - Gratuit: 0EUR
-   - Standard: 14EUR/mois (actuellement affiche 9,99EUR)
-   - Premium: 39EUR/mois (actuellement affiche 19,99EUR)
-   - Descriptions alignees avec les vraies fonctionnalites
-
-4. **Creer une page Aide** (`/help`)
-   - Instructions de connexion
-   - Contact support
+Refondre la page `/login` pour qu'elle ressemble au style de Shopify avec:
+- Un fond degrade (gradient) au lieu du fond uni actuel
+- Une carte blanche centrale bien visible avec ombre
+- Des bordures plus marquees sur les boutons et champs
+- Le bouton Passkey desactive avec un toast "bientot disponible"
 
 ---
 
-## Architecture technique
+## Modifications a apporter
 
-### Fichiers a creer
+### Fichier: `src/pages/Login.tsx`
 
-1. **`src/pages/Login.tsx`** - Nouvelle page de connexion complete
-2. **`src/pages/Help.tsx`** - Page d'aide
+### 1. Fond avec gradient
 
-### Fichiers a modifier
-
-1. **`src/pages/Landing.tsx`**
-   - Ajouter navigation horizontale avec ancres
-   - Corriger les prix affiches (14EUR et 39EUR)
-   - Mettre a jour les descriptions des plans
-   - Remplacer `setAuthOpen(true)` par `navigate("/login")`
-   - Ajouter `id` aux sections pour les ancres
-
-2. **`src/App.tsx`**
-   - Ajouter routes `/login` et `/help`
-
-3. **`src/pages/Auth.tsx`** (ou supprimer)
-   - Conserver uniquement pour le callback OAuth
-   - La connexion se fera sur `/login`
-
----
-
-## Detail de l'implementation
-
-### 1. Navigation Landing (Landing.tsx)
+Remplacer le fond `bg-background` par un gradient inspire de Shopify:
 
 ```text
+Actuel: bg-background
+Nouveau: bg-gradient-to-br from-indigo-900 via-purple-900 to-teal-800
+
+En mode clair: gradient violet/teal
+En mode sombre: gradient plus fonce
+```
+
+### 2. Carte blanche centrale
+
+Ajouter un conteneur blanc avec:
+- Fond blanc (`bg-white` / `bg-card` en dark mode)
+- Coins arrondis (`rounded-xl` ou `rounded-2xl`)
+- Ombre portee (`shadow-2xl`)
+- Padding interne (`p-8` ou `p-10`)
+- Largeur fixe (`max-w-md`)
+
+```text
+Structure:
 +----------------------------------------------------------+
-| [Logo] Cronos    Fonctionnalites  Comment ca marche      |
-|                  Tarification     [Se connecter] [Commencer]|
+|  [Gradient Background - Plein ecran]                     |
+|                                                          |
+|      +----------------------------------------+          |
+|      |  [Carte blanche avec ombre]            |          |
+|      |                                         |          |
+|      |  [Logo Cronos]                          |          |
+|      |  Cronos                                 |          |
+|      |                                         |          |
+|      |  [ Continuer avec Email ]               |          |
+|      |  [ Connexion cle d'acces ] (desactive)  |          |
+|      |  [ Continuer avec Google ]              |          |
+|      |                                         |          |
+|      |  ------------- ou -------------         |          |
+|      |                                         |          |
+|      |  Nouveau sur Cronos? Creer compte       |          |
+|      |                                         |          |
+|      |  Aide | Confidentialite | Conditions    |          |
+|      +----------------------------------------+          |
+|                                                          |
 +----------------------------------------------------------+
 ```
 
-- `Fonctionnalites` -> ancre `#features`
-- `Comment ca marche` -> ancre `#how-it-works`
-- `Tarification` -> ancre `#pricing`
-- `Se connecter` -> `/login`
-- `Commencer` -> `/login`
+### 3. Bordures plus visibles
 
-### 2. Nouvelle page Login (src/pages/Login.tsx)
+Modifier les classes des boutons pour avoir des bordures plus marquees:
 
 ```text
-+--------------------------------------------------+
-|                                                  |
-|           [Logo Cronos]                          |
-|           Cronos                                 |
-|                                                  |
-|    [ Email          Continuer avec Email     ]   |
-|    [ Cle           Connexion avec cle d'acces ]  |
-|    [ G             Continuer avec Google      ]  |
-|                                                  |
-|    ----------------------------------------      |
-|                                                  |
-|    Nouveau sur Cronos ? Creer votre compte       |
-|                                                  |
-|    ----------------------------------------      |
-|    Aide  |  Confidentialite  |  Conditions       |
-+--------------------------------------------------+
+Actuel: variant="outline" (bordure subtile)
+Nouveau: Ajouter classes explicites:
+  - border-2 (plus epais)
+  - border-gray-300 (couleur visible)
+  - hover:border-gray-400 (effet hover)
+  - focus:border-primary focus:ring-2 (focus visible)
 ```
 
-**Comportement Google:**
-- Au clic sur Google -> afficher overlay avec logo Cronos + "Redirection vers Google..."
-- Puis lancer `signInWithOAuth`
+### 4. Bouton Passkey desactive
 
-**Boutons:**
-- Email -> Affiche formulaire email/password inline
-- Passkey -> Pour l'instant, afficher un toast "Bientot disponible"
-- Google -> Overlay puis redirection
+Le bouton Passkey doit indiquer qu'il n'est pas disponible:
+- Ajouter une opacite reduite (`opacity-60`)
+- Garder le toast actuel "bientot disponible"
+- Optionnel: ajouter un badge "Bientot"
 
-### 3. Correction des prix (Landing.tsx)
+### 5. Separateur "ou" style Shopify
 
-Section "Des offres simples" actuelle:
-```
-Gratuit: 0EUR - OK
-Simple: 9,99EUR -> Corriger en 14EUR (Standard)
-Plus: 19,99EUR -> Corriger en 39EUR (Premium)
-```
-
-Nouvelles descriptions alignees avec `stripe-config.ts`:
-
-**Standard (14EUR/mois):**
-- 100 envois par mois
-- Recherche automatique par departement
-- Template email generique
-- Suivi des reponses
-
-**Premium (39EUR/mois):**
-- 400 envois par mois
-- Recherche IA + manuelle precise
-- Emails personnalises par IA
-- Lettres de motivation generees
-- Acces offres d'emploi
-
-### 4. Page Aide (src/pages/Help.tsx)
+Ajouter un separateur avec le texte "ou" entre les boutons et le lien inscription:
 
 ```text
-+--------------------------------------------------+
-|  [<- Retour]                     Centre d'aide   |
-|                                                  |
-|  Comment se connecter                            |
-|  -------------------------------------------     |
-|  1. Cliquez sur "Se connecter"                   |
-|  2. Choisissez votre methode...                  |
-|                                                  |
-|  Problemes de connexion ?                        |
-|  -------------------------------------------     |
-|  - Verifiez votre email/mot de passe             |
-|  - Essayez avec Google                           |
-|                                                  |
-|  Nous contacter                                  |
-|  -------------------------------------------     |
-|  Email: support@cronos.fr                        |
-+--------------------------------------------------+
+------------ ou ------------
 ```
 
 ---
 
-## Flux utilisateur
+## Code CSS/Tailwind
 
-### Connexion via Google:
-```text
-1. Utilisateur sur Landing -> clique "Se connecter"
-2. Redirige vers /login
-3. Clique sur "Continuer avec Google"
-4. Overlay s'affiche: [Logo Cronos] "Redirection vers Google..."
-5. Redirection vers Google OAuth
-6. Callback sur /auth (existant)
-7. Redirection vers /dashboard
+### Classes pour la carte:
+
+```css
+/* Carte principale */
+bg-white dark:bg-gray-900
+rounded-2xl
+shadow-2xl
+p-8 sm:p-10
+w-full max-w-md
+border border-gray-200 dark:border-gray-700
 ```
 
-### Connexion via Email:
-```text
-1. Utilisateur sur /login -> clique "Continuer avec Email"
-2. Formulaire email/password s'affiche
-3. Saisie credentials -> clic "Se connecter"
-4. Redirection vers /dashboard
+### Classes pour le fond gradient:
+
+```css
+/* Fond de page */
+min-h-screen
+bg-gradient-to-br from-indigo-900 via-purple-900 to-teal-800
+dark:from-gray-900 dark:via-gray-800 dark:to-gray-900
 ```
 
-### Inscription:
-```text
-1. Utilisateur sur /login -> clique "Creer votre compte"
-2. Redirige vers /register (existant)
-3. Formulaire complet d'inscription
+### Classes pour les boutons:
+
+```css
+/* Boutons avec bordure visible */
+border-2 border-gray-300 dark:border-gray-600
+hover:border-gray-400 dark:hover:border-gray-500
+hover:bg-gray-50 dark:hover:bg-gray-800
 ```
 
 ---
 
-## Routes (App.tsx)
+## Comparaison avant/apres
 
-Ajouter:
-```typescript
-<Route path="/login" element={<Login />} />
-<Route path="/help" element={<Help />} />
-```
+### Avant:
+- Fond uni (bg-background)
+- Pas de carte conteneur
+- Bordures subtiles peu visibles
+- Bouton Passkey actif (mais non fonctionnel)
 
-Conserver `/auth` pour le callback OAuth uniquement.
+### Apres:
+- Fond gradient colore style Shopify
+- Carte blanche avec ombre bien demarquee
+- Bordures plus epaisses et visibles
+- Bouton Passkey visuellement desactive avec indication "Bientot"
+- Separateur "ou" entre les sections
 
 ---
 
-## Resume des taches
+## Fichier a modifier
 
-| # | Tache | Fichier |
-|---|-------|---------|
-| 1 | Creer page Login avec boutons Email/Passkey/Google | src/pages/Login.tsx |
-| 2 | Creer page Help | src/pages/Help.tsx |
-| 3 | Ajouter navigation horizontale avec ancres | src/pages/Landing.tsx |
-| 4 | Corriger prix (14EUR/39EUR) et descriptions | src/pages/Landing.tsx |
-| 5 | Remplacer popup auth par navigation vers /login | src/pages/Landing.tsx |
-| 6 | Ajouter id aux sections pour ancres | src/pages/Landing.tsx |
-| 7 | Ajouter routes /login et /help | src/App.tsx |
+| Fichier | Changements |
+|---------|-------------|
+| `src/pages/Login.tsx` | - Ajouter gradient en fond de page |
+|                        | - Wrapper le contenu dans une carte avec ombre |
+|                        | - Renforcer les bordures des boutons |
+|                        | - Ajouter style desactive sur bouton Passkey |
+|                        | - Ajouter separateur "ou" |
+
+---
+
+## Impact
+
+- **Visuel**: Page de login beaucoup plus professionnelle et moderne
+- **UX**: Les elements sont clairement visibles et separes
+- **Coherence**: Style similaire aux standards de l'industrie (Shopify)
+- **Dark mode**: Le gradient s'adaptera au theme sombre
 
