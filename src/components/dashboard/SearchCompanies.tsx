@@ -7,10 +7,11 @@ import { ManualSearchMode } from "./search/ManualSearchMode";
 import { SearchFiltersStep } from "./search/SearchFiltersStep";
 import { SearchResultsStep } from "./search/SearchResultsStep";
 import { JobProgressCard } from "./JobProgressCard";
+import { AutomaticSearch } from "./AutomaticSearch";
 import { useJobQueue } from "@/hooks/useJobQueue";
-import { Sparkles, Grid3X3 } from "lucide-react";
+import { usePlanFeatures } from "@/hooks/usePlanFeatures";
+import { Sparkles, Grid3X3, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-
 interface Company {
   siren: string;
   siret: string;
@@ -50,6 +51,9 @@ export const SearchCompanies = ({ onNavigateToTab }: SearchCompaniesProps = {}) 
   const [villes, setVilles] = useState<string[]>([]);
   const [minResults, setMinResults] = useState("20");
   const [minEmployees, setMinEmployees] = useState("5-100");
+
+  // Plan features hook
+  const { features, isLoading: planLoading } = usePlanFeatures();
 
   // Job queue hook
   const handleJobComplete = useCallback((job: any) => {
@@ -284,38 +288,56 @@ export const SearchCompanies = ({ onNavigateToTab }: SearchCompaniesProps = {}) 
     }
   };
 
+  // If plan is loading, show skeleton
+  if (planLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  // If user doesn't have AI/Manual search access, show AutomaticSearch
+  if (!features.canUseAISearch && !features.canUseManualSearch) {
+    return <AutomaticSearch onNavigateToTab={onNavigateToTab} />;
+  }
+
   return (
     <div className="h-full">
       {/* Mode Tabs - Only visible during selection step */}
       {step === "select" && (
         <div className="flex justify-center mb-8 animate-fade-in">
           <div className="inline-flex p-1.5 rounded-2xl bg-card border border-border/50">
-            <button
-              onClick={() => setMode("ai")}
-              className={cn(
-                "flex items-center gap-2 px-6 py-3 rounded-xl font-medium text-sm transition-all duration-300",
-                mode === "ai"
-                  ? "bg-primary text-primary-foreground shadow-lg"
-                  : "text-muted-foreground hover:text-foreground hover:bg-accent"
-              )}
-              style={mode === "ai" ? { boxShadow: '0 0 20px hsl(var(--primary) / 0.3)' } : {}}
-            >
-              <Sparkles className="h-4 w-4" />
-              Recherche IA
-            </button>
-            <button
-              onClick={() => setMode("manual")}
-              className={cn(
-                "flex items-center gap-2 px-6 py-3 rounded-xl font-medium text-sm transition-all duration-300",
-                mode === "manual"
-                  ? "bg-primary text-primary-foreground shadow-lg"
-                  : "text-muted-foreground hover:text-foreground hover:bg-accent"
-              )}
-              style={mode === "manual" ? { boxShadow: '0 0 20px hsl(var(--primary) / 0.3)' } : {}}
-            >
-              <Grid3X3 className="h-4 w-4" />
-              Recherche manuelle
-            </button>
+            {features.canUseAISearch && (
+              <button
+                onClick={() => setMode("ai")}
+                className={cn(
+                  "flex items-center gap-2 px-6 py-3 rounded-xl font-medium text-sm transition-all duration-300",
+                  mode === "ai"
+                    ? "bg-primary text-primary-foreground shadow-lg"
+                    : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                )}
+                style={mode === "ai" ? { boxShadow: '0 0 20px hsl(var(--primary) / 0.3)' } : {}}
+              >
+                <Sparkles className="h-4 w-4" />
+                Recherche IA
+              </button>
+            )}
+            {features.canUseManualSearch && (
+              <button
+                onClick={() => setMode("manual")}
+                className={cn(
+                  "flex items-center gap-2 px-6 py-3 rounded-xl font-medium text-sm transition-all duration-300",
+                  mode === "manual"
+                    ? "bg-primary text-primary-foreground shadow-lg"
+                    : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                )}
+                style={mode === "manual" ? { boxShadow: '0 0 20px hsl(var(--primary) / 0.3)' } : {}}
+              >
+                <Grid3X3 className="h-4 w-4" />
+                Recherche manuelle
+              </button>
+            )}
           </div>
         </div>
       )}
@@ -324,11 +346,11 @@ export const SearchCompanies = ({ onNavigateToTab }: SearchCompaniesProps = {}) 
       <div className="relative">
         {step === "select" && (
           <div className="animate-fade-in">
-            {mode === "ai" ? (
+            {mode === "ai" && features.canUseAISearch ? (
               <AISearchMode onSectorsValidated={handleSectorsValidated} />
-            ) : (
+            ) : mode === "manual" && features.canUseManualSearch ? (
               <ManualSearchMode onSectorsValidated={handleSectorsValidated} />
-            )}
+            ) : null}
           </div>
         )}
 

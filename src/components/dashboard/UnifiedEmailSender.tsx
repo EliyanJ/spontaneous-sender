@@ -59,10 +59,14 @@ import {
   RefreshCw,
   Globe,
   Download,
-  Copy
+  Copy,
+  Crown
 } from "lucide-react";
 import { GenerationOverlay } from "./GenerationOverlay";
+import { GenericTemplateEditor } from "./GenericTemplateEditor";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { usePlanFeatures } from "@/hooks/usePlanFeatures";
+import { UpgradeBanner } from "@/components/UpgradeBanner";
 
 interface Company {
   id: string;
