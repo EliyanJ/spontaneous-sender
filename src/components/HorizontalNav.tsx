@@ -1,6 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, Building2, Briefcase, Mail, Send, Settings, Shield } from "lucide-react";
+import { Search, Building2, Briefcase, Mail, Send, Shield } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAdminCheck } from "@/hooks/useAdminCheck";
 
@@ -43,26 +43,11 @@ export const HorizontalNav = ({ activeTab, onTabChange }: HorizontalNavProps) =>
         );
       })}
       
-      {/* Settings button - gear icon */}
-      <button
-        onClick={() => onTabChange('settings')}
-        className={cn(
-          "flex items-center justify-center p-2 md:p-2.5 rounded-xl font-medium text-sm transition-all duration-300 shrink-0 ml-auto",
-          activeTab === 'settings'
-            ? "bg-primary text-primary-foreground shadow-lg" 
-            : "text-muted-foreground hover:text-foreground hover:bg-accent"
-        )}
-        style={activeTab === 'settings' ? { boxShadow: '0 0 20px hsl(var(--primary) / 0.3)' } : {}}
-        title="Paramètres"
-      >
-        <Settings className="h-4 w-4" />
-      </button>
-      
       {/* Admin button - only visible for admins */}
       {isAdmin && (
         <button
           onClick={() => navigate('/admin')}
-          className="flex items-center gap-2 px-3 md:px-4 py-2 md:py-2.5 rounded-xl font-medium text-sm transition-all duration-300 shrink-0 text-primary hover:bg-primary/10 border border-primary/30"
+          className="flex items-center gap-2 px-3 md:px-4 py-2 md:py-2.5 rounded-xl font-medium text-sm transition-all duration-300 shrink-0 text-primary hover:bg-primary/10 border border-primary/30 ml-auto"
         >
           <Shield className="h-4 w-4" />
           <span className="hidden lg:inline">Admin</span>

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { Settings as SettingsIcon } from "lucide-react";
 import { SearchCompanies } from "@/components/dashboard/SearchCompanies";
 import { JobOffers } from "@/components/dashboard/JobOffers";
 import { Entreprises } from "@/components/dashboard/Entreprises";
@@ -13,7 +14,9 @@ import { HorizontalNav } from "@/components/HorizontalNav";
 import { MobileNav } from "@/components/MobileNav";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { CreditsDisplay } from "@/components/CreditsDisplay";
+import { ProfileDropdown } from "@/components/ProfileDropdown";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { cn } from "@/lib/utils";
 import cronosLogo from "@/assets/cronos-logo.png";
 
 const Index = () => {
@@ -118,10 +121,23 @@ const Index = () => {
             <HorizontalNav activeTab={activeTab} onTabChange={handleTabChange} />
           )}
 
-          {/* Credits Display & Theme Toggle - Desktop only */}
+          {/* Credits, Profile, Settings & Theme Toggle - Desktop only */}
           {!isMobile && (
             <div className="flex items-center gap-2 shrink-0">
               <CreditsDisplay />
+              <ProfileDropdown onNavigateToSettings={() => handleTabChange('settings')} />
+              <button
+                onClick={() => handleTabChange('settings')}
+                className={cn(
+                  "flex items-center justify-center p-2 rounded-lg transition-all duration-200",
+                  activeTab === 'settings'
+                    ? "bg-primary text-primary-foreground" 
+                    : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                )}
+                title="Paramètres"
+              >
+                <SettingsIcon className="h-4 w-4" />
+              </button>
               <ThemeToggle isDark={isDark} onToggle={() => setIsDark(!isDark)} />
             </div>
           )}

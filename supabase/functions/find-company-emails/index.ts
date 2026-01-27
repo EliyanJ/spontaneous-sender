@@ -8,8 +8,9 @@ const corsHeaders = {
 };
 
 const requestSchema = z.object({
-  maxCompanies: z.number().int().min(1).max(25).optional().default(25), // Augmenté avec délais réduits
-  batchSize: z.number().int().min(5).max(25).optional().default(20) // 20 entreprises par batch
+  maxCompanies: z.number().int().min(1).max(25).optional().default(25),
+  batchSize: z.number().int().min(5).max(25).optional().default(20),
+  batchIds: z.array(z.string().uuid()).optional() // Filter by specific search batch IDs
 });
 
 async function checkRateLimit(supabase: any, userId: string, action: string, limit: number = 10) {
@@ -806,7 +807,7 @@ serve(async (req) => {
     }
 
     const requestData = await req.json();
-    const { maxCompanies: requestedMax } = requestSchema.parse(requestData);
+    const { maxCompanies: requestedMax, batchIds } = requestSchema.parse(requestData);
 
     // Vérifier les crédits disponibles avant de lancer la recherche
     const { data: subscription, error: subError } = await supabase
@@ -846,13 +847,22 @@ serve(async (req) => {
     console.log(`[Credits] User has ${totalCredits} credits available (${subscription?.sends_remaining} sends + ${subscription?.tokens_remaining} tokens)`);
     console.log(`[Credits] Limiting maxCompanies to ${maxCompanies} (requested: ${requestedMax})`);
 
-    // Fetch companies without selected_email
-    const { data: companies, error: fetchError } = await supabase
+    // Fetch companies without selected_email, optionally filtered by batch
+
+    // Fetch companies without selected_email, optionally filtered by batch
+    let query = supabase
       .from("companies")
       .select("id, nom, ville, siren, code_ape, libelle_ape, adresse, notes")
       .eq("user_id", user.id)
-      .is("selected_email", null)
-      .limit(maxCompanies);
+      .is("selected_email", null);
+    
+    // If batchIds provided, filter to only those batches
+    if (batchIds && batchIds.length > 0) {
+      query = query.in("search_batch_id", batchIds);
+      console.log(`[Batch Filter] Filtering to batch IDs: ${batchIds.join(', ')}`);
+    }
+    
+    const { data: companies, error: fetchError } = await query.limit(maxCompanies);
 
     if (fetchError) {
       console.error("Error fetching companies:", fetchError);

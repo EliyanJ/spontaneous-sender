@@ -1,12 +1,16 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Mail, Globe, Search, CheckCircle2, ArrowRight, Clock } from "lucide-react";
+import { Loader2, Mail, Globe, Search, CheckCircle2, ArrowRight, Clock, Calendar, FolderOpen, Send } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 import { CreditsNeededModal } from "./CreditsNeededModal";
+import { format } from "date-fns";
+import { fr } from "date-fns/locale";
 
 interface SearchResult {
   company: string;
@@ -19,9 +23,18 @@ interface SearchResult {
   error?: string;
 }
 
+interface BatchInfo {
+  id: string | null;
+  date: string;
+  count: number;
+  withoutEmail: number;
+}
+
 interface EmailSearchSectionProps {
   onEmailsFound?: () => void;
 }
+
+type SearchScope = "latest" | "previous" | "campaign";
 
 export const EmailSearchSection = ({ onEmailsFound }: EmailSearchSectionProps) => {
   const [isSearching, setIsSearching] = useState(false);
@@ -31,9 +44,105 @@ export const EmailSearchSection = ({ onEmailsFound }: EmailSearchSectionProps) =
   const [estimatedTotal, setEstimatedTotal] = useState(0);
   const [showCreditsModal, setShowCreditsModal] = useState(false);
   const [creditsInfo, setCreditsInfo] = useState<{ planType?: string; creditsAvailable?: number }>({});
+  
+  // Batch selection state
+  const [searchScope, setSearchScope] = useState<SearchScope>("latest");
+  const [latestBatch, setLatestBatch] = useState<BatchInfo | null>(null);
+  const [previousBatches, setPreviousBatches] = useState<BatchInfo[]>([]);
+  const [campaignReady, setCampaignReady] = useState<{ count: number }>({ count: 0 });
+  const [loading, setLoading] = useState(true);
+  
   const { toast } = useToast();
 
-  // Timer pour le temps écoulé
+  // Load batch information on mount
+  useEffect(() => {
+    loadBatchInfo();
+    
+    // Listen for new batch creation
+    const handleBatchCreated = () => {
+      loadBatchInfo();
+    };
+    window.addEventListener('search:batch-created', handleBatchCreated);
+    window.addEventListener('companies:updated', handleBatchCreated);
+    
+    return () => {
+      window.removeEventListener('search:batch-created', handleBatchCreated);
+      window.removeEventListener('companies:updated', handleBatchCreated);
+    };
+  }, []);
+
+  const loadBatchInfo = async () => {
+    setLoading(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      // Get all companies grouped by batch
+      const { data: companies } = await supabase
+        .from('companies')
+        .select('id, search_batch_id, search_batch_date, selected_email, status')
+        .eq('user_id', user.id)
+        .order('search_batch_date', { ascending: false });
+
+      if (!companies) return;
+
+      // Group by batch
+      const batchMap = new Map<string | null, { date: string; count: number; withoutEmail: number }>();
+      
+      companies.forEach(c => {
+        const batchId = c.search_batch_id || 'legacy';
+        const existing = batchMap.get(batchId) || { 
+          date: c.search_batch_date || c.search_batch_date, 
+          count: 0, 
+          withoutEmail: 0 
+        };
+        existing.count++;
+        if (!c.selected_email) existing.withoutEmail++;
+        batchMap.set(batchId, existing);
+      });
+
+      // Convert to array and sort by date
+      const batches: BatchInfo[] = [];
+      batchMap.forEach((info, id) => {
+        batches.push({ id, ...info });
+      });
+
+      // Sort by date descending
+      batches.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+      // Latest batch (most recent with companies without email)
+      const latestWithPending = batches.find(b => b.withoutEmail > 0);
+      setLatestBatch(latestWithPending || null);
+
+      // Previous batches (excluding latest)
+      const previousWithPending = batches
+        .filter(b => b.id !== latestWithPending?.id && b.withoutEmail > 0)
+        .slice(0, 5);
+      setPreviousBatches(previousWithPending);
+
+      // Companies ready for campaign (have email, status not 'sent')
+      const readyCount = companies.filter(c => 
+        c.selected_email && c.status !== 'sent'
+      ).length;
+      setCampaignReady({ count: readyCount });
+
+      // Auto-select scope based on availability
+      if (latestWithPending) {
+        setSearchScope("latest");
+      } else if (previousWithPending.length > 0) {
+        setSearchScope("previous");
+      } else if (readyCount > 0) {
+        setSearchScope("campaign");
+      }
+
+    } catch (error) {
+      console.error('Error loading batch info:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Timer for elapsed time
   useEffect(() => {
     let interval: NodeJS.Timeout;
     if (isSearching) {
@@ -52,20 +161,37 @@ export const EmailSearchSection = ({ onEmailsFound }: EmailSearchSectionProps) =
     return mins > 0 ? `${mins}min ${secs}s` : `${secs}s`;
   };
 
+  const formatDate = (dateStr: string) => {
+    try {
+      return format(new Date(dateStr), "d MMM yyyy", { locale: fr });
+    } catch {
+      return "Date inconnue";
+    }
+  };
+
   const handleSearch = async () => {
+    if (searchScope === "campaign") {
+      // Campaign mode - navigate to email composer
+      if (onEmailsFound) onEmailsFound();
+      return;
+    }
+
     setIsSearching(true);
     setResults([]);
     setSummary(null);
     setElapsedTime(0);
 
     try {
-      // D'abord, compter les entreprises à traiter
-      const { count } = await supabase
-        .from('companies')
-        .select('*', { count: 'exact', head: true })
-        .is('selected_email', null);
+      // Determine which batch(es) to search
+      let batchIds: (string | null)[] = [];
       
-      setEstimatedTotal(count || 0);
+      if (searchScope === "latest" && latestBatch) {
+        batchIds = [latestBatch.id];
+        setEstimatedTotal(latestBatch.withoutEmail);
+      } else if (searchScope === "previous") {
+        batchIds = previousBatches.map(b => b.id);
+        setEstimatedTotal(previousBatches.reduce((acc, b) => acc + b.withoutEmail, 0));
+      }
 
       let totalProcessed = 0;
       let totalEmailsFound = 0;
@@ -74,16 +200,15 @@ export const EmailSearchSection = ({ onEmailsFound }: EmailSearchSectionProps) =
 
       while (hasMore) {
         const { data, error } = await supabase.functions.invoke('find-company-emails', {
-          body: { maxCompanies: 25 } // Augmenté avec délais optimisés
+          body: { 
+            maxCompanies: 25,
+            batchIds: batchIds.filter(id => id !== null && id !== 'legacy')
+          }
         });
 
         if (error) {
-          // Gérer erreur de crédits insuffisants (402)
           if (error.message?.includes('Crédits insuffisants') || error.message?.includes('402')) {
-            setCreditsInfo({
-              planType: 'free',
-              creditsAvailable: 0
-            });
+            setCreditsInfo({ planType: 'free', creditsAvailable: 0 });
             setShowCreditsModal(true);
             break;
           }
@@ -104,24 +229,17 @@ export const EmailSearchSection = ({ onEmailsFound }: EmailSearchSectionProps) =
           break;
         }
 
-        // Vérifier si la réponse contient creditsNeeded (insuffisance de crédits)
         if (data?.creditsNeeded === true) {
-          setCreditsInfo({
-            planType: data.planType,
-            creditsAvailable: data.creditsAvailable
-          });
+          setCreditsInfo({ planType: data.planType, creditsAvailable: data.creditsAvailable });
           setShowCreditsModal(true);
           break;
         }
 
-        // Correction: utiliser les bons champs de la réponse
         totalProcessed += data.processed || 0;
         totalEmailsFound += data.summary?.found || data.results?.filter((r: SearchResult) => r.emails && r.emails.length > 0).length || 0;
         allResults = [...allResults, ...(data.results || [])];
-        hasMore = data.hasMore === true; // S'assurer que c'est bien un boolean true
+        hasMore = data.hasMore === true;
         
-        console.log(`[Email Search] Batch completed: ${data.processed} processed, ${data.summary?.found || 0} found, hasMore: ${hasMore}`);
-
         setResults(allResults);
         setSummary({
           processed: totalProcessed,
@@ -130,11 +248,12 @@ export const EmailSearchSection = ({ onEmailsFound }: EmailSearchSectionProps) =
         });
 
         if (hasMore) {
-          await new Promise(resolve => setTimeout(resolve, 1000)); // Réduit à 1s entre batches
+          await new Promise(resolve => setTimeout(resolve, 1000));
         }
       }
 
       window.dispatchEvent(new CustomEvent('companies:updated'));
+      loadBatchInfo(); // Refresh batch info
 
       toast({
         title: "Recherche terminée",
@@ -176,10 +295,9 @@ export const EmailSearchSection = ({ onEmailsFound }: EmailSearchSectionProps) =
     return <Badge className={colors[source] || ""}>{source}</Badge>;
   };
 
-  // Calcul de l'estimation du temps restant
   const getTimeEstimate = () => {
     if (!summary || !estimatedTotal || summary.processed === 0) return "";
-    const avgTimePerCompany = elapsedTime / summary.processed; // Calculer le temps moyen réel
+    const avgTimePerCompany = elapsedTime / summary.processed;
     const remaining = Math.max(0, (estimatedTotal - summary.processed) * avgTimePerCompany);
     
     if (remaining > 60) {
@@ -188,36 +306,136 @@ export const EmailSearchSection = ({ onEmailsFound }: EmailSearchSectionProps) =
     return `~${Math.ceil(remaining)}s restantes`;
   };
 
+  const getSelectedCount = () => {
+    if (searchScope === "latest" && latestBatch) return latestBatch.withoutEmail;
+    if (searchScope === "previous") return previousBatches.reduce((acc, b) => acc + b.withoutEmail, 0);
+    if (searchScope === "campaign") return campaignReady.count;
+    return 0;
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  const noCompanies = !latestBatch && previousBatches.length === 0 && campaignReady.count === 0;
+
   return (
     <div className="space-y-6">
+      {/* Batch Selection */}
+      {!noCompanies && (
+        <Card className="bg-card/50 border-border">
+          <CardContent className="p-6">
+            <h3 className="font-semibold text-foreground mb-4">Sélectionner les contacts</h3>
+            
+            <RadioGroup value={searchScope} onValueChange={(v) => setSearchScope(v as SearchScope)} className="space-y-3">
+              {/* Latest batch */}
+              {latestBatch && (
+                <div className={`flex items-center space-x-3 p-4 rounded-lg border transition-all ${searchScope === 'latest' ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'}`}>
+                  <RadioGroupItem value="latest" id="latest" />
+                  <Label htmlFor="latest" className="flex-1 cursor-pointer">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Search className="h-4 w-4 text-primary" />
+                        <span className="font-medium">Recherche récente</span>
+                        <Badge variant="secondary" className="text-xs">
+                          {formatDate(latestBatch.date)}
+                        </Badge>
+                      </div>
+                      <span className="text-sm text-muted-foreground">
+                        {latestBatch.withoutEmail} sans email
+                      </span>
+                    </div>
+                  </Label>
+                </div>
+              )}
+
+              {/* Previous batches */}
+              {previousBatches.length > 0 && (
+                <div className={`flex items-start space-x-3 p-4 rounded-lg border transition-all ${searchScope === 'previous' ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'}`}>
+                  <RadioGroupItem value="previous" id="previous" className="mt-1" />
+                  <Label htmlFor="previous" className="flex-1 cursor-pointer">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <FolderOpen className="h-4 w-4 text-muted-foreground" />
+                        <span className="font-medium">Recherches précédentes</span>
+                      </div>
+                      <span className="text-sm text-muted-foreground">
+                        {previousBatches.reduce((acc, b) => acc + b.withoutEmail, 0)} sans email
+                      </span>
+                    </div>
+                    <div className="text-xs text-muted-foreground space-y-1">
+                      {previousBatches.slice(0, 3).map((batch, i) => (
+                        <div key={batch.id || i} className="flex justify-between">
+                          <span>{formatDate(batch.date)}</span>
+                          <span>{batch.withoutEmail} contacts</span>
+                        </div>
+                      ))}
+                    </div>
+                  </Label>
+                </div>
+              )}
+
+              {/* Campaign ready */}
+              {campaignReady.count > 0 && (
+                <div className={`flex items-center space-x-3 p-4 rounded-lg border transition-all ${searchScope === 'campaign' ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'}`}>
+                  <RadioGroupItem value="campaign" id="campaign" />
+                  <Label htmlFor="campaign" className="flex-1 cursor-pointer">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Send className="h-4 w-4 text-green-500" />
+                        <span className="font-medium">Prêts pour campagne</span>
+                      </div>
+                      <span className="text-sm text-muted-foreground">
+                        {campaignReady.count} avec email
+                      </span>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Contacts avec email, non encore contactés
+                    </p>
+                  </Label>
+                </div>
+              )}
+            </RadioGroup>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Search Button */}
       <Card className="bg-card/50 border-border">
         <CardContent className="p-6">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="font-semibold text-foreground">Recherche automatique</h3>
+              <h3 className="font-semibold text-foreground">
+                {searchScope === "campaign" ? "Lancer une campagne" : "Recherche automatique"}
+              </h3>
               <p className="text-sm text-muted-foreground mt-1">
-                Trouvez les emails de toutes vos entreprises sauvegardées
+                {noCompanies 
+                  ? "Aucune entreprise à traiter. Lancez une recherche d'abord."
+                  : searchScope === "campaign"
+                    ? `Envoyer des emails à ${getSelectedCount()} contacts`
+                    : `Trouver les emails de ${getSelectedCount()} entreprises`
+                }
               </p>
             </div>
             <Button 
               onClick={handleSearch} 
-              disabled={isSearching}
+              disabled={isSearching || noCompanies || getSelectedCount() === 0}
               size="lg"
-              className="bg-primary hover:bg-primary/90"
-              tabIndex={isSearching ? -1 : 0}
-              onKeyDown={(e) => {
-                // Empêcher espace/entrée de déclencher pendant la recherche
-                if (isSearching && (e.key === ' ' || e.key === 'Enter')) {
-                  e.preventDefault();
-                  e.stopPropagation();
-                }
-              }}
+              className={searchScope === "campaign" ? "bg-green-600 hover:bg-green-700" : "bg-primary hover:bg-primary/90"}
             >
               {isSearching ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Recherche en cours...
+                </>
+              ) : searchScope === "campaign" ? (
+                <>
+                  <Send className="mr-2 h-4 w-4" />
+                  Composer les emails
                 </>
               ) : (
                 <>
@@ -250,11 +468,7 @@ export const EmailSearchSection = ({ onEmailsFound }: EmailSearchSectionProps) =
                 <p className="text-sm text-center text-muted-foreground">
                   <span className="text-primary font-medium">Recherche en cours...</span>
                   <br />
-                  Cela peut prendre plusieurs minutes selon le nombre d'entreprises.
-                  <br />
-                  <span className="text-xs opacity-75">
-                    Nous analysons les sites web et recherchons les emails de contact.
-                  </span>
+                  Analyse des sites web et recherche des emails de contact.
                 </p>
               </div>
             </div>
@@ -266,7 +480,6 @@ export const EmailSearchSection = ({ onEmailsFound }: EmailSearchSectionProps) =
       {summary && !isSearching && (
         <Card className="bg-card/50 border-border animate-fade-in">
           <CardContent className="p-6">
-            {/* Pourcentage de succès */}
             <div className="text-center mb-6">
               <div className="text-5xl font-bold text-primary">
                 {summary.processed > 0 ? Math.round((summary.emailsFound / summary.processed) * 100) : 0}%
@@ -357,7 +570,7 @@ export const EmailSearchSection = ({ onEmailsFound }: EmailSearchSectionProps) =
         </div>
       )}
 
-      {/* Modal de crédits insuffisants */}
+      {/* Credits Modal */}
       <CreditsNeededModal
         isOpen={showCreditsModal}
         onClose={() => setShowCreditsModal(false)}
