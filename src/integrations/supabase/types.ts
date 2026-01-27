@@ -689,6 +689,7 @@ export type Database = {
           created_at: string
           current_period_end: string | null
           current_period_start: string | null
+          generic_email_template: Json | null
           id: string
           plan_type: Database["public"]["Enums"]["plan_type"]
           sends_limit: number
@@ -704,6 +705,7 @@ export type Database = {
           created_at?: string
           current_period_end?: string | null
           current_period_start?: string | null
+          generic_email_template?: Json | null
           id?: string
           plan_type?: Database["public"]["Enums"]["plan_type"]
           sends_limit?: number
@@ -719,6 +721,7 @@ export type Database = {
           created_at?: string
           current_period_end?: string | null
           current_period_start?: string | null
+          generic_email_template?: Json | null
           id?: string
           plan_type?: Database["public"]["Enums"]["plan_type"]
           sends_limit?: number

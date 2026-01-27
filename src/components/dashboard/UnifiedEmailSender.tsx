@@ -112,13 +112,16 @@ interface SavedTemplate {
 }
 
 export const UnifiedEmailSender = () => {
+  // Plan features
+  const { features, isPremium, isLoading: planLoading } = usePlanFeatures();
+
   // Core states
   const [companies, setCompanies] = useState<Company[]>([]);
   const [selectedCompanies, setSelectedCompanies] = useState<Set<string>>(new Set());
   const [gmailConnected, setGmailConnected] = useState(false);
   const [checkingGmail, setCheckingGmail] = useState(true);
 
-  // AI options toggles
+  // AI options toggles - only available for premium
   const [enableAIEmails, setEnableAIEmails] = useState(false);
   const [enableCoverLetter, setEnableCoverLetter] = useState(false);
 
@@ -166,6 +169,14 @@ export const UnifiedEmailSender = () => {
   const [showSaveTemplateDialog, setShowSaveTemplateDialog] = useState(false);
   const [newProfileName, setNewProfileName] = useState("");
   const [newTemplateName, setNewTemplateName] = useState("");
+
+  // Callback for GenericTemplateEditor
+  const handleGenericTemplateChange = (tpl: { subject: string; body: string }) => {
+    if (!isPremium && !enableAIEmails) {
+      setSubject(tpl.subject);
+      setBody(tpl.body);
+    }
+  };
 
   useEffect(() => {
     loadCompanies();
@@ -826,39 +837,58 @@ export const UnifiedEmailSender = () => {
               </CardContent>
             </Card>
 
-            {/* AI Options */}
-            <Card className="bg-card/50 border-border">
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Sparkles className="h-5 w-5 text-primary" />
-                  Options IA
-                </CardTitle>
-                <CardDescription>Activez les fonctionnalités d'intelligence artificielle</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between p-4 rounded-lg border bg-background">
-                  <div className="flex items-center gap-3">
-                    <Mail className="h-5 w-5 text-primary" />
-                    <div>
-                      <p className="font-medium">Emails personnalisés IA</p>
-                      <p className="text-sm text-muted-foreground">L'IA génère des emails adaptés à chaque entreprise</p>
+            {/* AI Options - Only for Premium users */}
+            {isPremium ? (
+              <Card className="bg-card/50 border-border">
+                <CardHeader>
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <Sparkles className="h-5 w-5 text-primary" />
+                    Options IA
+                  </CardTitle>
+                  <CardDescription>Activez les fonctionnalités d'intelligence artificielle</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center justify-between p-4 rounded-lg border bg-background">
+                    <div className="flex items-center gap-3">
+                      <Mail className="h-5 w-5 text-primary" />
+                      <div>
+                        <p className="font-medium">Emails personnalisés IA</p>
+                        <p className="text-sm text-muted-foreground">L'IA génère des emails adaptés à chaque entreprise</p>
+                      </div>
                     </div>
+                    <Switch checked={enableAIEmails} onCheckedChange={setEnableAIEmails} />
                   </div>
-                  <Switch checked={enableAIEmails} onCheckedChange={setEnableAIEmails} />
-                </div>
 
-                <div className="flex items-center justify-between p-4 rounded-lg border bg-background">
-                  <div className="flex items-center gap-3">
-                    <FileText className="h-5 w-5 text-primary" />
-                    <div>
-                      <p className="font-medium">Lettres de motivation IA</p>
-                      <p className="text-sm text-muted-foreground">Génère une lettre pour chaque entreprise</p>
+                  <div className="flex items-center justify-between p-4 rounded-lg border bg-background">
+                    <div className="flex items-center gap-3">
+                      <FileText className="h-5 w-5 text-primary" />
+                      <div>
+                        <p className="font-medium">Lettres de motivation IA</p>
+                        <p className="text-sm text-muted-foreground">Génère une lettre pour chaque entreprise</p>
+                      </div>
                     </div>
+                    <Switch checked={enableCoverLetter} onCheckedChange={setEnableCoverLetter} />
                   </div>
-                  <Switch checked={enableCoverLetter} onCheckedChange={setEnableCoverLetter} />
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            ) : (
+              <>
+                {/* Generic Template Editor for non-premium users */}
+                <GenericTemplateEditor onTemplateChange={handleGenericTemplateChange} />
+                
+                {/* Upgrade Banner for AI features */}
+                <UpgradeBanner
+                  variant="compact"
+                  title="Personnalisation IA"
+                  description="Passez au plan Plus pour générer des emails personnalisés avec l'IA"
+                  features={[
+                    "Emails adaptés à chaque entreprise",
+                    "Lettres de motivation générées",
+                    "Scraping du site web pour personnalisation"
+                  ]}
+                />
+              </>
+            )}
 
             {/* AI Configuration - shown when AI is enabled */}
             {(enableAIEmails || enableCoverLetter) && (
