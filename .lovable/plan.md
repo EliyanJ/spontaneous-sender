@@ -1,267 +1,203 @@
 
-# Plan de Restructuration: Système de Feature Gating par Plan
 
-## Vision Business
+# Plan de Refonte: Navigation Landing + Nouvelle Page Connexion
 
-Tu souhaites créer **2 niveaux de plans** avec des fonctionnalités différentes:
+## Resume des changements demandes
 
-| Fonctionnalité | Plan Gratuit/Basique | Plan Elite/Premium |
-|----------------|---------------------|-------------------|
-| Recherche entreprises | Automatique (aléatoire par département) | IA + Manuelle (secteur, ville precis) |
-| Localisation | Département uniquement | Ville precise |
-| Offres d'emploi | Non accessible | Accessible |
-| Emails | Template generique unique | Personnalisation IA |
-| Lettres de motivation | Non | Generation IA |
-| Objets emails | Manuel | Generation IA |
-| Credits/envois | Limite (ex: 50/mois) | Plus eleve (200-400/mois) |
+1. **Navigation horizontale en haut de la landing** (style Shopify)
+   - Liens ancres: Fonctionnalites, Comment ca marche, Tarification
+   - Boutons: Se connecter, Commencer
+
+2. **Nouvelle page de connexion dediee** (remplacer le popup)
+   - Page complete `/login` (pas de fond assombri)
+   - Bouton Email, Bouton Passkey, Bouton Google avec logo
+   - Lien "Nouveau ? Creer votre compte"
+   - Liens en bas: Aide, Confidentialite, Conditions
+   - Encart de redirection Google avec logo Cronos
+
+3. **Synchronisation des prix sur la landing**
+   - Gratuit: 0EUR
+   - Standard: 14EUR/mois (actuellement affiche 9,99EUR)
+   - Premium: 39EUR/mois (actuellement affiche 19,99EUR)
+   - Descriptions alignees avec les vraies fonctionnalites
+
+4. **Creer une page Aide** (`/help`)
+   - Instructions de connexion
+   - Contact support
 
 ---
 
-## Architecture Technique
+## Architecture technique
 
-### 1. Nouveau systeme de Plans
+### Fichiers a creer
 
-**Modification de `src/lib/stripe-config.ts`:**
+1. **`src/pages/Login.tsx`** - Nouvelle page de connexion complete
+2. **`src/pages/Help.tsx`** - Page d'aide
+
+### Fichiers a modifier
+
+1. **`src/pages/Landing.tsx`**
+   - Ajouter navigation horizontale avec ancres
+   - Corriger les prix affiches (14EUR et 39EUR)
+   - Mettre a jour les descriptions des plans
+   - Remplacer `setAuthOpen(true)` par `navigate("/login")`
+   - Ajouter `id` aux sections pour les ancres
+
+2. **`src/App.tsx`**
+   - Ajouter routes `/login` et `/help`
+
+3. **`src/pages/Auth.tsx`** (ou supprimer)
+   - Conserver uniquement pour le callback OAuth
+   - La connexion se fera sur `/login`
+
+---
+
+## Detail de l'implementation
+
+### 1. Navigation Landing (Landing.tsx)
 
 ```text
-Plans:
-- FREE: 0 EUR - 5 envois/mois - Recherche auto departement seulement
-- STANDARD: 14 EUR/mois - 100 envois - Recherche auto, template generique
-- PREMIUM: 39 EUR/mois - 400 envois - Toutes fonctionnalites IA + offres emploi
++----------------------------------------------------------+
+| [Logo] Cronos    Fonctionnalites  Comment ca marche      |
+|                  Tarification     [Se connecter] [Commencer]|
++----------------------------------------------------------+
 ```
 
-### 2. Nouveau composant "Recherche Automatique"
+- `Fonctionnalites` -> ancre `#features`
+- `Comment ca marche` -> ancre `#how-it-works`
+- `Tarification` -> ancre `#pricing`
+- `Se connecter` -> `/login`
+- `Commencer` -> `/login`
 
-Creation de `src/components/dashboard/AutomaticSearch.tsx`:
-- Interface simple: selection de departement(s) francais
-- Bouton "Rechercher automatiquement"
-- Appel a l'API avec codes APE aleatoires
-- Trouve automatiquement les emails
-- Ajoute directement a la liste de l'utilisateur
+### 2. Nouvelle page Login (src/pages/Login.tsx)
 
 ```text
 +--------------------------------------------------+
-|  Recherche Automatique                           |
 |                                                  |
-|  Selectionnez votre zone geographique:           |
-|  [v] Departement: 75 - Paris                     |
-|  [v] Departement: 92 - Hauts-de-Seine            |
+|           [Logo Cronos]                          |
+|           Cronos                                 |
 |                                                  |
-|  Nombre d'entreprises: [20] (max 50 gratuit)     |
+|    [ Email          Continuer avec Email     ]   |
+|    [ Cle           Connexion avec cle d'acces ]  |
+|    [ G             Continuer avec Google      ]  |
 |                                                  |
-|  [ Lancer la recherche automatique ]             |
+|    ----------------------------------------      |
 |                                                  |
-|  ------------------------------------------------|
-|  Note: Les entreprises seront choisies           |
-|  aleatoirement dans les secteurs porteurs.       |
-|  Upgrade vers Premium pour choisir vos secteurs. |
+|    Nouveau sur Cronos ? Creer votre compte       |
+|                                                  |
+|    ----------------------------------------      |
+|    Aide  |  Confidentialite  |  Conditions       |
 +--------------------------------------------------+
 ```
 
-### 3. Systeme de Feature Gating
+**Comportement Google:**
+- Au clic sur Google -> afficher overlay avec logo Cronos + "Redirection vers Google..."
+- Puis lancer `signInWithOAuth`
 
-**Nouveau fichier `src/lib/plan-features.ts`:**
+**Boutons:**
+- Email -> Affiche formulaire email/password inline
+- Passkey -> Pour l'instant, afficher un toast "Bientot disponible"
+- Google -> Overlay puis redirection
 
+### 3. Correction des prix (Landing.tsx)
+
+Section "Des offres simples" actuelle:
+```
+Gratuit: 0EUR - OK
+Simple: 9,99EUR -> Corriger en 14EUR (Standard)
+Plus: 19,99EUR -> Corriger en 39EUR (Premium)
+```
+
+Nouvelles descriptions alignees avec `stripe-config.ts`:
+
+**Standard (14EUR/mois):**
+- 100 envois par mois
+- Recherche automatique par departement
+- Template email generique
+- Suivi des reponses
+
+**Premium (39EUR/mois):**
+- 400 envois par mois
+- Recherche IA + manuelle precise
+- Emails personnalises par IA
+- Lettres de motivation generees
+- Acces offres d'emploi
+
+### 4. Page Aide (src/pages/Help.tsx)
+
+```text
++--------------------------------------------------+
+|  [<- Retour]                     Centre d'aide   |
+|                                                  |
+|  Comment se connecter                            |
+|  -------------------------------------------     |
+|  1. Cliquez sur "Se connecter"                   |
+|  2. Choisissez votre methode...                  |
+|                                                  |
+|  Problemes de connexion ?                        |
+|  -------------------------------------------     |
+|  - Verifiez votre email/mot de passe             |
+|  - Essayez avec Google                           |
+|                                                  |
+|  Nous contacter                                  |
+|  -------------------------------------------     |
+|  Email: support@cronos.fr                        |
++--------------------------------------------------+
+```
+
+---
+
+## Flux utilisateur
+
+### Connexion via Google:
+```text
+1. Utilisateur sur Landing -> clique "Se connecter"
+2. Redirige vers /login
+3. Clique sur "Continuer avec Google"
+4. Overlay s'affiche: [Logo Cronos] "Redirection vers Google..."
+5. Redirection vers Google OAuth
+6. Callback sur /auth (existant)
+7. Redirection vers /dashboard
+```
+
+### Connexion via Email:
+```text
+1. Utilisateur sur /login -> clique "Continuer avec Email"
+2. Formulaire email/password s'affiche
+3. Saisie credentials -> clic "Se connecter"
+4. Redirection vers /dashboard
+```
+
+### Inscription:
+```text
+1. Utilisateur sur /login -> clique "Creer votre compte"
+2. Redirige vers /register (existant)
+3. Formulaire complet d'inscription
+```
+
+---
+
+## Routes (App.tsx)
+
+Ajouter:
 ```typescript
-export const PLAN_FEATURES = {
-  free: {
-    canUseAISearch: false,
-    canUseManualSearch: false,
-    canUseAutomaticSearch: true,
-    canAccessJobOffers: false,
-    canGenerateAIEmails: false,
-    canGenerateCoverLetters: false,
-    canGenerateAISubjects: false,
-    locationLevel: 'department', // vs 'city'
-    maxCompaniesPerSearch: 20,
-  },
-  standard: {
-    canUseAISearch: false,
-    canUseManualSearch: false,
-    canUseAutomaticSearch: true,
-    canAccessJobOffers: false,
-    canGenerateAIEmails: false,
-    canGenerateCoverLetters: false,
-    canGenerateAISubjects: false,
-    locationLevel: 'department',
-    maxCompaniesPerSearch: 50,
-  },
-  premium: {
-    canUseAISearch: true,
-    canUseManualSearch: true,
-    canUseAutomaticSearch: true,
-    canAccessJobOffers: true,
-    canGenerateAIEmails: true,
-    canGenerateCoverLetters: true,
-    canGenerateAISubjects: true,
-    locationLevel: 'city',
-    maxCompaniesPerSearch: 200,
-  }
-};
+<Route path="/login" element={<Login />} />
+<Route path="/help" element={<Help />} />
 ```
 
-**Nouveau hook `src/hooks/usePlanFeatures.ts`:**
-
-```typescript
-// Hook qui retourne les features disponibles pour l'utilisateur
-// Basé sur le plan_type de la table subscriptions
-export const usePlanFeatures = () => {
-  // Retourne: { features, isLoading, planType }
-};
-```
-
-### 4. Modifications de l'interface Recherche
-
-**`src/components/dashboard/SearchCompanies.tsx`:**
-
-```text
-SI planType === 'premium':
-  - Afficher tabs: [Recherche IA] [Recherche Manuelle]
-  - Fonctionnement actuel
-
-SI planType === 'free' ou 'standard':
-  - Afficher uniquement le composant AutomaticSearch
-  - Banner "Upgrade pour acceder a la recherche precise"
-```
-
-### 5. Modifications de l'interface Emails
-
-**`src/components/dashboard/UnifiedEmailSender.tsx`:**
-
-```text
-SI planType === 'premium':
-  - Toggle "Emails personnalises IA" visible
-  - Toggle "Lettres de motivation IA" visible
-  - Fonctionnement actuel
-
-SI planType === 'free' ou 'standard':
-  - Cacher les toggles IA
-  - Afficher section "Template generique"
-  - Un seul template pour tous les emails
-  - Banner "Upgrade pour personnaliser vos emails avec l'IA"
-```
-
-**Nouveau composant `src/components/dashboard/GenericTemplateEditor.tsx`:**
-
-Interface pour editer un template d'email generique qui sera envoye a toutes les entreprises:
-
-```text
-+--------------------------------------------------+
-|  Votre template d'email                          |
-|                                                  |
-|  Objet: [Candidature spontanee - {poste}      ] |
-|                                                  |
-|  Corps:                                          |
-|  [                                               |
-|   Madame, Monsieur,                             |
-|                                                  |
-|   Je me permets de vous contacter...            |
-|                                                  |
-|   Variables disponibles: {entreprise}, {ville}  |
-|  ]                                               |
-|                                                  |
-|  [ Sauvegarder le template ]                     |
-+--------------------------------------------------+
-```
-
-### 6. Gating de l'onglet Offres d'emploi
-
-**`src/pages/Index.tsx`:**
-
-```typescript
-// Dans HorizontalNav, cacher "Offres d'emploi" si pas premium
-// OU afficher avec cadenas + message "Premium requis"
-```
-
-### 7. Composant UpgradeBanner
-
-**Nouveau `src/components/UpgradeBanner.tsx`:**
-
-```text
-+--------------------------------------------------+
-| [icone crown] Fonctionnalite Premium             |
-|                                                  |
-| Passez au plan Premium pour:                     |
-| - Recherche IA et manuelle precise              |
-| - Emails personnalises par l'IA                 |
-| - Lettres de motivation generees                |
-| - Acces aux offres d'emploi                     |
-|                                                  |
-| [ Voir les plans ] [ Plus tard ]                 |
-+--------------------------------------------------+
-```
+Conserver `/auth` pour le callback OAuth uniquement.
 
 ---
 
-## Fichiers a creer
+## Resume des taches
 
-1. `src/lib/plan-features.ts` - Configuration des features par plan
-2. `src/hooks/usePlanFeatures.ts` - Hook pour acceder aux features
-3. `src/components/dashboard/AutomaticSearch.tsx` - Recherche automatique
-4. `src/components/dashboard/GenericTemplateEditor.tsx` - Template generique
-5. `src/components/UpgradeBanner.tsx` - Banner d'upgrade
-6. `src/components/FeatureGate.tsx` - Wrapper pour gater les features
+| # | Tache | Fichier |
+|---|-------|---------|
+| 1 | Creer page Login avec boutons Email/Passkey/Google | src/pages/Login.tsx |
+| 2 | Creer page Help | src/pages/Help.tsx |
+| 3 | Ajouter navigation horizontale avec ancres | src/pages/Landing.tsx |
+| 4 | Corriger prix (14EUR/39EUR) et descriptions | src/pages/Landing.tsx |
+| 5 | Remplacer popup auth par navigation vers /login | src/pages/Landing.tsx |
+| 6 | Ajouter id aux sections pour ancres | src/pages/Landing.tsx |
+| 7 | Ajouter routes /login et /help | src/App.tsx |
 
-## Fichiers a modifier
-
-1. `src/lib/stripe-config.ts` - Restructurer les plans avec features
-2. `src/pages/Index.tsx` - Logique de routing selon plan
-3. `src/components/dashboard/SearchCompanies.tsx` - Conditionner l'affichage
-4. `src/components/dashboard/UnifiedEmailSender.tsx` - Cacher options IA
-5. `src/components/dashboard/JobOffers.tsx` - Ajouter gating
-6. `src/components/HorizontalNav.tsx` - Cacher/montrer onglets selon plan
-7. `src/pages/Pricing.tsx` - Mettre a jour avec nouveaux plans
-
-## Migration base de donnees
-
-Ajouter une colonne pour stocker le template generique:
-
-```sql
-ALTER TABLE subscriptions 
-ADD COLUMN generic_email_template JSONB DEFAULT NULL;
-```
-
----
-
-## Flux utilisateur final
-
-### Utilisateur Gratuit/Standard:
-
-```text
-1. Connexion
-2. Onglet "Recherche" -> Affiche AutomaticSearch
-   - Choisit departement(s)
-   - Clique "Rechercher"
-   - Entreprises trouvees automatiquement
-   - Emails trouves automatiquement
-3. Onglet "Emails" -> GenericTemplateEditor
-   - Configure son template unique
-   - Envoie a toutes les entreprises
-4. Onglet "Offres d'emploi" -> UpgradeBanner
-```
-
-### Utilisateur Premium:
-
-```text
-1. Connexion
-2. Onglet "Recherche" -> Affiche AI + Manuel
-   - Recherche precise par secteur/ville
-3. Onglet "Emails" -> UnifiedEmailSender complet
-   - Toggle IA emails
-   - Toggle lettres de motivation
-4. Onglet "Offres d'emploi" -> Accessible
-```
-
----
-
-## Ordre d'implementation
-
-1. Creer `plan-features.ts` et `usePlanFeatures.ts`
-2. Creer `AutomaticSearch.tsx`
-3. Creer `UpgradeBanner.tsx` et `FeatureGate.tsx`
-4. Modifier `SearchCompanies.tsx` avec condition de plan
-5. Modifier `UnifiedEmailSender.tsx` pour cacher options IA
-6. Creer `GenericTemplateEditor.tsx`
-7. Modifier `HorizontalNav.tsx` et `Index.tsx` pour le gating
-8. Mettre a jour `Pricing.tsx` avec les nouveaux plans
-9. Migration DB pour le template generique
