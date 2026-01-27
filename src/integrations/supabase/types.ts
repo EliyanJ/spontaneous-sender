@@ -81,6 +81,8 @@ export type Database = {
           nom: string
           notes: string | null
           pipeline_stage: string | null
+          search_batch_date: string | null
+          search_batch_id: string | null
           selected_email: string | null
           siren: string
           siret: string
@@ -106,6 +108,8 @@ export type Database = {
           nom: string
           notes?: string | null
           pipeline_stage?: string | null
+          search_batch_date?: string | null
+          search_batch_id?: string | null
           selected_email?: string | null
           siren: string
           siret: string
@@ -131,6 +135,8 @@ export type Database = {
           nom?: string
           notes?: string | null
           pipeline_stage?: string | null
+          search_batch_date?: string | null
+          search_batch_id?: string | null
           selected_email?: string | null
           siren?: string
           siret?: string

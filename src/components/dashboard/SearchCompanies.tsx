@@ -217,6 +217,10 @@ export const SearchCompanies = ({ onNavigateToTab }: SearchCompaniesProps = {}) 
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
+      // Generate a unique batch ID for this search session
+      const searchBatchId = crypto.randomUUID();
+      const searchBatchDate = new Date().toISOString();
+
       const { data: existing } = await supabase
         .from('companies')
         .select('siren')
@@ -243,6 +247,8 @@ export const SearchCompanies = ({ onNavigateToTab }: SearchCompaniesProps = {}) 
           nature_juridique: company.nature_juridique,
           tranche_effectif: company.effectif_code,
           website_url: company.website_url ?? null,
+          search_batch_id: searchBatchId,
+          search_batch_date: searchBatchDate,
         }));
 
       if (toInsert.length === 0) {
@@ -253,7 +259,15 @@ export const SearchCompanies = ({ onNavigateToTab }: SearchCompaniesProps = {}) 
       const { error } = await supabase.from('companies').insert(toInsert);
       if (error) throw error;
 
+      // Store the batch ID in session for EmailSearchSection to use
+      sessionStorage.setItem('latest_search_batch_id', searchBatchId);
+      sessionStorage.setItem('latest_search_batch_count', String(toInsert.length));
+
       window.dispatchEvent(new CustomEvent('companies:updated'));
+      window.dispatchEvent(new CustomEvent('search:batch-created', { 
+        detail: { batchId: searchBatchId, count: toInsert.length } 
+      }));
+      
       toast.success(`${toInsert.length} entreprise(s) sauvegardée(s)`);
       setCompanies([]);
       
