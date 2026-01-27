@@ -1,12 +1,36 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Check, Zap, Crown, Sparkles, ArrowLeft, Loader2 } from "lucide-react";
+import { Check, Zap, Crown, Sparkles, ArrowLeft, Loader2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { STRIPE_PRODUCTS, FREE_PLAN, PriceType } from "@/lib/stripe-config";
+
+// Features comparison for highlighting differences
+const FEATURE_COMPARISON = {
+  search: {
+    free: "Automatique (département)",
+    simple: "Automatique (département)",
+    plus: "IA + Manuelle (ville précise)"
+  },
+  emails: {
+    free: "Template générique",
+    simple: "Template générique",
+    plus: "Personnalisés par IA"
+  },
+  coverLetter: {
+    free: false,
+    simple: false,
+    plus: true
+  },
+  jobOffers: {
+    free: false,
+    simple: false,
+    plus: true
+  }
+};
 
 export default function Pricing() {
   const navigate = useNavigate();

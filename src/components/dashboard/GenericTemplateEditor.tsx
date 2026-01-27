@@ -52,12 +52,14 @@ export const GenericTemplateEditor = ({ onTemplateChange }: GenericTemplateEdito
 
       const { data } = await supabase
         .from("subscriptions")
-        .select("generic_email_template")
+        .select("*")
         .eq("user_id", user.id)
         .single();
 
-      if (data?.generic_email_template) {
-        const template = data.generic_email_template as { subject?: string; body?: string };
+      // Cast to access the new column (types will be regenerated)
+      const subscriptionData = data as any;
+      if (subscriptionData?.generic_email_template) {
+        const template = subscriptionData.generic_email_template as { subject?: string; body?: string };
         if (template.subject) setSubject(template.subject);
         if (template.body) setBody(template.body);
       }
@@ -77,11 +79,12 @@ export const GenericTemplateEditor = ({ onTemplateChange }: GenericTemplateEdito
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Non connecté");
 
+      // Use RPC or raw update since the column isn't in generated types yet
       const { error } = await supabase
         .from("subscriptions")
         .update({ 
           generic_email_template: { subject, body } 
-        })
+        } as any)
         .eq("user_id", user.id);
 
       if (error) throw error;
