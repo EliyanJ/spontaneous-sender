@@ -8,6 +8,8 @@ import Index from "./pages/Index";
 import Landing from "./pages/Landing";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
+import Login from "./pages/Login";
+import Help from "./pages/Help";
 import Register from "./pages/Register";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
@@ -44,6 +46,8 @@ const App = () => (
         <Sonner />
         <Routes>
           <Route path="/" element={<Landing />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/help" element={<Help />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/register" element={<Register />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />

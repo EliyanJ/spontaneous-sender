@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { AuthDialog } from "@/components/AuthDialog";
 import { 
   ArrowRight, 
   Moon, 
@@ -20,14 +19,14 @@ import {
   Eye,
   X,
   Sparkles,
-  Gift
+  Gift,
+  Crown
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import cronosLogo from "@/assets/cronos-logo.png";
 
 const Landing = () => {
-  const [authOpen, setAuthOpen] = useState(false);
   const [isDark, setIsDark] = useState(() => {
     const saved = localStorage.getItem('theme');
     return saved ? saved === 'dark' : true;
@@ -48,6 +47,13 @@ const Landing = () => {
       localStorage.setItem('theme', 'light');
     }
   }, [isDark]);
+
+  const scrollToSection = (id: string) => {
+    const element = document.getElementById(id);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
 
   const targetAudience = [
     { icon: GraduationCap, title: "Étudiant", desc: "À la recherche d'un stage obligatoire" },
@@ -118,12 +124,35 @@ const Landing = () => {
       </div>
 
       <div className="relative z-10">
-        {/* Header */}
+        {/* Header avec navigation horizontale */}
         <header className="container mx-auto flex items-center justify-between px-6 py-6">
           <div className="flex items-center gap-3">
             <img src={cronosLogo} alt="Cronos" className="h-9 w-9 rounded-xl" />
             <span className="font-display text-xl font-bold text-foreground">Cronos</span>
           </div>
+          
+          {/* Navigation horizontale - style Shopify */}
+          <nav className="hidden md:flex items-center gap-8">
+            <button 
+              onClick={() => scrollToSection('features')}
+              className="text-muted-foreground hover:text-foreground transition-colors text-sm font-medium"
+            >
+              Fonctionnalités
+            </button>
+            <button 
+              onClick={() => scrollToSection('how-it-works')}
+              className="text-muted-foreground hover:text-foreground transition-colors text-sm font-medium"
+            >
+              Comment ça marche
+            </button>
+            <button 
+              onClick={() => scrollToSection('pricing')}
+              className="text-muted-foreground hover:text-foreground transition-colors text-sm font-medium"
+            >
+              Tarification
+            </button>
+          </nav>
+
           <nav className="flex items-center gap-3">
             <Button 
               variant="ghost" 
@@ -136,14 +165,14 @@ const Landing = () => {
             <Button 
               variant="ghost" 
               size="sm"
-              onClick={() => setAuthOpen(true)}
+              onClick={() => navigate("/login")}
               className="text-muted-foreground hover:text-foreground"
             >
               Se connecter
             </Button>
             <Button 
               size="sm"
-              onClick={() => setAuthOpen(true)}
+              onClick={() => navigate("/login")}
               className="btn-premium bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20"
             >
               Commencer
@@ -176,7 +205,7 @@ const Landing = () => {
             <div className="flex flex-col items-center justify-center gap-4 animate-fade-in" style={{ animationDelay: '0.3s' }}>
               <Button 
                 size="lg" 
-                onClick={() => setAuthOpen(true)}
+                onClick={() => navigate("/login")}
                 className="btn-premium bg-primary hover:bg-primary/90 text-primary-foreground px-8 h-14 text-base font-semibold shadow-xl shadow-primary/30 transition-all duration-300"
               >
                 Commencer gratuitement
@@ -227,7 +256,7 @@ const Landing = () => {
         </section>
 
         {/* HOW IT WORKS Section */}
-        <section className="container mx-auto px-6 py-16 bg-card/30">
+        <section id="how-it-works" className="container mx-auto px-6 py-16 bg-card/30">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">Comment ça marche</h2>
             <p className="text-muted-foreground text-lg">Simplement, en 4 étapes</p>
@@ -257,7 +286,7 @@ const Landing = () => {
         </section>
 
         {/* FEATURES Section */}
-        <section className="container mx-auto px-6 py-16">
+        <section id="features" className="container mx-auto px-6 py-16">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">Tout ce que Cronos fait pour toi</h2>
           </div>
@@ -370,54 +399,112 @@ const Landing = () => {
           </p>
         </section>
 
-        {/* PRICING TEASER Section */}
-        <section className="container mx-auto px-6 py-16">
+        {/* PRICING Section - Prix corrigés */}
+        <section id="pricing" className="container mx-auto px-6 py-16">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">Des offres simples</h2>
+            <p className="text-muted-foreground text-lg">Choisissez le plan adapté à vos besoins</p>
           </div>
           
-          <div className="grid gap-6 md:grid-cols-3 max-w-4xl mx-auto">
-            {/* Free */}
+          <div className="grid gap-6 md:grid-cols-3 max-w-5xl mx-auto">
+            {/* Gratuit */}
             <div className="rounded-2xl p-6 bg-card border border-border/50 hover:border-primary/30 transition-all duration-300 animate-fade-in">
               <div className="mb-4 inline-flex p-3 rounded-xl bg-muted">
                 <Gift className="h-6 w-6 text-muted-foreground" />
               </div>
               <h3 className="text-xl font-bold text-foreground mb-2">Gratuit</h3>
               <p className="text-muted-foreground text-sm mb-4">
-                Pour découvrir Cronos et tester la prospection intelligente.
+                Pour découvrir Cronos et faire ses premières candidatures.
               </p>
-              <div className="text-2xl font-bold text-foreground">0€</div>
+              <div className="text-2xl font-bold text-foreground mb-4">0€</div>
+              <ul className="space-y-2 text-sm text-muted-foreground mb-6">
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-primary" />
+                  5 envois par mois
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-primary" />
+                  Recherche automatique par département
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-primary" />
+                  Template email générique
+                </li>
+              </ul>
             </div>
             
-            {/* Simple */}
+            {/* Standard */}
             <div className="rounded-2xl p-6 bg-card border-2 border-primary shadow-lg shadow-primary/10 transition-all duration-300 animate-fade-in" style={{ animationDelay: '0.1s' }}>
               <div className="mb-4 inline-flex p-3 rounded-xl bg-primary/10">
                 <Rocket className="h-6 w-6 text-primary" />
               </div>
-              <h3 className="text-xl font-bold text-foreground mb-2">Simple</h3>
+              <h3 className="text-xl font-bold text-foreground mb-2">Standard</h3>
               <p className="text-muted-foreground text-sm mb-4">
-                Envois illimités, recherche IA avancée, relances automatiques.
+                Pour une recherche sérieuse avec plus de volume.
               </p>
-              <div className="text-2xl font-bold text-primary">9,99€<span className="text-sm text-muted-foreground font-normal">/mois</span></div>
+              <div className="text-2xl font-bold text-primary mb-4">14€<span className="text-sm text-muted-foreground font-normal">/mois</span></div>
+              <ul className="space-y-2 text-sm text-muted-foreground mb-6">
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-primary" />
+                  100 envois par mois
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-primary" />
+                  Recherche automatique par département
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-primary" />
+                  Template email générique
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-primary" />
+                  Suivi des réponses
+                </li>
+              </ul>
             </div>
             
-            {/* Plus */}
-            <div className="rounded-2xl p-6 bg-card border border-border/50 hover:border-primary/30 transition-all duration-300 animate-fade-in" style={{ animationDelay: '0.2s' }}>
-              <div className="mb-4 inline-flex p-3 rounded-xl bg-primary/10">
-                <Sparkles className="h-6 w-6 text-primary" />
+            {/* Premium */}
+            <div className="rounded-2xl p-6 bg-card border border-border/50 hover:border-primary/30 transition-all duration-300 animate-fade-in relative" style={{ animationDelay: '0.2s' }}>
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-primary text-primary-foreground text-xs font-semibold rounded-full">
+                Populaire
               </div>
-              <h3 className="text-xl font-bold text-foreground mb-2">Plus</h3>
+              <div className="mb-4 inline-flex p-3 rounded-xl bg-primary/10">
+                <Crown className="h-6 w-6 text-primary" />
+              </div>
+              <h3 className="text-xl font-bold text-foreground mb-2">Premium</h3>
               <p className="text-muted-foreground text-sm mb-4">
-                Tout de Simple + support prioritaire et fonctionnalités avancées.
+                Toutes les fonctionnalités IA pour maximiser tes chances.
               </p>
-              <div className="text-2xl font-bold text-foreground">19,99€<span className="text-sm text-muted-foreground font-normal">/mois</span></div>
+              <div className="text-2xl font-bold text-foreground mb-4">39€<span className="text-sm text-muted-foreground font-normal">/mois</span></div>
+              <ul className="space-y-2 text-sm text-muted-foreground mb-6">
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-primary" />
+                  400 envois par mois
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-primary" />
+                  Recherche IA + manuelle par ville
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-primary" />
+                  Emails personnalisés par IA
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-primary" />
+                  Lettres de motivation générées
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-primary" />
+                  Accès aux offres d'emploi
+                </li>
+              </ul>
             </div>
           </div>
           
           <div className="text-center mt-8">
             <Button 
               size="lg" 
-              onClick={() => setAuthOpen(true)}
+              onClick={() => navigate("/login")}
               className="btn-premium bg-primary hover:bg-primary/90 text-primary-foreground px-8 h-12"
             >
               Commencer gratuitement
@@ -437,7 +524,7 @@ const Landing = () => {
             </p>
             <Button 
               size="lg" 
-              onClick={() => setAuthOpen(true)}
+              onClick={() => navigate("/login")}
               className="btn-premium bg-primary hover:bg-primary/90 text-primary-foreground px-10 h-14 text-lg font-semibold shadow-xl shadow-primary/30"
             >
               Créer mon compte gratuitement
@@ -455,6 +542,7 @@ const Landing = () => {
                 <span className="font-display font-semibold text-foreground">Cronos</span>
               </div>
               <div className="flex flex-wrap justify-center gap-4 md:gap-6 text-sm text-muted-foreground">
+                <a href="/help" className="hover:text-primary transition-colors duration-300">Aide</a>
                 <a href="/privacy-policy" className="hover:text-primary transition-colors duration-300">Confidentialité</a>
                 <a href="/terms-of-service" className="hover:text-primary transition-colors duration-300">Conditions</a>
                 <a href="/mentions-legales" className="hover:text-primary transition-colors duration-300">Mentions légales</a>
@@ -463,8 +551,6 @@ const Landing = () => {
             </div>
           </div>
         </footer>
-
-        <AuthDialog open={authOpen} onOpenChange={setAuthOpen} />
       </div>
     </div>
   );
