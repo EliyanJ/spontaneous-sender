@@ -3,6 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Mail, Key, Loader2 } from "lucide-react";
@@ -82,15 +83,15 @@ const Login = () => {
   // Overlay de redirection Google
   if (isRedirecting) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-900 via-purple-900 to-teal-800">
         <div className="flex flex-col items-center space-y-6 animate-fade-in">
           <img src={cronosLogo} alt="Cronos" className="h-20 w-20" />
-          <span className="text-2xl font-bold text-foreground">Cronos</span>
-          <Loader2 className="h-10 w-10 animate-spin text-primary" />
-          <p className="text-lg font-medium text-foreground">
+          <span className="text-2xl font-bold text-white">Cronos</span>
+          <Loader2 className="h-10 w-10 animate-spin text-white" />
+          <p className="text-lg font-medium text-white">
             Redirection vers Google...
           </p>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-white/70">
             Veuillez patienter
           </p>
         </div>
@@ -99,12 +100,13 @@ const Login = () => {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-background px-4">
-      <div className="w-full max-w-sm space-y-8">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-indigo-900 via-purple-900 to-teal-800 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 px-4">
+      {/* Carte blanche centrale */}
+      <div className="w-full max-w-md bg-white dark:bg-gray-900 rounded-2xl shadow-2xl p-8 sm:p-10 border border-gray-200 dark:border-gray-700">
         {/* Logo et titre */}
-        <div className="flex flex-col items-center space-y-4">
+        <div className="flex flex-col items-center space-y-4 mb-8">
           <img src={cronosLogo} alt="Cronos" className="h-16 w-16" />
-          <h1 className="text-2xl font-bold text-foreground">Cronos</h1>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Cronos</h1>
         </div>
 
         {/* Boutons de connexion */}
@@ -114,27 +116,35 @@ const Login = () => {
               {/* Bouton Email */}
               <Button
                 variant="outline"
-                className="w-full h-12 justify-start gap-3 text-base"
+                className="w-full h-12 justify-start gap-3 text-base border-2 border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800 bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
                 onClick={() => setShowEmailForm(true)}
               >
                 <Mail className="h-5 w-5" />
                 Continuer avec Email
               </Button>
 
-              {/* Bouton Passkey */}
-              <Button
-                variant="outline"
-                className="w-full h-12 justify-start gap-3 text-base"
-                onClick={handlePasskeyClick}
-              >
-                <Key className="h-5 w-5" />
-                Connexion avec clé d'accès
-              </Button>
+              {/* Bouton Passkey - Désactivé */}
+              <div className="relative">
+                <Button
+                  variant="outline"
+                  className="w-full h-12 justify-start gap-3 text-base border-2 border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-400 dark:text-gray-500 cursor-not-allowed opacity-60"
+                  onClick={handlePasskeyClick}
+                >
+                  <Key className="h-5 w-5" />
+                  Connexion avec clé d'accès
+                </Button>
+                <Badge 
+                  variant="secondary" 
+                  className="absolute -top-2 -right-2 text-xs bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300 border-0"
+                >
+                  Bientôt
+                </Badge>
+              </div>
 
               {/* Bouton Google */}
               <Button
                 variant="outline"
-                className="w-full h-12 justify-start gap-3 text-base"
+                className="w-full h-12 justify-start gap-3 text-base border-2 border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800 bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
                 onClick={handleGoogleLogin}
               >
                 <svg className="h-5 w-5" viewBox="0 0 24 24">
@@ -162,7 +172,7 @@ const Login = () => {
             /* Formulaire Email/Password */
             <form onSubmit={handleEmailLogin} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email" className="text-gray-700 dark:text-gray-300">Email</Label>
                 <Input
                   id="email"
                   type="email"
@@ -170,10 +180,11 @@ const Login = () => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
+                  className="border-2 border-gray-300 dark:border-gray-600 focus:border-primary bg-white dark:bg-gray-800"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="password">Mot de passe</Label>
+                <Label htmlFor="password" className="text-gray-700 dark:text-gray-300">Mot de passe</Label>
                 <Input
                   id="password"
                   type="password"
@@ -181,6 +192,7 @@ const Login = () => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
+                  className="border-2 border-gray-300 dark:border-gray-600 focus:border-primary bg-white dark:bg-gray-800"
                 />
               </div>
               <div className="flex items-center justify-between">
@@ -189,6 +201,7 @@ const Login = () => {
                   variant="ghost"
                   size="sm"
                   onClick={() => setShowEmailForm(false)}
+                  className="text-gray-600 dark:text-gray-400"
                 >
                   Retour
                 </Button>
@@ -214,16 +227,19 @@ const Login = () => {
           )}
         </div>
 
-        {/* Séparateur */}
-        <div className="relative">
+        {/* Séparateur "ou" */}
+        <div className="relative my-6">
           <div className="absolute inset-0 flex items-center">
-            <span className="w-full border-t border-border" />
+            <span className="w-full border-t border-gray-300 dark:border-gray-600" />
+          </div>
+          <div className="relative flex justify-center text-sm">
+            <span className="px-4 bg-white dark:bg-gray-900 text-gray-500 dark:text-gray-400">ou</span>
           </div>
         </div>
 
         {/* Lien inscription */}
         <div className="text-center">
-          <p className="text-muted-foreground">
+          <p className="text-gray-600 dark:text-gray-400">
             Nouveau sur Cronos ?{" "}
             <Link to="/register" className="text-primary hover:underline font-medium">
               Créer votre compte
@@ -232,14 +248,14 @@ const Login = () => {
         </div>
 
         {/* Séparateur */}
-        <div className="relative">
+        <div className="relative my-6">
           <div className="absolute inset-0 flex items-center">
-            <span className="w-full border-t border-border" />
+            <span className="w-full border-t border-gray-300 dark:border-gray-600" />
           </div>
         </div>
 
         {/* Liens en bas */}
-        <div className="flex items-center justify-center gap-4 text-sm text-muted-foreground">
+        <div className="flex items-center justify-center gap-4 text-sm text-gray-500 dark:text-gray-400">
           <Link to="/help" className="hover:text-primary transition-colors">
             Aide
           </Link>
