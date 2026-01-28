@@ -6,7 +6,8 @@ import { Settings as SettingsIcon } from "lucide-react";
 import { SearchCompanies } from "@/components/dashboard/SearchCompanies";
 import { JobOffers } from "@/components/dashboard/JobOffers";
 import { Entreprises } from "@/components/dashboard/Entreprises";
-import { Emails } from "@/components/dashboard/Emails";
+import { ContactSearch } from "@/components/dashboard/ContactSearch";
+import { UnifiedEmailSender } from "@/components/dashboard/UnifiedEmailSender";
 import { CampaignsHub } from "@/components/dashboard/CampaignsHub";
 import { Settings } from "@/components/dashboard/Settings";
 
@@ -85,7 +86,13 @@ const Index = () => {
       case "jobs":
         return <JobOffers />;
       case "emails":
-        return <Emails onNavigateToTab={handleTabChange} />;
+        // Check which section to show based on sessionStorage
+        const section = sessionStorage.getItem('emails_initial_section');
+        if (section === 'search') {
+          return <ContactSearch onNavigateToTab={handleTabChange} />;
+        }
+        // Default to send/campaign view
+        return <UnifiedEmailSender />;
       case "campaigns":
         return <CampaignsHub />;
       case "settings":
