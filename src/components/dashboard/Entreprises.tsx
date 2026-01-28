@@ -245,7 +245,7 @@ export const Entreprises = ({ onNavigateToTab }: EntreprisesProps) => {
           {filteredCompanies.map((company) => (
             <Card 
               key={company.id} 
-              className="bg-card/50 hover:bg-card/70 transition-colors group cursor-pointer"
+              className="w-full bg-card/50 hover:bg-card/70 transition-colors group cursor-pointer"
               onClick={() => setSelectedCompany(company)}
             >
               <CardContent className="p-3 sm:p-4">
@@ -272,17 +272,17 @@ export const Entreprises = ({ onNavigateToTab }: EntreprisesProps) => {
                           <FileText className="h-3 w-3 text-primary/60" />
                         )}
                       </div>
-                      <div className="flex items-center gap-3 mt-1 text-sm text-muted-foreground">
+                      <div className="mt-1 min-w-0 text-xs sm:text-sm text-muted-foreground flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-3">
                         {company.ville && (
-                          <span className="flex items-center gap-1">
-                            <MapPin className="h-3 w-3" />
-                            {company.ville}
+                          <span className="flex items-center gap-1 min-w-0">
+                            <MapPin className="h-3 w-3 shrink-0" />
+                            <span className="truncate">{company.ville}</span>
                           </span>
                         )}
                         {company.selected_email && (
-                          <span className="flex items-center gap-1">
-                            <Mail className="h-3 w-3" />
-                            {company.selected_email}
+                          <span className="flex items-center gap-1 min-w-0">
+                            <Mail className="h-3 w-3 shrink-0" />
+                            <span className="truncate">{company.selected_email}</span>
                           </span>
                         )}
                       </div>

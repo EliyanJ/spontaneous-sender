@@ -90,9 +90,9 @@ export const HelpBubble = () => {
         <Button
           variant="default"
           size="icon"
-          className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg hover:shadow-xl transition-all z-50 bg-primary hover:bg-primary/90"
+          className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 h-12 w-12 sm:h-14 sm:w-14 rounded-full shadow-lg hover:shadow-xl transition-all z-50 bg-primary hover:bg-primary/90"
         >
-          <HelpCircle className="h-6 w-6" />
+          <HelpCircle className="h-5 w-5 sm:h-6 sm:w-6" />
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
@@ -108,7 +108,7 @@ export const HelpBubble = () => {
 
         {submitted ? (
           <div className="flex flex-col items-center justify-center py-8 space-y-4">
-            <CheckCircle className="h-16 w-16 text-green-500" />
+            <CheckCircle className="h-16 w-16 text-primary" />
             <p className="text-lg font-medium text-center">Ticket envoyé !</p>
             <p className="text-sm text-muted-foreground text-center">
               Nous vous répondrons dès que possible.
