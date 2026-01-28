@@ -48,7 +48,7 @@ export const ProfileDropdown = ({ onNavigateToSettings }: ProfileDropdownProps) 
     try {
       await supabase.auth.signOut();
       toast.success("Déconnexion réussie");
-      navigate("/auth");
+      navigate("/");
     } catch (error) {
       toast.error("Erreur lors de la déconnexion");
     }
