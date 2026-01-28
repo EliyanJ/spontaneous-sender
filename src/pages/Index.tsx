@@ -117,11 +117,19 @@ const Index = () => {
             />
           )}
 
-          {/* Logo */}
-          <div className="flex items-center gap-2 shrink-0">
+          {/* Logo - hidden on mobile to make room for navigation */}
+          <div className="hidden sm:flex items-center gap-2 shrink-0">
             <img src={cronosLogo} alt="Cronos" className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg" />
             <span className="font-semibold text-foreground hidden sm:inline">Cronos</span>
           </div>
+          
+          {/* Mobile: Credits and logo on the right side */}
+          {isMobile && (
+            <div className="flex items-center gap-2">
+              <CreditsDisplay />
+              <img src={cronosLogo} alt="Cronos" className="w-7 h-7 rounded-lg" />
+            </div>
+          )}
 
           {/* Navigation - Desktop only */}
           {!isMobile && (

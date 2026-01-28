@@ -125,11 +125,22 @@ const Landing = () => {
 
       <div className="relative z-10">
         {/* Header avec navigation horizontale */}
-        <header className="container mx-auto flex items-center justify-between px-6 py-6">
-          <div className="flex items-center gap-3">
+        <header className="container mx-auto flex items-center justify-between px-4 sm:px-6 py-4 sm:py-6">
+          {/* Logo - hidden on mobile */}
+          <div className="hidden sm:flex items-center gap-3">
             <img src={cronosLogo} alt="Cronos" className="h-9 w-9 rounded-xl" />
             <span className="font-display text-xl font-bold text-foreground">Cronos</span>
           </div>
+          
+          {/* Theme toggle on mobile (left side) */}
+          <Button 
+            variant="ghost" 
+            size="icon"
+            onClick={() => setIsDark(!isDark)}
+            className="sm:hidden rounded-full w-10 h-10 hover:bg-accent"
+          >
+            {isDark ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
+          </Button>
           
           {/* Navigation horizontale - style Shopify */}
           <nav className="hidden md:flex items-center gap-8">
@@ -153,12 +164,13 @@ const Landing = () => {
             </button>
           </nav>
 
-          <nav className="flex items-center gap-3">
+          <nav className="flex items-center gap-2 sm:gap-3">
+            {/* Theme toggle - desktop only */}
             <Button 
               variant="ghost" 
               size="icon"
               onClick={() => setIsDark(!isDark)}
-              className="rounded-full w-10 h-10 hover:bg-accent"
+              className="hidden sm:flex rounded-full w-10 h-10 hover:bg-accent"
             >
               {isDark ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
             </Button>
@@ -166,14 +178,14 @@ const Landing = () => {
               variant="ghost" 
               size="sm"
               onClick={() => navigate("/login")}
-              className="text-muted-foreground hover:text-foreground"
+              className="text-muted-foreground hover:text-foreground text-xs sm:text-sm px-2 sm:px-3"
             >
               Se connecter
             </Button>
             <Button 
               size="sm"
               onClick={() => navigate("/login")}
-              className="btn-premium bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20"
+              className="btn-premium bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20 text-xs sm:text-sm px-3 sm:px-4 whitespace-nowrap"
             >
               Commencer
             </Button>
@@ -514,21 +526,21 @@ const Landing = () => {
         </section>
 
         {/* FINAL CTA Section */}
-        <section className="container mx-auto px-6 py-20">
-          <div className="max-w-3xl mx-auto text-center glass rounded-3xl p-12 border border-primary/20 animate-glow-pulse">
-            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+        <section className="container mx-auto px-4 sm:px-6 py-12 sm:py-20">
+          <div className="max-w-3xl mx-auto text-center glass rounded-3xl p-6 sm:p-12 border border-primary/20 animate-glow-pulse">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-foreground mb-4">
               Prêt à décrocher ton stage, ton alternance ou ton job ?
             </h2>
-            <p className="text-muted-foreground text-lg mb-8">
+            <p className="text-muted-foreground text-base sm:text-lg mb-6 sm:mb-8">
               Moins de candidatures dans le vide. Plus de réponses.
             </p>
             <Button 
               size="lg" 
               onClick={() => navigate("/login")}
-              className="btn-premium bg-primary hover:bg-primary/90 text-primary-foreground px-10 h-14 text-lg font-semibold shadow-xl shadow-primary/30"
+              className="btn-premium bg-primary hover:bg-primary/90 text-primary-foreground px-6 sm:px-10 h-12 sm:h-14 text-sm sm:text-lg font-semibold shadow-xl shadow-primary/30 whitespace-nowrap max-w-full"
             >
               Créer mon compte gratuitement
-              <ArrowRight className="ml-2 h-5 w-5" />
+              <ArrowRight className="ml-2 h-4 w-4 sm:h-5 sm:w-5" />
             </Button>
           </div>
         </section>
