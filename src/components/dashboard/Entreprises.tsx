@@ -249,52 +249,36 @@ export const Entreprises = ({ onNavigateToTab }: EntreprisesProps) => {
               onClick={() => setSelectedCompany(company)}
             >
               <CardContent className="p-3 sm:p-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4 flex-1 min-w-0">
-                    <div className="p-2 rounded-lg bg-primary/10 shrink-0">
-                      <Building2 className="h-4 w-4 text-primary" />
+                <div className="flex items-start gap-3">
+                  <div className="p-2 rounded-lg bg-primary/10 shrink-0">
+                    <Building2 className="h-4 w-4 text-primary" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-start justify-between gap-2">
+                      <h3 className="font-medium text-foreground text-sm sm:text-base line-clamp-2 flex-1">{company.nom}</h3>
+                      <div className="shrink-0">
+                        {getStatusBadge(company.status)}
+                      </div>
                     </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-medium text-foreground truncate max-w-[150px] sm:max-w-[250px] md:max-w-none">{company.nom}</h3>
-                        {company.website_url && (
-                          <a 
-                            href={company.website_url} 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            className="opacity-0 group-hover:opacity-100 transition-opacity"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <ExternalLink className="h-3 w-3 text-muted-foreground" />
-                          </a>
-                        )}
-                        {company.notes && (
-                          <FileText className="h-3 w-3 text-primary/60" />
-                        )}
-                      </div>
-                      <div className="mt-1 min-w-0 text-xs sm:text-sm text-muted-foreground flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-3">
-                        {company.ville && (
-                          <span className="flex items-center gap-1 min-w-0">
-                            <MapPin className="h-3 w-3 shrink-0" />
-                            <span className="truncate">{company.ville}</span>
-                          </span>
-                        )}
-                        {company.selected_email && (
-                          <span className="flex items-center gap-1 min-w-0">
-                            <Mail className="h-3 w-3 shrink-0" />
-                            <span className="truncate">{company.selected_email}</span>
-                          </span>
-                        )}
-                      </div>
-                      {company.libelle_ape && (
-                        <p className="text-xs text-muted-foreground mt-1 truncate">
-                          {company.libelle_ape}
-                        </p>
+                    <div className="mt-1 text-xs text-muted-foreground space-y-0.5">
+                      {company.ville && (
+                        <span className="flex items-center gap-1">
+                          <MapPin className="h-3 w-3 shrink-0" />
+                          <span className="truncate">{company.ville}</span>
+                        </span>
+                      )}
+                      {company.selected_email ? (
+                        <span className="flex items-center gap-1">
+                          <Mail className="h-3 w-3 shrink-0" />
+                          <span className="truncate">{company.selected_email}</span>
+                        </span>
+                      ) : (
+                        <span className="flex items-center gap-1 text-muted-foreground/60">
+                          <Mail className="h-3 w-3 shrink-0" />
+                          <span>NOT_FOUND</span>
+                        </span>
                       )}
                     </div>
-                  </div>
-                  <div className="shrink-0 ml-4">
-                    {getStatusBadge(company.status)}
                   </div>
                 </div>
               </CardContent>
