@@ -1,8 +1,8 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { 
-  Search, Building2, Briefcase, Mail, Send, Settings, TrendingUp, Shield, 
-  Menu, X, Moon, Sun 
+  Search, Building2, Briefcase, Send, Shield, 
+  Menu, Moon, Sun, UserSearch, History 
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAdminCheck } from "@/hooks/useAdminCheck";
@@ -16,13 +16,12 @@ import {
 import { Button } from "@/components/ui/button";
 
 const menuItems = [
-  { title: "Recherche", icon: Search, value: "search" },
+  { title: "Recherche d'entreprise", icon: Search, value: "search" },
+  { title: "Recherche de contact", icon: UserSearch, value: "emails", section: "search" },
+  { title: "Campagnes", icon: Send, value: "emails", section: "send" },
+  { title: "Historiques & relances", icon: History, value: "campaigns" },
   { title: "Entreprises", icon: Building2, value: "entreprises" },
-  { title: "Emails", icon: Mail, value: "emails" },
-  { title: "Campagnes", icon: Send, value: "campaigns" },
   { title: "Offres d'emploi", icon: Briefcase, value: "jobs" },
-  { title: "Suivi", icon: TrendingUp, value: "suivi" },
-  { title: "Paramètres", icon: Settings, value: "settings" },
 ];
 
 interface MobileNavProps {
@@ -37,8 +36,12 @@ export const MobileNav = ({ activeTab, onTabChange, isDark, onToggleTheme }: Mob
   const { isAdmin } = useAdminCheck();
   const [open, setOpen] = React.useState(false);
 
-  const handleTabClick = (value: string) => {
-    onTabChange(value);
+  const handleTabClick = (item: typeof menuItems[0]) => {
+    // Set section in sessionStorage if specified
+    if (item.section) {
+      sessionStorage.setItem('emails_initial_section', item.section);
+    }
+    onTabChange(item.value);
     setOpen(false);
   };
 
@@ -62,11 +65,15 @@ export const MobileNav = ({ activeTab, onTabChange, isDark, onToggleTheme }: Mob
         
         <nav className="flex flex-col p-2">
           {menuItems.map((item) => {
-            const isActive = activeTab === item.value;
+            const isEmailSection = item.value === 'emails';
+            const currentSection = sessionStorage.getItem('emails_initial_section');
+            const isActive = isEmailSection 
+              ? activeTab === 'emails' && currentSection === item.section
+              : activeTab === item.value;
             return (
               <button
-                key={item.value}
-                onClick={() => handleTabClick(item.value)}
+                key={`${item.value}-${item.section || 'default'}`}
+                onClick={() => handleTabClick(item)}
                 className={cn(
                   "flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm transition-all duration-200 w-full text-left",
                   isActive 

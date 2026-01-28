@@ -1,16 +1,17 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, Building2, Briefcase, Mail, Send, Shield, Lock } from "lucide-react";
+import { Search, Building2, Briefcase, Mail, Send, Shield, Lock, UserSearch, History } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAdminCheck } from "@/hooks/useAdminCheck";
 import { usePlanFeatures } from "@/hooks/usePlanFeatures";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 const menuItems = [
-  { title: "Recherche", icon: Search, value: "search" },
+  { title: "Recherche d'entreprise", icon: Search, value: "search" },
+  { title: "Recherche de contact", icon: UserSearch, value: "emails", section: "search" },
+  { title: "Campagnes", icon: Send, value: "emails", section: "send" },
+  { title: "Historiques & relances", icon: History, value: "campaigns" },
   { title: "Entreprises", icon: Building2, value: "entreprises" },
-  { title: "Emails", icon: Mail, value: "emails" },
-  { title: "Campagnes", icon: Send, value: "campaigns" },
   { title: "Offres d'emploi", icon: Briefcase, value: "jobs", premium: true },
 ];
 
@@ -30,18 +31,29 @@ export const HorizontalNav = ({ activeTab, onTabChange }: HorizontalNavProps) =>
       navigate('/pricing');
       return;
     }
+    
+    // Set section in sessionStorage if specified
+    if (item.section) {
+      sessionStorage.setItem('emails_initial_section', item.section);
+    }
+    
     onTabChange(item.value);
   };
 
   return (
     <nav className="flex items-center gap-1 px-2 py-1 bg-card/50 backdrop-blur-xl border border-border/50 rounded-2xl overflow-x-auto max-w-[calc(100vw-8rem)] md:max-w-none scrollbar-hide">
       {menuItems.map((item) => {
-        const isActive = activeTab === item.value;
+        // For emails tab, check if this specific button is active based on section
+        const isEmailSection = item.value === 'emails';
+        const currentSection = sessionStorage.getItem('emails_initial_section');
+        const isActive = isEmailSection 
+          ? activeTab === 'emails' && currentSection === item.section
+          : activeTab === item.value;
         const isLocked = item.premium && !features.canAccessJobOffers;
         
         const button = (
           <button
-            key={item.value}
+            key={`${item.value}-${item.section || 'default'}`}
             onClick={() => handleTabClick(item)}
             className={cn(
               "flex items-center gap-2 px-3 md:px-4 py-2 md:py-2.5 rounded-xl font-medium text-sm transition-all duration-300 shrink-0",
@@ -64,7 +76,7 @@ export const HorizontalNav = ({ activeTab, onTabChange }: HorizontalNavProps) =>
 
         if (isLocked) {
           return (
-            <Tooltip key={item.value}>
+            <Tooltip key={`${item.value}-${item.section || 'default'}`}>
               <TooltipTrigger asChild>
                 {button}
               </TooltipTrigger>
