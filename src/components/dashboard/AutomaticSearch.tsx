@@ -17,7 +17,8 @@ import {
   Sparkles, 
   X, 
   Info,
-  CheckCircle
+  CheckCircle,
+  Mail
 } from "lucide-react";
 
 // Liste des départements français
@@ -440,9 +441,15 @@ export const AutomaticSearch = ({ onNavigateToTab }: AutomaticSearchProps) => {
                   {result.found} entreprise(s) trouvée(s), {result.saved} ajoutée(s) à votre liste
                 </p>
               </div>
-              <Button onClick={handleGoToCompanies} variant="outline" className="gap-2">
-                Voir mes entreprises
-                <Building2 className="h-4 w-4" />
+              <Button 
+                onClick={() => {
+                  sessionStorage.setItem('emails_initial_section', 'search');
+                  onNavigateToTab?.('emails');
+                }} 
+                className="gap-2"
+              >
+                <Mail className="h-4 w-4" />
+                Rechercher les emails de contact
               </Button>
             </div>
           </CardContent>
