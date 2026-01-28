@@ -63,7 +63,6 @@ import {
   Crown
 } from "lucide-react";
 import { GenerationOverlay } from "./GenerationOverlay";
-import { GenericTemplateEditor } from "./GenericTemplateEditor";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { usePlanFeatures } from "@/hooks/usePlanFeatures";
 import { UpgradeBanner } from "@/components/UpgradeBanner";
@@ -872,22 +871,17 @@ export const UnifiedEmailSender = () => {
                 </CardContent>
               </Card>
             ) : (
-              <>
-                {/* Generic Template Editor for non-premium users */}
-                <GenericTemplateEditor onTemplateChange={handleGenericTemplateChange} />
-                
-                {/* Upgrade Banner for AI features */}
-                <UpgradeBanner
-                  variant="compact"
-                  title="Personnalisation IA"
-                  description="Passez au plan Plus pour générer des emails personnalisés avec l'IA"
-                  features={[
-                    "Emails adaptés à chaque entreprise",
-                    "Lettres de motivation générées",
-                    "Scraping du site web pour personnalisation"
-                  ]}
-                />
-              </>
+              /* Upgrade Banner for AI features - only shown for non-premium */
+              <UpgradeBanner
+                variant="compact"
+                title="Personnalisation IA"
+                description="Passez au plan Plus pour générer des emails personnalisés avec l'IA"
+                features={[
+                  "Emails adaptés à chaque entreprise",
+                  "Lettres de motivation générées",
+                  "Scraping du site web pour personnalisation"
+                ]}
+              />
             )}
 
             {/* AI Configuration - shown when AI is enabled */}
@@ -959,7 +953,37 @@ export const UnifiedEmailSender = () => {
             {!enableAIEmails && (
               <Card className="bg-card/50 border-border">
                 <CardHeader>
-                  <CardTitle className="text-lg">Contenu de l'email</CardTitle>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-lg">Contenu de l'email</CardTitle>
+                    {savedTemplates.length > 0 && (
+                      <Select 
+                        value="" 
+                        onValueChange={(templateId) => {
+                          const tpl = savedTemplates.find(t => t.id === templateId);
+                          if (tpl) {
+                            // Parse template content - format: "Subject: xxx\n\nBody..."
+                            const lines = tpl.content.split('\n');
+                            const subjectLine = lines.find(l => l.toLowerCase().startsWith('objet:') || l.toLowerCase().startsWith('subject:'));
+                            if (subjectLine) {
+                              setSubject(subjectLine.replace(/^(objet|subject):\s*/i, '').trim());
+                              setBody(lines.filter(l => l !== subjectLine).join('\n').trim());
+                            } else {
+                              setBody(tpl.content);
+                            }
+                            toast({ title: `Template "${tpl.name}" chargé` });
+                          }
+                        }}
+                      >
+                        <SelectTrigger className="w-[180px]">
+                          <FolderOpen className="h-4 w-4 mr-2" />
+                          <SelectValue placeholder="Charger un template" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {savedTemplates.map(t => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div>
@@ -969,6 +993,9 @@ export const UnifiedEmailSender = () => {
                   <div>
                     <Label>Message</Label>
                     <Textarea value={body} onChange={(e) => setBody(e.target.value)} placeholder="Écrivez votre email..." rows={8} className="mt-1.5 bg-background" />
+                    <p className="text-xs text-muted-foreground mt-1.5">
+                      Variables disponibles : <code className="bg-muted px-1 rounded">{'{entreprise}'}</code> <code className="bg-muted px-1 rounded">{'{ville}'}</code> <code className="bg-muted px-1 rounded">{'{secteur}'}</code>
+                    </p>
                   </div>
                   <div>
                     <Label>Pièces jointes</Label>
@@ -988,6 +1015,24 @@ export const UnifiedEmailSender = () => {
                       </div>
                     )}
                   </div>
+                  {/* Save as template button */}
+                  <Button 
+                    variant="outline" 
+                    onClick={() => {
+                      if (!subject.trim() && !body.trim()) {
+                        toast({ title: "Écrivez d'abord un email", variant: "destructive" });
+                        return;
+                      }
+                      const templateContent = subject.trim() ? `Objet: ${subject}\n\n${body}` : body;
+                      setTemplate(templateContent);
+                      setShowSaveTemplateDialog(true);
+                    }}
+                    disabled={!subject.trim() && !body.trim()}
+                    className="w-full gap-2"
+                  >
+                    <Save className="h-4 w-4" />
+                    Sauvegarder comme template
+                  </Button>
                 </CardContent>
               </Card>
             )}

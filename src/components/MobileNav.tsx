@@ -2,10 +2,11 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import { 
   Search, Building2, Briefcase, Send, Shield, 
-  Menu, Moon, Sun, UserSearch, History 
+  Menu, Moon, Sun
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAdminCheck } from "@/hooks/useAdminCheck";
+import { usePlanFeatures } from "@/hooks/usePlanFeatures";
 import {
   Sheet,
   SheetContent,
@@ -15,13 +16,31 @@ import {
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 
-const menuItems = [
-  { title: "Recherche d'entreprise", icon: Search, value: "search" },
-  { title: "Recherche de contact", icon: UserSearch, value: "emails", section: "search" },
-  { title: "Campagnes", icon: Send, value: "emails", section: "send" },
-  { title: "Historiques & relances", icon: History, value: "campaigns" },
-  { title: "Entreprises", icon: Building2, value: "entreprises" },
-  { title: "Offres d'emploi", icon: Briefcase, value: "jobs" },
+// Grouped menu structure
+const menuGroups = [
+  {
+    title: "Recherche",
+    icon: Search,
+    items: [
+      { title: "Nouvelle recherche", value: "search" },
+      { title: "Entreprises trouvées", value: "entreprises" },
+      { title: "Recherche de contact", value: "emails", section: "search" },
+    ]
+  },
+  {
+    title: "Campagnes",
+    icon: Send,
+    items: [
+      { title: "Envoyer une campagne", value: "emails", section: "send" },
+      { title: "Historiques & relances", value: "campaigns" },
+    ]
+  },
+  {
+    title: "Offres d'emploi",
+    icon: Briefcase,
+    value: "jobs",
+    premium: true,
+  }
 ];
 
 interface MobileNavProps {
@@ -34,20 +53,34 @@ interface MobileNavProps {
 export const MobileNav = ({ activeTab, onTabChange, isDark, onToggleTheme }: MobileNavProps) => {
   const navigate = useNavigate();
   const { isAdmin } = useAdminCheck();
+  const { features } = usePlanFeatures();
   const [open, setOpen] = React.useState(false);
 
-  const handleTabClick = (item: typeof menuItems[0]) => {
-    // Set section in sessionStorage if specified
-    if (item.section) {
-      sessionStorage.setItem('emails_initial_section', item.section);
+  const currentSection = sessionStorage.getItem('emails_initial_section');
+
+  const handleTabClick = (value: string, section?: string) => {
+    if (section) {
+      sessionStorage.setItem('emails_initial_section', section);
     }
-    onTabChange(item.value);
+    onTabChange(value);
     setOpen(false);
   };
 
   const handleAdminClick = () => {
     navigate('/admin');
     setOpen(false);
+  };
+
+  const handlePremiumClick = () => {
+    navigate('/pricing');
+    setOpen(false);
+  };
+
+  const isItemActive = (value: string, section?: string) => {
+    if (value === 'emails' && section) {
+      return activeTab === 'emails' && currentSection === section;
+    }
+    return activeTab === value;
   };
 
   return (
@@ -64,26 +97,59 @@ export const MobileNav = ({ activeTab, onTabChange, isDark, onToggleTheme }: Mob
         </SheetHeader>
         
         <nav className="flex flex-col p-2">
-          {menuItems.map((item) => {
-            const isEmailSection = item.value === 'emails';
-            const currentSection = sessionStorage.getItem('emails_initial_section');
-            const isActive = isEmailSection 
-              ? activeTab === 'emails' && currentSection === item.section
-              : activeTab === item.value;
+          {menuGroups.map((group) => {
+            // Handle simple items (like Jobs)
+            if (group.value) {
+              const isLocked = group.premium && !features.canAccessJobOffers;
+              const isActive = activeTab === group.value;
+              
+              return (
+                <button
+                  key={group.value}
+                  onClick={() => isLocked ? handlePremiumClick() : handleTabClick(group.value!)}
+                  className={cn(
+                    "flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm transition-all duration-200 w-full text-left",
+                    isActive 
+                      ? "bg-primary text-primary-foreground" 
+                      : isLocked
+                        ? "text-muted-foreground/50"
+                        : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                  )}
+                >
+                  <group.icon className="h-5 w-5 shrink-0" />
+                  <span>{group.title}</span>
+                  {isLocked && <span className="ml-auto text-xs">Premium</span>}
+                </button>
+              );
+            }
+
+            // Handle grouped items
             return (
-              <button
-                key={`${item.value}-${item.section || 'default'}`}
-                onClick={() => handleTabClick(item)}
-                className={cn(
-                  "flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm transition-all duration-200 w-full text-left",
-                  isActive 
-                    ? "bg-primary text-primary-foreground" 
-                    : "text-muted-foreground hover:text-foreground hover:bg-accent"
-                )}
-              >
-                <item.icon className="h-5 w-5 shrink-0" />
-                <span>{item.title}</span>
-              </button>
+              <div key={group.title} className="mb-2">
+                <div className="px-4 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-2">
+                  <group.icon className="h-4 w-4" />
+                  {group.title}
+                </div>
+                <div className="space-y-1">
+                  {group.items?.map((item) => {
+                    const isActive = isItemActive(item.value, item.section);
+                    return (
+                      <button
+                        key={`${item.value}-${item.section || 'default'}`}
+                        onClick={() => handleTabClick(item.value, item.section)}
+                        className={cn(
+                          "flex items-center gap-3 px-4 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 w-full text-left ml-2",
+                          isActive 
+                            ? "bg-primary text-primary-foreground" 
+                            : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                        )}
+                      >
+                        <span>{item.title}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
             );
           })}
           
