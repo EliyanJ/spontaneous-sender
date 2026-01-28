@@ -77,61 +77,61 @@ export const JobProgressCard = ({ job, onViewResults }: JobProgressCardProps) =>
 
   return (
     <Card className="border-border/50 bg-card/80 backdrop-blur-sm">
-      <CardContent className="p-6">
+      <CardContent className="p-4 sm:p-6">
         {/* Header */}
         <div className="flex items-center gap-3 mb-4">
           {getStatusIcon()}
-          <span className="font-medium">{getStatusText()}</span>
+          <span className="font-medium text-sm sm:text-base">{getStatusText()}</span>
         </div>
 
         {/* Progress Bar */}
         <div className="mb-4">
-          <Progress value={progress} className="h-3" />
-          <div className="flex justify-between mt-1 text-sm text-muted-foreground">
+          <Progress value={progress} className="h-2 sm:h-3" />
+          <div className="flex justify-between mt-1 text-xs sm:text-sm text-muted-foreground">
             <span>{progress}%</span>
             <span>{job.processedCount} / {job.totalCount}</span>
           </div>
         </div>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-4 gap-4 mb-4">
+        {/* Stats Grid - 2 columns on mobile, 4 on larger screens */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4 mb-4">
           <div className="text-center p-2 rounded-lg bg-green-500/10">
-            <div className="flex items-center justify-center gap-1.5 text-green-500">
-              <CheckCircle className="h-4 w-4" />
-              <span className="font-semibold">{job.successCount}</span>
+            <div className="flex items-center justify-center gap-1 sm:gap-1.5 text-green-500">
+              <CheckCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              <span className="font-semibold text-sm sm:text-base">{job.successCount}</span>
             </div>
-            <span className="text-xs text-muted-foreground">Trouvées</span>
+            <span className="text-[10px] sm:text-xs text-muted-foreground">Trouvées</span>
           </div>
 
           <div className="text-center p-2 rounded-lg bg-muted/50">
-            <div className="flex items-center justify-center gap-1.5 text-muted-foreground">
-              <Clock className="h-4 w-4" />
-              <span className="font-semibold">{job.totalCount - job.processedCount}</span>
+            <div className="flex items-center justify-center gap-1 sm:gap-1.5 text-muted-foreground">
+              <Clock className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              <span className="font-semibold text-sm sm:text-base">{job.totalCount - job.processedCount}</span>
             </div>
-            <span className="text-xs text-muted-foreground">En attente</span>
+            <span className="text-[10px] sm:text-xs text-muted-foreground">En attente</span>
           </div>
 
           <div className="text-center p-2 rounded-lg bg-destructive/10">
-            <div className="flex items-center justify-center gap-1.5 text-destructive">
-              <AlertCircle className="h-4 w-4" />
-              <span className="font-semibold">{job.errorCount}</span>
+            <div className="flex items-center justify-center gap-1 sm:gap-1.5 text-destructive">
+              <AlertCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              <span className="font-semibold text-sm sm:text-base">{job.errorCount}</span>
             </div>
-            <span className="text-xs text-muted-foreground">Erreurs</span>
+            <span className="text-[10px] sm:text-xs text-muted-foreground">Erreurs</span>
           </div>
 
           <div className="text-center p-2 rounded-lg bg-amber-500/10">
-            <div className="flex items-center justify-center gap-1.5 text-amber-500">
-              <Ban className="h-4 w-4" />
-              <span className="font-semibold">{job.skippedCount}</span>
+            <div className="flex items-center justify-center gap-1 sm:gap-1.5 text-amber-500">
+              <Ban className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              <span className="font-semibold text-sm sm:text-base">{job.skippedCount}</span>
             </div>
-            <span className="text-xs text-muted-foreground">Blacklistées</span>
+            <span className="text-[10px] sm:text-xs text-muted-foreground">Blacklistées</span>
           </div>
         </div>
 
         {/* Time Info */}
-        <div className="flex items-center justify-between text-sm text-muted-foreground border-t border-border/50 pt-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-0 text-xs sm:text-sm text-muted-foreground border-t border-border/50 pt-4">
           <div className="flex items-center gap-2">
-            <Clock className="h-4 w-4" />
+            <Clock className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             <span>Temps écoulé : {formatTime(elapsedTime)}</span>
           </div>
           {estimatedRemaining !== null && job.status === 'processing' && (
@@ -143,7 +143,7 @@ export const JobProgressCard = ({ job, onViewResults }: JobProgressCardProps) =>
         {job.status === 'completed' && onViewResults && (
           <button
             onClick={onViewResults}
-            className="w-full mt-4 py-2.5 px-4 rounded-lg bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors"
+            className="w-full mt-4 py-2.5 px-4 rounded-lg bg-primary text-primary-foreground font-medium text-sm sm:text-base hover:bg-primary/90 transition-colors"
           >
             Voir les résultats ({job.successCount} entreprises)
           </button>
