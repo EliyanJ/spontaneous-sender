@@ -430,12 +430,12 @@ export const AutomaticSearch = ({ onNavigateToTab }: AutomaticSearchProps) => {
       {/* Result */}
       {result && (
         <Card className="border-primary/50 bg-primary/5">
-          <CardContent className="p-6">
-            <div className="flex items-center gap-4">
-              <div className="p-3 rounded-full bg-primary/20">
+          <CardContent className="p-4 sm:p-6">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+              <div className="p-3 rounded-full bg-primary/20 shrink-0">
                 <CheckCircle className="h-6 w-6 text-primary" />
               </div>
-              <div className="flex-1">
+              <div className="flex-1 min-w-0">
                 <h4 className="font-semibold">Recherche terminée !</h4>
                 <p className="text-sm text-muted-foreground">
                   {result.found} entreprise(s) trouvée(s), {result.saved} ajoutée(s) à votre liste
@@ -446,10 +446,11 @@ export const AutomaticSearch = ({ onNavigateToTab }: AutomaticSearchProps) => {
                   sessionStorage.setItem('emails_initial_section', 'search');
                   onNavigateToTab?.('emails');
                 }} 
-                className="gap-2"
+                className="gap-2 w-full sm:w-auto whitespace-nowrap"
               >
                 <Mail className="h-4 w-4" />
-                Rechercher les emails de contact
+                <span className="hidden sm:inline">Rechercher les emails de contact</span>
+                <span className="sm:hidden">Rechercher emails</span>
               </Button>
             </div>
           </CardContent>
