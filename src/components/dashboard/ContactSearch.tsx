@@ -220,21 +220,21 @@ export const ContactSearch = ({ onNavigateToTab }: ContactSearchProps) => {
   // Search in progress - Full screen overlay
   if (isSearching) {
     return (
-      <div className="fixed inset-0 z-50 bg-background/95 backdrop-blur-sm flex items-center justify-center">
-        <div className="w-full max-w-lg mx-auto px-6">
+      <div className="fixed inset-0 z-50 bg-background/95 backdrop-blur-sm flex items-center justify-center overflow-y-auto py-4">
+        <div className="w-full max-w-lg mx-auto px-4 sm:px-6">
           <Card className="border-primary/20 bg-card">
-            <CardContent className="p-8 space-y-6">
+            <CardContent className="p-4 sm:p-8 space-y-4 sm:space-y-6">
               <div className="text-center space-y-2">
-                <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-4">
-                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                <div className="inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-primary/10 mb-2 sm:mb-4">
+                  <Loader2 className="h-6 w-6 sm:h-8 sm:w-8 animate-spin text-primary" />
                 </div>
-                <h2 className="text-2xl font-semibold text-foreground">Recherche en cours</h2>
-                <p className="text-muted-foreground">
+                <h2 className="text-xl sm:text-2xl font-semibold text-foreground">Recherche en cours</h2>
+                <p className="text-sm sm:text-base text-muted-foreground">
                   Analyse des sites web et recherche des emails de contact...
                 </p>
               </div>
 
-              <div className="space-y-4">
+              <div className="space-y-3 sm:space-y-4">
                 <div className="flex items-center justify-between text-sm">
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <Clock className="h-4 w-4" />
@@ -250,15 +250,15 @@ export const ContactSearch = ({ onNavigateToTab }: ContactSearchProps) => {
                 {summary && summary.total > 0 && (
                   <Progress 
                     value={(summary.processed / summary.total) * 100} 
-                    className="h-3"
+                    className="h-2 sm:h-3"
                   />
                 )}
 
                 {summary && (
-                  <div className="bg-primary/10 border border-primary/20 rounded-lg p-4 text-center">
+                  <div className="bg-primary/10 border border-primary/20 rounded-lg p-3 sm:p-4 text-center">
                     <div className="flex items-center justify-center gap-2">
-                      <Mail className="h-5 w-5 text-primary" />
-                      <span className="text-lg font-semibold text-foreground">
+                      <Mail className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+                      <span className="text-base sm:text-lg font-semibold text-foreground">
                         {summary.emailsFound} emails trouvés
                       </span>
                     </div>
@@ -268,21 +268,21 @@ export const ContactSearch = ({ onNavigateToTab }: ContactSearchProps) => {
 
               {/* Live results */}
               {results.length > 0 && (
-                <div className="space-y-2 max-h-48 overflow-y-auto">
+                <div className="space-y-2 max-h-32 sm:max-h-48 overflow-y-auto">
                   {results.slice(-5).map((result, idx) => (
                     <div 
                       key={idx}
-                      className="flex items-center justify-between text-sm p-2 rounded bg-muted/50"
+                      className="flex items-center justify-between text-xs sm:text-sm p-2 rounded bg-muted/50"
                     >
-                      <span className="truncate flex-1">{result.company}</span>
+                      <span className="truncate flex-1 mr-2">{result.company}</span>
                       {result.selected_email ? (
-                        <Badge variant="default" className="ml-2 shrink-0">
+                        <Badge variant="default" className="shrink-0 text-xs">
                           <Mail className="h-3 w-3 mr-1" />
                           Trouvé
                         </Badge>
                       ) : (
-                        <Badge variant="secondary" className="ml-2 shrink-0">
-                          Aucun email
+                        <Badge variant="secondary" className="shrink-0 text-xs">
+                          Aucun
                         </Badge>
                       )}
                     </div>
@@ -426,33 +426,33 @@ export const ContactSearch = ({ onNavigateToTab }: ContactSearchProps) => {
               <ChevronRight className="h-4 w-4" />
             </Button>
           </SheetTrigger>
-          <SheetContent side="right" className="w-full sm:max-w-lg">
-            <SheetHeader>
+          <SheetContent side="right" className="w-full sm:max-w-lg max-w-full">
+            <SheetHeader className="pr-8">
               <SheetTitle className="flex items-center gap-2">
                 <Building2 className="h-5 w-5" />
                 Entreprises ({companies.length})
               </SheetTitle>
             </SheetHeader>
-            <ScrollArea className="h-[calc(100vh-8rem)] mt-4 pr-4">
+            <ScrollArea className="h-[calc(100vh-6rem)] sm:h-[calc(100vh-8rem)] mt-4 pr-2 sm:pr-4">
               <div className="space-y-2">
                 {companies.map((company) => (
                   <div 
                     key={company.id}
-                    className="flex items-center justify-between p-3 rounded-lg border border-border bg-card/50 hover:bg-card transition-colors"
+                    className="flex items-center justify-between p-2 sm:p-3 rounded-lg border border-border bg-card/50 hover:bg-card transition-colors"
                   >
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-foreground truncate">{company.nom}</p>
-                      <p className="text-sm text-muted-foreground truncate">
+                    <div className="flex-1 min-w-0 mr-2">
+                      <p className="font-medium text-foreground text-sm sm:text-base truncate">{company.nom}</p>
+                      <p className="text-xs sm:text-sm text-muted-foreground truncate">
                         {company.ville || 'Ville inconnue'} {company.code_postal ? `(${company.code_postal})` : ''}
                       </p>
                     </div>
                     {company.selected_email ? (
-                      <Badge variant="default" className="shrink-0 ml-2">
+                      <Badge variant="default" className="shrink-0 text-xs">
                         <Mail className="h-3 w-3 mr-1" />
                         Email
                       </Badge>
                     ) : (
-                      <Badge variant="secondary" className="shrink-0 ml-2">
+                      <Badge variant="secondary" className="shrink-0 text-xs">
                         En attente
                       </Badge>
                     )}

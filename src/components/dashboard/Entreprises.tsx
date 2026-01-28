@@ -305,19 +305,19 @@ export const Entreprises = ({ onNavigateToTab }: EntreprisesProps) => {
 
       {/* Company Details Sheet */}
       <Sheet open={!!selectedCompany} onOpenChange={(open) => !open && setSelectedCompany(null)}>
-        <SheetContent className="w-[400px] sm:w-[540px]">
+        <SheetContent className="w-full sm:w-[400px] md:w-[540px] max-w-full overflow-y-auto">
           {selectedCompany && (
             <>
-              <SheetHeader>
-                <SheetTitle className="flex items-center gap-2">
-                  <Building2 className="h-5 w-5 text-primary" />
-                  {selectedCompany.nom}
+              <SheetHeader className="pr-8">
+                <SheetTitle className="flex items-center gap-2 text-base sm:text-lg">
+                  <Building2 className="h-5 w-5 text-primary shrink-0" />
+                  <span className="truncate">{selectedCompany.nom}</span>
                 </SheetTitle>
               </SheetHeader>
               
-              <div className="mt-6 space-y-6">
+              <div className="mt-4 sm:mt-6 space-y-4 sm:space-y-6">
                 {/* Company Info */}
-                <div className="space-y-4">
+                <div className="space-y-3 sm:space-y-4">
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-muted-foreground">Statut</span>
                     {getStatusBadge(selectedCompany.status)}
@@ -326,23 +326,23 @@ export const Entreprises = ({ onNavigateToTab }: EntreprisesProps) => {
                   {selectedCompany.ville && (
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-muted-foreground">Ville</span>
-                      <span className="text-sm font-medium">
+                      <span className="text-sm font-medium text-right">
                         {selectedCompany.ville} {selectedCompany.code_postal && `(${selectedCompany.code_postal})`}
                       </span>
                     </div>
                   )}
                   
                   {selectedCompany.adresse && (
-                    <div className="flex items-start justify-between gap-4">
+                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-1 sm:gap-4">
                       <span className="text-sm text-muted-foreground shrink-0">Adresse</span>
-                      <span className="text-sm font-medium text-right">{selectedCompany.adresse}</span>
+                      <span className="text-sm font-medium sm:text-right break-words">{selectedCompany.adresse}</span>
                     </div>
                   )}
                   
                   {selectedCompany.selected_email && (
-                    <div className="flex items-center justify-between">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
                       <span className="text-sm text-muted-foreground">Email</span>
-                      <span className="text-sm font-medium">{selectedCompany.selected_email}</span>
+                      <span className="text-sm font-medium break-all">{selectedCompany.selected_email}</span>
                     </div>
                   )}
                   
@@ -361,9 +361,9 @@ export const Entreprises = ({ onNavigateToTab }: EntreprisesProps) => {
                   )}
                   
                   {selectedCompany.libelle_ape && (
-                    <div className="flex items-start justify-between gap-4">
+                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-1 sm:gap-4">
                       <span className="text-sm text-muted-foreground shrink-0">Secteur</span>
-                      <span className="text-sm font-medium text-right">{selectedCompany.libelle_ape}</span>
+                      <span className="text-sm font-medium sm:text-right">{selectedCompany.libelle_ape}</span>
                     </div>
                   )}
                   
@@ -374,7 +374,7 @@ export const Entreprises = ({ onNavigateToTab }: EntreprisesProps) => {
                   
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-muted-foreground">SIRET</span>
-                    <span className="text-sm font-medium font-mono">{selectedCompany.siret}</span>
+                    <span className="text-sm font-medium font-mono text-right break-all">{selectedCompany.siret}</span>
                   </div>
                 </div>
 
@@ -385,7 +385,7 @@ export const Entreprises = ({ onNavigateToTab }: EntreprisesProps) => {
                     placeholder="Ajoutez vos notes sur cette entreprise..."
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
-                    rows={5}
+                    rows={4}
                     className="resize-none"
                   />
                   <Button 
@@ -406,18 +406,18 @@ export const Entreprises = ({ onNavigateToTab }: EntreprisesProps) => {
                       Supprimer de ma liste
                     </Button>
                   </AlertDialogTrigger>
-                  <AlertDialogContent>
+                  <AlertDialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-lg">
                     <AlertDialogHeader>
                       <AlertDialogTitle>Supprimer cette entreprise ?</AlertDialogTitle>
                       <AlertDialogDescription>
                         Cette action est irréversible. L'entreprise sera retirée de votre liste.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Annuler</AlertDialogCancel>
+                    <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+                      <AlertDialogCancel className="w-full sm:w-auto">Annuler</AlertDialogCancel>
                       <AlertDialogAction
                         onClick={() => deleteCompany(selectedCompany.id)}
-                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        className="w-full sm:w-auto bg-destructive text-destructive-foreground hover:bg-destructive/90"
                       >
                         Supprimer
                       </AlertDialogAction>
