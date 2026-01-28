@@ -23,6 +23,7 @@ import cronosLogo from "@/assets/cronos-logo.png";
 const Index = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState("search");
+  const [emailsSection, setEmailsSection] = useState<string | null>(null);
   const [isDark, setIsDark] = useState(true);
   const [slideDirection, setSlideDirection] = useState<"left" | "right">("right");
   const prevTabRef = useRef(activeTab);
@@ -41,6 +42,11 @@ const Index = () => {
     // Store emailsSection for Emails component
     if (emailsSectionFromUrl) {
       sessionStorage.setItem('emails_initial_section', emailsSectionFromUrl);
+      setEmailsSection(emailsSectionFromUrl);
+    } else {
+      // Read from sessionStorage if not in URL
+      const storedSection = sessionStorage.getItem('emails_initial_section');
+      setEmailsSection(storedSection);
     }
     
     // Handle Gmail refresh parameter - dispatch event and clean URL
@@ -68,12 +74,19 @@ const Index = () => {
     }
   }, [isDark]);
 
-  const handleTabChange = (newTab: string) => {
+  const handleTabChange = (newTab: string, section?: string) => {
     const currentIndex = tabOrder.indexOf(activeTab);
     const newIndex = tabOrder.indexOf(newTab);
     setSlideDirection(newIndex > currentIndex ? "right" : "left");
     prevTabRef.current = activeTab;
     setActiveTab(newTab);
+    
+    // Update emails section if provided
+    if (section) {
+      sessionStorage.setItem('emails_initial_section', section);
+      setEmailsSection(section);
+    }
+    
     setSearchParams({ tab: newTab });
   };
 
@@ -86,9 +99,8 @@ const Index = () => {
       case "jobs":
         return <JobOffers />;
       case "emails":
-        // Check which section to show based on sessionStorage
-        const section = sessionStorage.getItem('emails_initial_section');
-        if (section === 'search') {
+        // Use React state for emailsSection instead of reading sessionStorage directly
+        if (emailsSection === 'search') {
           return <ContactSearch onNavigateToTab={handleTabChange} />;
         }
         // Default to send/campaign view

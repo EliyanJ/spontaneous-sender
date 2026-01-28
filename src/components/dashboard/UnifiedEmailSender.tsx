@@ -671,6 +671,15 @@ export const UnifiedEmailSender = () => {
   const isAiMode = enableAIEmails || enableCoverLetter;
   const isPrepareDisabled = isGenerating || !gmailConnected || (isAiMode ? selectedCount === 0 : prepareCount === 0);
 
+  // Show loading state while plan is loading
+  if (planLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
   return (
     <>
       <GenerationOverlay
@@ -692,7 +701,7 @@ export const UnifiedEmailSender = () => {
                 <span>Vérification Gmail...</span>
               </div>
             ) : gmailConnected ? (
-              <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
+              <div className="flex items-center gap-2 text-primary">
                 <CheckCircle className="h-4 w-4" />
                 <span className="font-medium">Gmail connecté</span>
               </div>
@@ -1063,7 +1072,7 @@ export const UnifiedEmailSender = () => {
                         <div className="flex items-start justify-between gap-3">
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2">
-                              {email.success ? <CheckCircle className="h-4 w-4 text-green-500" /> : <XCircle className="h-4 w-4 text-destructive" />}
+                              {email.success ? <CheckCircle className="h-4 w-4 text-primary" /> : <XCircle className="h-4 w-4 text-destructive" />}
                               <span className="font-medium truncate">{email.company_name}</span>
                               {email.coverLetter && <Badge variant="outline"><FileText className="h-3 w-3 mr-1" />Lettre</Badge>}
                             </div>
