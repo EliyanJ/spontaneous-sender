@@ -45,7 +45,7 @@ const menuGroups = [
 
 interface MobileNavProps {
   activeTab: string;
-  onTabChange: (value: string) => void;
+  onTabChange: (value: string, section?: string) => void;
   isDark: boolean;
   onToggleTheme: () => void;
 }
@@ -59,10 +59,7 @@ export const MobileNav = ({ activeTab, onTabChange, isDark, onToggleTheme }: Mob
   const currentSection = sessionStorage.getItem('emails_initial_section');
 
   const handleTabClick = (value: string, section?: string) => {
-    if (section) {
-      sessionStorage.setItem('emails_initial_section', section);
-    }
-    onTabChange(value);
+    onTabChange(value, section);
     setOpen(false);
   };
 

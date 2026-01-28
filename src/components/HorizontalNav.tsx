@@ -14,7 +14,7 @@ import {
 
 interface HorizontalNavProps {
   activeTab: string;
-  onTabChange: (value: string) => void;
+  onTabChange: (value: string, section?: string) => void;
 }
 
 export const HorizontalNav = ({ activeTab, onTabChange }: HorizontalNavProps) => {
@@ -27,13 +27,10 @@ export const HorizontalNav = ({ activeTab, onTabChange }: HorizontalNavProps) =>
   // Check if current tab is in a dropdown group
   const isSearchGroupActive = activeTab === 'search' || activeTab === 'entreprises' || 
     (activeTab === 'emails' && currentSection === 'search');
-  const isCampaignGroupActive = (activeTab === 'emails' && currentSection === 'send') || activeTab === 'campaigns';
+  const isCampaignGroupActive = (activeTab === 'emails' && currentSection !== 'search') || activeTab === 'campaigns';
 
   const handleTabClick = (value: string, section?: string) => {
-    if (section) {
-      sessionStorage.setItem('emails_initial_section', section);
-    }
-    onTabChange(value);
+    onTabChange(value, section);
   };
 
   const isJobsLocked = !features.canAccessJobOffers;
