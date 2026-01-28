@@ -220,9 +220,13 @@ export const ContactSearch = ({ onNavigateToTab }: ContactSearchProps) => {
   // Search in progress - Full screen overlay
   if (isSearching) {
     return (
-      <div className="fixed inset-0 z-50 bg-background/95 backdrop-blur-sm flex items-center justify-center overflow-y-auto py-4">
-        <div className="w-full max-w-lg mx-auto px-4 sm:px-6">
-          <Card className="border-primary/20 bg-card">
+      <div className="fixed inset-0 z-[100] bg-background flex flex-col">
+        {/* Spacer to push content to center on larger screens */}
+        <div className="flex-1 min-h-0" />
+        
+        {/* Main content - scrollable */}
+        <div className="w-full max-w-lg mx-auto px-4 py-6 overflow-y-auto">
+          <Card className="border-primary/20 bg-card shadow-xl">
             <CardContent className="p-4 sm:p-8 space-y-4 sm:space-y-6">
               <div className="text-center space-y-2">
                 <div className="inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-primary/10 mb-2 sm:mb-4">
@@ -292,6 +296,9 @@ export const ContactSearch = ({ onNavigateToTab }: ContactSearchProps) => {
             </CardContent>
           </Card>
         </div>
+        
+        {/* Spacer to push content to center on larger screens */}
+        <div className="flex-1 min-h-0" />
       </div>
     );
   }
@@ -307,10 +314,10 @@ export const ContactSearch = ({ onNavigateToTab }: ContactSearchProps) => {
           </p>
         </div>
 
-        <Card className="bg-gradient-to-br from-green-500/10 to-emerald-500/10 border-green-500/30">
+        <Card className="bg-gradient-to-br from-primary/10 to-primary/5 border-primary/30">
           <CardContent className="p-8 text-center space-y-6">
-            <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-green-500/20">
-              <CheckCircle2 className="h-10 w-10 text-green-500" />
+            <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-primary/20">
+              <CheckCircle2 className="h-10 w-10 text-primary" />
             </div>
             
             <div className="space-y-2">
