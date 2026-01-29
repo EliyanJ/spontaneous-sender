@@ -220,14 +220,10 @@ export const ContactSearch = ({ onNavigateToTab }: ContactSearchProps) => {
   // Search in progress - Full screen overlay
   if (isSearching) {
     return (
-      <div className="fixed inset-0 z-[100] bg-background flex flex-col">
-        {/* Spacer to push content to center on larger screens */}
-        <div className="flex-1 min-h-0" />
-        
-        {/* Main content - scrollable */}
-        <div className="w-full max-w-lg mx-auto px-4 py-6 overflow-y-auto">
+      <div className="fixed inset-0 z-[100] bg-background flex items-center justify-center p-3 sm:p-6">
+        <div className="w-full max-w-2xl">
           <Card className="border-primary/20 bg-card shadow-xl">
-            <CardContent className="p-4 sm:p-8 space-y-4 sm:space-y-6">
+            <CardContent className="p-4 sm:p-8 space-y-4 sm:space-y-6 max-h-[calc(100svh-2rem)] overflow-hidden">
               <div className="text-center space-y-2">
                 <div className="inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-primary/10 mb-2 sm:mb-4">
                   <Loader2 className="h-6 w-6 sm:h-8 sm:w-8 animate-spin text-primary" />
@@ -270,11 +266,11 @@ export const ContactSearch = ({ onNavigateToTab }: ContactSearchProps) => {
                 )}
               </div>
 
-              {/* Live results */}
+              {/* Live results (no inner scroll: keep it "full screen", no small window) */}
               {results.length > 0 && (
-                <div className="space-y-2 max-h-32 sm:max-h-48 overflow-y-auto">
+                <div className="space-y-2">
                   {results.slice(-5).map((result, idx) => (
-                    <div 
+                    <div
                       key={idx}
                       className="flex items-center justify-between text-xs sm:text-sm p-2 rounded bg-muted/50"
                     >
@@ -296,9 +292,6 @@ export const ContactSearch = ({ onNavigateToTab }: ContactSearchProps) => {
             </CardContent>
           </Card>
         </div>
-        
-        {/* Spacer to push content to center on larger screens */}
-        <div className="flex-1 min-h-0" />
       </div>
     );
   }
