@@ -219,6 +219,15 @@ export const ContactSearch = ({ onNavigateToTab }: ContactSearchProps) => {
 
   // Search in progress - Full screen overlay
   if (isSearching) {
+    // Calculate progress values - use companiesWithoutEmail.length as initial total
+    const totalToProcess = summary?.total || companiesWithoutEmail.length;
+    const processed = summary?.processed || 0;
+    const emailsFound = summary?.emailsFound || 0;
+    const progressPercent = totalToProcess > 0 ? Math.round((processed / totalToProcess) * 100) : 0;
+    const avgTimePerItem = processed > 0 ? elapsedTime / processed : 0;
+    const remainingItems = totalToProcess - processed;
+    const estimatedRemaining = processed > 0 ? Math.round(avgTimePerItem * remainingItems) : 0;
+
     return (
       <div className="fixed inset-0 z-[100] bg-background flex items-center justify-center p-3 sm:p-6">
         <div className="w-full max-w-2xl">
@@ -232,77 +241,70 @@ export const ContactSearch = ({ onNavigateToTab }: ContactSearchProps) => {
                 </p>
               </div>
 
-              {/* Progress Gauge */}
-              {summary && summary.total > 0 && (() => {
-                const progressPercent = Math.round((summary.processed / summary.total) * 100);
-                const avgTimePerItem = summary.processed > 0 ? elapsedTime / summary.processed : 0;
-                const remainingItems = summary.total - summary.processed;
-                const estimatedRemaining = Math.round(avgTimePerItem * remainingItems);
-                
-                return (
-                  <div className="space-y-3">
-                    {/* Big percentage display */}
-                    <div className="flex flex-col items-center justify-center py-4">
-                      <div className="relative w-28 h-28 sm:w-36 sm:h-36">
-                        {/* Background circle */}
-                        <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
-                          <circle
-                            cx="50"
-                            cy="50"
-                            r="42"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="8"
-                            className="text-muted/30"
-                          />
-                          <circle
-                            cx="50"
-                            cy="50"
-                            r="42"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="8"
-                            strokeLinecap="round"
-                            strokeDasharray={`${progressPercent * 2.64} 264`}
-                            className="text-primary transition-all duration-500 ease-out"
-                          />
-                        </svg>
-                        {/* Center content */}
-                        <div className="absolute inset-0 flex flex-col items-center justify-center">
-                          <span className="text-3xl sm:text-4xl font-bold text-foreground">{progressPercent}%</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Stats row */}
-                    <div className="grid grid-cols-3 gap-2 text-center">
-                      <div className="bg-muted/50 rounded-lg p-2 sm:p-3">
-                        <div className="text-lg sm:text-xl font-semibold text-foreground">{summary.processed}</div>
-                        <div className="text-xs text-muted-foreground">Traités</div>
-                      </div>
-                      <div className="bg-primary/10 border border-primary/20 rounded-lg p-2 sm:p-3">
-                        <div className="text-lg sm:text-xl font-semibold text-primary">{summary.emailsFound}</div>
-                        <div className="text-xs text-muted-foreground">Emails</div>
-                      </div>
-                      <div className="bg-muted/50 rounded-lg p-2 sm:p-3">
-                        <div className="text-lg sm:text-xl font-semibold text-foreground">{summary.total}</div>
-                        <div className="text-xs text-muted-foreground">Total</div>
-                      </div>
-                    </div>
-
-                    {/* Time info */}
-                    <div className="flex items-center justify-between text-xs sm:text-sm text-muted-foreground px-1">
-                      <div className="flex items-center gap-1.5">
-                        <Clock className="h-3.5 w-3.5" />
-                        <span>{formatTime(elapsedTime)}</span>
-                      </div>
-                      {summary.processed > 0 && summary.processed < summary.total && (
-                        <span>~{formatTime(estimatedRemaining)} restant</span>
-                      )}
+              {/* Progress Gauge - ALWAYS visible */}
+              <div className="space-y-3">
+                {/* Big percentage display */}
+                <div className="flex flex-col items-center justify-center py-4">
+                  <div className="relative w-28 h-28 sm:w-36 sm:h-36">
+                    {/* Background circle */}
+                    <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+                      <circle
+                        cx="50"
+                        cy="50"
+                        r="42"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="8"
+                        className="text-muted/30"
+                      />
+                      <circle
+                        cx="50"
+                        cy="50"
+                        r="42"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="8"
+                        strokeLinecap="round"
+                        strokeDasharray={`${progressPercent * 2.64} 264`}
+                        className="text-primary transition-all duration-500 ease-out"
+                      />
+                    </svg>
+                    {/* Center content */}
+                    <div className="absolute inset-0 flex flex-col items-center justify-center">
+                      <span className="text-3xl sm:text-4xl font-bold text-foreground">{progressPercent}%</span>
                     </div>
                   </div>
-                );
-              })()}
+                </div>
+
+                {/* Stats row */}
+                <div className="grid grid-cols-3 gap-2 text-center">
+                  <div className="bg-muted/50 rounded-lg p-2 sm:p-3">
+                    <div className="text-lg sm:text-xl font-semibold text-foreground">{processed}</div>
+                    <div className="text-xs text-muted-foreground">Traités</div>
+                  </div>
+                  <div className="bg-primary/10 border border-primary/20 rounded-lg p-2 sm:p-3">
+                    <div className="text-lg sm:text-xl font-semibold text-primary">{emailsFound}</div>
+                    <div className="text-xs text-muted-foreground">Emails</div>
+                  </div>
+                  <div className="bg-muted/50 rounded-lg p-2 sm:p-3">
+                    <div className="text-lg sm:text-xl font-semibold text-foreground">{totalToProcess}</div>
+                    <div className="text-xs text-muted-foreground">Total</div>
+                  </div>
+                </div>
+
+                {/* Time info */}
+                <div className="flex items-center justify-between text-xs sm:text-sm text-muted-foreground px-1">
+                  <div className="flex items-center gap-1.5">
+                    <Clock className="h-3.5 w-3.5" />
+                    <span>{formatTime(elapsedTime)}</span>
+                  </div>
+                  {processed > 0 && processed < totalToProcess ? (
+                    <span>~{formatTime(estimatedRemaining)} restant</span>
+                  ) : processed === 0 ? (
+                    <span className="animate-pulse">Initialisation...</span>
+                  ) : null}
+                </div>
+              </div>
 
               {/* Live results (no inner scroll: keep it "full screen", no small window) */}
               {results.length > 0 && (
