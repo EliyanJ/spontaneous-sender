@@ -224,47 +224,85 @@ export const ContactSearch = ({ onNavigateToTab }: ContactSearchProps) => {
         <div className="w-full max-w-2xl">
           <Card className="border-primary/20 bg-card shadow-xl">
             <CardContent className="p-4 sm:p-8 space-y-4 sm:space-y-6 max-h-[calc(100svh-2rem)] overflow-hidden">
-              <div className="text-center space-y-2">
-                <div className="inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-primary/10 mb-2 sm:mb-4">
-                  <Loader2 className="h-6 w-6 sm:h-8 sm:w-8 animate-spin text-primary" />
-                </div>
+              {/* Header */}
+              <div className="text-center space-y-1">
                 <h2 className="text-xl sm:text-2xl font-semibold text-foreground">Recherche en cours</h2>
-                <p className="text-sm sm:text-base text-muted-foreground">
-                  Analyse des sites web et recherche des emails de contact...
+                <p className="text-sm text-muted-foreground">
+                  Analyse des sites web et recherche des emails...
                 </p>
               </div>
 
-              <div className="space-y-3 sm:space-y-4">
-                <div className="flex items-center justify-between text-sm">
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <Clock className="h-4 w-4" />
-                    <span>Temps écoulé: {formatTime(elapsedTime)}</span>
-                  </div>
-                  {summary && (
-                    <span className="text-foreground font-medium">
-                      {summary.processed} / {summary.total}
-                    </span>
-                  )}
-                </div>
+              {/* Progress Gauge */}
+              {summary && summary.total > 0 && (() => {
+                const progressPercent = Math.round((summary.processed / summary.total) * 100);
+                const avgTimePerItem = summary.processed > 0 ? elapsedTime / summary.processed : 0;
+                const remainingItems = summary.total - summary.processed;
+                const estimatedRemaining = Math.round(avgTimePerItem * remainingItems);
                 
-                {summary && summary.total > 0 && (
-                  <Progress 
-                    value={(summary.processed / summary.total) * 100} 
-                    className="h-2 sm:h-3"
-                  />
-                )}
+                return (
+                  <div className="space-y-3">
+                    {/* Big percentage display */}
+                    <div className="flex flex-col items-center justify-center py-4">
+                      <div className="relative w-28 h-28 sm:w-36 sm:h-36">
+                        {/* Background circle */}
+                        <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+                          <circle
+                            cx="50"
+                            cy="50"
+                            r="42"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="8"
+                            className="text-muted/30"
+                          />
+                          <circle
+                            cx="50"
+                            cy="50"
+                            r="42"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="8"
+                            strokeLinecap="round"
+                            strokeDasharray={`${progressPercent * 2.64} 264`}
+                            className="text-primary transition-all duration-500 ease-out"
+                          />
+                        </svg>
+                        {/* Center content */}
+                        <div className="absolute inset-0 flex flex-col items-center justify-center">
+                          <span className="text-3xl sm:text-4xl font-bold text-foreground">{progressPercent}%</span>
+                        </div>
+                      </div>
+                    </div>
 
-                {summary && (
-                  <div className="bg-primary/10 border border-primary/20 rounded-lg p-3 sm:p-4 text-center">
-                    <div className="flex items-center justify-center gap-2">
-                      <Mail className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
-                      <span className="text-base sm:text-lg font-semibold text-foreground">
-                        {summary.emailsFound} emails trouvés
-                      </span>
+                    {/* Stats row */}
+                    <div className="grid grid-cols-3 gap-2 text-center">
+                      <div className="bg-muted/50 rounded-lg p-2 sm:p-3">
+                        <div className="text-lg sm:text-xl font-semibold text-foreground">{summary.processed}</div>
+                        <div className="text-xs text-muted-foreground">Traités</div>
+                      </div>
+                      <div className="bg-primary/10 border border-primary/20 rounded-lg p-2 sm:p-3">
+                        <div className="text-lg sm:text-xl font-semibold text-primary">{summary.emailsFound}</div>
+                        <div className="text-xs text-muted-foreground">Emails</div>
+                      </div>
+                      <div className="bg-muted/50 rounded-lg p-2 sm:p-3">
+                        <div className="text-lg sm:text-xl font-semibold text-foreground">{summary.total}</div>
+                        <div className="text-xs text-muted-foreground">Total</div>
+                      </div>
+                    </div>
+
+                    {/* Time info */}
+                    <div className="flex items-center justify-between text-xs sm:text-sm text-muted-foreground px-1">
+                      <div className="flex items-center gap-1.5">
+                        <Clock className="h-3.5 w-3.5" />
+                        <span>{formatTime(elapsedTime)}</span>
+                      </div>
+                      {summary.processed > 0 && summary.processed < summary.total && (
+                        <span>~{formatTime(estimatedRemaining)} restant</span>
+                      )}
                     </div>
                   </div>
-                )}
-              </div>
+                );
+              })()}
 
               {/* Live results (no inner scroll: keep it "full screen", no small window) */}
               {results.length > 0 && (
