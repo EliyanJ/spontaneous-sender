@@ -17,13 +17,12 @@ interface EmailRequest {
     | 'welcome' 
     | 'ticket_notification' 
     | 'ticket_confirmation'
-    | 'email_reminder' 
-    | 'response_detected'
     | 'gmail_connected'
-    | 'campaign_summary'
+    | 'campaign_sent'
+    | 'campaign_scheduled'
+    | 'campaign_reminder_2h'
     | 'payment_received_admin'
-    | 'new_user_admin'
-    | 'credits_low';
+    | 'new_user_admin';
   to?: string;
   firstName?: string;
   subject?: string;
@@ -31,18 +30,16 @@ interface EmailRequest {
   currentPage?: string;
   userEmail?: string;
   userId?: string;
-  scheduledCount?: number;
-  scheduledTime?: string;
-  companyName?: string;
-  responseCategory?: string;
-  // New fields
-  ticketId?: string;
+  // Campaign fields
   emailsSent?: number;
   companiesContacted?: string[];
+  scheduledTime?: string;
+  scheduledDate?: string;
+  // Ticket fields
+  ticketId?: string;
+  // Payment fields
   amount?: number;
   planType?: string;
-  creditsRemaining?: number;
-  renewalDate?: string;
 }
 
 // ============= EMAIL TEMPLATES =============
@@ -182,73 +179,6 @@ const getTicketConfirmationHtml = (data: EmailRequest) => `
 </html>
 `;
 
-const getEmailReminderHtml = (scheduledCount: number, scheduledTime: string) => `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; }
-    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-    .header { background: #3b82f6; color: white; padding: 20px; text-align: center; border-radius: 10px 10px 0 0; }
-    .content { background: #f9fafb; padding: 30px; border-radius: 0 0 10px 10px; }
-    .highlight { font-size: 24px; font-weight: bold; color: #667eea; }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <div class="header">
-      <h1>⏰ Rappel: Emails programmés</h1>
-    </div>
-    <div class="content">
-      <p>Bonjour,</p>
-      <p>Vos <span class="highlight">${scheduledCount} email(s)</span> seront envoyés dans <strong>1 minute</strong> (à ${scheduledTime}).</p>
-      <p>Si vous souhaitez annuler ou modifier, connectez-vous rapidement à votre tableau de bord.</p>
-      <p style="text-align: center; margin-top: 20px;">
-        <a href="https://getcronos.fr/dashboard?tab=emails" style="background: #667eea; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px;">
-          Voir mes emails programmés
-        </a>
-      </p>
-    </div>
-  </div>
-</body>
-</html>
-`;
-
-const getResponseDetectedHtml = (companyName: string, responseCategory: string) => `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; }
-    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-    .header { background: #10b981; color: white; padding: 20px; text-align: center; border-radius: 10px 10px 0 0; }
-    .content { background: #f9fafb; padding: 30px; border-radius: 0 0 10px 10px; }
-    .company { font-size: 20px; font-weight: bold; color: #667eea; }
-    .category { display: inline-block; padding: 4px 12px; border-radius: 20px; background: #e0e7ff; color: #3730a3; font-size: 14px; }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <div class="header">
-      <h1>📬 Nouvelle réponse reçue !</h1>
-    </div>
-    <div class="content">
-      <p>Bonne nouvelle !</p>
-      <p>Vous avez reçu une réponse de <span class="company">${companyName}</span>.</p>
-      <p>Catégorie: <span class="category">${responseCategory}</span></p>
-      <p style="text-align: center; margin-top: 20px;">
-        <a href="https://getcronos.fr/dashboard?tab=emails" style="background: #10b981; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px;">
-          Voir la réponse
-        </a>
-      </p>
-    </div>
-  </div>
-</body>
-</html>
-`;
-
 const getGmailConnectedHtml = (userEmail: string) => `
 <!DOCTYPE html>
 <html>
@@ -304,7 +234,8 @@ const getGmailConnectedHtml = (userEmail: string) => `
 </html>
 `;
 
-const getCampaignSummaryHtml = (data: EmailRequest) => `
+// Campaign sent - after immediate send
+const getCampaignSentHtml = (data: EmailRequest) => `
 <!DOCTYPE html>
 <html>
 <head>
@@ -312,10 +243,10 @@ const getCampaignSummaryHtml = (data: EmailRequest) => `
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; }
     .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-    .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+    .header { background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
     .content { background: #f9fafb; padding: 30px; border-radius: 0 0 10px 10px; }
     .stat-box { background: white; padding: 20px; border-radius: 8px; margin: 15px 0; text-align: center; border: 1px solid #e5e7eb; }
-    .stat-number { font-size: 36px; font-weight: bold; color: #667eea; }
+    .stat-number { font-size: 48px; font-weight: bold; color: #10b981; }
     .companies-list { background: white; padding: 15px; border-radius: 8px; margin: 15px 0; max-height: 200px; overflow-y: auto; }
     .footer { text-align: center; margin-top: 20px; color: #6b7280; font-size: 14px; }
   </style>
@@ -323,15 +254,15 @@ const getCampaignSummaryHtml = (data: EmailRequest) => `
 <body>
   <div class="container">
     <div class="header">
-      <h1>📊 Récapitulatif de votre campagne</h1>
+      <h1>🚀 Campagne envoyée !</h1>
     </div>
     <div class="content">
       <p>Bonjour,</p>
-      <p>Voici le récapitulatif de vos emails envoyés :</p>
+      <p>Vos emails de prospection ont été envoyés avec succès.</p>
       
       <div class="stat-box">
         <p class="stat-number">${data.emailsSent || 0}</p>
-        <p>Email(s) envoyé(s)</p>
+        <p>email(s) envoyé(s)</p>
       </div>
       
       ${data.companiesContacted && data.companiesContacted.length > 0 ? `
@@ -344,15 +275,134 @@ const getCampaignSummaryHtml = (data: EmailRequest) => `
       </div>
       ` : ''}
       
-      <p>Consultez votre tableau de bord pour suivre les réponses et gérer vos prochaines relances.</p>
+      <p>Consultez votre tableau de bord pour suivre les réponses et planifier vos relances.</p>
       
       <p style="text-align: center; margin-top: 20px;">
-        <a href="https://getcronos.fr/dashboard?tab=emails" style="background: #667eea; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px;">
-          Voir mes emails
+        <a href="https://getcronos.fr/dashboard?tab=campagnes" style="background: #667eea; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px;">
+          Voir mes campagnes
         </a>
       </p>
       
       <p>Bonne continuation !<br>L'équipe Cronos</p>
+    </div>
+    <div class="footer">
+      <p>© 2025 Cronos - Votre assistant de prospection</p>
+    </div>
+  </div>
+</body>
+</html>
+`;
+
+// Campaign scheduled - when user schedules for later
+const getCampaignScheduledHtml = (data: EmailRequest) => `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+    .header { background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+    .content { background: #f9fafb; padding: 30px; border-radius: 0 0 10px 10px; }
+    .schedule-box { background: white; padding: 25px; border-radius: 8px; margin: 20px 0; text-align: center; border: 2px solid #3b82f6; }
+    .schedule-date { font-size: 24px; font-weight: bold; color: #1d4ed8; }
+    .schedule-time { font-size: 32px; font-weight: bold; color: #3b82f6; margin-top: 5px; }
+    .stat-box { background: #eff6ff; padding: 15px; border-radius: 8px; margin: 15px 0; text-align: center; }
+    .footer { text-align: center; margin-top: 20px; color: #6b7280; font-size: 14px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>📅 Campagne programmée</h1>
+    </div>
+    <div class="content">
+      <p>Bonjour,</p>
+      <p>Votre campagne de prospection a été programmée avec succès.</p>
+      
+      <div class="schedule-box">
+        <p style="margin: 0; color: #6b7280;">Envoi prévu le</p>
+        <p class="schedule-date">${data.scheduledDate || 'Date non spécifiée'}</p>
+        <p class="schedule-time">à ${data.scheduledTime || 'Heure non spécifiée'}</p>
+      </div>
+      
+      <div class="stat-box">
+        <p style="margin: 0;"><strong>${data.emailsSent || 0}</strong> email(s) seront envoyés</p>
+      </div>
+      
+      ${data.companiesContacted && data.companiesContacted.length > 0 ? `
+      <p><strong>Entreprises ciblées :</strong> ${data.companiesContacted.slice(0, 5).join(', ')}${data.companiesContacted.length > 5 ? ` et ${data.companiesContacted.length - 5} autres` : ''}</p>
+      ` : ''}
+      
+      <p style="background: #fef3c7; padding: 15px; border-radius: 8px; border-left: 4px solid #f59e0b;">
+        💡 <strong>Vous pouvez annuler</strong> à tout moment depuis votre tableau de bord avant l'heure d'envoi.
+      </p>
+      
+      <p style="text-align: center; margin-top: 20px;">
+        <a href="https://getcronos.fr/dashboard?tab=emails-programmes" style="background: #667eea; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px;">
+          Gérer mes emails programmés
+        </a>
+      </p>
+      
+      <p>À bientôt !<br>L'équipe Cronos</p>
+    </div>
+    <div class="footer">
+      <p>© 2025 Cronos - Votre assistant de prospection</p>
+    </div>
+  </div>
+</body>
+</html>
+`;
+
+// Campaign reminder 2h before
+const getCampaignReminder2hHtml = (data: EmailRequest) => `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+    .header { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+    .content { background: #f9fafb; padding: 30px; border-radius: 0 0 10px 10px; }
+    .countdown-box { background: white; padding: 25px; border-radius: 8px; margin: 20px 0; text-align: center; border: 2px solid #f59e0b; }
+    .countdown { font-size: 48px; font-weight: bold; color: #d97706; }
+    .stat-box { background: #fffbeb; padding: 15px; border-radius: 8px; margin: 15px 0; text-align: center; }
+    .warning-box { background: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px; border-radius: 4px; margin: 20px 0; }
+    .footer { text-align: center; margin-top: 20px; color: #6b7280; font-size: 14px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>⏰ Rappel : Envoi dans 2 heures</h1>
+    </div>
+    <div class="content">
+      <p>Bonjour,</p>
+      <p>Votre campagne de prospection programmée sera envoyée dans <strong>2 heures</strong>.</p>
+      
+      <div class="countdown-box">
+        <p class="countdown">2h</p>
+        <p style="margin: 0; color: #6b7280;">avant l'envoi</p>
+        <p style="margin-top: 10px;"><strong>${data.scheduledTime || ''}</strong></p>
+      </div>
+      
+      <div class="stat-box">
+        <p style="margin: 0;"><strong>${data.emailsSent || 0}</strong> email(s) seront envoyés</p>
+      </div>
+      
+      <div class="warning-box">
+        <p style="margin: 0;"><strong>⚠️ Besoin de modifier ou annuler ?</strong></p>
+        <p style="margin: 5px 0 0 0;">Vous avez encore le temps de modifier ou annuler cet envoi depuis votre tableau de bord.</p>
+      </div>
+      
+      <p style="text-align: center; margin-top: 20px;">
+        <a href="https://getcronos.fr/dashboard?tab=emails-programmes" style="background: #667eea; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px;">
+          Voir mes emails programmés
+        </a>
+      </p>
+      
+      <p>Bonne prospection !<br>L'équipe Cronos</p>
     </div>
     <div class="footer">
       <p>© 2025 Cronos - Votre assistant de prospection</p>
@@ -439,158 +489,121 @@ const getNewUserAdminHtml = (data: EmailRequest) => `
 </html>
 `;
 
-const getCreditsLowHtml = (data: EmailRequest) => `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; }
-    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-    .header { background: #f59e0b; color: white; padding: 20px; text-align: center; border-radius: 10px 10px 0 0; }
-    .content { background: #f9fafb; padding: 30px; border-radius: 0 0 10px 10px; }
-    .credits { font-size: 48px; font-weight: bold; color: #f59e0b; text-align: center; }
-    .info-box { background: #fef3c7; padding: 15px; border-radius: 8px; margin: 15px 0; border-left: 4px solid #f59e0b; }
-    .footer { text-align: center; margin-top: 20px; color: #6b7280; font-size: 14px; }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <div class="header">
-      <h1>⚠️ Crédits faibles</h1>
-    </div>
-    <div class="content">
-      <p>Bonjour,</p>
-      <p>Il vous reste peu de crédits sur Cronos :</p>
-      
-      <p class="credits">${data.creditsRemaining || 0}</p>
-      <p style="text-align: center; color: #6b7280;">crédits d'envoi restants</p>
-      
-      ${data.renewalDate ? `
-      <div class="info-box">
-        <p><strong>📅 Prochain renouvellement :</strong> ${data.renewalDate}</p>
-        <p>Vos crédits seront automatiquement rechargés à cette date si vous avez un abonnement actif.</p>
-      </div>
-      ` : ''}
-      
-      <p>Pour continuer à prospecter sans interruption, pensez à recharger vos crédits ou à passer à un forfait supérieur.</p>
-      
-      <p style="text-align: center; margin-top: 20px;">
-        <a href="https://getcronos.fr/pricing" style="background: #667eea; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px;">
-          Voir les offres
-        </a>
-      </p>
-      
-      <p>À bientôt,<br>L'équipe Cronos</p>
-    </div>
-    <div class="footer">
-      <p>© 2025 Cronos - Votre assistant de prospection</p>
-    </div>
-  </div>
-</body>
-</html>
-`;
-
 // ============= MAIN HANDLER =============
 
-serve(async (req): Promise<Response> => {
+serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
     const data: EmailRequest = await req.json();
-    console.log('Sending system email:', data.type);
+    console.log(`Processing email type: ${data.type}`);
 
-    let to: string;
-    let subject: string;
-    let html: string;
+    let emailConfig: { to: string; subject: string; html: string } | null = null;
 
     switch (data.type) {
-      case 'welcome':
-        to = data.to!;
-        subject = "🎉 Bienvenue sur Cronos !";
-        html = getWelcomeEmailHtml(data.firstName || 'Utilisateur');
+      case "welcome":
+        emailConfig = {
+          to: data.to!,
+          subject: "🎉 Bienvenue sur Cronos !",
+          html: getWelcomeEmailHtml(data.firstName || ""),
+        };
         break;
 
-      case 'ticket_notification':
-        to = ADMIN_EMAIL;
-        subject = `🎫 Nouveau ticket: ${data.subject}`;
-        html = getTicketNotificationHtml(data);
+      case "ticket_notification":
+        emailConfig = {
+          to: ADMIN_EMAIL,
+          subject: `🎫 Nouveau ticket: ${data.subject}`,
+          html: getTicketNotificationHtml(data),
+        };
         break;
 
-      case 'ticket_confirmation':
-        to = data.to!;
-        subject = `🎫 Ticket reçu - ${data.subject}`;
-        html = getTicketConfirmationHtml(data);
+      case "ticket_confirmation":
+        emailConfig = {
+          to: data.to || data.userEmail!,
+          subject: "🎫 Ticket reçu - Cronos Support",
+          html: getTicketConfirmationHtml(data),
+        };
         break;
 
-      case 'email_reminder':
-        to = data.to!;
-        subject = `⏰ Rappel: ${data.scheduledCount} email(s) dans 1 minute`;
-        html = getEmailReminderHtml(data.scheduledCount!, data.scheduledTime!);
+      case "gmail_connected":
+        emailConfig = {
+          to: data.to || data.userEmail!,
+          subject: "🔗 Gmail connecté à Cronos",
+          html: getGmailConnectedHtml(data.userEmail || ""),
+        };
         break;
 
-      case 'response_detected':
-        to = data.to!;
-        subject = `📬 Réponse de ${data.companyName}`;
-        html = getResponseDetectedHtml(data.companyName!, data.responseCategory || 'Non catégorisée');
+      case "campaign_sent":
+        emailConfig = {
+          to: data.to || data.userEmail!,
+          subject: `🚀 Campagne envoyée : ${data.emailsSent || 0} email(s)`,
+          html: getCampaignSentHtml(data),
+        };
         break;
 
-      case 'gmail_connected':
-        to = data.to!;
-        subject = "🔗 Gmail connecté à votre compte Cronos";
-        html = getGmailConnectedHtml(data.userEmail || data.to!);
+      case "campaign_scheduled":
+        emailConfig = {
+          to: data.to || data.userEmail!,
+          subject: `📅 Campagne programmée pour le ${data.scheduledDate}`,
+          html: getCampaignScheduledHtml(data),
+        };
         break;
 
-      case 'campaign_summary':
-        to = data.to!;
-        subject = `📊 Récap: ${data.emailsSent} email(s) envoyé(s)`;
-        html = getCampaignSummaryHtml(data);
+      case "campaign_reminder_2h":
+        emailConfig = {
+          to: data.to || data.userEmail!,
+          subject: `⏰ Rappel : Votre campagne part dans 2 heures`,
+          html: getCampaignReminder2hHtml(data),
+        };
         break;
 
-      case 'payment_received_admin':
-        to = ADMIN_EMAIL;
-        subject = `💰 Nouveau paiement: ${((data.amount || 0) / 100).toFixed(2)}€ - ${data.planType}`;
-        html = getPaymentReceivedAdminHtml(data);
+      case "payment_received_admin":
+        emailConfig = {
+          to: ADMIN_EMAIL,
+          subject: `💰 Paiement reçu: ${((data.amount || 0) / 100).toFixed(2)}€`,
+          html: getPaymentReceivedAdminHtml(data),
+        };
         break;
 
-      case 'new_user_admin':
-        to = ADMIN_EMAIL;
-        subject = `👤 Nouvel utilisateur: ${data.userEmail}`;
-        html = getNewUserAdminHtml(data);
-        break;
-
-      case 'credits_low':
-        to = data.to!;
-        subject = `⚠️ Plus que ${data.creditsRemaining} crédits sur Cronos`;
-        html = getCreditsLowHtml(data);
+      case "new_user_admin":
+        emailConfig = {
+          to: ADMIN_EMAIL,
+          subject: `👤 Nouvel utilisateur: ${data.userEmail}`,
+          html: getNewUserAdminHtml(data),
+        };
         break;
 
       default:
         throw new Error(`Unknown email type: ${data.type}`);
     }
 
-    const emailResponse = await resend.emails.send({
+    if (!emailConfig) {
+      throw new Error("Email configuration not set");
+    }
+
+    console.log(`Sending email to: ${emailConfig.to}`);
+
+    const result = await resend.emails.send({
       from: FROM_EMAIL,
-      to: [to],
-      subject,
-      html,
+      to: emailConfig.to,
+      subject: emailConfig.subject,
+      html: emailConfig.html,
     });
 
-    console.log("Email sent successfully:", emailResponse);
+    console.log(`Email sent successfully:`, result);
 
-    return new Response(JSON.stringify({ success: true, ...emailResponse }), {
-      status: 200,
-      headers: { "Content-Type": "application/json", ...corsHeaders },
+    return new Response(JSON.stringify({ success: true, result }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error: any) {
-    console.error("Error in send-system-email:", error);
+    console.error("Error sending email:", error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ success: false, error: error.message }),
       {
         status: 500,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       }
     );
   }
