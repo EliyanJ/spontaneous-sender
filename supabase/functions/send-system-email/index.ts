@@ -9,8 +9,8 @@ const corsHeaders = {
 };
 
 const ADMIN_EMAIL = "eliyanjacquet99@gmail.com";
-// TODO: Update to noreply@getcronos.fr once domain is verified in Resend
-const FROM_EMAIL = "Cronos <onboarding@resend.dev>";
+// Domain verified in Resend - using custom domain
+const FROM_EMAIL = "Cronos <noreply@getcronos.fr>";
 
 interface EmailRequest {
   type: 
