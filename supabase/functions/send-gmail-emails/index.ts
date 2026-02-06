@@ -314,6 +314,28 @@ serve(async (req) => {
       }
     }
 
+    // Envoyer notification "campaign_sent" si des emails ont été envoyés
+    if (successCount > 0) {
+      try {
+        // Récupérer les noms des entreprises contactées depuis les recipients
+        const companiesContacted = recipients.slice(0, 10); // Limiter à 10 pour l'email
+        
+        await supabaseClient.functions.invoke('send-system-email', {
+          body: {
+            type: 'campaign_sent',
+            to: user.email,
+            userEmail: user.email,
+            emailsSent: successCount,
+            companiesContacted: companiesContacted,
+          }
+        });
+        console.log('Notification campaign_sent envoyée');
+      } catch (notifError) {
+        console.error('Erreur envoi notification campaign_sent:', notifError);
+        // Ne pas bloquer si la notification échoue
+      }
+    }
+
     return new Response(
       JSON.stringify({
         success: true,

@@ -114,6 +114,40 @@ serve(async (req) => {
 
     console.log('Email scheduled successfully via pgmq for:', scheduledDate.toISOString());
 
+    // Récupérer l'email de l'utilisateur pour la notification
+    const { data: userData } = await supabase.auth.getUser();
+    const userEmail = userData?.user?.email;
+
+    // Envoyer notification "campaign_scheduled"
+    try {
+      const scheduledDateObj = new Date(scheduledFor);
+      const formattedDate = scheduledDateObj.toLocaleDateString('fr-FR', { 
+        weekday: 'long', 
+        day: 'numeric', 
+        month: 'long' 
+      });
+      const formattedTime = scheduledDateObj.toLocaleTimeString('fr-FR', { 
+        hour: '2-digit', 
+        minute: '2-digit' 
+      });
+
+      await serviceSupabase.functions.invoke('send-system-email', {
+        body: {
+          type: 'campaign_scheduled',
+          to: userEmail,
+          userEmail: userEmail,
+          emailsSent: recipients.length,
+          scheduledDate: formattedDate,
+          scheduledTime: formattedTime,
+          companiesContacted: recipients.slice(0, 10), // Limiter à 10 pour l'email
+        }
+      });
+      console.log('Notification campaign_scheduled envoyée');
+    } catch (notifError) {
+      console.error('Erreur envoi notification:', notifError);
+      // Ne pas bloquer si la notification échoue
+    }
+
     return new Response(
       JSON.stringify({
         success: true,
