@@ -11,6 +11,8 @@ const corsHeaders = {
 const ADMIN_EMAIL = "eliyanjacquet99@gmail.com";
 // Domain verified in Resend - using custom domain
 const FROM_EMAIL = "Cronos <noreply@getcronos.fr>";
+// Support email for ticket replies - hosted on IONOS
+const SUPPORT_EMAIL = "support@getcronos.fr";
 
 interface EmailRequest {
   type: 
@@ -167,12 +169,15 @@ const getTicketConfirmationHtml = (data: EmailRequest) => `
       
       <p>Notre équipe vous répondra dans les <strong>24 à 48 heures</strong> ouvrables.</p>
       
+      <p>Vous pouvez répondre directement à cet email si vous avez des informations supplémentaires à ajouter.</p>
+      
       <p>En attendant, n'hésitez pas à consulter notre <a href="https://getcronos.fr/help">centre d'aide</a> qui peut peut-être répondre à votre question.</p>
       
       <p>Merci de votre confiance,<br>L'équipe Cronos</p>
     </div>
     <div class="footer">
       <p>© 2025 Cronos - Votre assistant de prospection</p>
+      <p>Contact : <a href="mailto:support@getcronos.fr">support@getcronos.fr</a></p>
     </div>
   </div>
 </body>
@@ -500,7 +505,7 @@ serve(async (req) => {
     const data: EmailRequest = await req.json();
     console.log(`Processing email type: ${data.type}`);
 
-    let emailConfig: { to: string; subject: string; html: string } | null = null;
+    let emailConfig: { to: string; subject: string; html: string; replyTo?: string } | null = null;
 
     switch (data.type) {
       case "welcome":
@@ -524,6 +529,7 @@ serve(async (req) => {
           to: data.to || data.userEmail!,
           subject: "🎫 Ticket reçu - Cronos Support",
           html: getTicketConfirmationHtml(data),
+          replyTo: SUPPORT_EMAIL,
         };
         break;
 
@@ -590,6 +596,7 @@ serve(async (req) => {
       to: emailConfig.to,
       subject: emailConfig.subject,
       html: emailConfig.html,
+      ...(emailConfig.replyTo && { reply_to: emailConfig.replyTo }),
     });
 
     console.log(`Email sent successfully:`, result);
