@@ -37,6 +37,15 @@ serve(async (req) => {
 
     console.log("Storing Gmail tokens for user:", user.id);
 
+    // Check if this is a new Gmail connection (not an existing one)
+    const { data: existingToken } = await supabase
+      .from("gmail_tokens")
+      .select("id")
+      .eq("user_id", user.id)
+      .single();
+
+    const isNewConnection = !existingToken;
+
     // Calculer l'expiration (tokens Google expirent en 1h)
     const expiresAt = new Date();
     expiresAt.setHours(expiresAt.getHours() + 1);
@@ -60,6 +69,23 @@ serve(async (req) => {
     }
 
     console.log("Gmail tokens stored successfully");
+
+    // Send security notification email for new connections
+    if (isNewConnection && user.email) {
+      try {
+        await supabase.functions.invoke('send-system-email', {
+          body: {
+            type: 'gmail_connected',
+            to: user.email,
+            userEmail: user.email
+          }
+        });
+        console.log("Gmail connection notification email sent");
+      } catch (emailError) {
+        // Don't fail the token storage if email fails
+        console.error("Failed to send gmail_connected email:", emailError);
+      }
+    }
 
     return new Response(
       JSON.stringify({ success: true, message: "Tokens stored successfully" }),
