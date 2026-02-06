@@ -38,6 +38,23 @@ const logStep = (step: string, details?: any) => {
   console.log(`[STRIPE-WEBHOOK] ${step}${detailsStr}`);
 };
 
+// Helper to send admin notification
+async function notifyAdminPayment(supabase: any, customerEmail: string, amount: number, planType: string) {
+  try {
+    await supabase.functions.invoke('send-system-email', {
+      body: {
+        type: 'payment_received_admin',
+        userEmail: customerEmail,
+        amount: amount,
+        planType: planType
+      }
+    });
+    logStep("Admin payment notification sent");
+  } catch (error) {
+    logStep("Failed to send admin notification", { error: error instanceof Error ? error.message : String(error) });
+  }
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -135,10 +152,12 @@ serve(async (req) => {
           
           let planType: "simple" | "plus" = "simple";
           let sendsLimit = 200;
+          let planName = "Plan Simple";
 
           if (productId === STRIPE_PRODUCTS.PLAN_PLUS.product_id) {
             planType = "plus";
             sendsLimit = 400;
+            planName = "Plan Plus";
           }
 
           logStep("Updating subscription", { planType, sendsLimit, userId: user.id });
@@ -172,15 +191,21 @@ serve(async (req) => {
             logStep("Error updating subscription", { error: subError.message });
           } else {
             logStep("Subscription updated successfully", { userId: user.id, planType, sendsLimit, updated: subData });
+            
+            // Send admin notification for subscription
+            await notifyAdminPayment(supabase, customerEmail, session.amount_total || 0, planName);
           }
         } else if (session.mode === "payment") {
           // Handle token pack purchase
           let tokensToAdd = 0;
+          let packName = "";
 
           if (priceId === STRIPE_PRODUCTS.PACK_50_TOKENS.price_id) {
             tokensToAdd = 50;
+            packName = "Pack 50 Tokens";
           } else if (priceId === STRIPE_PRODUCTS.PACK_100_TOKENS.price_id) {
             tokensToAdd = 100;
+            packName = "Pack 100 Tokens";
           }
 
           if (tokensToAdd > 0) {
@@ -218,10 +243,13 @@ serve(async (req) => {
                 user_id: user.id,
                 amount: tokensToAdd,
                 type: "purchase",
-                description: `Achat Pack ${tokensToAdd} Tokens`
+                description: `Achat ${packName}`
               });
 
               logStep("Tokens added successfully", { newTotal: newTokens });
+              
+              // Send admin notification for token purchase
+              await notifyAdminPayment(supabase, customerEmail, session.amount_total || 0, packName);
             }
           }
         }

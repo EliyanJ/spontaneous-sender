@@ -138,8 +138,9 @@ const Register = () => {
           console.error('Profile update error:', profileError);
         }
 
-        // Send welcome email via edge function
+        // Send welcome email + admin notification via edge function
         try {
+          // Welcome email to user
           await supabase.functions.invoke('send-system-email', {
             body: {
               type: 'welcome',
@@ -147,8 +148,17 @@ const Register = () => {
               firstName: formData.firstName,
             },
           });
+
+          // Notify admin of new user
+          await supabase.functions.invoke('send-system-email', {
+            body: {
+              type: 'new_user_admin',
+              userEmail: formData.email,
+              firstName: formData.firstName,
+            },
+          });
         } catch (emailError) {
-          console.error('Welcome email error:', emailError);
+          console.error('Email notification error:', emailError);
         }
       }
 

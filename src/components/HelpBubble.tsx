@@ -36,19 +36,22 @@ export const HelpBubble = () => {
 
     try {
       // Insert ticket into database
-      const { error: ticketError } = await supabase
+      const { data: ticketData, error: ticketError } = await supabase
         .from('support_tickets')
         .insert({
           user_id: user.id,
           subject: subject.trim(),
           description: description.trim(),
           current_page: location.pathname,
-        });
+        })
+        .select()
+        .single();
 
       if (ticketError) throw ticketError;
 
-      // Send notification email
+      // Send notification emails (admin + user confirmation)
       try {
+        // Notify admin
         await supabase.functions.invoke('send-system-email', {
           body: {
             type: 'ticket_notification',
@@ -57,6 +60,16 @@ export const HelpBubble = () => {
             currentPage: location.pathname,
             userEmail: user.email,
             userId: user.id,
+          },
+        });
+
+        // Send confirmation to user
+        await supabase.functions.invoke('send-system-email', {
+          body: {
+            type: 'ticket_confirmation',
+            to: user.email,
+            subject: subject.trim(),
+            ticketId: ticketData?.id,
           },
         });
       } catch (emailError) {
