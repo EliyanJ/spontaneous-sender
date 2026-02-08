@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable/index";
+import { signInWithGoogle } from "@/lib/auth-utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -73,13 +73,11 @@ export const AuthDialog = ({ open, onOpenChange }: AuthDialogProps) => {
   const handleGoogleSignIn = async () => {
     setGoogleLoading(true);
     try {
-      const result = await lovable.auth.signInWithOAuth("google", {
-        redirect_uri: window.location.origin,
-      });
+      const { error } = await signInWithGoogle("/auth");
 
-      if (result.error) {
-        console.error('OAuth error:', result.error);
-        toast.error(result.error.message || "Erreur lors de la connexion Google");
+      if (error) {
+        console.error('OAuth error:', error);
+        toast.error(error.message || "Erreur lors de la connexion Google");
       }
     } catch (error: any) {
       console.error('OAuth error:', error);

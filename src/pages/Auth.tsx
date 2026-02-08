@@ -1,15 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable/index";
+import { signInWithGoogle } from "@/lib/auth-utils";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import cronosLogo from "@/assets/cronos-logo.png";
 
-// ========== CRITICAL FIX: Module-level flag to survive re-renders ==========
 let authAttempted = false;
 
-// Fonction pour décoder proprement une URL
 const decodeReturnPath = (path: string): string => {
   try {
     let decoded = path;
@@ -30,14 +28,12 @@ const Auth = () => {
   const nextPath = searchParams.get('next') || '/dashboard';
 
   useEffect(() => {
-    // Reset au montage pour permettre une nouvelle tentative
     authAttempted = false;
     
     if (nextPath !== '/dashboard') {
       sessionStorage.setItem("post_login_redirect", nextPath);
     }
 
-    // ========== Écouter les changements d'authentification ==========
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log('[Auth] Auth state changed:', event, 'Session:', !!session);
@@ -53,9 +49,7 @@ const Auth = () => {
       }
     );
 
-    // ========== Gérer l'authentification initiale ==========
     const initAuth = async () => {
-      // CAS 1: Vérifier session existante
       console.log('[Auth] Checking existing session...');
       const { data: { session } } = await supabase.auth.getSession();
       
@@ -67,29 +61,21 @@ const Auth = () => {
         return;
       }
       
-      // CAS 2: Pas de session, lancer OAuth via Lovable Cloud
       console.log('[Auth] No session, starting OAuth...');
       handleGoogleSignIn();
     };
 
     const handleGoogleSignIn = async () => {
-      if (authAttempted) {
-        console.log('[Auth] OAuth already attempted, skipping');
-        return;
-      }
+      if (authAttempted) return;
       authAttempted = true;
       setStatusMessage("Redirection vers Google...");
       
       try {
-        console.log('[Auth] Starting Lovable Cloud OAuth...');
+        const { error } = await signInWithGoogle("/auth");
 
-        const result = await lovable.auth.signInWithOAuth("google", {
-          redirect_uri: window.location.origin,
-        });
-
-        if (result.error) {
-          console.error('[Auth] OAuth error:', result.error);
-          toast.error(result.error.message);
+        if (error) {
+          console.error('[Auth] OAuth error:', error);
+          toast.error(error.message);
           authAttempted = false;
         }
       } catch (error: any) {
