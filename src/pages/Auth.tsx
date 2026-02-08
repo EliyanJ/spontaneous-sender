@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { lovable } from "@/integrations/lovable/index";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import cronosLogo from "@/assets/cronos-logo.png";
@@ -36,8 +37,6 @@ const Auth = () => {
       sessionStorage.setItem("post_login_redirect", nextPath);
     }
 
-    const hash = window.location.hash;
-
     // ========== Écouter les changements d'authentification ==========
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
@@ -47,7 +46,6 @@ const Auth = () => {
           setStatusMessage("Connexion réussie...");
           toast.success("Connexion réussie !");
           
-          // Redirection simple - pas de stockage de tokens Gmail ici
           const returnPath = sessionStorage.getItem("post_login_redirect") || "/dashboard";
           sessionStorage.removeItem("post_login_redirect");
           navigate(decodeReturnPath(returnPath), { replace: true });
@@ -57,31 +55,7 @@ const Auth = () => {
 
     // ========== Gérer l'authentification initiale ==========
     const initAuth = async () => {
-      // CAS 1: Callback OAuth en cours - Supabase va le traiter automatiquement
-      if (hash && hash.includes('access_token')) {
-        console.log('[Auth] OAuth callback detected, waiting for Supabase...');
-        setStatusMessage("Finalisation de la connexion...");
-        authAttempted = true;
-        
-        // Timeout de sécurité
-        setTimeout(() => {
-          console.log('[Auth] Checking session after timeout...');
-          supabase.auth.getSession().then(({ data: { session } }) => {
-            if (!session) {
-              console.error('[Auth] No session after timeout');
-              toast.error("Erreur: session non trouvée. Réessayez.");
-              // Nettoyer et permettre une nouvelle tentative
-              window.history.replaceState({}, "", window.location.pathname);
-              authAttempted = false;
-              setStatusMessage("Redirection vers Google...");
-              handleGoogleSignIn();
-            }
-          });
-        }, 5000);
-        return;
-      }
-      
-      // CAS 2: Vérifier session existante
+      // CAS 1: Vérifier session existante
       console.log('[Auth] Checking existing session...');
       const { data: { session } } = await supabase.auth.getSession();
       
@@ -93,7 +67,7 @@ const Auth = () => {
         return;
       }
       
-      // CAS 3: Pas de session, lancer OAuth
+      // CAS 2: Pas de session, lancer OAuth via Lovable Cloud
       console.log('[Auth] No session, starting OAuth...');
       handleGoogleSignIn();
     };
@@ -107,20 +81,15 @@ const Auth = () => {
       setStatusMessage("Redirection vers Google...");
       
       try {
-        const redirectUrl = `${window.location.origin}/auth`;
-        console.log('[Auth] Starting OAuth with redirect:', redirectUrl);
+        console.log('[Auth] Starting Lovable Cloud OAuth...');
 
-        const { error } = await supabase.auth.signInWithOAuth({
-          provider: 'google',
-          options: {
-            redirectTo: redirectUrl,
-            // Pas de scopes Gmail - connexion simple
-          },
+        const result = await lovable.auth.signInWithOAuth("google", {
+          redirect_uri: window.location.origin,
         });
 
-        if (error) {
-          console.error('[Auth] OAuth error:', error);
-          toast.error(error.message);
+        if (result.error) {
+          console.error('[Auth] OAuth error:', result.error);
+          toast.error(result.error.message);
           authAttempted = false;
         }
       } catch (error: any) {
