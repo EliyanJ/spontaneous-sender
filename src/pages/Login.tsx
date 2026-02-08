@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable/index";
+import { signInWithGoogle } from "@/lib/auth-utils";
 import { toast } from "sonner";
 import { Mail, Key, Loader2 } from "lucide-react";
 import cronosLogo from "@/assets/cronos-logo.png";
@@ -31,13 +31,11 @@ const Login = () => {
     setIsRedirecting(true);
     
     try {
-      const result = await lovable.auth.signInWithOAuth("google", {
-        redirect_uri: window.location.origin,
-      });
+      const { error } = await signInWithGoogle("/auth");
 
-      if (result.error) {
-        console.error('[Login] OAuth error:', result.error);
-        toast.error(result.error.message);
+      if (error) {
+        console.error('[Login] OAuth error:', error);
+        toast.error(error.message);
         setIsRedirecting(false);
       }
     } catch (error: any) {

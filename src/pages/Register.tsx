@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable/index";
+import { signInWithGoogle } from "@/lib/auth-utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -180,12 +180,10 @@ const Register = () => {
   const handleGoogleSignUp = async () => {
     setGoogleLoading(true);
     try {
-      const result = await lovable.auth.signInWithOAuth("google", {
-        redirect_uri: window.location.origin,
-      });
+      const { error } = await signInWithGoogle("/auth");
 
-      if (result.error) {
-        toast.error(result.error.message || "Erreur lors de l'inscription Google");
+      if (error) {
+        toast.error(error.message || "Erreur lors de l'inscription Google");
       }
     } catch (error: any) {
       toast.error(error?.message || "Erreur lors de l'inscription Google");
