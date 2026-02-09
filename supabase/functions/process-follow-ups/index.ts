@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.74.0";
+import { decryptToken } from "../_shared/crypto.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -11,7 +12,6 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  // Validate CRON_SECRET for security
   const cronSecret = req.headers.get('x-cron-secret');
   if (cronSecret !== Deno.env.get('CRON_SECRET')) {
     console.error('Unauthorized cron request - invalid or missing secret');
@@ -29,7 +29,6 @@ serve(async (req) => {
 
     console.log('Traitement des relances...');
 
-    // Récupérer les campagnes qui nécessitent une relance
     const { data: campaigns } = await supabase
       .from('email_campaigns')
       .select('*, user_preferences!inner(*)')
@@ -47,7 +46,6 @@ serve(async (req) => {
       const delayDays = campaign.follow_up_delay_days || 10;
 
       if (daysSince >= delayDays) {
-        // Vérifier les préférences utilisateur
         const { data: prefs } = await supabase
           .from('user_preferences')
           .select('auto_follow_up, follow_up_template')
@@ -55,7 +53,6 @@ serve(async (req) => {
           .single();
 
         if (prefs?.auto_follow_up) {
-          // Envoi automatique de relance
           try {
             const { data: tokenData } = await supabase
               .from('gmail_tokens')
@@ -64,17 +61,20 @@ serve(async (req) => {
               .single();
 
             if (tokenData) {
-              let accessToken = tokenData.access_token;
+              // Decrypt access token
+              let accessToken = await decryptToken(tokenData.access_token);
 
-              // Rafraîchir le token si nécessaire
               if (tokenData.expires_at && new Date(tokenData.expires_at) <= new Date()) {
+                // Decrypt refresh token for refresh
+                const decryptedRefreshToken = await decryptToken(tokenData.refresh_token || '');
+                
                 const refreshResponse = await fetch('https://oauth2.googleapis.com/token', {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                   body: new URLSearchParams({
                     client_id: Deno.env.get('GMAIL_CLIENT_ID') || '',
                     client_secret: Deno.env.get('GMAIL_CLIENT_SECRET') || '',
-                    refresh_token: tokenData.refresh_token || '',
+                    refresh_token: decryptedRefreshToken,
                     grant_type: 'refresh_token',
                   }),
                 });
@@ -83,7 +83,6 @@ serve(async (req) => {
                 accessToken = refreshData.access_token;
               }
 
-              // Template de relance
               const followUpBody = prefs.follow_up_template || `
                 Bonjour,
                 
@@ -115,9 +114,7 @@ serve(async (req) => {
                   'Authorization': `Bearer ${accessToken}`,
                   'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({
-                  raw: encodedEmail,
-                }),
+                body: JSON.stringify({ raw: encodedEmail }),
               });
 
               if (sendResponse.ok) {
@@ -136,7 +133,6 @@ serve(async (req) => {
             console.error(`Erreur relance auto pour ${campaign.id}:`, error);
           }
         } else {
-          // Envoyer une notification pour relance manuelle
           await supabase
             .from('user_notifications')
             .insert({

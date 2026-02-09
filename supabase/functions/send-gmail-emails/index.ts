@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.74.0";
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
+import { decryptToken } from "../_shared/crypto.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -187,7 +188,8 @@ serve(async (req) => {
       );
     }
 
-    let accessToken = tokenData.access_token;
+    // Decrypt access token
+    let accessToken = await decryptToken(tokenData.access_token);
 
     // Vérifier si le token a expiré
     const expiresAt = new Date(tokenData.expires_at);
@@ -216,7 +218,6 @@ serve(async (req) => {
       console.log("Token refreshed successfully");
     }
 
-    // Envoyer les emails
     let successCount = 0;
     let failureCount = 0;
     const errors: string[] = [];

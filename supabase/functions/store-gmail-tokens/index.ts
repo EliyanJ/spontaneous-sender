@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.74.0";
+import { encryptToken } from "../_shared/crypto.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -21,7 +22,6 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Vérifier l'authentification
     const token = authHeader.replace("Bearer ", "");
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
 
@@ -37,7 +37,6 @@ serve(async (req) => {
 
     console.log("Storing Gmail tokens for user:", user.id);
 
-    // Check if this is a new Gmail connection (not an existing one)
     const { data: existingToken } = await supabase
       .from("gmail_tokens")
       .select("id")
@@ -46,17 +45,21 @@ serve(async (req) => {
 
     const isNewConnection = !existingToken;
 
-    // Calculer l'expiration (tokens Google expirent en 1h)
     const expiresAt = new Date();
     expiresAt.setHours(expiresAt.getHours() + 1);
 
-    // Upsert les tokens dans la table gmail_tokens
+    // Encrypt tokens before storing
+    const encryptedAccessToken = await encryptToken(provider_token);
+    const encryptedRefreshToken = provider_refresh_token 
+      ? await encryptToken(provider_refresh_token) 
+      : null;
+
     const { error: upsertError } = await supabase
       .from("gmail_tokens")
       .upsert({
         user_id: user.id,
-        access_token: provider_token,
-        refresh_token: provider_refresh_token,
+        access_token: encryptedAccessToken,
+        refresh_token: encryptedRefreshToken,
         expires_at: expiresAt.toISOString(),
         updated_at: new Date().toISOString(),
       }, {
@@ -68,9 +71,8 @@ serve(async (req) => {
       throw upsertError;
     }
 
-    console.log("Gmail tokens stored successfully");
+    console.log("Gmail tokens stored successfully (encrypted)");
 
-    // Send security notification email for new connections
     if (isNewConnection && user.email) {
       try {
         await supabase.functions.invoke('send-system-email', {
@@ -82,7 +84,6 @@ serve(async (req) => {
         });
         console.log("Gmail connection notification email sent");
       } catch (emailError) {
-        // Don't fail the token storage if email fails
         console.error("Failed to send gmail_connected email:", emailError);
       }
     }
