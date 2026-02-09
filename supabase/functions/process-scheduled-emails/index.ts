@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.74.0";
+import { decryptToken, encryptToken } from "../_shared/crypto.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -11,9 +12,6 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  // Support multiple authentication methods:
-  // 1. x-cron-secret header (for cron jobs)
-  // 2. Authorization header with CRON_SECRET (for pg_cron via net.http_post)
   const cronSecret = req.headers.get('x-cron-secret');
   const authHeader = req.headers.get('Authorization');
   const expectedSecret = Deno.env.get('CRON_SECRET');
@@ -40,14 +38,11 @@ serve(async (req) => {
     const now = new Date().toISOString();
     console.log('Traitement des emails programmés à:', now);
 
-    // NOUVELLE APPROCHE: Lire les messages de la queue pgmq
-    // On lit jusqu'à 20 messages à la fois, avec un visibility timeout de 60 secondes
     const { data: queueMessages, error: readError } = await supabase.rpc('read_email_queue', {
       batch_size: 20,
       visibility_timeout: 60
     });
 
-    // Fallback si la fonction RPC n'existe pas: utiliser la méthode classique
     if (readError) {
       console.log('RPC read_email_queue not found, using fallback method');
       return await processWithFallback(supabase, now);
@@ -71,52 +66,40 @@ serve(async (req) => {
         const emailData = msg.message;
         console.log(`Traitement email pour user ${emailData.user_id}`);
 
-        // Envoyer l'email
         const sendResult = await sendEmailViaGmail(supabase, emailData);
 
         if (sendResult.success) {
           successCount++;
 
-          // Supprimer le message de la queue
           await supabase.rpc('delete_from_queue', {
             queue_name: 'scheduled_emails_queue',
             msg_id: msg.msg_id
           });
 
-          // Mettre à jour le statut dans scheduled_emails
           await supabase
             .from('scheduled_emails')
-            .update({
-              status: 'sent',
-              sent_at: new Date().toISOString(),
-            })
+            .update({ status: 'sent', sent_at: new Date().toISOString() })
             .eq('user_id', emailData.user_id)
             .eq('subject', emailData.subject)
             .eq('status', 'pending');
 
-          // Notification si demandé
           if (emailData.notify_on_sent) {
-            await supabase
-              .from('user_notifications')
-              .insert({
-                user_id: emailData.user_id,
-                type: 'email_sent',
-                title: 'Email envoyé',
-                message: `Votre email "${emailData.subject}" a été envoyé avec succès.`,
-              });
+            await supabase.from('user_notifications').insert({
+              user_id: emailData.user_id,
+              type: 'email_sent',
+              title: 'Email envoyé',
+              message: `Votre email "${emailData.subject}" a été envoyé avec succès.`,
+            });
           }
 
-          // Créer entrée email_campaigns pour tracking
-          await supabase
-            .from('email_campaigns')
-            .insert({
-              user_id: emailData.user_id,
-              recipient: emailData.recipients[0],
-              subject: emailData.subject,
-              body: emailData.body,
-              status: 'sent',
-              sent_at: new Date().toISOString(),
-            });
+          await supabase.from('email_campaigns').insert({
+            user_id: emailData.user_id,
+            recipient: emailData.recipients[0],
+            subject: emailData.subject,
+            body: emailData.body,
+            status: 'sent',
+            sent_at: new Date().toISOString(),
+          });
 
         } else {
           throw new Error(sendResult.error);
@@ -126,28 +109,21 @@ serve(async (req) => {
         console.error(`Erreur traitement message:`, error);
         failCount++;
 
-        // Archive le message en erreur (après 3 tentatives il sera archivé automatiquement par pgmq)
         const emailData = msg.message;
         
         await supabase
           .from('scheduled_emails')
-          .update({
-            status: 'failed',
-            error_message: error.message,
-          })
+          .update({ status: 'failed', error_message: error.message })
           .eq('user_id', emailData.user_id)
           .eq('subject', emailData.subject)
           .eq('status', 'pending');
 
-        // Notification d'échec
-        await supabase
-          .from('user_notifications')
-          .insert({
-            user_id: emailData.user_id,
-            type: 'email_failed',
-            title: 'Échec envoi email',
-            message: `L'envoi de votre email "${emailData.subject}" a échoué: ${error.message}`,
-          });
+        await supabase.from('user_notifications').insert({
+          user_id: emailData.user_id,
+          type: 'email_failed',
+          title: 'Échec envoi email',
+          message: `L'envoi de votre email "${emailData.subject}" a échoué: ${error.message}`,
+        });
       }
     }
 
@@ -159,27 +135,19 @@ serve(async (req) => {
         failed: failCount,
         message: 'Traitement terminé',
       }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200,
-      }
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
     );
   } catch (error: any) {
     console.error('Erreur globale:', error);
     return new Response(
       JSON.stringify({ error: error.message }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 500,
-      }
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
     );
   }
 });
 
-// Fonction pour envoyer un email via Gmail API
 async function sendEmailViaGmail(supabase: any, emailData: any): Promise<{ success: boolean; error?: string }> {
   try {
-    // Récupérer le token Gmail de l'utilisateur
     const { data: tokenData, error: tokenError } = await supabase
       .from('gmail_tokens')
       .select('access_token, refresh_token, expires_at')
@@ -190,18 +158,22 @@ async function sendEmailViaGmail(supabase: any, emailData: any): Promise<{ succe
       return { success: false, error: 'Token Gmail non trouvé' };
     }
 
-    let accessToken = tokenData.access_token;
+    // Decrypt access token
+    let accessToken = await decryptToken(tokenData.access_token);
 
-    // Rafraîchir le token si nécessaire
     if (tokenData.expires_at && new Date(tokenData.expires_at) <= new Date()) {
       console.log('Token expired, refreshing...');
+      
+      // Decrypt refresh token
+      const decryptedRefreshToken = await decryptToken(tokenData.refresh_token || '');
+      
       const refreshResponse = await fetch('https://oauth2.googleapis.com/token', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: new URLSearchParams({
           client_id: Deno.env.get('GMAIL_CLIENT_ID') || '',
           client_secret: Deno.env.get('GMAIL_CLIENT_SECRET') || '',
-          refresh_token: tokenData.refresh_token || '',
+          refresh_token: decryptedRefreshToken,
           grant_type: 'refresh_token',
         }),
       });
@@ -211,10 +183,13 @@ async function sendEmailViaGmail(supabase: any, emailData: any): Promise<{ succe
       if (refreshData.access_token) {
         accessToken = refreshData.access_token;
 
+        // Encrypt new access token before storing
+        const encryptedAccessToken = await encryptToken(accessToken);
+
         await supabase
           .from('gmail_tokens')
           .update({
-            access_token: accessToken,
+            access_token: encryptedAccessToken,
             expires_at: new Date(Date.now() + refreshData.expires_in * 1000).toISOString(),
           })
           .eq('user_id', emailData.user_id);
@@ -223,14 +198,12 @@ async function sendEmailViaGmail(supabase: any, emailData: any): Promise<{ succe
       }
     }
 
-    // FIX: Encoder le sujet en UTF-8 Base64 pour les caractères spéciaux
     const encodedSubject = `=?UTF-8?B?${btoa(unescape(encodeURIComponent(emailData.subject)))}?=`;
     
     const attachments = emailData.attachments || [];
     let emailContent: string;
 
     if (attachments.length > 0) {
-      // Construire un email multipart avec pièces jointes
       const boundary = "boundary_" + Math.random().toString(36).substring(7);
       emailContent = [
         `To: ${emailData.recipients.join(', ')}`,
@@ -259,7 +232,6 @@ async function sendEmailViaGmail(supabase: any, emailData: any): Promise<{ succe
 
       emailContent += `--${boundary}--`;
     } else {
-      // Email simple sans pièces jointes
       emailContent = [
         `To: ${emailData.recipients.join(', ')}`,
         `Subject: ${encodedSubject}`,
@@ -275,7 +247,6 @@ async function sendEmailViaGmail(supabase: any, emailData: any): Promise<{ succe
       .replace(/\//g, '_')
       .replace(/=+$/, '');
 
-    // Envoyer directement via Gmail API
     const sendResponse = await fetch(
       'https://gmail.googleapis.com/gmail/v1/users/me/messages/send',
       {
@@ -303,7 +274,6 @@ async function sendEmailViaGmail(supabase: any, emailData: any): Promise<{ succe
   }
 }
 
-// Fallback: méthode classique sans pgmq (compatibilité)
 async function processWithFallback(supabase: any, now: string) {
   console.log('Using fallback method (direct DB query)');
   
@@ -313,9 +283,7 @@ async function processWithFallback(supabase: any, now: string) {
     .eq('status', 'pending')
     .lte('scheduled_for', now);
 
-  if (fetchError) {
-    throw fetchError;
-  }
+  if (fetchError) throw fetchError;
 
   console.log(`${scheduledEmails?.length || 0} emails à traiter (fallback)`);
 
@@ -324,7 +292,6 @@ async function processWithFallback(supabase: any, now: string) {
 
   for (const email of scheduledEmails || []) {
     try {
-      // Si email_body existe, utiliser le nouveau système
       if (email.email_body) {
         const emailData = {
           user_id: email.user_id,
@@ -332,7 +299,7 @@ async function processWithFallback(supabase: any, now: string) {
           subject: email.subject,
           body: email.email_body,
           notify_on_sent: email.notify_on_sent,
-          attachments: email.attachments || [], // FIX: Inclure les pièces jointes
+          attachments: email.attachments || [],
         };
 
         const sendResult = await sendEmailViaGmail(supabase, emailData);
@@ -345,31 +312,26 @@ async function processWithFallback(supabase: any, now: string) {
             .eq('id', email.id);
 
           if (email.notify_on_sent) {
-            await supabase
-              .from('user_notifications')
-              .insert({
-                user_id: email.user_id,
-                type: 'email_sent',
-                title: 'Email envoyé',
-                message: `Votre email "${email.subject}" a été envoyé avec succès.`,
-              });
+            await supabase.from('user_notifications').insert({
+              user_id: email.user_id,
+              type: 'email_sent',
+              title: 'Email envoyé',
+              message: `Votre email "${email.subject}" a été envoyé avec succès.`,
+            });
           }
 
-          await supabase
-            .from('email_campaigns')
-            .insert({
-              user_id: email.user_id,
-              recipient: email.recipients[0],
-              subject: email.subject,
-              body: email.email_body,
-              status: 'sent',
-              sent_at: new Date().toISOString(),
-            });
+          await supabase.from('email_campaigns').insert({
+            user_id: email.user_id,
+            recipient: email.recipients[0],
+            subject: email.subject,
+            body: email.email_body,
+            status: 'sent',
+            sent_at: new Date().toISOString(),
+          });
         } else {
           throw new Error(sendResult.error);
         }
       } else {
-        // Email sans body - ne peut pas être traité
         throw new Error('Email programmé sans contenu');
       }
     } catch (error: any) {
@@ -381,14 +343,12 @@ async function processWithFallback(supabase: any, now: string) {
         .update({ status: 'failed', error_message: error.message })
         .eq('id', email.id);
 
-      await supabase
-        .from('user_notifications')
-        .insert({
-          user_id: email.user_id,
-          type: 'email_failed',
-          title: 'Échec envoi email',
-          message: `L'envoi de votre email "${email.subject}" a échoué: ${error.message}`,
-        });
+      await supabase.from('user_notifications').insert({
+        user_id: email.user_id,
+        type: 'email_failed',
+        title: 'Échec envoi email',
+        message: `L'envoi de votre email "${email.subject}" a échoué: ${error.message}`,
+      });
     }
   }
 
@@ -400,9 +360,6 @@ async function processWithFallback(supabase: any, now: string) {
       failed: failCount,
       message: 'Traitement terminé (fallback)',
     }),
-    {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      status: 200,
-    }
+    { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
   );
 }

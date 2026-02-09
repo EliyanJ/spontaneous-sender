@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.74.0";
+import { decryptToken, encryptToken } from "../_shared/crypto.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -28,7 +29,6 @@ serve(async (req) => {
       throw new Error("Unauthorized");
     }
 
-    // Récupérer les tokens existants
     const { data: tokenData, error: fetchError } = await supabase
       .from("gmail_tokens")
       .select("*")
@@ -43,19 +43,21 @@ serve(async (req) => {
       throw new Error("No refresh token available");
     }
 
+    // Decrypt refresh token
+    const decryptedRefreshToken = await decryptToken(tokenData.refresh_token);
+
     const clientId = Deno.env.get("GMAIL_CLIENT_ID");
     const clientSecret = Deno.env.get("GMAIL_CLIENT_SECRET");
 
     console.log("Refreshing Gmail token for user:", user.id);
 
-    // Rafraîchir le token via l'API Google
     const refreshResponse = await fetch("https://oauth2.googleapis.com/token", {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: new URLSearchParams({
         client_id: clientId!,
         client_secret: clientSecret!,
-        refresh_token: tokenData.refresh_token,
+        refresh_token: decryptedRefreshToken,
         grant_type: "refresh_token",
       }),
     });
@@ -64,7 +66,6 @@ serve(async (req) => {
       const errorData = await refreshResponse.json().catch(() => ({}));
       console.error("Error refreshing token:", JSON.stringify(errorData));
       
-      // Si le token a été révoqué ou a expiré, supprimer les tokens invalides
       if (errorData.error === "invalid_grant") {
         console.log("Token revoked or expired, deleting invalid tokens for user:", user.id);
         await supabase
@@ -81,14 +82,16 @@ serve(async (req) => {
     const refreshData = await refreshResponse.json();
     const newAccessToken = refreshData.access_token;
 
-    // Mettre à jour le token dans la base
     const expiresAt = new Date();
     expiresAt.setHours(expiresAt.getHours() + 1);
+
+    // Encrypt new access token before storing
+    const encryptedAccessToken = await encryptToken(newAccessToken);
 
     const { error: updateError } = await supabase
       .from("gmail_tokens")
       .update({
-        access_token: newAccessToken,
+        access_token: encryptedAccessToken,
         expires_at: expiresAt.toISOString(),
         updated_at: new Date().toISOString(),
       })
