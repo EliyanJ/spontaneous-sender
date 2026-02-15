@@ -1033,6 +1033,7 @@ export type Database = {
           education_level: string | null
           first_name: string | null
           full_name: string | null
+          gender: string | null
           id: string | null
           last_name: string | null
           terms_accepted_at: string | null
@@ -1043,6 +1044,7 @@ export type Database = {
           education_level?: string | null
           first_name?: string | null
           full_name?: string | null
+          gender?: string | null
           id?: string | null
           last_name?: string | null
           terms_accepted_at?: string | null
@@ -1053,6 +1055,7 @@ export type Database = {
           education_level?: string | null
           first_name?: string | null
           full_name?: string | null
+          gender?: string | null
           id?: string | null
           last_name?: string | null
           terms_accepted_at?: string | null
