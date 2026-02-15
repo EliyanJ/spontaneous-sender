@@ -9,7 +9,9 @@ import {
   ArrowLeft,
   Shield,
   MessageSquare,
-  Database
+  Database,
+  FileText,
+  Search
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import cronosLogo from "@/assets/cronos-logo.png";
@@ -24,6 +26,8 @@ const adminNavItems = [
   { title: "Analytics", icon: BarChart3, path: "/admin/analytics" },
   { title: "Activité", icon: Activity, path: "/admin/activity" },
   { title: "Équipe", icon: UserCog, path: "/admin/team" },
+  { title: "CMS", icon: FileText, path: "/admin/cms" },
+  { title: "SEO", icon: Search, path: "/admin/seo" },
 ];
 
 export const AdminLayout = () => {

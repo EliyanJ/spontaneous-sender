@@ -34,8 +34,12 @@ import {
   AdminActivity, 
   AdminTeam,
   AdminTickets,
-  AdminDataCenter
+  AdminDataCenter,
+  AdminCMS,
+  AdminPageEditor,
+  AdminSEO
 } from "./pages/Admin";
+import BlogPost from "./pages/BlogPost";
 
 const queryClient = new QueryClient();
 
@@ -74,7 +78,12 @@ const App = () => (
             <Route path="activity" element={<AdminActivity />} />
             <Route path="team" element={<AdminTeam />} />
             <Route path="tickets" element={<AdminTickets />} />
+            <Route path="cms" element={<AdminCMS />} />
+            <Route path="cms/:pageId" element={<AdminPageEditor />} />
+            <Route path="seo" element={<AdminSEO />} />
           </Route>
+          
+          <Route path="/blog/:slug" element={<BlogPost />} />
           
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />

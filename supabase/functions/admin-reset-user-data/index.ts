@@ -86,8 +86,38 @@ Deno.serve(async (req) => {
         })
         .eq("user_id", userId);
       results["subscriptions"] = error ? error.message : "reset to free";
+    } else if (resetType === "emails_sent") {
+      const { error: e0 } = await adminClient.from("email_responses").delete().eq("user_id", userId);
+      results["email_responses"] = e0 ? e0.message : "deleted";
+      const { error: e1 } = await adminClient.from("email_campaigns").delete().eq("user_id", userId);
+      results["email_campaigns"] = e1 ? e1.message : "deleted";
+      const { error: e2 } = await adminClient.from("scheduled_emails").delete().eq("user_id", userId);
+      results["scheduled_emails"] = e2 ? e2.message : "deleted";
+    } else if (resetType === "all_data") {
+      // Reset everything except the account itself
+      await adminClient.from("email_responses").delete().eq("user_id", userId);
+      await adminClient.from("email_campaigns").delete().eq("user_id", userId);
+      await adminClient.from("scheduled_emails").delete().eq("user_id", userId);
+      const { data: campaignIds } = await adminClient.from("campaigns").select("id").eq("user_id", userId);
+      if (campaignIds && campaignIds.length > 0) {
+        await adminClient.from("email_logs").delete().in("campaign_id", campaignIds.map((c: { id: string }) => c.id));
+      }
+      await adminClient.from("campaigns").delete().eq("user_id", userId);
+      await adminClient.from("companies").delete().eq("user_id", userId);
+      await adminClient.from("user_company_blacklist").delete().eq("user_id", userId);
+      await adminClient.from("gmail_tokens").delete().eq("user_id", userId);
+      await adminClient.from("gmail_watch_config").delete().eq("user_id", userId);
+      await adminClient.from("user_email_templates").delete().eq("user_id", userId);
+      await adminClient.from("user_cv_profiles").delete().eq("user_id", userId);
+      await adminClient.from("job_queue").delete().eq("user_id", userId);
+      await adminClient.from("user_notifications").delete().eq("user_id", userId);
+      await adminClient.from("subscriptions").update({
+        plan_type: "free", status: "active", sends_remaining: 5, sends_limit: 5, tokens_remaining: 0,
+        stripe_subscription_id: null, stripe_customer_id: null, current_period_start: null, current_period_end: null,
+      }).eq("user_id", userId);
+      results["all_data"] = "reset complete";
     } else {
-      return new Response(JSON.stringify({ error: "Invalid resetType. Use: gmail, companies, subscription" }), {
+      return new Response(JSON.stringify({ error: "Invalid resetType. Use: gmail, companies, subscription, emails_sent, all_data" }), {
         status: 400, headers: corsHeaders,
       });
     }
