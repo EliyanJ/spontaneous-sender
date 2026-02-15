@@ -8,7 +8,8 @@ import {
   UserCog, 
   ArrowLeft,
   Shield,
-  MessageSquare
+  MessageSquare,
+  Database
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import cronosLogo from "@/assets/cronos-logo.png";
@@ -18,6 +19,7 @@ import { useState, useEffect } from "react";
 const adminNavItems = [
   { title: "Dashboard", icon: LayoutDashboard, path: "/admin" },
   { title: "Utilisateurs", icon: Users, path: "/admin/users" },
+  { title: "Data", icon: Database, path: "/admin/data" },
   { title: "Tickets", icon: MessageSquare, path: "/admin/tickets" },
   { title: "Analytics", icon: BarChart3, path: "/admin/analytics" },
   { title: "Activité", icon: Activity, path: "/admin/activity" },

@@ -74,3 +74,9 @@ verify_jwt = true
 
 [functions.customer-portal]
 verify_jwt = true
+
+[functions.admin-delete-user]
+verify_jwt = false
+
+[functions.admin-reset-user-data]
+verify_jwt = false
