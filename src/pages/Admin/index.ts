@@ -6,3 +6,4 @@ export { AdminAnalytics } from './AdminAnalytics';
 export { AdminActivity } from './AdminActivity';
 export { AdminTeam } from './AdminTeam';
 export { default as AdminTickets } from './AdminTickets';
+export { AdminDataCenter } from './AdminDataCenter';

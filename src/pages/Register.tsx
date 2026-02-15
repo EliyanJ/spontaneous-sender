@@ -49,6 +49,7 @@ const Register = () => {
     confirmPassword: "",
     age: "",
     educationLevel: "",
+    gender: "",
     termsAccepted: false,
   });
 
@@ -131,6 +132,7 @@ const Register = () => {
             full_name: `${formData.firstName} ${formData.lastName}`,
             age: parseInt(formData.age),
             education_level: formData.educationLevel,
+            gender: formData.gender || null,
             terms_accepted_at: new Date().toISOString(),
           })
           .eq('id', data.user.id);
@@ -383,6 +385,24 @@ const Register = () => {
                 </Select>
                 {errors.educationLevel && <p className="text-xs text-red-500">{errors.educationLevel}</p>}
               </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="gender">Genre</Label>
+              <Select
+                value={formData.gender}
+                onValueChange={(value) => updateFormData("gender", value)}
+                disabled={loading}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Sélectionner (optionnel)" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="homme">Homme</SelectItem>
+                  <SelectItem value="femme">Femme</SelectItem>
+                  <SelectItem value="autre">Autre</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="flex items-start space-x-2">
