@@ -534,6 +534,7 @@ export type Database = {
           education_level: string | null
           first_name: string | null
           full_name: string | null
+          gender: string | null
           id: string
           last_name: string | null
           linkedin_url: string | null
@@ -549,6 +550,7 @@ export type Database = {
           education_level?: string | null
           first_name?: string | null
           full_name?: string | null
+          gender?: string | null
           id: string
           last_name?: string | null
           linkedin_url?: string | null
@@ -564,6 +566,7 @@ export type Database = {
           education_level?: string | null
           first_name?: string | null
           full_name?: string | null
+          gender?: string | null
           id?: string
           last_name?: string | null
           linkedin_url?: string | null
