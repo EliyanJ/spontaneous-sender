@@ -1,0 +1,1 @@
+ALTER TABLE public.cms_pages ADD COLUMN page_type text NOT NULL DEFAULT 'blog';
