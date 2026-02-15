@@ -7,3 +7,6 @@ export { AdminActivity } from './AdminActivity';
 export { AdminTeam } from './AdminTeam';
 export { default as AdminTickets } from './AdminTickets';
 export { AdminDataCenter } from './AdminDataCenter';
+export { AdminCMS } from './AdminCMS';
+export { AdminPageEditor } from './AdminPageEditor';
+export { AdminSEO } from './AdminSEO';
