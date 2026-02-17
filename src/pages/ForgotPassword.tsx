@@ -20,11 +20,20 @@ export const ForgotPassword = () => {
     setLoading(true);
 
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`,
-      });
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/custom-reset-password`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email,
+            redirectTo: `${window.location.origin}/reset-password`,
+          }),
+        }
+      );
 
-      if (error) throw error;
+      const data = await response.json();
+      if (!response.ok && data.error) throw new Error(data.error);
 
       setSent(true);
       toast.success("Email de réinitialisation envoyé !");

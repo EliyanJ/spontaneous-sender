@@ -17,6 +17,7 @@ const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loginError, setLoginError] = useState<string | null>(null);
 
   // Vérifier si déjà connecté
   useEffect(() => {
@@ -48,6 +49,7 @@ const Login = () => {
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setLoginError(null);
 
     try {
       const { error } = await supabase.auth.signInWithPassword({
@@ -56,13 +58,13 @@ const Login = () => {
       });
 
       if (error) {
-        toast.error(error.message);
+        setLoginError("Adresse email ou mot de passe incorrect");
       } else {
         toast.success("Connexion réussie !");
         navigate("/dashboard", { replace: true });
       }
     } catch (error: any) {
-      toast.error(error.message || "Une erreur est survenue");
+      setLoginError("Une erreur est survenue lors de la connexion");
     } finally {
       setIsLoading(false);
     }
@@ -172,7 +174,7 @@ const Login = () => {
                   type="email"
                   placeholder="vous@exemple.com"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => { setEmail(e.target.value); setLoginError(null); }}
                   required
                   className="border-2 border-gray-300 dark:border-gray-600 focus:border-primary bg-white dark:bg-gray-800"
                 />
@@ -184,11 +186,19 @@ const Login = () => {
                   type="password"
                   placeholder="••••••••"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => { setPassword(e.target.value); setLoginError(null); }}
                   required
                   className="border-2 border-gray-300 dark:border-gray-600 focus:border-primary bg-white dark:bg-gray-800"
                 />
               </div>
+              {loginError && (
+                <div className="bg-destructive/10 border border-destructive/30 text-destructive text-sm rounded-lg px-4 py-3 flex items-center gap-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 shrink-0" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                  {loginError}
+                </div>
+              )}
               <div className="flex items-center justify-between">
                 <Button
                   type="button"

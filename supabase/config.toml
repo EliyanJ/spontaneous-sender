@@ -75,6 +75,9 @@ verify_jwt = true
 [functions.customer-portal]
 verify_jwt = true
 
+[functions.custom-reset-password]
+verify_jwt = false
+
 [functions.admin-delete-user]
 verify_jwt = false
 
