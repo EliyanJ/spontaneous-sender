@@ -5,6 +5,12 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+const PLAN_LIMITS: Record<string, { sends_remaining: number; sends_limit: number }> = {
+  free: { sends_remaining: 5, sends_limit: 5 },
+  simple: { sends_remaining: 100, sends_limit: 100 },
+  plus: { sends_remaining: 400, sends_limit: 400 },
+};
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -38,7 +44,8 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403, headers: corsHeaders });
     }
 
-    const { userId, resetType } = await req.json();
+    const body = await req.json();
+    const { userId, resetType, targetPlan } = body;
     if (!userId || !resetType) {
       return new Response(JSON.stringify({ error: "userId and resetType are required" }), { status: 400, headers: corsHeaders });
     }
@@ -51,21 +58,15 @@ Deno.serve(async (req) => {
       const { error: e2 } = await adminClient.from("gmail_watch_config").delete().eq("user_id", userId);
       results["gmail_watch_config"] = e2 ? e2.message : "deleted";
     } else if (resetType === "companies") {
-      // Delete email_responses first (FK to email_campaigns)
       const { error: e0 } = await adminClient.from("email_responses").delete().eq("user_id", userId);
       results["email_responses"] = e0 ? e0.message : "deleted";
-
-      // Delete email_campaigns (FK to companies)
       const { error: e1 } = await adminClient.from("email_campaigns").delete().eq("user_id", userId);
       results["email_campaigns"] = e1 ? e1.message : "deleted";
-
-      // Delete email_logs via campaigns
       const { data: campaignIds } = await adminClient.from("campaigns").select("id").eq("user_id", userId);
       if (campaignIds && campaignIds.length > 0) {
         await adminClient.from("email_logs").delete().in("campaign_id", campaignIds.map((c: { id: string }) => c.id));
       }
       results["email_logs"] = "deleted";
-
       const { error: e2 } = await adminClient.from("companies").delete().eq("user_id", userId);
       results["companies"] = e2 ? e2.message : "deleted";
       const { error: e3 } = await adminClient.from("user_company_blacklist").delete().eq("user_id", userId);
@@ -86,6 +87,23 @@ Deno.serve(async (req) => {
         })
         .eq("user_id", userId);
       results["subscriptions"] = error ? error.message : "reset to free";
+    } else if (resetType === "upgrade_plan") {
+      if (!targetPlan || !PLAN_LIMITS[targetPlan]) {
+        return new Response(JSON.stringify({ error: "Invalid targetPlan. Use: free, simple, plus" }), {
+          status: 400, headers: corsHeaders,
+        });
+      }
+      const limits = PLAN_LIMITS[targetPlan];
+      const { error } = await adminClient
+        .from("subscriptions")
+        .update({
+          plan_type: targetPlan,
+          status: "active",
+          sends_remaining: limits.sends_remaining,
+          sends_limit: limits.sends_limit,
+        })
+        .eq("user_id", userId);
+      results["subscriptions"] = error ? error.message : `upgraded to ${targetPlan}`;
     } else if (resetType === "emails_sent") {
       const { error: e0 } = await adminClient.from("email_responses").delete().eq("user_id", userId);
       results["email_responses"] = e0 ? e0.message : "deleted";
@@ -94,7 +112,6 @@ Deno.serve(async (req) => {
       const { error: e2 } = await adminClient.from("scheduled_emails").delete().eq("user_id", userId);
       results["scheduled_emails"] = e2 ? e2.message : "deleted";
     } else if (resetType === "all_data") {
-      // Reset everything except the account itself
       await adminClient.from("email_responses").delete().eq("user_id", userId);
       await adminClient.from("email_campaigns").delete().eq("user_id", userId);
       await adminClient.from("scheduled_emails").delete().eq("user_id", userId);
@@ -117,7 +134,7 @@ Deno.serve(async (req) => {
       }).eq("user_id", userId);
       results["all_data"] = "reset complete";
     } else {
-      return new Response(JSON.stringify({ error: "Invalid resetType. Use: gmail, companies, subscription, emails_sent, all_data" }), {
+      return new Response(JSON.stringify({ error: "Invalid resetType. Use: gmail, companies, subscription, upgrade_plan, emails_sent, all_data" }), {
         status: 400, headers: corsHeaders,
       });
     }
