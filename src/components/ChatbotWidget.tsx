@@ -357,7 +357,7 @@ export const ChatbotWidget = () => {
             {/* Ticket tab */}
             <TabsContent
               value="ticket"
-              className="flex-1 overflow-y-auto m-0 px-4 py-3"
+              className="m-0 px-4 py-3 overflow-y-auto"
             >
               {ticketSubmitted ? (
                 <div className="flex flex-col items-center justify-center py-8 space-y-4">
