@@ -10,3 +10,4 @@ export { AdminDataCenter } from './AdminDataCenter';
 export { AdminCMS } from './AdminCMS';
 export { AdminPageEditor } from './AdminPageEditor';
 export { AdminSEO } from './AdminSEO';
+export { AdminBlockEditor } from './AdminBlockEditor';

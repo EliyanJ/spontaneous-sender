@@ -37,7 +37,8 @@ import {
   AdminDataCenter,
   AdminCMS,
   AdminPageEditor,
-  AdminSEO
+  AdminSEO,
+  AdminBlockEditor,
 } from "./pages/Admin";
 import BlogPost from "./pages/BlogPost";
 
@@ -79,9 +80,12 @@ const App = () => (
             <Route path="team" element={<AdminTeam />} />
             <Route path="tickets" element={<AdminTickets />} />
             <Route path="cms" element={<AdminCMS />} />
-            <Route path="cms/:pageId" element={<AdminPageEditor />} />
             <Route path="seo" element={<AdminSEO />} />
           </Route>
+          
+          {/* CMS Editor — fullscreen, outside AdminLayout */}
+          <Route path="/admin/cms/:pageId" element={<AdminRoute><AdminPageEditor /></AdminRoute>} />
+          <Route path="/admin/cms/blocks/:blockId" element={<AdminRoute><AdminBlockEditor /></AdminRoute>} />
           
           <Route path="/blog/:slug" element={<BlogPost />} />
           <Route path="/p/:slug" element={<BlogPost />} />

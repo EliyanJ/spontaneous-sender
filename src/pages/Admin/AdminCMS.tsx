@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
-import { Plus, Edit, Trash2, Eye, FileText, Calendar, Globe, Clock } from "lucide-react";
+import { Plus, Edit, Trash2, Eye, FileText, Calendar, Globe, Clock, Blocks } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -78,11 +78,15 @@ export const AdminCMS = () => {
             <h1 className="text-2xl font-bold text-foreground">Contenu</h1>
             <p className="text-sm text-muted-foreground mt-1">Gérez vos articles et pages</p>
           </div>
-          <Button onClick={() => navigate("/admin/cms/new")} className="gap-2 rounded-xl shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-shadow">
-            <Plus className="h-4 w-4" /> Nouveau
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button onClick={() => navigate("/admin/cms/blocks/new")} variant="outline" className="gap-2 rounded-xl">
+              <Blocks className="h-4 w-4" /> Nouveau bloc
+            </Button>
+            <Button onClick={() => navigate("/admin/cms/new")} className="gap-2 rounded-xl shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-shadow">
+              <Plus className="h-4 w-4" /> Nouvelle page
+            </Button>
+          </div>
         </div>
-
         {/* Stats bar - bento style */}
         <div className="grid grid-cols-3 gap-3">
           {[
