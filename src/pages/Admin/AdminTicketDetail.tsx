@@ -87,7 +87,7 @@ const AdminTicketDetail = () => {
         setNewStatus(t.status);
         setNewCategory(t.category || "support");
         setNewUrgency(t.urgency || "medium");
-        setNewAssignee(t.assigned_to || "");
+        setNewAssignee(t.assigned_to || "none");
 
         // Fetch team members (admins/support)
         const { data: roles } = await supabase
@@ -127,7 +127,7 @@ const AdminTicketDetail = () => {
         status: newStatus,
         category: newCategory,
         urgency: newUrgency,
-        assigned_to: newAssignee || null,
+        assigned_to: newAssignee === "none" ? null : newAssignee,
       };
 
       if (response.trim()) {
@@ -323,7 +323,7 @@ const AdminTicketDetail = () => {
                 <Select value={newAssignee} onValueChange={setNewAssignee}>
                   <SelectTrigger><SelectValue placeholder="Non assigné" /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Non assigné</SelectItem>
+                    <SelectItem value="none">Non assigné</SelectItem>
                     {teamMembers.map(m => (
                       <SelectItem key={m.user_id} value={m.user_id}>
                         {m.full_name || m.user_id.slice(0, 8)} ({m.role})
