@@ -41,6 +41,7 @@ import {
 } from "./pages/Admin";
 import AdminTicketDetail from "./pages/Admin/AdminTicketDetail";
 import BlogPost from "./pages/BlogPost";
+import Onboarding from "./pages/Onboarding";
 
 const queryClient = new QueryClient();
 
@@ -67,6 +68,7 @@ const App = () => (
           <Route path="/mentions-legales" element={<LegalNotice />} />
           <Route path="/legal-notice" element={<LegalNoticeEn />} />
           <Route path="/pricing" element={<Pricing />} />
+          <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
           <Route path="/dashboard" element={<ProtectedRoute><Index /></ProtectedRoute>} />
           
           {/* Admin Routes */}
