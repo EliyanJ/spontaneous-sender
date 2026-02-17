@@ -1,137 +1,93 @@
 
 
-# Refonte du CMS Cronos - Editeur plein ecran, blocs reutilisables et mediatheque
+# Strategie candidature spontanee - Fonctionnalites MVP raisonnables
 
-## Contexte
+## Analyse critique de ta demande
 
-L'editeur CMS actuel est imbrique dans le layout admin (avec la barre de navigation Dashboard/Users/Data...), ce qui reduit l'espace de previsualisation. Les insertions d'images et de couleurs se font via des `prompt()` natifs du navigateur, peu ergonomiques. Il n'existe pas de systeme de blocs reutilisables.
+### Ce qui est faisable pour un MVP (sans tracking d'ouverture ni scope Gmail sensible)
 
----
+Tu as raison sur les contraintes :
+- **Tracking ouverture** : necessite un pixel de tracking (1x1 image hebergee) insere dans l'email. C'est techniquement faisable MAIS Gmail bloque souvent les images externes par defaut, ce qui rend les stats peu fiables. De plus, ca donne un aspect "commercial/spam" aux candidatures spontanees, ce qui va a l'encontre de ta strategie. **A eviter pour un MVP.**
+- **Tracking reponses automatique** : necessite `gmail.readonly` ou `gmail.modify` = audit CASA a 75k. **Exclu.**
+- **Machine learning / IA collective** : interessant a long terme mais beaucoup trop tot. Il faut d'abord des milliers de data points avec du feedback utilisateur. **V2/V3.**
 
-## 1. Editeur plein ecran (sans le menu admin)
+### Ce qui est raisonnable et a forte valeur ajoutee
 
-**Probleme** : L'editeur est enfant de `AdminLayout` qui affiche la barre de navigation admin en permanence.
+1. **Systeme de variantes d'emails (A/B testing manuel)** : Permettre a l'utilisateur de tagger ses emails avec un "type" (Corporate/RH, Valeur ajoutee, Manager, Question) et de noter manuellement le resultat (reponse positive, negative, aucune reponse). Pas besoin de ML, juste des statistiques simples.
 
-**Solution** : Sortir la route `/admin/cms/:pageId` du layout admin pour qu'elle ait sa propre page plein ecran, avec uniquement un bouton "Retour" vers `/admin/cms`.
+2. **Personnalisation profonde des prompts IA** : Integrer ta synthese de strategie directement dans les prompts de generation d'emails et de lettres de motivation. C'est la ou tu auras le plus d'impact immediat.
 
-- Modifier `App.tsx` : deplacer la route `cms/:pageId` hors du `<Route path="/admin" element={<AdminLayout />}>` tout en gardant la protection `AdminRoute`
-- L'editeur occupera 100vh sans la barre admin
-- Le bouton "Retour" existant redirige deja vers `/admin/cms`
-
----
-
-## 2. Mediatheque avec stockage (images et videos)
-
-**Probleme** : L'insertion d'images/videos demande de coller une URL manuellement via `prompt()`.
-
-**Solution** : Creer un bucket de stockage `cms-media` et un composant `MediaLibrary` en popup (Dialog).
-
-### Base de donnees
-- Creer un bucket de stockage `cms-media` (public) pour heberger les fichiers
-- Politique RLS : les admins peuvent upload/supprimer, tout le monde peut lire (les medias sont publics sur le site)
-
-### Composant `MediaLibrary`
-- Dialog modale qui s'ouvre au clic sur "Image" ou "Video" dans la toolbar
-- Deux onglets : "Bibliotheque" (fichiers deja uploades) et "Importer"
-- Onglet Bibliotheque : grille de vignettes avec recherche, clic pour selectionner
-- Onglet Importer : zone de drag-and-drop ou bouton parcourir, formats acceptes (png, jpg, webp, gif, mp4, webm)
-- A la selection, l'URL publique du fichier est inseree dans l'editeur via `execCommand`
-
-### Fichiers
-- Nouveau composant : `src/components/cms/MediaLibrary.tsx`
-- Modification : `AdminPageEditor.tsx` - remplacer `insertImage()` et ajouter `insertVideo()` par l'ouverture de la mediatheque
+3. **Dashboard de performance par type** : Agregation simple des resultats par type d'objet/ton pour que l'utilisateur voie visuellement quel style fonctionne le mieux.
 
 ---
 
-## 3. Palette de couleurs visuelle
+## Plan d'implementation
 
-**Probleme** : Le changement de couleur demande de taper un code hex dans un `prompt()`.
+### 1. Migration BDD - Ajouter les metadonnees de variante aux emails
 
-**Solution** : Utiliser un `<input type="color">` natif HTML5 qui ouvre le selecteur systeme, combine avec des presets de couleurs de la charte Cronos.
+Ajouter des colonnes a `email_campaigns` pour categoriser chaque email envoye :
 
-### Composant `ColorPickerPopover`
-- Popover qui s'ouvre au clic sur l'icone Palette
-- En haut : grille de couleurs preselectionnees (noir, blanc, primary, secondary, rouge, bleu, vert, orange, violet...)
-- En bas : input type="color" natif pour choisir une couleur personnalisee
-- Au clic sur une couleur, applique `execCommand("foreColor", color)` immediatement
+- `subject_type` (text) : 'corporate', 'value', 'manager', 'question' (correspond aux 4 types d'objets de ta synthese)
+- `tone` (text) : 'formal', 'balanced', 'direct', 'soft' (les 4 tons de corps d'email)
+- `user_feedback` (text) : 'positive', 'negative', 'no_response', null (feedback manuel de l'utilisateur)
+- `feedback_notes` (text) : notes libres de l'utilisateur sur pourquoi ca a marche ou non
 
-### Fichiers
-- Nouveau composant : `src/components/cms/ColorPickerPopover.tsx`
-- Modification : `AdminPageEditor.tsx` - remplacer `changeColor()` par le popover
+Ca permet de construire de la data sans aucun tracking automatique.
 
----
+### 2. Refonte des prompts IA - Emails personnalises
 
-## 4. Systeme de blocs reutilisables
+Mettre a jour la Edge Function `generate-personalized-emails` pour :
 
-**Probleme** : Pas de moyen de creer des blocs HTML/CSS reutilisables avec des parametres de style editables.
+- Integrer les **4 types d'objets** de ta synthese (Corporate/RH, Valeur ajoutee, Manager, Question)
+- Respecter la **structure 4 lignes max** du corps
+- Toujours mentionner CV + lettre de motivation en PJ
+- Ne jamais mentionner le type de contrat
+- Eviter tout vocabulaire de prospection commerciale
+- Generer un **objet structure** : `[Type d'approche] -- Candidature spontanee -- [Nom Prenom]`
+- Retourner aussi le `subject_type` et le `tone` utilises pour le tracking
 
-**Solution** : Creer une table `cms_blocks` pour stocker des blocs avec leur code source (HTML/CSS/JS) et des parametres de stylisation editables.
+Le prompt systeme sera completement reecrit selon ta synthese.
 
-### Base de donnees
+### 3. Refonte des prompts IA - Lettres de motivation
 
-Nouvelle table `cms_blocks` :
-- `id` (uuid, PK)
-- `name` (text) - nom du bloc (ex: "Hero Banner", "Section CTA")
-- `description` (text) - description courte
-- `html_template` (text) - code HTML du bloc avec des placeholders pour les parametres editables (ex: `{{title}}`, `{{bg_color}}`)
-- `css` (text) - styles CSS du bloc
-- `js` (text, nullable) - JavaScript optionnel
-- `thumbnail_url` (text, nullable) - apercu visuel
-- `editable_params` (jsonb) - definition des parametres editables : nom, type (text, color, url, select), valeur par defaut
-- `category` (text) - categorie (hero, section, cta, footer, card...)
-- `created_at`, `updated_at` (timestamps)
-- `created_by` (uuid) - admin qui a cree le bloc
+Mettre a jour la Edge Function `generate-cover-letter` pour :
 
-RLS : admins peuvent tout faire, lecture publique pour le rendu.
+- Respecter la **structure 3 paragraphes** :
+  1. Presentation (statut, specialisation, competences, outils)
+  2. Entreprise (ce qui attire, projet/valeur/positionnement)
+  3. Apport (contribution concrete, appui/renfort, ouverture)
+- Maximum 1 page (~350 mots)
+- Personnaliser avec au moins 1 element reel de l'entreprise (scrape)
+- Ton professionnel, pas familier
+- Pas de type de contrat mentionne
 
-### Interface d'insertion de blocs
+### 4. Interface de selection du type d'approche
 
-Nouveau composant `BlockInserter` :
-- Dialog accessible depuis la toolbar de l'editeur (nouveau bouton "Blocs")
-- Affiche les blocs disponibles en grille avec apercu
-- Filtre par categorie
-- Au clic : insere le HTML du bloc dans l'editeur avec les valeurs par defaut des parametres
+Dans `UnifiedEmailSender`, avant la generation IA, ajouter un selecteur :
 
-### Interface de creation de blocs
+- **Type d'objet** : Corporate/RH | Valeur ajoutee | Manager | Question
+- **Ton du mail** : Formel | Equilibre | Direct | Question (adouci)
+- Ces choix sont envoyes au prompt IA pour guider la generation
+- Ils sont aussi stockes dans `email_campaigns` a l'envoi
 
-Nouvelle page `AdminBlockEditor` (route `/admin/cms/blocks/new` et `/admin/cms/blocks/:blockId`) :
-- Editeur de code HTML/CSS/JS (textarea avec coloration ou simplement mode HTML)
-- Formulaire pour definir les parametres editables (nom, type, valeur par defaut)
-- Apercu en temps reel du bloc
-- Le bloc est sauvegarde en base
+### 5. Feedback utilisateur dans le suivi des campagnes
 
-### Edition des parametres d'un bloc insere
+Dans `CampaignsHub`, pour chaque email envoye, ajouter :
 
-Quand un bloc est insere dans une page, les parametres simples (couleurs, textes, polices, liens) sont editables directement :
-- Les textes sont editables via contentEditable (deja en place)
-- Les couleurs de fond, polices, alignements sont modifiables via le panneau de droite quand un bloc est selectionne
+- Un selecteur de feedback : "Reponse positive" | "Reponse negative" | "Pas de reponse" (avec des icones couleur : vert/rouge/gris)
+- Un champ de notes optionnel
+- Ces infos sont sauvegardees dans `email_campaigns`
 
-Les elements structurels (nombre d'images, animations, layout) ne sont PAS modifiables depuis l'editeur de page -- il faut modifier le bloc source.
+### 6. Dashboard de performance par type
 
-### Fichiers
-- Nouveau composant : `src/components/cms/BlockInserter.tsx`
-- Nouvelle page : `src/pages/Admin/AdminBlockEditor.tsx`
-- Modification : `AdminCMS.tsx` - ajouter un onglet "Blocs" pour gerer les blocs
-- Modification : `AdminPageEditor.tsx` - ajouter le bouton "Blocs" dans la toolbar
-- Modification : `App.tsx` - ajouter les routes pour l'editeur de blocs
+Dans l'onglet "Suivi" de `CampaignsHub`, ajouter une section stats :
 
----
+- **Taux de feedback positif par type d'objet** (bar chart horizontal)
+- **Taux de feedback positif par ton** (bar chart horizontal)
+- **Nombre d'emails par type** (donut)
+- **Tendance dans le temps** (line chart simple)
 
-## 5. Performance du CMS sur le site principal
-
-Concernant la question de la performance : le CMS n'alourdit pas le site car les composants admin ne sont charges (importes) que lorsqu'on navigue vers `/admin/*` grace au lazy loading de React Router. Les visiteurs normaux du site ne telechargeront jamais le code du CMS. On pourra ajouter `React.lazy()` sur les imports admin pour optimiser davantage le bundle splitting.
-
----
-
-## Ordre d'implementation
-
-1. Migration BDD : bucket `cms-media` + table `cms_blocks`
-2. Sortir l'editeur du layout admin (route plein ecran)
-3. Composant `MediaLibrary` avec upload et selection
-4. Composant `ColorPickerPopover`
-5. Table et CRUD pour `cms_blocks`
-6. Composant `BlockInserter` + `AdminBlockEditor`
-7. Integration de tout dans `AdminPageEditor`
+Tout base sur les feedbacks manuels des utilisateurs. Pas de tracking automatique.
 
 ---
 
@@ -140,43 +96,35 @@ Concernant la question de la performance : le CMS n'alourdit pas le site car les
 ### Migration SQL
 
 ```sql
--- Bucket cms-media public
-INSERT INTO storage.buckets (id, name, public) VALUES ('cms-media', 'cms-media', true);
-
--- Politique RLS storage : admins upload/delete, public read
-CREATE POLICY "Public read cms-media" ON storage.objects FOR SELECT USING (bucket_id = 'cms-media');
-CREATE POLICY "Admins can upload cms-media" ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'cms-media' AND has_role(auth.uid(), 'admin'));
-CREATE POLICY "Admins can delete cms-media" ON storage.objects FOR DELETE USING (bucket_id = 'cms-media' AND has_role(auth.uid(), 'admin'));
-
--- Table cms_blocks
-CREATE TABLE public.cms_blocks (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  name TEXT NOT NULL,
-  description TEXT,
-  html_template TEXT NOT NULL DEFAULT '',
-  css TEXT DEFAULT '',
-  js TEXT,
-  thumbnail_url TEXT,
-  editable_params JSONB DEFAULT '[]',
-  category TEXT DEFAULT 'general',
-  created_by UUID NOT NULL,
-  created_at TIMESTAMPTZ DEFAULT now(),
-  updated_at TIMESTAMPTZ DEFAULT now()
-);
-
-ALTER TABLE public.cms_blocks ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Admins can manage blocks" ON public.cms_blocks FOR ALL USING (has_role(auth.uid(), 'admin')) WITH CHECK (has_role(auth.uid(), 'admin'));
-CREATE POLICY "Public can read blocks" ON public.cms_blocks FOR SELECT USING (true);
+ALTER TABLE public.email_campaigns 
+ADD COLUMN subject_type text DEFAULT null,
+ADD COLUMN tone text DEFAULT null,
+ADD COLUMN user_feedback text DEFAULT null,
+ADD COLUMN feedback_notes text DEFAULT null;
 ```
 
-### Nouveaux fichiers
-- `src/components/cms/MediaLibrary.tsx` - Mediatheque avec upload/selection
-- `src/components/cms/ColorPickerPopover.tsx` - Palette de couleurs visuelle
-- `src/components/cms/BlockInserter.tsx` - Insertion de blocs dans l'editeur
-- `src/pages/Admin/AdminBlockEditor.tsx` - Creation/edition de blocs
-
 ### Fichiers modifies
-- `src/App.tsx` - Route editeur hors AdminLayout + routes blocs
-- `src/pages/Admin/AdminPageEditor.tsx` - Integration mediatheque, palette, blocs, plein ecran
-- `src/pages/Admin/AdminCMS.tsx` - Onglet blocs dans la liste
+
+- `supabase/functions/generate-personalized-emails/index.ts` : Refonte complete du prompt systeme avec la strategie de candidature spontanee, ajout du parametre `subjectType` et `tone`
+- `supabase/functions/generate-cover-letter/index.ts` : Refonte du prompt pour respecter la structure 3 paragraphes
+- `src/components/dashboard/UnifiedEmailSender.tsx` : Ajout selecteur type d'objet + ton avant generation, stockage des metadonnees a l'envoi
+- `src/components/dashboard/CampaignsHub.tsx` : Ajout feedback utilisateur par email + dashboard stats par type
+- `src/integrations/supabase/types.ts` : Mis a jour automatiquement apres migration
+
+### Ce qui est volontairement exclu du MVP
+
+- Tracking d'ouverture par pixel (peu fiable + aspect spam)
+- Tracking automatique des reponses (necessite scope sensible Gmail)
+- Machine learning collectif (pas assez de data)
+- n8n ou automatisations externes (complexite disproportionnee)
+- A/B testing automatique avec rotation (trop complexe pour un MVP)
+
+### Ordre d'implementation
+
+1. Migration BDD (nouvelles colonnes)
+2. Refonte prompt emails (`generate-personalized-emails`)
+3. Refonte prompt lettres de motivation (`generate-cover-letter`)
+4. Interface selecteur type/ton dans `UnifiedEmailSender`
+5. Feedback utilisateur dans `CampaignsHub`
+6. Dashboard stats par type
 
