@@ -7,14 +7,28 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
-import { Upload, FileText, Loader2, CheckCircle2, XCircle, AlertTriangle, Target, Brain, Heart, Image, Briefcase, FileCheck } from "lucide-react";
+import { Upload, FileText, Loader2, CheckCircle2, XCircle, AlertTriangle, Target, Brain, Heart, Image, Briefcase, FileCheck, Mail, Phone, MapPin, Globe, User, Hash, FileType } from "lucide-react";
 
 interface AnalysisResult {
   totalScore: number;
   extractionWarning: boolean;
+  contactInfo: {
+    email: boolean;
+    phone: boolean;
+    address: boolean;
+    web: boolean;
+    score: number;
+    maxScore: number;
+  };
+  profileSection: {
+    found: boolean;
+    score: number;
+    maxScore: number;
+  };
   sections: {
-    checks: Array<{ section: string; found: boolean; penalty: number }>;
-    penalty: number;
+    checks: Array<{ section: string; found: boolean; points: number }>;
+    score: number;
+    maxScore: number;
   };
   profession: {
     name: string;
@@ -40,10 +54,20 @@ interface AnalysisResult {
     total: number;
     maxTotal: number;
   };
+  measurableResults: {
+    count: number;
+    score: number;
+    maxScore: number;
+    examples: string[];
+  };
+  wordCount: {
+    count: number;
+    score: number;
+    maxScore: number;
+  };
   images: {
     count: number;
     penalty: number;
-    maxPoints: number;
   };
   proximity: {
     bonus: number;
@@ -53,11 +77,11 @@ interface AnalysisResult {
   titleCheck: {
     filteredTitle: string;
     found: boolean;
-    penalty: number;
+    score: number;
   };
   contractType: {
     found: string;
-    penalty: number;
+    score: number;
   };
 }
 
@@ -72,6 +96,13 @@ const getScoreLabel = (score: number) => {
   if (score >= 40) return "À améliorer";
   return "Insuffisant";
 };
+
+const CheckItem = ({ ok, label }: { ok: boolean; label: string }) => (
+  <div className={`flex items-center gap-2 text-sm ${ok ? 'text-green-600 dark:text-green-400' : 'text-red-500'}`}>
+    {ok ? <CheckCircle2 className="h-4 w-4 shrink-0" /> : <XCircle className="h-4 w-4 shrink-0" />}
+    {label}
+  </div>
+);
 
 export const CVComparator = () => {
   const [jobTitle, setJobTitle] = useState("");
@@ -104,7 +135,6 @@ export const CVComparator = () => {
     setIsParsing(true);
 
     try {
-      // Read file as base64
       const reader = new FileReader();
       const base64 = await new Promise<string>((resolve, reject) => {
         reader.onload = () => {
@@ -115,9 +145,6 @@ export const CVComparator = () => {
         reader.onerror = reject;
         reader.readAsDataURL(file);
       });
-
-      const { data: sessionData } = await supabase.auth.getSession();
-      const token = sessionData?.session?.access_token;
 
       const response = await supabase.functions.invoke('parse-cv-document', {
         body: { fileBase64: base64, fileName: file.name, fileType: file.type },
@@ -306,7 +333,7 @@ export const CVComparator = () => {
                 <Card className="border-orange-500/50 bg-orange-500/5">
                   <CardContent className="py-3 flex items-center gap-2">
                     <AlertTriangle className="h-5 w-5 text-orange-500 shrink-0" />
-                    <span className="text-sm text-orange-600 dark:text-orange-400">⚠️ CV incomplet ou mal formaté — Analyse partielle effectuée</span>
+                    <span className="text-sm text-orange-600 dark:text-orange-400">⚠️ CV incomplet ou mal formaté — Analyse partielle</span>
                   </CardContent>
                 </Card>
               )}
@@ -318,62 +345,66 @@ export const CVComparator = () => {
                     <div className="relative w-48 h-48">
                       <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
-                          <Pie
-                            data={pieData}
-                            cx="50%"
-                            cy="50%"
-                            innerRadius={60}
-                            outerRadius={80}
-                            dataKey="value"
-                            startAngle={90}
-                            endAngle={-270}
-                            strokeWidth={0}
-                          >
+                          <Pie data={pieData} cx="50%" cy="50%" innerRadius={60} outerRadius={80} dataKey="value" startAngle={90} endAngle={-270} strokeWidth={0}>
                             <Cell fill={scoreColor} />
                             <Cell fill="hsl(var(--muted))" />
                           </Pie>
                         </PieChart>
                       </ResponsiveContainer>
                       <div className="absolute inset-0 flex flex-col items-center justify-center">
-                        <span className="text-3xl font-bold" style={{ color: scoreColor }}>
-                          {Math.round(result.totalScore)}
-                        </span>
+                        <span className="text-3xl font-bold" style={{ color: scoreColor }}>{Math.round(result.totalScore)}</span>
                         <span className="text-xs text-muted-foreground">/ 100 pts</span>
-                        <span className="text-xs font-medium mt-1" style={{ color: scoreColor }}>
-                          {getScoreLabel(result.totalScore)}
-                        </span>
+                        <span className="text-xs font-medium mt-1" style={{ color: scoreColor }}>{getScoreLabel(result.totalScore)}</span>
                       </div>
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
-              {/* Sections Check */}
+              {/* 1. Contact Information */}
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <Mail className="h-4 w-4 text-primary" />
+                    Informations de contact ({result.contactInfo.score}/{result.contactInfo.maxScore} pts)
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-1.5">
+                  <CheckItem ok={result.contactInfo.email} label={result.contactInfo.email ? "Email détecté" : "Email non détecté"} />
+                  <CheckItem ok={result.contactInfo.phone} label={result.contactInfo.phone ? "Téléphone détecté" : "Téléphone non détecté"} />
+                  <CheckItem ok={result.contactInfo.address} label={result.contactInfo.address ? "Adresse/ville détectée" : "Adresse non détectée"} />
+                  <CheckItem ok={result.contactInfo.web} label={result.contactInfo.web ? "LinkedIn ou site web détecté" : "Aucun lien web détecté"} />
+                </CardContent>
+              </Card>
+
+              {/* 2. Resume/Profile Section */}
+              <Card>
+                <CardContent className="py-3">
+                  <CheckItem
+                    ok={result.profileSection.found}
+                    label={result.profileSection.found
+                      ? `Section Profil/Résumé détectée (+${result.profileSection.score} pts)`
+                      : "Aucune section Profil ou Résumé détectée (0 pts)"}
+                  />
+                </CardContent>
+              </Card>
+
+              {/* 3. Required Sections */}
               <Card>
                 <CardHeader className="pb-3">
                   <CardTitle className="text-sm flex items-center gap-2">
                     <FileText className="h-4 w-4 text-primary" />
-                    Sections obligatoires
+                    Sections obligatoires ({result.sections.score}/{result.sections.maxScore} pts)
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-1.5">
-                  {result.sections.checks.every(s => s.found) ? (
-                    <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400">
-                      <CheckCircle2 className="h-4 w-4" />
-                      Toutes les sections obligatoires sont présentes
-                    </div>
-                  ) : (
-                    result.sections.checks.map((s, i) => (
-                      <div key={i} className={`flex items-center gap-2 text-sm ${s.found ? 'text-green-600 dark:text-green-400' : 'text-red-500'}`}>
-                        {s.found ? <CheckCircle2 className="h-4 w-4" /> : <XCircle className="h-4 w-4" />}
-                        {s.found ? `✅ Section '${s.section}' détectée` : `❌ Section '${s.section}' non détectée dans le CV`}
-                      </div>
-                    ))
-                  )}
+                  {result.sections.checks.map((s, i) => (
+                    <CheckItem key={i} ok={s.found} label={s.found ? `Section '${s.section}' détectée (+${s.points} pts)` : `Section '${s.section}' non détectée`} />
+                  ))}
                 </CardContent>
               </Card>
 
-              {/* Profession Identified */}
+              {/* 4. Profession Identified */}
               <Card>
                 <CardHeader className="pb-3">
                   <CardTitle className="text-sm flex items-center gap-2">
@@ -382,17 +413,14 @@ export const CVComparator = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-sm">
-                    {result.profession.isPartialMatch
-                      ? `Métier identifié par défaut : **${result.profession.name}** (correspondance partielle)`
-                      : `Métier identifié : **${result.profession.name}**`
-                    }
-                  </p>
-                  <Badge variant="outline" className="mt-2">{result.profession.name}</Badge>
+                  <Badge variant="outline" className="mt-0">{result.profession.name}</Badge>
+                  {result.profession.isPartialMatch && (
+                    <p className="text-xs text-muted-foreground mt-1">Correspondance partielle</p>
+                  )}
                 </CardContent>
               </Card>
 
-              {/* Primary Keywords */}
+              {/* 5. Primary Keywords */}
               <Card>
                 <CardHeader className="pb-3">
                   <CardTitle className="text-sm flex items-center gap-2">
@@ -401,15 +429,14 @@ export const CVComparator = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-2">
-                  <p className="text-xs text-muted-foreground mb-2">Ces compétences correspondent à celles recherchées dans la fiche de poste.</p>
                   <div className="flex flex-wrap gap-1.5">
                     {result.primaryKeywords.scores.map((k, i) => (
                       <Badge
                         key={i}
-                        variant={k.points >= 4 ? "default" : k.points > 0 ? "secondary" : "outline"}
-                        className={`text-xs ${k.points >= 4 ? '' : k.points > 0 ? 'border-orange-500/50 text-orange-600 dark:text-orange-400' : 'opacity-50'}`}
+                        variant={k.points >= k.maxPoints * 0.8 ? "default" : k.points > 0 ? "secondary" : "outline"}
+                        className={`text-xs ${k.points >= k.maxPoints * 0.8 ? '' : k.points > 0 ? 'border-orange-500/50 text-orange-600 dark:text-orange-400' : 'opacity-50'}`}
                       >
-                        {k.points >= 4 ? '✅' : k.points > 0 ? '⚠️' : '❌'} {k.keyword} ({k.points.toFixed(1)}/{k.maxPoints})
+                        {k.points >= k.maxPoints * 0.8 ? '✅' : k.points > 0 ? '⚠️' : '❌'} {k.keyword} ({k.points.toFixed(1)}/{k.maxPoints})
                       </Badge>
                     ))}
                   </div>
@@ -421,7 +448,7 @@ export const CVComparator = () => {
                 </CardContent>
               </Card>
 
-              {/* Secondary Keywords */}
+              {/* 6. Secondary Keywords */}
               <Card>
                 <CardHeader className="pb-3">
                   <CardTitle className="text-sm flex items-center gap-2">
@@ -432,11 +459,7 @@ export const CVComparator = () => {
                 <CardContent>
                   <div className="flex flex-wrap gap-1.5">
                     {result.secondaryKeywords.scores.map((k, i) => (
-                      <Badge
-                        key={i}
-                        variant={k.points >= 4 ? "default" : k.points > 0 ? "secondary" : "outline"}
-                        className={`text-xs ${k.points > 0 ? '' : 'opacity-50'}`}
-                      >
+                      <Badge key={i} variant={k.points > 0 ? "default" : "outline"} className={`text-xs ${k.points === 0 ? 'opacity-50' : ''}`}>
                         {k.points > 0 ? '✅' : '❌'} {k.keyword}
                       </Badge>
                     ))}
@@ -449,7 +472,7 @@ export const CVComparator = () => {
                 </CardContent>
               </Card>
 
-              {/* Soft Skills */}
+              {/* 7. Soft Skills */}
               <Card>
                 <CardHeader className="pb-3">
                   <CardTitle className="text-sm flex items-center gap-2">
@@ -468,24 +491,78 @@ export const CVComparator = () => {
                 </CardContent>
               </Card>
 
-              {/* Images Check */}
+              {/* 8. Measurable Results */}
               <Card>
                 <CardHeader className="pb-3">
                   <CardTitle className="text-sm flex items-center gap-2">
-                    <Image className="h-4 w-4 text-primary" />
-                    Format du CV
+                    <Hash className="h-4 w-4 text-primary" />
+                    Résultats mesurables ({result.measurableResults.score}/{result.measurableResults.maxScore} pts)
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  {result.images.penalty < 0 ? (
-                    <p className="text-sm text-red-500 flex items-center gap-2">
-                      <XCircle className="h-4 w-4" /> ❌ Trop d'éléments visuels dans le CV ({result.images.count} images)
-                    </p>
-                  ) : (
-                    <p className="text-sm text-green-600 dark:text-green-400 flex items-center gap-2">
-                      <CheckCircle2 className="h-4 w-4" /> ✅ Format du CV approprié
-                    </p>
+                  <p className="text-sm text-muted-foreground">
+                    {result.measurableResults.count} résultat(s) chiffré(s) détecté(s)
+                    {result.measurableResults.count >= 5 ? ' — Excellent !' : result.measurableResults.count >= 1 ? ' — Ajoutez plus de chiffres pour maximiser votre score.' : ' — Ajoutez des chiffres, pourcentages et KPIs dans vos expériences.'}
+                  </p>
+                  {result.measurableResults.examples.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-2">
+                      {result.measurableResults.examples.map((ex, i) => (
+                        <Badge key={i} variant="secondary" className="text-xs">{ex.trim()}</Badge>
+                      ))}
+                    </div>
                   )}
+                </CardContent>
+              </Card>
+
+              {/* 9. Word Count */}
+              <Card>
+                <CardContent className="py-3">
+                  <div className="flex items-center gap-2 text-sm">
+                    <FileType className="h-4 w-4 text-primary shrink-0" />
+                    <span className={result.wordCount.score >= 5 ? 'text-green-600 dark:text-green-400' : result.wordCount.score >= 3 ? 'text-orange-600 dark:text-orange-400' : 'text-red-500'}>
+                      {result.wordCount.count} mots ({result.wordCount.score}/{result.wordCount.maxScore} pts)
+                      {result.wordCount.count < 200 && ' — CV trop court'}
+                      {result.wordCount.count >= 200 && result.wordCount.count < 400 && ' — Un peu court, visez 400-1200 mots'}
+                      {result.wordCount.count >= 400 && result.wordCount.count <= 1200 && ' — Longueur idéale'}
+                      {result.wordCount.count > 1200 && ' — CV un peu long, visez 400-1200 mots'}
+                    </span>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* 10. Title Check */}
+              <Card>
+                <CardContent className="py-3">
+                  <CheckItem
+                    ok={result.titleCheck.found}
+                    label={result.titleCheck.found
+                      ? `Intitulé du poste présent dans le CV (+${result.titleCheck.score} pts)`
+                      : `Intitulé du poste non mentionné dans le CV (${result.titleCheck.score} pts)`}
+                  />
+                </CardContent>
+              </Card>
+
+              {/* 11. Contract Type */}
+              <Card>
+                <CardContent className="py-3">
+                  <CheckItem
+                    ok={!!result.contractType.found}
+                    label={result.contractType.found
+                      ? `Type de contrat '${result.contractType.found}' mentionné (+${result.contractType.score} pts)`
+                      : `Type de contrat non spécifié (${result.contractType.score} pts)`}
+                  />
+                </CardContent>
+              </Card>
+
+              {/* 12. Images */}
+              <Card>
+                <CardContent className="py-3">
+                  <CheckItem
+                    ok={result.images.penalty === 0}
+                    label={result.images.penalty < 0
+                      ? `Trop d'éléments visuels (${result.images.count} images, ${result.images.penalty} pts)`
+                      : "Format du CV approprié"}
+                  />
                 </CardContent>
               </Card>
 
@@ -498,44 +575,12 @@ export const CVComparator = () => {
                   <CardContent>
                     <div className="space-y-1">
                       {result.proximity.details.map((d, i) => (
-                        <p key={i} className="text-xs text-muted-foreground">
-                          "{d.secondary}" proche de "{d.primary}"
-                        </p>
+                        <p key={i} className="text-xs text-muted-foreground">"{d.secondary}" proche de "{d.primary}"</p>
                       ))}
                     </div>
                   </CardContent>
                 </Card>
               )}
-
-              {/* Title Check */}
-              <Card>
-                <CardContent className="py-3">
-                  {result.titleCheck.found ? (
-                    <p className="text-sm text-green-600 dark:text-green-400 flex items-center gap-2">
-                      <CheckCircle2 className="h-4 w-4" /> ✅ Intitulé du poste présent dans le CV
-                    </p>
-                  ) : (
-                    <p className="text-sm text-red-500 flex items-center gap-2">
-                      <XCircle className="h-4 w-4" /> ❌ Intitulé du poste non mentionné dans le CV ({result.titleCheck.penalty} pts)
-                    </p>
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* Contract Type */}
-              <Card>
-                <CardContent className="py-3">
-                  {result.contractType.found ? (
-                    <p className="text-sm text-green-600 dark:text-green-400 flex items-center gap-2">
-                      <CheckCircle2 className="h-4 w-4" /> ✅ Type de contrat '{result.contractType.found}' mentionné
-                    </p>
-                  ) : (
-                    <p className="text-sm text-red-500 flex items-center gap-2">
-                      <XCircle className="h-4 w-4" /> ❌ Type de contrat non spécifié dans le CV ({result.contractType.penalty} pts)
-                    </p>
-                  )}
-                </CardContent>
-              </Card>
             </div>
           )}
         </div>
