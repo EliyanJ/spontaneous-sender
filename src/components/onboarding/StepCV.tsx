@@ -65,20 +65,32 @@ export const StepCV = ({
         setParsing(true);
         setUploading(false);
 
-        const formData = new FormData();
-        formData.append("file", file);
+        // Convert file to base64 for the edge function
+        const reader = new FileReader();
+        const base64 = await new Promise<string>((resolve, reject) => {
+          reader.onload = () => {
+            const result = reader.result as string;
+            // Remove data URL prefix (e.g. "data:application/pdf;base64,")
+            const base64Data = result.split(",")[1];
+            resolve(base64Data);
+          };
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
 
         const { data: parseResult, error: parseError } = await supabase.functions.invoke(
           "parse-cv-document",
-          { body: formData }
+          { body: { fileBase64: base64, fileName: file.name, fileType: file.type } }
         );
 
         if (parseError) {
           console.error("CV parse error:", parseError);
           toast({ title: "Parsing en cours...", description: "La synthèse n'a pas pu être générée automatiquement. Vous pouvez la saisir manuellement." });
-        } else if (parseResult?.content) {
-          onCvContentChange(parseResult.content);
+        } else if (parseResult?.text) {
+          onCvContentChange(parseResult.text);
           toast({ title: "CV analysé !", description: "Vérifiez et modifiez la synthèse si nécessaire." });
+        } else {
+          toast({ title: "Parsing terminé", description: "Aucun contenu extrait. Vous pouvez saisir la synthèse manuellement." });
         }
       } catch (error: any) {
         console.error("Upload error:", error);
