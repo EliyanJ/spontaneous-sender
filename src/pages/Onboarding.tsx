@@ -10,6 +10,7 @@ import { StepObjectives } from "@/components/onboarding/StepObjectives";
 import { StepSectors } from "@/components/onboarding/StepSectors";
 import { StepInterests } from "@/components/onboarding/StepInterests";
 import { StepCV } from "@/components/onboarding/StepCV";
+import cronosLogo from "@/assets/cronos-logo.png";
 
 const STEPS = ["Objectifs", "Secteurs", "Intérêts", "CV"];
 
@@ -19,14 +20,10 @@ const Onboarding = () => {
   const [step, setStep] = useState(0);
   const [saving, setSaving] = useState(false);
 
-  // Step 1
   const [objectives, setObjectives] = useState<string[]>([]);
-  // Step 2
   const [sectors, setSectors] = useState<string[]>([]);
   const [targetJobs, setTargetJobs] = useState("");
-  // Step 3
   const [interests, setInterests] = useState<string[]>([]);
-  // Step 4
   const [cvContent, setCvContent] = useState("");
   const [cvFileUrl, setCvFileUrl] = useState("");
 
@@ -37,7 +34,7 @@ const Onboarding = () => {
     if (step === 0) return objectives.length > 0;
     if (step === 1) return sectors.length > 0;
     if (step === 2) return interests.length > 0;
-    return true; // CV is optional
+    return true;
   };
 
   const handleFinish = async () => {
@@ -79,66 +76,76 @@ const Onboarding = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      {/* Header */}
-      <div className="border-b border-border bg-card/50">
-        <div className="max-w-2xl mx-auto px-4 py-4">
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 flex flex-col">
+      {/* Header with logo */}
+      <div className="border-b border-border bg-card/80 backdrop-blur-sm">
+        <div className="max-w-2xl mx-auto px-4 py-5">
+          <div className="flex items-center justify-center gap-3 mb-4">
+            <img src={cronosLogo} alt="Cronos" className="h-10 w-10 rounded-lg" />
+            <div className="text-center">
+              <h1 className="text-lg font-display font-bold text-foreground">Bienvenue sur Cronos</h1>
+              <p className="text-xs text-muted-foreground">Configurons votre profil en quelques étapes</p>
+            </div>
+          </div>
+
           <div className="flex items-center justify-between mb-3">
             <span className="text-sm font-medium text-muted-foreground">
               Étape {step + 1} sur {STEPS.length}
             </span>
-            <div className="flex gap-1">
+            <div className="flex gap-1.5">
               {STEPS.map((s, i) => (
                 <span
                   key={s}
-                  className={`text-xs px-2 py-1 rounded-full ${
+                  className={`text-xs px-3 py-1 rounded-full font-medium transition-all ${
                     i === step
-                      ? "bg-primary text-primary-foreground"
+                      ? "bg-primary text-primary-foreground shadow-sm"
                       : i < step
                       ? "bg-primary/20 text-primary"
                       : "bg-muted text-muted-foreground"
                   }`}
                 >
-                  {s}
+                  {i < step ? "✓" : s}
                 </span>
               ))}
             </div>
           </div>
-          <Progress value={progress} className="h-2" />
+          <Progress value={progress} className="h-2.5 rounded-full" />
         </div>
       </div>
 
       {/* Content */}
-      <div className="flex-1 flex items-center justify-center p-4">
-        <div className="w-full max-w-2xl">
-          {step === 0 && (
-            <StepObjectives selected={objectives} onChange={setObjectives} />
-          )}
-          {step === 1 && (
-            <StepSectors
-              selectedSectors={sectors}
-              targetJobs={targetJobs}
-              onSectorsChange={setSectors}
-              onTargetJobsChange={setTargetJobs}
-            />
-          )}
-          {step === 2 && (
-            <StepInterests selected={interests} onChange={setInterests} />
-          )}
-          {step === 3 && user && (
-            <StepCV
-              userId={user.id}
-              cvContent={cvContent}
-              cvFileUrl={cvFileUrl}
-              onCvContentChange={setCvContent}
-              onCvFileUrlChange={setCvFileUrl}
-            />
-          )}
+      <div className="flex-1 flex items-center justify-center p-6">
+        <div className="w-full max-w-2xl animate-in fade-in slide-in-from-bottom-4 duration-300" key={step}>
+          <div className="bg-card/60 backdrop-blur-sm border border-border rounded-2xl p-8 shadow-lg">
+            {step === 0 && (
+              <StepObjectives selected={objectives} onChange={setObjectives} />
+            )}
+            {step === 1 && (
+              <StepSectors
+                selectedSectors={sectors}
+                targetJobs={targetJobs}
+                onSectorsChange={setSectors}
+                onTargetJobsChange={setTargetJobs}
+              />
+            )}
+            {step === 2 && (
+              <StepInterests selected={interests} onChange={setInterests} />
+            )}
+            {step === 3 && user && (
+              <StepCV
+                userId={user.id}
+                cvContent={cvContent}
+                cvFileUrl={cvFileUrl}
+                onCvContentChange={setCvContent}
+                onCvFileUrlChange={setCvFileUrl}
+              />
+            )}
+          </div>
         </div>
       </div>
 
       {/* Footer */}
-      <div className="border-t border-border bg-card/50">
+      <div className="border-t border-border bg-card/80 backdrop-blur-sm">
         <div className="max-w-2xl mx-auto px-4 py-4 flex items-center justify-between">
           <Button
             variant="ghost"
@@ -152,6 +159,7 @@ const Onboarding = () => {
           <Button
             onClick={handleNext}
             disabled={!canProceed() || saving}
+            className="min-w-[140px]"
           >
             {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
             {isLastStep ? (
