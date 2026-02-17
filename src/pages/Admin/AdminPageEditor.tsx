@@ -13,11 +13,14 @@ import { toast } from "sonner";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   ArrowLeft, Save, Globe, Code, Type,
-  Bold, Italic, Underline, List, ListOrdered, Link, Palette,
-  Heading1, Heading2, Heading3, AlignLeft, AlignCenter, AlignRight, Anchor, Image,
-  Search, PanelRightClose, PanelRight, Eye
+  Bold, Italic, Underline, List, ListOrdered, Link,
+  Heading1, Heading2, Heading3, AlignLeft, AlignCenter, AlignRight, Anchor, Image, Film,
+  Search, PanelRightClose, PanelRight, Eye, Blocks
 } from "lucide-react";
 import cronosLogo from "@/assets/cronos-logo.png";
+import { MediaLibrary } from "@/components/cms/MediaLibrary";
+import { ColorPickerPopover } from "@/components/cms/ColorPickerPopover";
+import { BlockInserter } from "@/components/cms/BlockInserter";
 
 export const AdminPageEditor = () => {
   const { pageId } = useParams();
@@ -36,6 +39,9 @@ export const AdminPageEditor = () => {
   const [pageType, setPageType] = useState<"blog" | "page">("blog");
   const [editorMode, setEditorMode] = useState<"visual" | "html">("visual");
   const [showRightPanel, setShowRightPanel] = useState(true);
+  const [mediaOpen, setMediaOpen] = useState(false);
+  const [mediaType, setMediaType] = useState<"image" | "video" | "all">("all");
+  const [blockInserterOpen, setBlockInserterOpen] = useState(false);
 
   const { data: page, isLoading } = useQuery({
     queryKey: ["cms-page", pageId],
@@ -105,14 +111,28 @@ export const AdminPageEditor = () => {
     }
   };
 
-  const insertImage = () => {
-    const url = prompt("URL de l'image :");
-    if (url) execCmd("insertImage", url);
+  const openMediaLibrary = (type: "image" | "video") => {
+    setMediaType(type);
+    setMediaOpen(true);
   };
 
-  const changeColor = () => {
-    const color = prompt("Couleur (hex, ex: #ff0000) :");
-    if (color) execCmd("foreColor", color);
+  const handleMediaSelect = (url: string, type: "image" | "video") => {
+    if (type === "image") {
+      execCmd("insertImage", url);
+    } else {
+      document.execCommand("insertHTML", false, `<video src="${url}" controls style="max-width:100%;"></video>`);
+      syncHtmlFromEditor();
+    }
+  };
+
+  const handleColorSelect = (color: string) => {
+    execCmd("foreColor", color);
+  };
+
+  const handleBlockInsert = (html: string, css: string) => {
+    const block = css ? `<style>${css}</style>${html}` : html;
+    document.execCommand("insertHTML", false, block);
+    syncHtmlFromEditor();
   };
 
   const saveMutation = useMutation({
@@ -184,8 +204,9 @@ export const AdminPageEditor = () => {
       items: [
         { icon: Link, action: insertLink, label: "Lien" },
         { icon: Anchor, action: insertAnchor, label: "Ancre" },
-        { icon: Image, action: insertImage, label: "Image" },
-        { icon: Palette, action: changeColor, label: "Couleur" },
+        { icon: Image, action: () => openMediaLibrary("image"), label: "Image" },
+        { icon: Film, action: () => openMediaLibrary("video"), label: "Vidéo" },
+        { icon: Blocks, action: () => setBlockInserterOpen(true), label: "Bloc" },
       ]
     },
   ];
@@ -193,14 +214,14 @@ export const AdminPageEditor = () => {
   const urlPrefix = pageType === "blog" ? "/blog/" : "/p/";
 
   if (isLoading) return (
-    <div className="h-[calc(100vh-80px)] flex items-center justify-center">
+    <div className="h-screen flex items-center justify-center">
       <div className="h-8 w-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
     </div>
   );
 
   return (
     <TooltipProvider>
-      <div className="h-[calc(100vh-80px)] flex flex-col">
+      <div className="h-screen flex flex-col">
         {/* Top bar — glassmorphism */}
         <div className="flex items-center justify-between px-4 py-2.5 border-b border-border/50 bg-card/60 backdrop-blur-xl shrink-0">
           <div className="flex items-center gap-3">
@@ -313,6 +334,14 @@ export const AdminPageEditor = () => {
                   </div>
                 </div>
               ))}
+              {/* Color picker */}
+              <div className="px-1.5">
+                <div className="h-px bg-border/30 my-2" />
+                <p className="text-[8px] text-muted-foreground/50 uppercase tracking-widest text-center mb-1">Couleur</p>
+                <div className="flex flex-col items-center">
+                  <ColorPickerPopover onColorSelect={handleColorSelect} />
+                </div>
+              </div>
             </div>
           )}
 
@@ -475,6 +504,19 @@ export const AdminPageEditor = () => {
             </div>
           )}
         </div>
+
+        {/* Dialogs */}
+        <MediaLibrary
+          open={mediaOpen}
+          onOpenChange={setMediaOpen}
+          onSelect={handleMediaSelect}
+          mediaType={mediaType}
+        />
+        <BlockInserter
+          open={blockInserterOpen}
+          onOpenChange={setBlockInserterOpen}
+          onInsert={handleBlockInsert}
+        />
       </div>
     </TooltipProvider>
   );

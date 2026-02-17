@@ -65,6 +65,51 @@ export type Database = {
         }
         Relationships: []
       }
+      cms_blocks: {
+        Row: {
+          category: string | null
+          created_at: string | null
+          created_by: string
+          css: string | null
+          description: string | null
+          editable_params: Json | null
+          html_template: string
+          id: string
+          js: string | null
+          name: string
+          thumbnail_url: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string | null
+          created_by: string
+          css?: string | null
+          description?: string | null
+          editable_params?: Json | null
+          html_template?: string
+          id?: string
+          js?: string | null
+          name: string
+          thumbnail_url?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          category?: string | null
+          created_at?: string | null
+          created_by?: string
+          css?: string | null
+          description?: string | null
+          editable_params?: Json | null
+          html_template?: string
+          id?: string
+          js?: string | null
+          name?: string
+          thumbnail_url?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       cms_pages: {
         Row: {
           author_id: string
