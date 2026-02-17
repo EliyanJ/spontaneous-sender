@@ -635,6 +635,7 @@ export type Database = {
           age: number | null
           created_at: string | null
           cv_content: string | null
+          cv_file_url: string | null
           education: string | null
           education_level: string | null
           first_name: string | null
@@ -643,7 +644,12 @@ export type Database = {
           id: string
           last_name: string | null
           linkedin_url: string | null
+          objective: string | null
+          onboarding_completed: boolean | null
           phone: string | null
+          professional_interests: Json | null
+          target_jobs: string | null
+          target_sectors: Json | null
           terms_accepted_at: string | null
           updated_at: string | null
         }
@@ -651,6 +657,7 @@ export type Database = {
           age?: number | null
           created_at?: string | null
           cv_content?: string | null
+          cv_file_url?: string | null
           education?: string | null
           education_level?: string | null
           first_name?: string | null
@@ -659,7 +666,12 @@ export type Database = {
           id: string
           last_name?: string | null
           linkedin_url?: string | null
+          objective?: string | null
+          onboarding_completed?: boolean | null
           phone?: string | null
+          professional_interests?: Json | null
+          target_jobs?: string | null
+          target_sectors?: Json | null
           terms_accepted_at?: string | null
           updated_at?: string | null
         }
@@ -667,6 +679,7 @@ export type Database = {
           age?: number | null
           created_at?: string | null
           cv_content?: string | null
+          cv_file_url?: string | null
           education?: string | null
           education_level?: string | null
           first_name?: string | null
@@ -675,7 +688,12 @@ export type Database = {
           id?: string
           last_name?: string | null
           linkedin_url?: string | null
+          objective?: string | null
+          onboarding_completed?: boolean | null
           phone?: string | null
+          professional_interests?: Json | null
+          target_jobs?: string | null
+          target_sectors?: Json | null
           terms_accepted_at?: string | null
           updated_at?: string | null
         }
