@@ -199,10 +199,10 @@ export const CVComparator = () => {
     }
   };
 
-  const scoreColor = result ? getScoreColor(result.totalScore) : "#888";
+  const scoreColor = result ? getScoreColor(result.totalScore ?? 0) : "#888";
   const pieData = result ? [
-    { name: "Score", value: result.totalScore },
-    { name: "Restant", value: Math.max(0, 100 - result.totalScore) },
+    { name: "Score", value: result.totalScore ?? 0 },
+    { name: "Restant", value: Math.max(0, 100 - (result.totalScore ?? 0)) },
   ] : [];
 
   return (
@@ -366,14 +366,14 @@ export const CVComparator = () => {
                 <CardHeader className="pb-3">
                   <CardTitle className="text-sm flex items-center gap-2">
                     <Mail className="h-4 w-4 text-primary" />
-                    Informations de contact ({result.contactInfo.score}/{result.contactInfo.maxScore} pts)
+                    Informations de contact ({result.contactInfo?.score ?? 0}/{result.contactInfo?.maxScore ?? 10} pts)
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-1.5">
-                  <CheckItem ok={result.contactInfo.email} label={result.contactInfo.email ? "Email détecté" : "Email non détecté"} />
-                  <CheckItem ok={result.contactInfo.phone} label={result.contactInfo.phone ? "Téléphone détecté" : "Téléphone non détecté"} />
-                  <CheckItem ok={result.contactInfo.address} label={result.contactInfo.address ? "Adresse/ville détectée" : "Adresse non détectée"} />
-                  <CheckItem ok={result.contactInfo.web} label={result.contactInfo.web ? "LinkedIn ou site web détecté" : "Aucun lien web détecté"} />
+                  <CheckItem ok={result.contactInfo?.email ?? false} label={result.contactInfo?.email ? "Email détecté" : "Email non détecté"} />
+                  <CheckItem ok={result.contactInfo?.phone ?? false} label={result.contactInfo?.phone ? "Téléphone détecté" : "Téléphone non détecté"} />
+                  <CheckItem ok={result.contactInfo?.address ?? false} label={result.contactInfo?.address ? "Adresse/ville détectée" : "Adresse non détectée"} />
+                  <CheckItem ok={result.contactInfo?.web ?? false} label={result.contactInfo?.web ? "LinkedIn ou site web détecté" : "Aucun lien web détecté"} />
                 </CardContent>
               </Card>
 
@@ -381,9 +381,9 @@ export const CVComparator = () => {
               <Card>
                 <CardContent className="py-3">
                   <CheckItem
-                    ok={result.profileSection.found}
-                    label={result.profileSection.found
-                      ? `Section Profil/Résumé détectée (+${result.profileSection.score} pts)`
+                    ok={result.profileSection?.found ?? false}
+                    label={result.profileSection?.found
+                      ? `Section Profil/Résumé détectée (+${result.profileSection?.score ?? 0} pts)`
                       : "Aucune section Profil ou Résumé détectée (0 pts)"}
                   />
                 </CardContent>
@@ -394,11 +394,11 @@ export const CVComparator = () => {
                 <CardHeader className="pb-3">
                   <CardTitle className="text-sm flex items-center gap-2">
                     <FileText className="h-4 w-4 text-primary" />
-                    Sections obligatoires ({result.sections.score}/{result.sections.maxScore} pts)
+                    Sections obligatoires ({result.sections?.score ?? 0}/{result.sections?.maxScore ?? 10} pts)
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-1.5">
-                  {result.sections.checks.map((s, i) => (
+                  {(result.sections?.checks ?? []).map((s, i) => (
                     <CheckItem key={i} ok={s.found} label={s.found ? `Section '${s.section}' détectée (+${s.points} pts)` : `Section '${s.section}' non détectée`} />
                   ))}
                 </CardContent>
@@ -496,17 +496,17 @@ export const CVComparator = () => {
                 <CardHeader className="pb-3">
                   <CardTitle className="text-sm flex items-center gap-2">
                     <Hash className="h-4 w-4 text-primary" />
-                    Résultats mesurables ({result.measurableResults.score}/{result.measurableResults.maxScore} pts)
+                    Résultats mesurables ({result.measurableResults?.score ?? 0}/{result.measurableResults?.maxScore ?? 5} pts)
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p className="text-sm text-muted-foreground">
-                    {result.measurableResults.count} résultat(s) chiffré(s) détecté(s)
-                    {result.measurableResults.count >= 5 ? ' — Excellent !' : result.measurableResults.count >= 1 ? ' — Ajoutez plus de chiffres pour maximiser votre score.' : ' — Ajoutez des chiffres, pourcentages et KPIs dans vos expériences.'}
+                    {result.measurableResults?.count ?? 0} résultat(s) chiffré(s) détecté(s)
+                    {(result.measurableResults?.count ?? 0) >= 5 ? ' — Excellent !' : (result.measurableResults?.count ?? 0) >= 1 ? ' — Ajoutez plus de chiffres pour maximiser votre score.' : ' — Ajoutez des chiffres, pourcentages et KPIs dans vos expériences.'}
                   </p>
-                  {result.measurableResults.examples.length > 0 && (
+                  {(result.measurableResults?.examples ?? []).length > 0 && (
                     <div className="flex flex-wrap gap-1 mt-2">
-                      {result.measurableResults.examples.map((ex, i) => (
+                      {(result.measurableResults?.examples ?? []).map((ex, i) => (
                         <Badge key={i} variant="secondary" className="text-xs">{ex.trim()}</Badge>
                       ))}
                     </div>
@@ -519,12 +519,12 @@ export const CVComparator = () => {
                 <CardContent className="py-3">
                   <div className="flex items-center gap-2 text-sm">
                     <FileType className="h-4 w-4 text-primary shrink-0" />
-                    <span className={result.wordCount.score >= 5 ? 'text-green-600 dark:text-green-400' : result.wordCount.score >= 3 ? 'text-orange-600 dark:text-orange-400' : 'text-red-500'}>
-                      {result.wordCount.count} mots ({result.wordCount.score}/{result.wordCount.maxScore} pts)
-                      {result.wordCount.count < 200 && ' — CV trop court'}
-                      {result.wordCount.count >= 200 && result.wordCount.count < 400 && ' — Un peu court, visez 400-1200 mots'}
-                      {result.wordCount.count >= 400 && result.wordCount.count <= 1200 && ' — Longueur idéale'}
-                      {result.wordCount.count > 1200 && ' — CV un peu long, visez 400-1200 mots'}
+                    <span className={(result.wordCount?.score ?? 0) >= 5 ? 'text-green-600 dark:text-green-400' : (result.wordCount?.score ?? 0) >= 3 ? 'text-orange-600 dark:text-orange-400' : 'text-red-500'}>
+                      {result.wordCount?.count ?? 0} mots ({result.wordCount?.score ?? 0}/{result.wordCount?.maxScore ?? 5} pts)
+                      {(result.wordCount?.count ?? 0) < 200 && ' — CV trop court'}
+                      {(result.wordCount?.count ?? 0) >= 200 && (result.wordCount?.count ?? 0) < 400 && ' — Un peu court, visez 400-1200 mots'}
+                      {(result.wordCount?.count ?? 0) >= 400 && (result.wordCount?.count ?? 0) <= 1200 && ' — Longueur idéale'}
+                      {(result.wordCount?.count ?? 0) > 1200 && ' — CV un peu long, visez 400-1200 mots'}
                     </span>
                   </div>
                 </CardContent>
@@ -534,10 +534,10 @@ export const CVComparator = () => {
               <Card>
                 <CardContent className="py-3">
                   <CheckItem
-                    ok={result.titleCheck.found}
-                    label={result.titleCheck.found
-                      ? `Intitulé du poste présent dans le CV (+${result.titleCheck.score} pts)`
-                      : `Intitulé du poste non mentionné dans le CV (${result.titleCheck.score} pts)`}
+                    ok={result.titleCheck?.found ?? false}
+                    label={result.titleCheck?.found
+                      ? `Intitulé du poste présent dans le CV (+${result.titleCheck?.score ?? 0} pts)`
+                      : `Intitulé du poste non mentionné dans le CV (${result.titleCheck?.score ?? 0} pts)`}
                   />
                 </CardContent>
               </Card>
@@ -546,10 +546,10 @@ export const CVComparator = () => {
               <Card>
                 <CardContent className="py-3">
                   <CheckItem
-                    ok={!!result.contractType.found}
-                    label={result.contractType.found
-                      ? `Type de contrat '${result.contractType.found}' mentionné (+${result.contractType.score} pts)`
-                      : `Type de contrat non spécifié (${result.contractType.score} pts)`}
+                    ok={!!result.contractType?.found}
+                    label={result.contractType?.found
+                      ? `Type de contrat '${result.contractType.found}' mentionné (+${result.contractType?.score ?? 0} pts)`
+                      : `Type de contrat non spécifié (${result.contractType?.score ?? 0} pts)`}
                   />
                 </CardContent>
               </Card>
