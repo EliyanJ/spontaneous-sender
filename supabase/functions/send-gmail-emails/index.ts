@@ -121,6 +121,7 @@ serve(async (req) => {
 
     // Validate input
     const requestBody = await req.json();
+    const { subject_type: reqSubjectType, tone: reqTone } = requestBody;
     const validationResult = emailSchema.safeParse(requestBody);
     
     if (!validationResult.success) {
@@ -295,14 +296,17 @@ serve(async (req) => {
           
           // Enregistrer l'envoi dans email_campaigns pour l'historique
           try {
-            await supabaseClient.from("email_campaigns").insert({
+            const campaignData: Record<string, any> = {
               user_id: user.id,
               recipient: recipient,
               subject: subject,
               body: body,
               sent_at: new Date().toISOString(),
               status: 'sent'
-            });
+            };
+            if (reqSubjectType) campaignData.subject_type = reqSubjectType;
+            if (reqTone) campaignData.tone = reqTone;
+            await supabaseClient.from("email_campaigns").insert(campaignData);
           } catch (campaignError: any) {
             console.error(`Failed to log campaign for ${recipient}:`, campaignError);
             // Ne pas bloquer l'envoi si le log échoue

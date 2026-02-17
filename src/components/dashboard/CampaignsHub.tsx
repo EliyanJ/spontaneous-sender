@@ -4,12 +4,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   Loader2, Mail, Clock, AlertCircle, Send, 
   Calendar, Trash2, RefreshCw, Settings2, ChevronDown, ChevronUp, X,
-  Search, BarChart3, List, TrendingUp
+  Search, BarChart3, List, TrendingUp, ThumbsUp, ThumbsDown, MinusCircle, MessageSquare
 } from "lucide-react";
 import {
   AlertDialog,
@@ -41,6 +42,10 @@ interface Campaign {
   response_detected_at: string | null;
   response_category: string | null;
   response_summary: string | null;
+  subject_type: string | null;
+  tone: string | null;
+  user_feedback: string | null;
+  feedback_notes: string | null;
 }
 
 interface ScheduledEmail {
@@ -365,6 +370,39 @@ export const CampaignsHub = () => {
     });
   };
 
+  const [feedbackNoteId, setFeedbackNoteId] = useState<string | null>(null);
+  const [feedbackNoteText, setFeedbackNoteText] = useState("");
+
+  const handleSetFeedback = async (campaignId: string, feedback: string) => {
+    try {
+      const { error } = await supabase
+        .from('email_campaigns')
+        .update({ user_feedback: feedback } as any)
+        .eq('id', campaignId);
+      if (error) throw error;
+      setCampaigns(prev => prev.map(c => c.id === campaignId ? { ...c, user_feedback: feedback } : c));
+      toast({ title: "Feedback enregistré" });
+    } catch {
+      toast({ title: "Erreur", variant: "destructive" });
+    }
+  };
+
+  const handleSaveFeedbackNote = async (campaignId: string) => {
+    try {
+      const { error } = await supabase
+        .from('email_campaigns')
+        .update({ feedback_notes: feedbackNoteText } as any)
+        .eq('id', campaignId);
+      if (error) throw error;
+      setCampaigns(prev => prev.map(c => c.id === campaignId ? { ...c, feedback_notes: feedbackNoteText } : c));
+      setFeedbackNoteId(null);
+      setFeedbackNoteText("");
+      toast({ title: "Note sauvegardée" });
+    } catch {
+      toast({ title: "Erreur", variant: "destructive" });
+    }
+  };
+
   const moveCompany = async (companyId: string, newStage: string) => {
     setUpdatingCompany(companyId);
     try {
@@ -581,41 +619,107 @@ export const CampaignsHub = () => {
                             return (
                               <div 
                                 key={campaign.id} 
-                                className={`flex items-center justify-between p-2 rounded-md ${
+                                className={`p-3 rounded-md ${
                                   isExcluded ? 'bg-muted/20 opacity-50' : 'bg-muted/30'
                                 }`}
                               >
-                                <div className="flex items-center gap-2 min-w-0">
-                                  <Mail className="h-3 w-3 text-muted-foreground shrink-0" />
-                                  <span className={`text-sm truncate ${isExcluded ? 'line-through' : ''}`}>
-                                    {campaign.recipient}
-                                  </span>
-                                </div>
-                                <div className="flex items-center gap-2 shrink-0">
-                                  {campaign.response_detected_at && (
-                                    <Badge variant="outline" className="text-xs">Répondu</Badge>
-                                  )}
-                                  {campaign.follow_up_status === 'sent' && (
-                                    <Badge variant="secondary" className="text-xs">Relancé</Badge>
-                                  )}
-                                  {isPending && canRelance && (
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-2 min-w-0">
+                                    <Mail className="h-3 w-3 text-muted-foreground shrink-0" />
+                                    <span className={`text-sm truncate ${isExcluded ? 'line-through' : ''}`}>
+                                      {campaign.recipient}
+                                    </span>
+                                    {campaign.subject_type && (
+                                      <Badge variant="outline" className="text-xs capitalize">{campaign.subject_type}</Badge>
+                                    )}
+                                  </div>
+                                  <div className="flex items-center gap-1 shrink-0">
+                                    {/* Feedback buttons */}
+                                    <Button
+                                      variant={campaign.user_feedback === 'positive' ? 'default' : 'ghost'}
+                                      size="sm"
+                                      className="h-7 w-7 p-0"
+                                      onClick={(e) => { e.stopPropagation(); handleSetFeedback(campaign.id, campaign.user_feedback === 'positive' ? '' : 'positive'); }}
+                                      title="Réponse positive"
+                                    >
+                                      <ThumbsUp className={`h-3.5 w-3.5 ${campaign.user_feedback === 'positive' ? '' : 'text-emerald-500'}`} />
+                                    </Button>
+                                    <Button
+                                      variant={campaign.user_feedback === 'negative' ? 'destructive' : 'ghost'}
+                                      size="sm"
+                                      className="h-7 w-7 p-0"
+                                      onClick={(e) => { e.stopPropagation(); handleSetFeedback(campaign.id, campaign.user_feedback === 'negative' ? '' : 'negative'); }}
+                                      title="Réponse négative"
+                                    >
+                                      <ThumbsDown className={`h-3.5 w-3.5 ${campaign.user_feedback === 'negative' ? '' : 'text-red-500'}`} />
+                                    </Button>
+                                    <Button
+                                      variant={campaign.user_feedback === 'no_response' ? 'secondary' : 'ghost'}
+                                      size="sm"
+                                      className="h-7 w-7 p-0"
+                                      onClick={(e) => { e.stopPropagation(); handleSetFeedback(campaign.id, campaign.user_feedback === 'no_response' ? '' : 'no_response'); }}
+                                      title="Pas de réponse"
+                                    >
+                                      <MinusCircle className={`h-3.5 w-3.5 ${campaign.user_feedback === 'no_response' ? '' : 'text-muted-foreground'}`} />
+                                    </Button>
                                     <Button
                                       variant="ghost"
                                       size="sm"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        toggleExcludeFromRelance(campaign.id);
+                                      className="h-7 w-7 p-0"
+                                      onClick={(e) => { 
+                                        e.stopPropagation(); 
+                                        if (feedbackNoteId === campaign.id) {
+                                          setFeedbackNoteId(null);
+                                        } else {
+                                          setFeedbackNoteId(campaign.id);
+                                          setFeedbackNoteText(campaign.feedback_notes || '');
+                                        }
                                       }}
-                                      className="h-6 w-6 p-0"
+                                      title="Ajouter une note"
                                     >
-                                      {isExcluded ? (
-                                        <RefreshCw className="h-3 w-3" />
-                                      ) : (
-                                        <X className="h-3 w-3 text-destructive" />
-                                      )}
+                                      <MessageSquare className={`h-3.5 w-3.5 ${campaign.feedback_notes ? 'text-primary' : 'text-muted-foreground'}`} />
                                     </Button>
-                                  )}
+
+                                    {campaign.response_detected_at && (
+                                      <Badge variant="outline" className="text-xs ml-1">Répondu</Badge>
+                                    )}
+                                    {campaign.follow_up_status === 'sent' && (
+                                      <Badge variant="secondary" className="text-xs">Relancé</Badge>
+                                    )}
+                                    {isPending && canRelance && (
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          toggleExcludeFromRelance(campaign.id);
+                                        }}
+                                        className="h-6 w-6 p-0"
+                                      >
+                                        {isExcluded ? (
+                                          <RefreshCw className="h-3 w-3" />
+                                        ) : (
+                                          <X className="h-3 w-3 text-destructive" />
+                                        )}
+                                      </Button>
+                                    )}
+                                  </div>
                                 </div>
+                                {/* Feedback note input */}
+                                {feedbackNoteId === campaign.id && (
+                                  <div className="mt-2 flex gap-2" onClick={(e) => e.stopPropagation()}>
+                                    <Textarea
+                                      value={feedbackNoteText}
+                                      onChange={(e) => setFeedbackNoteText(e.target.value)}
+                                      placeholder="Pourquoi ça a marché/pas marché..."
+                                      rows={2}
+                                      className="text-xs"
+                                    />
+                                    <Button size="sm" onClick={() => handleSaveFeedbackNote(campaign.id)} className="shrink-0">
+                                      OK
+                                    </Button>
+                                  </div>
+                                )}
                               </div>
                             );
                           })}
@@ -930,6 +1034,106 @@ export const CampaignsHub = () => {
                             <p className="text-xs text-muted-foreground">Entretien → Accepté</p>
                           </div>
                         </div>
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  {/* Feedback Performance by Type */}
+                  {campaigns.length > 0 && (
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-lg">📊 Performance par type d'approche</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        {(() => {
+                          const withFeedback = campaigns.filter(c => c.user_feedback);
+                          const typeLabels: Record<string, string> = { corporate: 'Corporate/RH', value: 'Valeur ajoutée', manager: 'Manager', question: 'Question' };
+                          const toneLabels: Record<string, string> = { formal: 'Formel', balanced: 'Équilibré', direct: 'Direct', soft: 'Adouci' };
+                          
+                          const byType = Object.entries(typeLabels).map(([key, label]) => {
+                            const ofType = withFeedback.filter(c => c.subject_type === key);
+                            const positive = ofType.filter(c => c.user_feedback === 'positive').length;
+                            return { name: label, total: ofType.length, positive, rate: ofType.length > 0 ? Math.round((positive / ofType.length) * 100) : 0 };
+                          }).filter(d => d.total > 0);
+
+                          const byTone = Object.entries(toneLabels).map(([key, label]) => {
+                            const ofTone = withFeedback.filter(c => c.tone === key);
+                            const positive = ofTone.filter(c => c.user_feedback === 'positive').length;
+                            return { name: label, total: ofTone.length, positive, rate: ofTone.length > 0 ? Math.round((positive / ofTone.length) * 100) : 0 };
+                          }).filter(d => d.total > 0);
+
+                          const totalPositive = withFeedback.filter(c => c.user_feedback === 'positive').length;
+                          const totalNegative = withFeedback.filter(c => c.user_feedback === 'negative').length;
+                          const totalNoResponse = withFeedback.filter(c => c.user_feedback === 'no_response').length;
+
+                          if (withFeedback.length === 0) {
+                            return <p className="text-sm text-muted-foreground text-center py-4">Ajoutez des feedbacks sur vos emails pour voir les statistiques.</p>;
+                          }
+
+                          const feedbackPieData = [
+                            { name: 'Positif', value: totalPositive, color: '#22c55e' },
+                            { name: 'Négatif', value: totalNegative, color: '#ef4444' },
+                            { name: 'Sans réponse', value: totalNoResponse, color: '#94a3b8' },
+                          ].filter(d => d.value > 0);
+
+                          return (
+                            <div className="space-y-6">
+                              <div className="grid grid-cols-3 gap-4">
+                                <div className="text-center p-3 bg-muted/30 rounded-lg">
+                                  <p className="text-2xl font-bold text-emerald-500">{totalPositive}</p>
+                                  <p className="text-xs text-muted-foreground">Positifs</p>
+                                </div>
+                                <div className="text-center p-3 bg-muted/30 rounded-lg">
+                                  <p className="text-2xl font-bold text-red-500">{totalNegative}</p>
+                                  <p className="text-xs text-muted-foreground">Négatifs</p>
+                                </div>
+                                <div className="text-center p-3 bg-muted/30 rounded-lg">
+                                  <p className="text-2xl font-bold text-muted-foreground">{totalNoResponse}</p>
+                                  <p className="text-xs text-muted-foreground">Sans réponse</p>
+                                </div>
+                              </div>
+                              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                <div>
+                                  <h4 className="font-medium mb-3">Répartition feedbacks</h4>
+                                  <ResponsiveContainer width="100%" height={200}>
+                                    <PieChart>
+                                      <Pie data={feedbackPieData} cx="50%" cy="50%" outerRadius={70} dataKey="value" label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`} labelLine={false}>
+                                        {feedbackPieData.map((entry, i) => <Cell key={i} fill={entry.color} />)}
+                                      </Pie>
+                                      <Tooltip />
+                                    </PieChart>
+                                  </ResponsiveContainer>
+                                </div>
+                                {byType.length > 0 && (
+                                  <div>
+                                    <h4 className="font-medium mb-3">Taux positif par type</h4>
+                                    <ResponsiveContainer width="100%" height={200}>
+                                      <BarChart data={byType} layout="vertical">
+                                        <XAxis type="number" domain={[0, 100]} tickFormatter={(v) => `${v}%`} />
+                                        <YAxis type="category" dataKey="name" width={100} tick={{ fontSize: 12 }} />
+                                        <Tooltip formatter={(v: number) => `${v}%`} />
+                                        <Bar dataKey="rate" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
+                                      </BarChart>
+                                    </ResponsiveContainer>
+                                  </div>
+                                )}
+                              </div>
+                              {byTone.length > 0 && (
+                                <div>
+                                  <h4 className="font-medium mb-3">Taux positif par ton</h4>
+                                  <ResponsiveContainer width="100%" height={160}>
+                                    <BarChart data={byTone} layout="vertical">
+                                      <XAxis type="number" domain={[0, 100]} tickFormatter={(v) => `${v}%`} />
+                                      <YAxis type="category" dataKey="name" width={100} tick={{ fontSize: 12 }} />
+                                      <Tooltip formatter={(v: number) => `${v}%`} />
+                                      <Bar dataKey="rate" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
+                                    </BarChart>
+                                  </ResponsiveContainer>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })()}
                       </CardContent>
                     </Card>
                   )}

@@ -30,7 +30,6 @@ async function scrapeWebsite(url: string): Promise<string> {
 
     const html = await response.text();
     
-    // Basic HTML to text conversion
     let text = html
       .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
       .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
@@ -47,7 +46,6 @@ async function scrapeWebsite(url: string): Promise<string> {
       .replace(/\s+/g, ' ')
       .trim();
 
-    // Limit content length
     return text.slice(0, 5000);
   } catch (error) {
     console.error(`Error scraping ${url}:`, error);
@@ -60,7 +58,7 @@ async function getAdditionalContent(baseUrl: string): Promise<string> {
   const additionalPages = ['/about', '/about-us', '/a-propos', '/qui-sommes-nous', '/entreprise', '/company', '/careers', '/carrieres', '/recrutement', '/jobs'];
   let combinedContent = '';
 
-  for (const page of additionalPages.slice(0, 3)) { // Limit to 3 additional pages
+  for (const page of additionalPages.slice(0, 3)) {
     try {
       const url = new URL(page, baseUrl).toString();
       const content = await scrapeWebsite(url);
@@ -74,6 +72,45 @@ async function getAdditionalContent(baseUrl: string): Promise<string> {
 
   return combinedContent.slice(0, 8000);
 }
+
+// Subject type descriptions for the prompt
+const SUBJECT_TYPE_PROMPTS: Record<string, string> = {
+  corporate: `TYPE D'OBJET : Corporate / RH (sécurisant, ATS-friendly)
+Objectif : rassurer, clarté administrative.
+Format objet : "Candidature spontanée – [Spécialité] – [Nom Prénom]" ou "Profil [spécialité] – Candidature spontanée – [Nom Prénom]"`,
+  
+  value: `TYPE D'OBJET : Valeur ajoutée (RH + managers ouverts)
+Objectif : montrer l'apport sans se vendre.
+Format objet : "Appui [spécialité] – Candidature spontanée – [Nom Prénom]" ou "Renfort [spécialité] – Candidature spontanée – [Nom Prénom]"`,
+  
+  manager: `TYPE D'OBJET : Managers / opérationnels
+Objectif : proximité métier, concret.
+Format objet : "Appui sur vos projets [spécialité] – Candidature spontanée – [Nom Prénom]" ou "Intérêt pour vos projets [spécialité] – Candidature spontanée – [Nom Prénom]"`,
+  
+  question: `TYPE D'OBJET : Approche question (engagement doux)
+Objectif : déclencher une réponse sans pression.
+Format objet : "Vos sujets [spécialité] actuels – Candidature spontanée – [Nom Prénom]" ou "Besoins actuels en [spécialité] – Candidature spontanée – [Nom Prénom]"
+Règle : Toujours rattacher explicitement à "candidature spontanée". Jamais de vocabulaire "prospection".`,
+};
+
+const TONE_PROMPTS: Record<string, string> = {
+  formal: `TON : Formel (Version RH)
+- Vouvoiement strict
+- "Je souhaite vous adresser ma candidature spontanée"
+- Ton professionnel et structuré`,
+  
+  balanced: `TON : Équilibré
+- "Je me permets de vous contacter afin de vous proposer ma candidature spontanée"
+- Professionnel mais accessible`,
+  
+  direct: `TON : Direct (Version manager)
+- "J'ai découvert [projet/initiative] de [Nom entreprise], ce qui m'a donné envie de vous adresser ma candidature spontanée"
+- Concret et orienté action`,
+  
+  soft: `TON : Question adoucie
+- "Je serais ravi d'échanger avec vous afin de mieux comprendre sur quels aspects je pourrais apporter du renfort"
+- Doux, non pressant`,
+};
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -104,7 +141,7 @@ serve(async (req) => {
       );
     }
 
-    const { companies, template, cvContent, userProfile } = await req.json();
+    const { companies, template, cvContent, userProfile, subjectType, tone } = await req.json();
 
     if (!companies || !Array.isArray(companies) || companies.length === 0) {
       throw new Error('companies doit être un tableau non vide');
@@ -115,7 +152,13 @@ serve(async (req) => {
       throw new Error('LOVABLE_API_KEY non configurée');
     }
 
-    console.log(`Generating personalized emails for ${companies.length} companies`);
+    // Determine subject type and tone instructions
+    const selectedSubjectType = subjectType || 'corporate';
+    const selectedTone = tone || 'balanced';
+    const subjectTypeInstruction = SUBJECT_TYPE_PROMPTS[selectedSubjectType] || SUBJECT_TYPE_PROMPTS.corporate;
+    const toneInstruction = TONE_PROMPTS[selectedTone] || TONE_PROMPTS.balanced;
+
+    console.log(`Generating personalized emails for ${companies.length} companies (type: ${selectedSubjectType}, tone: ${selectedTone})`);
 
     const results = [];
 
@@ -132,22 +175,33 @@ serve(async (req) => {
         }
 
         // Step 2: Generate personalized email using AI
-        const systemPrompt = `Tu es un expert en rédaction d'emails de candidature spontanée.
+        const systemPrompt = `Tu es un expert en rédaction d'emails de candidature spontanée. Tu appliques une stratégie précise pour maximiser le taux d'ouverture et de réponse.
 
-RÈGLES STRICTES:
-- Écris UNIQUEMENT l'email, sans introduction ni explication
-- Email COURT: 100-150 mots maximum
-- Mentionne des éléments SPÉCIFIQUES de l'entreprise
-- Ne laisse AUCUN placeholder [XXX] - personnalise tout
-- Ton professionnel mais direct
-- Une seule accroche percutante, pas de formule bateau
-- Termine par une invitation simple à échanger
+RÈGLES STRICTES :
+1. Écris UNIQUEMENT l'email, sans introduction ni explication
+2. Le corps du mail fait MAXIMUM 4 LIGNES (4 phrases courtes)
+3. Structure obligatoire du corps :
+   - Ligne 1 : Qui je suis (statut volontairement flou, spécialisation)
+   - Ligne 2 : Pourquoi cette entreprise (élément spécifique si possible)
+   - Ligne 3 : Ce que je peux apporter (appui / renfort / contribution)
+   - Ligne 4 : Ouverture + mention PJ ("Vous trouverez en pièces jointes mon CV et ma lettre de motivation.")
+4. Ne JAMAIS mentionner le type de contrat (CDI, CDD, stage, alternance...)
+5. Toujours mentionner CV + lettre de motivation en pièces jointes
+6. AUCUN vocabulaire de prospection commerciale (pas de "collaboration", "enjeux", "échange" isolé)
+7. Ton professionnel, humain, non-commercial
+8. Ne laisser AUCUN placeholder [XXX] - personnaliser tout
+9. L'objet doit TOUJOURS contenir "Candidature spontanée"
 
-FORMAT DE SORTIE:
-Sujet: [ligne d'objet courte et percutante]
+${subjectTypeInstruction}
 
-[corps de l'email - 100-150 mots max]`;
+${toneInstruction}
 
+FORMAT DE SORTIE :
+Sujet: [objet selon le type choisi]
+
+[corps de l'email - 4 lignes max]`;
+
+        const candidatName = userProfile?.fullName || '';
         const userPrompt = `ENTREPRISE CIBLE:
 - Nom: ${company.nom}
 - Ville: ${company.ville || 'Non spécifiée'}
@@ -157,7 +211,7 @@ Sujet: [ligne d'objet courte et percutante]
 INFORMATIONS SCRAPÉES DU SITE:
 ${companyInfo || 'Aucune information disponible - base-toi sur le nom et le secteur'}
 
-${template ? `TEMPLATE DE RÉFÉRENCE (à adapter, pas copier):
+${template ? `STYLE DE RÉFÉRENCE (à adapter, pas copier):
 ${template}` : ''}
 
 ${cvContent ? `PROFIL DU CANDIDAT:
@@ -169,7 +223,9 @@ ${userProfile ? `INFORMATIONS CANDIDAT:
 - LinkedIn: ${userProfile.linkedinUrl || 'Non spécifié'}
 ` : ''}
 
-Génère un email de candidature spontanée PERSONNALISÉ pour cette entreprise.`;
+NOM DU CANDIDAT POUR L'OBJET: ${candidatName || 'Non spécifié'}
+
+Génère un email de candidature spontanée PERSONNALISÉ pour cette entreprise en respectant strictement les règles ci-dessus.`;
 
         const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
           method: 'POST',
@@ -199,7 +255,6 @@ Génère un email de candidature spontanée PERSONNALISÉ pour cette entreprise.
               success: false,
               error: 'Rate limit - veuillez réessayer dans quelques instants'
             });
-            // Wait before continuing
             await new Promise(resolve => setTimeout(resolve, 5000));
             continue;
           }
@@ -244,7 +299,9 @@ Génère un email de candidature spontanée PERSONNALISÉ pour cette entreprise.
           success: true,
           subject,
           body,
-          scraped_info: companyInfo ? true : false
+          scraped_info: companyInfo ? true : false,
+          subject_type: selectedSubjectType,
+          tone: selectedTone,
         });
 
         console.log(`✓ Generated email for ${company.nom}`);

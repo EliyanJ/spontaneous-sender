@@ -284,6 +284,7 @@ export type Database = {
           body: string
           company_id: string | null
           created_at: string
+          feedback_notes: string | null
           follow_up_delay_days: number | null
           follow_up_enabled: boolean | null
           follow_up_sent_at: string | null
@@ -298,7 +299,10 @@ export type Database = {
           sent_at: string | null
           status: string | null
           subject: string
+          subject_type: string | null
+          tone: string | null
           updated_at: string
+          user_feedback: string | null
           user_id: string
         }
         Insert: {
@@ -306,6 +310,7 @@ export type Database = {
           body: string
           company_id?: string | null
           created_at?: string
+          feedback_notes?: string | null
           follow_up_delay_days?: number | null
           follow_up_enabled?: boolean | null
           follow_up_sent_at?: string | null
@@ -320,7 +325,10 @@ export type Database = {
           sent_at?: string | null
           status?: string | null
           subject: string
+          subject_type?: string | null
+          tone?: string | null
           updated_at?: string
+          user_feedback?: string | null
           user_id: string
         }
         Update: {
@@ -328,6 +336,7 @@ export type Database = {
           body?: string
           company_id?: string | null
           created_at?: string
+          feedback_notes?: string | null
           follow_up_delay_days?: number | null
           follow_up_enabled?: boolean | null
           follow_up_sent_at?: string | null
@@ -342,7 +351,10 @@ export type Database = {
           sent_at?: string | null
           status?: string | null
           subject?: string
+          subject_type?: string | null
+          tone?: string | null
           updated_at?: string
+          user_feedback?: string | null
           user_id?: string
         }
         Relationships: [
