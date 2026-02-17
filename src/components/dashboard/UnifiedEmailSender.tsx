@@ -181,6 +181,7 @@ export const UnifiedEmailSender = () => {
   const [editingEmail, setEditingEmail] = useState<GeneratedEmail | null>(null);
   const [editedSubject, setEditedSubject] = useState("");
   const [editedBody, setEditedBody] = useState("");
+  const [editedCoverLetter, setEditedCoverLetter] = useState("");
   const [previewEmail, setPreviewEmail] = useState<GeneratedEmail | null>(null);
   const [showSaveProfileDialog, setShowSaveProfileDialog] = useState(false);
   const [showSaveTemplateDialog, setShowSaveTemplateDialog] = useState(false);
@@ -455,6 +456,15 @@ export const UnifiedEmailSender = () => {
   };
 
   const handleGenerate = async () => {
+    const forceRegenerate = false; // will be true when called from "Regénérer tout"
+    return handleGenerateInternal(forceRegenerate);
+  };
+
+  const handleForceRegenerate = () => {
+    return handleGenerateInternal(true);
+  };
+
+  const handleGenerateInternal = async (forceRegenerate: boolean) => {
     // Manual mode: allow sending either to selected companies OR to manual recipient emails
     if (!enableAIEmails && !enableCoverLetter) {
       if (selectedCompanies.size === 0 && manualRecipients.length === 0) {
@@ -472,48 +482,76 @@ export const UnifiedEmailSender = () => {
         body,
       }));
 
-      setGeneratedEmails([
-        ...selectedList.map(c => ({
+      // Merge with existing: keep already-generated that are still selected, add new ones
+      const existingIds = new Set(generatedEmails.map(e => e.company_id));
+      const newCompanyEmails = selectedList
+        .filter(c => forceRegenerate || !existingIds.has(c.id))
+        .map(c => ({
           company_id: c.id,
           company_name: c.nom,
           company_email: c.selected_email || undefined,
           success: true,
           subject,
           body,
-        })),
-        ...manualList,
-      ]);
+        }));
+      const newManualEmails = manualList.filter(m => forceRegenerate || !existingIds.has(m.company_id));
+
+      if (forceRegenerate) {
+        setGeneratedEmails([...newCompanyEmails, ...newManualEmails]);
+      } else {
+        setGeneratedEmails(prev => [...prev.filter(e => !newCompanyEmails.find(n => n.company_id === e.company_id) && !newManualEmails.find(n => n.company_id === e.company_id)), ...newCompanyEmails, ...newManualEmails]);
+      }
       setActiveTab("preview");
       return;
     }
 
-    // AI modes require selecting companies
-    if (selectedCompanies.size === 0) {
-      toast({ title: "Sélectionnez au moins une entreprise", variant: "destructive" });
+    // AI modes require selecting companies or manual recipients (Plus)
+    if (selectedCompanies.size === 0 && manualRecipients.length === 0) {
+      toast({ title: "Ajoutez au moins un destinataire", variant: "destructive" });
       return;
     }
 
     setIsGenerating(true);
     setProgress(0);
     setElapsedTime(0);
-    setGeneratedEmails([]);
     setProcessLogs([]);
-    addLog('info', `🚀 Génération pour ${selectedCompanies.size} entreprise(s)`);
+
+    // Smart merge: keep already generated, only generate for new
+    const existingGeneratedIds = new Set(generatedEmails.map(e => e.company_id));
+    const previousEmails = forceRegenerate ? [] : [...generatedEmails];
+    const selectedList = companies.filter(c => selectedCompanies.has(c.id));
+    // Filter out already generated companies (smart merge)
+    const companiesToGenerate = forceRegenerate ? selectedList : selectedList.filter(c => !existingGeneratedIds.has(c.id));
+    // Manual recipients for AI generation (Plus plan)
+    const manualRecipientsToGenerate = forceRegenerate 
+      ? manualRecipients 
+      : manualRecipients.filter(email => !existingGeneratedIds.has(`manual:${email}`));
+
+    const totalToGenerate = companiesToGenerate.length + (enableAIEmails ? manualRecipientsToGenerate.length : 0);
+
+    if (totalToGenerate === 0) {
+      toast({ title: "Tous les emails sont déjà générés", description: "Utilisez 'Regénérer tout' pour forcer une nouvelle génération." });
+      setIsGenerating(false);
+      setActiveTab("preview");
+      return;
+    }
+
+    addLog('info', `🚀 Génération pour ${totalToGenerate} destinataire(s) (${existingGeneratedIds.size} déjà générés)`);
 
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error("Session expirée");
 
-      const selectedList = companies.filter(c => selectedCompanies.has(c.id));
       const allResults: GeneratedEmail[] = [];
 
       if (enableAIEmails) {
         addLog('info', `📧 Génération des emails personnalisés...`);
         const batchSize = 5;
 
-        for (let i = 0; i < selectedList.length; i += batchSize) {
-          const batch = selectedList.slice(i, i + batchSize);
-          setCurrentStep(`Lot ${Math.floor(i / batchSize) + 1}/${Math.ceil(selectedList.length / batchSize)}`);
+        // Generate for companies
+        for (let i = 0; i < companiesToGenerate.length; i += batchSize) {
+          const batch = companiesToGenerate.slice(i, i + batchSize);
+          setCurrentStep(`Lot ${Math.floor(i / batchSize) + 1}/${Math.ceil(companiesToGenerate.length / batchSize)}`);
 
           const { data, error } = await supabase.functions.invoke("generate-personalized-emails", {
             body: { companies: batch, template: template || null, cvContent: cvContent || null, subjectType: selectedSubjectType, tone: selectedTone },
@@ -526,12 +564,49 @@ export const UnifiedEmailSender = () => {
             allResults.push(...data.results);
           }
 
-          setProgress(Math.round(((i + batch.length) / selectedList.length) * 100));
-          if (i + batchSize < selectedList.length) await new Promise(r => setTimeout(r, 1000));
+          setProgress(Math.round(((i + batch.length) / totalToGenerate) * 100));
+          if (i + batchSize < companiesToGenerate.length) await new Promise(r => setTimeout(r, 1000));
+        }
+
+        // Generate AI emails for manual recipients (Plus plan)
+        if (manualRecipientsToGenerate.length > 0) {
+          addLog('info', `📧 Génération IA pour ${manualRecipientsToGenerate.length} email(s) manuel(s)...`);
+          const fakeCompanies = manualRecipientsToGenerate.map(email => ({
+            id: `manual:${email}`,
+            nom: email.split('@')[1]?.split('.')[0] || email,
+            selected_email: email,
+            website_url: null,
+            ville: null,
+            libelle_ape: null,
+            siren: `manual-${email}`,
+          }));
+
+          for (let i = 0; i < fakeCompanies.length; i += batchSize) {
+            const batch = fakeCompanies.slice(i, i + batchSize);
+            setCurrentStep(`Emails manuels ${i + 1}-${Math.min(i + batchSize, fakeCompanies.length)}`);
+
+            const { data, error } = await supabase.functions.invoke("generate-personalized-emails", {
+              body: { companies: batch, template: template || null, cvContent: cvContent || null, subjectType: selectedSubjectType, tone: selectedTone },
+              headers: { Authorization: `Bearer ${session.access_token}` }
+            });
+
+            if (error) {
+              batch.forEach(c => allResults.push({ company_id: c.id, company_name: c.nom, company_email: c.selected_email || undefined, success: false, error: error.message }));
+            } else if (data?.results) {
+              // Fix company_email for manual results
+              const results = data.results.map((r: GeneratedEmail, idx: number) => ({
+                ...r,
+                company_email: batch[idx]?.selected_email || r.company_email,
+              }));
+              allResults.push(...results);
+            }
+
+            if (i + batchSize < fakeCompanies.length) await new Promise(r => setTimeout(r, 1000));
+          }
         }
       } else {
-        // Use manual email content
-        selectedList.forEach(c => allResults.push({
+        // Use manual email content for companies
+        companiesToGenerate.forEach(c => allResults.push({
           company_id: c.id,
           company_name: c.nom,
           company_email: c.selected_email || undefined,
@@ -569,9 +644,11 @@ export const UnifiedEmailSender = () => {
         }
       }
 
-      setGeneratedEmails(allResults);
-      const successCount = allResults.filter(r => r.success).length;
-      addLog('success', `🎉 ${successCount}/${allResults.length} emails prêts`);
+      // Merge: keep previous + add new results
+      const mergedEmails = [...previousEmails.filter(e => !allResults.find(r => r.company_id === e.company_id)), ...allResults];
+      setGeneratedEmails(mergedEmails);
+      const successCount = mergedEmails.filter(r => r.success).length;
+      addLog('success', `🎉 ${successCount}/${mergedEmails.length} emails prêts (dont ${previousEmails.length} conservés)`);
       setActiveTab("preview");
       toast({ title: "Génération terminée", description: `${successCount} email(s) prêt(s)` });
     } catch (error) {
@@ -671,18 +748,42 @@ export const UnifiedEmailSender = () => {
     setEditingEmail(email);
     setEditedSubject(email.subject || "");
     setEditedBody(email.body || "");
+    setEditedCoverLetter(email.coverLetter || "");
   };
 
   const handleSaveEdit = () => {
     if (!editingEmail) return;
     setGeneratedEmails(prev => prev.map(e =>
       e.company_id === editingEmail.company_id
-        ? { ...e, subject: editedSubject, body: editedBody }
+        ? { ...e, subject: editedSubject, body: editedBody, coverLetter: editedCoverLetter || e.coverLetter }
         : e
     ));
     setEditingEmail(null);
     toast({ title: "Email modifié" });
   };
+
+  const handleRemoveGeneratedEmail = (companyId: string) => {
+    setGeneratedEmails(prev => prev.filter(e => e.company_id !== companyId));
+  };
+
+  // Auto-sync manual recipients into preview (non-AI mode)
+  useEffect(() => {
+    if (enableAIEmails || enableCoverLetter) return;
+    if (manualRecipients.length === 0) return;
+    
+    setGeneratedEmails(prev => {
+      // Keep non-manual entries
+      const nonManual = prev.filter(e => !e.company_id.startsWith('manual:'));
+      // Build manual entries
+      const manualEntries: GeneratedEmail[] = manualRecipients.map(email => {
+        const existing = prev.find(e => e.company_id === `manual:${email}`);
+        return existing 
+          ? { ...existing, subject: subject || existing.subject, body: body || existing.body }
+          : { company_id: `manual:${email}`, company_name: email, company_email: email, success: true, subject, body };
+      });
+      return [...nonManual, ...manualEntries];
+    });
+  }, [manualRecipients, subject, body, enableAIEmails, enableCoverLetter]);
 
   const successfulEmails = generatedEmails.filter(e => e.success);
   const selectedCount = selectedCompanies.size;
@@ -751,7 +852,7 @@ export const UnifiedEmailSender = () => {
               <Sparkles className="h-4 w-4" />
               Configuration
             </TabsTrigger>
-            <TabsTrigger value="preview" className="flex-1 gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground" disabled={generatedEmails.length === 0}>
+            <TabsTrigger value="preview" className="flex-1 gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground" disabled={generatedEmails.length === 0 && manualRecipients.length === 0}>
               <Eye className="h-4 w-4" />
               Prévisualisation ({successfulEmails.length})
             </TabsTrigger>
@@ -873,7 +974,12 @@ export const UnifiedEmailSender = () => {
                     <Sparkles className="h-5 w-5 text-primary" />
                     Options IA
                   </CardTitle>
-                  <CardDescription>Activez les fonctionnalités d'intelligence artificielle</CardDescription>
+                  <CardDescription>
+                    Activez les fonctionnalités d'intelligence artificielle.
+                    <span className="block mt-1 text-xs text-muted-foreground/80">
+                      💡 Désactivez les deux options ci-dessous pour utiliser le mode d'envoi manuel classique.
+                    </span>
+                  </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="flex items-center justify-between p-4 rounded-lg border bg-background">
@@ -1124,6 +1230,12 @@ export const UnifiedEmailSender = () => {
                     <CardTitle className="text-lg">Emails prêts à envoyer</CardTitle>
                     <CardDescription>{successfulEmails.length} email(s) générés</CardDescription>
                   </div>
+                  {generatedEmails.length > 0 && (
+                    <Button variant="outline" size="sm" onClick={handleForceRegenerate} className="gap-2">
+                      <RefreshCw className="h-4 w-4" />
+                      Regénérer tout
+                    </Button>
+                  )}
                 </div>
               </CardHeader>
               <CardContent>
@@ -1147,12 +1259,17 @@ export const UnifiedEmailSender = () => {
                             )}
                             {!email.success && <p className="text-sm text-destructive mt-1">{email.error}</p>}
                           </div>
-                          {email.success && (
-                            <div className="flex gap-1 shrink-0">
-                              <Button variant="ghost" size="icon" onClick={() => setPreviewEmail(email)}><Eye className="h-4 w-4" /></Button>
-                              <Button variant="ghost" size="icon" onClick={() => handleEditEmail(email)}><Edit3 className="h-4 w-4" /></Button>
-                            </div>
-                          )}
+                          <div className="flex gap-1 shrink-0">
+                            {email.success && (
+                              <>
+                                <Button variant="ghost" size="icon" onClick={() => setPreviewEmail(email)}><Eye className="h-4 w-4" /></Button>
+                                <Button variant="ghost" size="icon" onClick={() => handleEditEmail(email)}><Edit3 className="h-4 w-4" /></Button>
+                              </>
+                            )}
+                            <Button variant="ghost" size="icon" onClick={() => handleRemoveGeneratedEmail(email.company_id)} className="text-destructive hover:text-destructive">
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </div>
                       </div>
                     ))}
@@ -1275,6 +1392,15 @@ export const UnifiedEmailSender = () => {
               <Label>Message</Label>
               <Textarea value={editedBody} onChange={(e) => setEditedBody(e.target.value)} rows={10} className="mt-1.5" />
             </div>
+            {editingEmail?.coverLetter && (
+              <div>
+                <Label className="flex items-center gap-2">
+                  <FileText className="h-4 w-4" />
+                  Lettre de motivation
+                </Label>
+                <Textarea value={editedCoverLetter} onChange={(e) => setEditedCoverLetter(e.target.value)} rows={12} className="mt-1.5" />
+              </div>
+            )}
           </div>
           <div className="flex gap-2 justify-end">
             <Button variant="outline" onClick={() => setEditingEmail(null)}>Annuler</Button>
