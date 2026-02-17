@@ -2,7 +2,7 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import { 
   Search, Building2, Briefcase, Send, Shield, 
-  Menu, Moon, Sun
+  Menu, Moon, Sun, FileBarChart
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAdminCheck } from "@/hooks/useAdminCheck";
@@ -150,6 +150,22 @@ export const MobileNav = ({ activeTab, onTabChange, isDark, onToggleTheme }: Mob
             );
           })}
           
+          {/* Admin: Score CV */}
+          {isAdmin && (
+            <button
+              onClick={() => handleTabClick('cv-score')}
+              className={cn(
+                "flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm transition-all duration-200 w-full text-left",
+                activeTab === 'cv-score' 
+                  ? "bg-primary text-primary-foreground" 
+                  : "text-muted-foreground hover:text-foreground hover:bg-accent"
+              )}
+            >
+              <FileBarChart className="h-5 w-5 shrink-0" />
+              <span>Score CV</span>
+            </button>
+          )}
+
           {/* Admin button */}
           {isAdmin && (
             <button

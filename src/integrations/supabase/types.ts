@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      ats_professions: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          primary_keywords: Json
+          secondary_keywords: Json
+          soft_skills: Json
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          primary_keywords?: Json
+          secondary_keywords?: Json
+          soft_skills?: Json
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          primary_keywords?: Json
+          secondary_keywords?: Json
+          soft_skills?: Json
+        }
+        Relationships: []
+      }
       campaigns: {
         Row: {
           body_template: string
