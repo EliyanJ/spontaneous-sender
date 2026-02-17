@@ -141,7 +141,9 @@ serve(async (req) => {
     const FRENCH_CITIES = ['paris', 'lyon', 'marseille', 'toulouse', 'bordeaux', 'nantes', 'lille', 'strasbourg', 'montpellier', 'rennes', 'nice', 'grenoble', 'rouen', 'toulon', 'dijon', 'angers', 'nimes', 'saint-etienne', 'saint etienne', 'le mans', 'clermont-ferrand', 'clermont ferrand', 'brest', 'tours', 'amiens', 'metz', 'besancon', 'orleans', 'mulhouse', 'perpignan', 'caen', 'nancy', 'argenteuil', 'montreuil', 'saint-denis', 'saint denis', 'versailles', 'creteil', 'boulogne', 'nanterre', 'vitry', 'colombes', 'courbevoie', 'asnieres'];
     const postalCodeFound = /\b\d{5}\b/.test(cvText);
     const regionOrCityFound = [...FRENCH_REGIONS, ...FRENCH_CITIES].some(loc => normalizedCV.includes(normalize(loc)));
-    const addressFound = postalCodeFound || regionOrCityFound;
+    // Also detect address labels like "adresse :", "adresse postale", "localisation", "domicile", "lieu de residence"
+    const addressLabelFound = /(?:adresse|localisation|domicile|lieu de residence|ville|residence|habite|situe)\s*[:;\-–]/i.test(normalize(cvText));
+    const addressFound = postalCodeFound || regionOrCityFound || addressLabelFound;
     const webFound = /(?:linkedin\.com|github\.com|https?:\/\/[^\s]+|www\.[^\s]+)/i.test(cvText);
     
     const contactScore = (emailFound ? 3 : 0) + (phoneFound ? 3 : 0) + (addressFound ? 2 : 0) + (webFound ? 2 : 0);
