@@ -22,6 +22,7 @@ export const AuthDialog = ({ open, onOpenChange }: AuthDialogProps) => {
   const [googleLoading, setGoogleLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loginError, setLoginError] = useState<string | null>(null);
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,6 +52,7 @@ export const AuthDialog = ({ open, onOpenChange }: AuthDialogProps) => {
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setLoginError(null);
 
     try {
       const { error } = await supabase.auth.signInWithPassword({
@@ -58,13 +60,16 @@ export const AuthDialog = ({ open, onOpenChange }: AuthDialogProps) => {
         password,
       });
 
-      if (error) throw error;
+      if (error) {
+        setLoginError("Adresse email ou mot de passe incorrect");
+        return;
+      }
 
       toast.success("Connexion réussie !");
       onOpenChange(false);
       navigate("/dashboard");
     } catch (error: any) {
-      toast.error(error.message || "Erreur lors de la connexion");
+      setLoginError("Une erreur est survenue lors de la connexion");
     } finally {
       setLoading(false);
     }
@@ -144,8 +149,9 @@ export const AuthDialog = ({ open, onOpenChange }: AuthDialogProps) => {
                   id="signin-email"
                   type="email"
                   placeholder="votre@email.com"
+
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => { setEmail(e.target.value); setLoginError(null); }}
                   required
                   disabled={loading}
                 />
@@ -168,11 +174,19 @@ export const AuthDialog = ({ open, onOpenChange }: AuthDialogProps) => {
                   id="signin-password"
                   type="password"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => { setPassword(e.target.value); setLoginError(null); }}
                   required
                   disabled={loading}
                 />
               </div>
+              {loginError && (
+                <div className="bg-destructive/10 border border-destructive/30 text-destructive text-sm rounded-lg px-4 py-3 flex items-center gap-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 shrink-0" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                  {loginError}
+                </div>
+              )}
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading ? (
                   <>
