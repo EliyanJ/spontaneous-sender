@@ -413,6 +413,21 @@ export const Settings = () => {
 
                 <Separator />
 
+                {/* Onboarding preferences link */}
+                <div className="p-4 bg-muted/30 rounded-lg border border-border">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-foreground">Objectifs & préférences</p>
+                      <p className="text-xs text-muted-foreground">Modifiez vos objectifs, secteurs et centres d'intérêt</p>
+                    </div>
+                    <Button variant="outline" size="sm" onClick={() => navigate('/onboarding')}>
+                      Modifier
+                    </Button>
+                  </div>
+                </div>
+
+                <Separator />
+
                 {/* Profile fields */}
                 <div>
                   <Label htmlFor="full_name" className="text-muted-foreground">Nom complet</Label>
