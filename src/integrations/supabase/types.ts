@@ -873,6 +873,8 @@ export type Database = {
       support_tickets: {
         Row: {
           admin_response: string | null
+          assigned_to: string | null
+          category: string | null
           created_at: string
           current_page: string | null
           description: string
@@ -882,10 +884,13 @@ export type Database = {
           status: string
           subject: string
           updated_at: string
+          urgency: string | null
           user_id: string
         }
         Insert: {
           admin_response?: string | null
+          assigned_to?: string | null
+          category?: string | null
           created_at?: string
           current_page?: string | null
           description: string
@@ -895,10 +900,13 @@ export type Database = {
           status?: string
           subject: string
           updated_at?: string
+          urgency?: string | null
           user_id: string
         }
         Update: {
           admin_response?: string | null
+          assigned_to?: string | null
+          category?: string | null
           created_at?: string
           current_page?: string | null
           description?: string
@@ -908,6 +916,7 @@ export type Database = {
           status?: string
           subject?: string
           updated_at?: string
+          urgency?: string | null
           user_id?: string
         }
         Relationships: []
