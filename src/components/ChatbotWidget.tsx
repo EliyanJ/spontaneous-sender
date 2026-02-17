@@ -57,9 +57,49 @@ export const ChatbotWidget = () => {
     scrollToBottom();
   }, [messages, scrollToBottom]);
 
+  // Extract clickable suggestions from the last assistant message
+  const extractSuggestions = (content: string): string[] => {
+    const lines = content.split("\n");
+    const suggestions: string[] = [];
+    let inSuggestionBlock = false;
+    for (const line of lines) {
+      if (line.includes("Tu veux en savoir plus") || line.includes("Pour aller plus loin")) {
+        inSuggestionBlock = true;
+        continue;
+      }
+      if (inSuggestionBlock) {
+        const match = line.match(/^[-•]\s*(.+?)(\?|$)/);
+        if (match) suggestions.push(match[1].trim() + (match[0].includes("?") ? "" : " ?"));
+      }
+    }
+    return suggestions;
+  };
+
+  // Strip suggestion block from displayed message
+  const stripSuggestions = (content: string): string => {
+    // Remove everything from the suggestion header onwards
+    const patterns = ["👉 **Tu veux en savoir plus", "💡 **Pour aller plus loin", "👉 **Pour aller plus loin"];
+    let stripped = content;
+    for (const p of patterns) {
+      const idx = stripped.indexOf(p);
+      if (idx !== -1) stripped = stripped.slice(0, idx).trimEnd();
+    }
+    return stripped;
+  };
+
+  const sendDirectMessage = async (text: string) => {
+    if (isStreaming) return;
+    setChatInput("");
+    await doSend(text);
+  };
+
   const sendMessage = async () => {
     const input = chatInput.trim();
     if (!input || isStreaming) return;
+    await doSend(input);
+  };
+
+  const doSend = async (input: string) => {
 
     const userMsg: Msg = { role: "user", content: input };
     setChatInput("");
@@ -294,28 +334,47 @@ export const ChatbotWidget = () => {
             >
               {/* Messages */}
               <div className="flex-1 overflow-y-auto px-3 py-2 space-y-3">
-                {messages.map((msg, i) => (
-                  <div
-                    key={i}
-                    className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
-                  >
-                    <div
-                      className={`max-w-[85%] rounded-2xl px-3 py-2 text-sm ${
-                        msg.role === "user"
-                          ? "bg-primary text-primary-foreground rounded-br-md"
-                          : "bg-muted text-foreground rounded-bl-md"
-                      }`}
-                    >
-                      {msg.role === "assistant" ? (
-                        <div className="prose prose-sm dark:prose-invert max-w-none [&>p]:m-0 [&>ul]:my-1 [&>ol]:my-1 [&>p+p]:mt-2">
-                          <ReactMarkdown>{msg.content}</ReactMarkdown>
+                {messages.map((msg, i) => {
+                  const isLast = i === messages.length - 1;
+                  const isAssistant = msg.role === "assistant";
+                  const displayContent = isAssistant ? stripSuggestions(msg.content) : msg.content;
+                  const suggestions = isAssistant && isLast && !isStreaming ? extractSuggestions(msg.content) : [];
+
+                  return (
+                    <div key={i}>
+                      <div className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
+                        <div
+                          className={`max-w-[85%] rounded-2xl px-3 py-2 text-sm ${
+                            msg.role === "user"
+                              ? "bg-primary text-primary-foreground rounded-br-md"
+                              : "bg-muted text-foreground rounded-bl-md"
+                          }`}
+                        >
+                          {isAssistant ? (
+                            <div className="prose prose-sm dark:prose-invert max-w-none [&>p]:m-0 [&>ul]:my-1 [&>ol]:my-1 [&>p+p]:mt-2">
+                              <ReactMarkdown>{displayContent}</ReactMarkdown>
+                            </div>
+                          ) : (
+                            msg.content
+                          )}
                         </div>
-                      ) : (
-                        msg.content
+                      </div>
+                      {suggestions.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 mt-2 ml-1">
+                          {suggestions.map((s, j) => (
+                            <button
+                              key={j}
+                              onClick={() => sendDirectMessage(s)}
+                              className="text-xs px-2.5 py-1.5 rounded-full border border-primary/30 bg-primary/5 text-primary hover:bg-primary/15 transition-colors text-left"
+                            >
+                              {s}
+                            </button>
+                          ))}
+                        </div>
                       )}
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
                 {isStreaming && messages[messages.length - 1]?.role === "user" && (
                   <div className="flex justify-start">
                     <div className="bg-muted rounded-2xl rounded-bl-md px-3 py-2">
