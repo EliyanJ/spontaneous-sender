@@ -1,153 +1,151 @@
 
+# Refonte de l'algorithme ATS - Scoring equilibre et realiste
 
-# Comparateur CV / Score ATS - Admin Only
+## Probleme identifie
 
-## Resume
+Le score actuel de 8/100 vient de plusieurs defauts majeurs :
 
-Creation d'un nouvel onglet "Score CV" dans le dashboard, accessible uniquement aux admins. L'utilisateur colle une fiche de poste, upload un CV, et l'algorithme compare les deux pour produire un score sur 100 points avec des resultats visuels (camembert, listes detaillees).
+1. **Dependance excessive a la base de metiers** : Si la fiche de poste ne matche pas bien un metier pre-defini, les 75 points (50 primaires + 25 secondaires) sont quasi-perdus
+2. **Ratio d'occurrences trop strict** : Si "SEO" apparait 8 fois dans la fiche mais 3 dans le CV, le score est 3/8 = 37% des points seulement
+3. **Aucun point positif pour les bonnes pratiques** : Le concurrent accorde des points pour les infos de contact, le resume/profil, le formatage des dates, les resultats mesurables, le nombre de mots, etc.
+4. **Trop de malus empiles** : -8 intitule + -6 contrat + -15 sections = deja -29 points perdus facilement
 
----
+## Nouvelle approche - Hybride (base de metiers + extraction directe)
 
-## Architecture
+Le nouveau scoring s'inspire du concurrent tout en gardant la logique de ton algorithme original. L'idee principale : **extraire les mots-cles directement de la fiche de poste en plus de la base de metiers**, et ajouter des dimensions positives.
 
-### 1. Base de donnees - Table `ats_professions`
+### Nouvelle repartition des 100 points
 
-Table contenant la "Grande base de donnees" des metiers avec leurs mots-cles :
+| Categorie | Points | Description |
+|-----------|--------|-------------|
+| Mots-cles techniques (hard skills) | 30 pts | Extraction directe depuis fiche de poste + base metiers |
+| Mots-cles secondaires / transversaux | 15 pts | Idem, logique mixte |
+| Soft skills | 10 pts | Detection dans CV vs fiche |
+| Informations de contact | 10 pts | Email, telephone, adresse, LinkedIn |
+| Section Resume/Profil | 5 pts | Presence d'un resume ou profil en haut du CV |
+| Sections obligatoires | 10 pts | Experiences, Competences, Formation, Education |
+| Resultats mesurables | 5 pts | Chiffres, pourcentages, KPIs dans le CV |
+| Nombre de mots | 5 pts | Entre 400 et 1200 mots = optimal |
+| Intitule du poste | 5 pts | Presence dans le CV (malus reduit de -8 a -5) |
+| Type de contrat | 5 pts | Presence dans le CV (malus reduit de -6 a -5) |
+| **Total base** | **100 pts** | |
+| Bonus proximite | +6 max | Mots secondaires proches des primaires |
+| Bonus mots-cles extra | +1.5/mot | Mots au-dela du top classement |
 
-| Colonne | Type | Description |
-|---------|------|-------------|
-| `id` | uuid | PK |
-| `name` | text | Nom du metier (ex: "Marketing digital") |
-| `primary_keywords` | jsonb | Liste de mots-cles principaux (ex: ["SEO", "SEA", "Google Ads"]) |
-| `secondary_keywords` | jsonb | Liste de mots-cles secondaires (ex: ["Coordination", "Planification"]) |
-| `soft_skills` | jsonb | Liste de soft skills (ex: ["Autonomie", "Organisation"]) |
-| `created_at` | timestamptz | Date creation |
+### Changements cles dans l'algorithme
 
-RLS : lecture pour les utilisateurs authentifies, ecriture pour les admins uniquement.
+**1. Extraction hybride des mots-cles**
+Au lieu de se baser uniquement sur la base `ats_professions`, on va aussi extraire les mots significatifs directement de la fiche de poste (mots de 4+ caracteres, filtrage des stop words francais). Les mots qui apparaissent dans la base de metiers ET dans la fiche de poste comptent double.
 
-Seed initial avec environ 15-20 metiers courants :
-- Marketing digital, Developpement web, Ressources humaines, Commerce/Vente, Finance/Comptabilite, Communication, Data/Analytics, Design graphique, Gestion de projet, Logistique/Supply chain, Droit/Juridique, Informatique/Systemes, Ingenierie, Assistanat/Administratif, Community Management, etc.
+**2. Scoring plus genereux**
+- Si un mot-cle est present au moins 1 fois dans le CV, il obtient minimum 50% des points (au lieu de 0 si le ratio est faible)
+- Formule : `score = (0.5 + 0.5 * min(1, occ_cv / occ_fiche)) * pointsMax`
+- Cela signifie que meme une seule mention donne la moitie des points
 
-Chaque metier aura 20-30 mots-cles principaux, 15-20 secondaires, et 10-15 soft skills.
+**3. Nouvelles dimensions de scoring**
+- **Contact info (10 pts)** : Detection de patterns email, telephone, adresse, LinkedIn/site web
+- **Resume/Profil (5 pts)** : Detection de section "Profil", "Resume", "A propos", "Objectif"
+- **Resultats mesurables (5 pts)** : Comptage de chiffres/pourcentages/metriques dans le CV
+- **Word count (5 pts)** : Verification que le CV a un nombre de mots raisonnable
 
-### 2. Edge function `analyze-cv-ats`
+**4. Sections obligatoires plus souples (10 pts au lieu de -15)**
+Au lieu de retirer 5 points par section manquante, on donne 2.5 points par section trouvee parmi : Experiences, Competences, Formation, Education. Cela rend le scoring positif.
 
-Fonction backend qui execute l'algorithme complet :
+**5. Malus reduits**
+- Intitule du poste : -5 au lieu de -8
+- Type de contrat : -5 au lieu de -6
+- Images : -5 (inchange)
 
-**Entrees** : CV (texte extrait), fiche de poste (texte), intitule du poste (texte)
+### Impact attendu
 
-**Etapes de l'algorithme** :
+Pour un CV correct (avec contact, profil, sections, quelques mots-cles) :
+- Contact: ~8/10
+- Resume: 5/5
+- Sections: ~7.5/10
+- Keywords: ~15-20/30 (au lieu de ~3/50 avec l'ancien ratio)
+- Soft skills: ~5/10
+- Resultats mesurables: ~3/5
+- Word count: ~5/5
+- Intitule + contrat: variable
+- **Total estime: ~50-65/100** (au lieu de 8)
 
-```text
-ETAPE 1 : Verification des sections obligatoires (-5pts par section manquante)
-   - Cherche "Experiences", "Competences", "Formation" avec ORTOFLEX
-   - ORTOFLEX = case-insensitive + accents ignores + tolerance sur pluriel
-   - Penalite uniquement si faute d'orthographe grammaticale reelle
+Cela s'aligne avec le 57% du concurrent.
 
-ETAPE 2 : Identification du metier
-   - Extraire tous les mots de la fiche de poste
-   - Comparer avec chaque metier de ats_professions
-   - Compter les correspondances de mots-cles principaux
-   - Cross-check avec l'intitule du poste fourni par l'utilisateur
-   - En cas d'ambiguite, choisir aleatoirement parmi les meilleurs
-
-ETAPE 3 : Scoring mots-cles principaux (50 points)
-   - Classer les mots-cles principaux du metier identifie par occurrences dans la fiche de poste
-   - Top 10 = 5 points chacun (score = min(1, occ_cv / occ_fiche) * 5)
-   - Au-dela du top 10 : bonus +1.5 si present au moins 1 fois dans CV et fiche
-   - Score cap a 1 chiffre apres la virgule
-
-ETAPE 4 : Scoring mots-cles secondaires (25 points)
-   - Meme logique que principaux, top 5 a 5 points chacun
-   - Bonus +1.5 pour les mots au-dela du top 5
-
-ETAPE 5 : Scoring soft skills (14 points)
-   - Top soft skills du metier identifies dans fiche de poste
-   - Repartition des 14 points sur les soft skills trouves
-
-ETAPE 6 : Verification images (5 points)
-   - Detecter les references a des images (png, jpg, jpeg, gif, svg, image)
-   - Si plus de 5 references : -5 points
-
-ETAPE 7 : Bonus proximite (+2pts x3 max = +6pts plafonnes)
-   - Verifier si des mots secondaires sont a moins de 50 caracteres de mots principaux
-   - +2 points par occurrence, max 3 fois
-
-ETAPE 8 : Malus intitule du poste (-8 points)
-   - Filtrer l'intitule : supprimer mots < 3 caracteres SAUF exceptions (IA, RH, IT, QA, UX, UI...)
-   - Verifier si la phrase filtree est presente dans le CV
-   - Si absente : -8 points
-
-ETAPE 9 : Malus type de contrat (-6 points)
-   - Chercher "Stage", "CDI", "CDD", "Alternance", "Apprentissage", "Professionnalisation"
-   - Avec ORTOFLEX
-   - Si aucun present : -6 points
-   - Cumulable avec malus intitule
-
-ETAPE 10 : Verification qualite extraction
-   - Si < 100 caracteres hors espaces : erreur extraction defaillante
-```
-
-**Sortie** : JSON complet avec score total, detail de chaque etape, listes de mots-cles trouves/manquants, metier identifie, et tous les indicateurs pour le frontend.
-
-### 3. Frontend - Composant `CVComparator.tsx`
-
-**Interface en 2 parties** :
-
-**Formulaire (partie gauche/haut)** :
-- Champ texte : Intitule du poste
-- Textarea : Coller la fiche de poste
-- Upload CV (PDF/DOCX/TXT) - reutilise le parse-cv-document existant
-- 1 seul bouton "Analyser"
-
-**Resultats (partie droite/bas)** :
-- Camembert circulaire (recharts PieChart) avec score au centre
-  - Vert > 70 points, Orange 40-70, Rouge < 40
-- Sections detaillees dans l'ordre :
-  1. Sections obligatoires (checkmarks/croix)
-  2. Metier identifie
-  3. Competences techniques (principaux) avec icones
-  4. Competences transversales (secondaires)
-  5. Soft skills
-  6. Verification images
-  7. Intitule du poste
-  8. Type de contrat
-  9. Alerte extraction si defaillante
-
-### 4. Integration dans le dashboard
-
-**Fichiers modifies** :
+## Fichiers modifies
 
 | Fichier | Modification |
 |---------|-------------|
-| `src/pages/Index.tsx` | Ajout case "cv-score" dans renderContent + tabOrder, import CVComparator |
-| `src/components/HorizontalNav.tsx` | Ajout bouton "Score CV" visible uniquement si isAdmin |
-| `src/components/MobileNav.tsx` | Ajout entree "Score CV" dans le menu mobile, admin only |
+| `supabase/functions/analyze-cv-ats/index.ts` | Rewrite complet de l'algorithme avec les nouvelles dimensions |
+| `src/components/dashboard/CVComparator.tsx` | Ajout des nouvelles sections de resultats (contact, resume, dates, word count) |
 
-**Nouveaux fichiers** :
-
-| Fichier | Role |
-|---------|------|
-| `src/components/dashboard/CVComparator.tsx` | Composant principal avec formulaire + resultats |
-| `src/lib/ats-professions-seed.ts` | Donnees de seed pour les metiers (utilise dans la migration SQL) |
-| `supabase/functions/analyze-cv-ats/index.ts` | Edge function avec l'algorithme complet |
-
-### 5. Detail de la fonction ORTOFLEX
+## Detail technique de l'edge function
 
 ```text
-ORTOFLEX(mot_cherche, texte):
-  1. Normaliser : lowercase + supprimer accents (e, e, e -> e)
-  2. Generer variantes : pluriel (s/es), feminin (e), etc.
-  3. Chercher chaque variante dans le texte normalise
-  4. Retourner TRUE si une variante est trouvee
-  5. Ne PAS matcher si la difference est une lettre en trop/manquante
-     (ex: "Competnces" != "Competences")
+ETAPE 0 : Qualite d'extraction
+  - Si < 100 caracteres hors espaces : warning
+
+ETAPE 1 : Informations de contact (10 pts)
+  - Email detecte : +3 pts (regex pattern)
+  - Telephone detecte : +3 pts (regex 06/07/+33)
+  - Adresse/ville detectee : +2 pts (pattern code postal)
+  - LinkedIn ou site web : +2 pts (regex URL/linkedin)
+
+ETAPE 2 : Section Resume/Profil (5 pts)
+  - Chercher "Profil", "Resume", "A propos", "Objectif", "Presentation" avec ORTOFLEX
+  - Si trouvee : +5 pts
+
+ETAPE 3 : Sections obligatoires (10 pts = 2.5 pts x 4)
+  - Experiences/Experience professionnelle : 2.5 pts
+  - Competences : 2.5 pts
+  - Formation/Education : 2.5 pts
+  - Langues ou Certifications (bonus section) : 2.5 pts
+
+ETAPE 4 : Identification du metier (inchange)
+  - Matching avec ats_professions
+
+ETAPE 5 : Hard skills / mots-cles techniques (30 pts)
+  - Extraction HYBRIDE : mots-cles de la base metier + extraction directe de la fiche
+  - Top 10 mots = 3 pts chacun
+  - Formule genereuse : present >= 1 fois = min 50% des points
+  - Bonus +1.5 pour les mots au-dela du top 10
+
+ETAPE 6 : Mots-cles secondaires (15 pts)
+  - Top 5 = 3 pts chacun
+  - Meme formule genereuse
+
+ETAPE 7 : Soft skills (10 pts)
+  - Distribution des 10 pts sur les soft skills detectes
+
+ETAPE 8 : Resultats mesurables (5 pts)
+  - Compter les nombres/pourcentages/metriques dans le CV
+  - 0 resultats : 0 pts, 1-2 : 2 pts, 3-4 : 3 pts, 5+ : 5 pts
+
+ETAPE 9 : Nombre de mots (5 pts)
+  - < 200 mots : 1 pt, 200-400 : 3 pts, 400-1200 : 5 pts, > 1200 : 3 pts
+
+ETAPE 10 : Intitule du poste (5 pts / -5 malus)
+  - Meme logique ORTOFLEX mais malus reduit a -5
+
+ETAPE 11 : Type de contrat (5 pts / -5 malus)
+  - Meme logique mais malus reduit a -5
+
+ETAPE 12 : Verification images (-5 si > 5 images)
+
+ETAPE 13 : Bonus proximite (+2 x 3 max = +6)
 ```
 
-### 6. Ordre d'implementation
+## Frontend - Nouvelles sections affichees
 
-1. Migration DB : table `ats_professions` + seed des metiers
-2. Edge function `analyze-cv-ats` avec tout l'algorithme
-3. Composant `CVComparator.tsx` avec formulaire + graphiques recharts
-4. Integration dans Index.tsx, HorizontalNav.tsx, MobileNav.tsx (admin only)
-
+Apres le camembert de score, dans l'ordre :
+1. **Informations de contact** - checkmarks pour email, tel, adresse, web
+2. **Resume/Profil** - check ou croix
+3. **Sections obligatoires** - checkmarks par section
+4. **Metier identifie** - badge
+5. **Competences techniques** - badges avec scores
+6. **Competences transversales** - badges
+7. **Soft skills** - badges
+8. **Resultats mesurables** - compteur
+9. **Nombre de mots** - indicateur
+10. **Intitule du poste** - check ou croix
+11. **Type de contrat** - check ou croix
+12. **Images** - check ou croix
