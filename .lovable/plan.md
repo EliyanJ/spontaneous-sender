@@ -1,64 +1,104 @@
 
 
-# Corrections ATS : Detection permissive + UX post-analyse
+# Chatbot IA + Ticket Support en bas a droite
 
-## Problemes identifies
+## Vue d'ensemble
 
-### 1. Sections obligatoires non detectees
-La fonction `ortoflexFind` cherche des mots isoles avec des word boundaries (`\b`-like regex). Mais dans un CV extrait en texte brut, les titres de section apparaissent souvent :
-- En MAJUSCULES : `EXPERIENCES PROFESSIONNELLES`
-- Colles a d'autres mots : `Competences:gestion...`
-- Avec des variantes non couvertes : `PARCOURS`, `LANGUES PARLEES`, `CERTIFICATIONS OBTENUES`
-- Avec accents dans le texte brut : `Expériences`, `Compétences`
-
-La solution : utiliser `normalizedCV.includes(keyword)` en plus du regex strict, et ajouter beaucoup plus de variantes de mots-cles pour chaque section.
-
-### 2. Adresse : "Ile de France" non detectee
-Actuellement seul le pattern code postal 5 chiffres est utilise (`\b\d{5}\b`). Il faut ajouter des noms de regions, villes et patterns courants francais.
-
-### 3. UX : masquer le formulaire apres analyse + bouton "Refaire"
-Apres l'analyse, le formulaire (fiche de poste + CV) prend trop de place. On doit :
-- Masquer les cartes de saisie une fois les resultats affiches
-- Afficher les resultats en pleine largeur
-- Ajouter un bouton "Nouvelle analyse" pour reset tout
+Transformer la bulle d'aide actuelle (HelpBubble) en un widget double : l'utilisateur peut soit discuter avec un chatbot IA qui connait toute l'application, soit soumettre un ticket de support classique. Le chatbot utilise Lovable AI (Gemini) avec un system prompt exhaustif contenant toute la base de connaissances de l'application.
 
 ---
 
-## Fichiers modifies
+## Architecture
+
+Le widget en bas a droite ouvre un panneau avec 2 onglets :
+- **Assistant IA** : chatbot streaming qui repond aux questions
+- **Ticket** : formulaire de ticket existant (inchange)
+
+La "base de donnees" de connaissances sera un system prompt detaille dans l'edge function, pas une table SQL. C'est la methode la plus efficace : l'IA a tout le contexte en memoire sans avoir besoin de recherche vectorielle.
+
+---
+
+## Fichiers a creer
+
+| Fichier | Role |
+|---------|------|
+| `supabase/functions/chatbot-assistant/index.ts` | Edge function avec system prompt + streaming via Lovable AI |
+| `src/components/ChatbotWidget.tsx` | Nouveau widget avec onglets Chat / Ticket |
+
+## Fichiers a modifier
 
 | Fichier | Modification |
 |---------|-------------|
-| `supabase/functions/analyze-cv-ats/index.ts` | Section detection plus permissive + adresse elargie |
-| `src/components/dashboard/CVComparator.tsx` | Masquer formulaire apres analyse + bouton refaire |
+| `src/components/HelpBubble.tsx` | Remplace par le nouveau ChatbotWidget |
+| `supabase/config.toml` | Ajouter config pour chatbot-assistant |
 
 ---
 
 ## Details techniques
 
-### Edge function - Section detection permissive (ETAPE 3)
+### 1. Edge function `chatbot-assistant`
 
-Remplacer la detection actuelle par une double approche :
-1. `normalizedCV.includes(keyword)` (substring simple)
-2. `ortoflexFind(keyword, normalizedCV)` (regex avec variantes)
-3. Si l'un des deux match, la section est trouvee
+System prompt contenant toute la base de connaissances structuree :
 
-Nouvelles listes de mots-cles elargies :
-- **Experiences** : `experience`, `experiences`, `experience professionnelle`, `experiences professionnelles`, `parcours`, `parcours professionnel`, `postes`, `emplois`, `historique professionnel`, `career`, `work history`
-- **Competences** : `competence`, `competences`, `skills`, `savoir-faire`, `aptitudes`, `expertise`, `outils`, `technologies`, `tech`, `hard skills`
-- **Formation** : `formation`, `formations`, `education`, `diplome`, `diplomes`, `cursus`, `etudes`, `scolarite`, `academic`, `qualification`
-- **Langues/Certifications** : `langue`, `langues`, `certification`, `certifications`, `certificat`, `habilitation`, `langues parlees`, `languages`, `certifie`
+**Cronos - Presentation generale**
+- Plateforme de recherche d'entreprises et de candidature spontanee
+- Permet de trouver des entreprises, obtenir leurs emails, envoyer des candidatures par email
+- 3 plans : Gratuit (5 envois/mois), Standard 14EUR (100 envois), Premium 39EUR (400 envois + IA)
 
-### Edge function - Adresse elargie (ETAPE 1)
+**Fonctionnalites par onglet**
+- Recherche : trouver des entreprises par secteur, localisation, effectif (base gouvernementale)
+- Entreprises : liste des entreprises sauvegardees, gestion du pipeline
+- Emails : recherche de contacts email via hunter.io, envoi de candidatures
+- Campagnes : envoi groupe, suivi des relances automatiques, detection de reponses
+- Offres d'emploi : acces aux offres France Travail (Premium uniquement)
+- Score CV : analyse ATS de votre CV vs une fiche de poste
+- Parametres : profil, preferences, templates, connexion Gmail
 
-Ajouter a la detection d'adresse :
-- Noms de regions : `ile de france`, `ile-de-france`, `auvergne`, `bretagne`, `normandie`, `occitanie`, `paca`, `provence`, etc.
-- Noms de grandes villes : `paris`, `lyon`, `marseille`, `toulouse`, `bordeaux`, `nantes`, `lille`, `strasbourg`, `montpellier`, `rennes`, `nice`, `grenoble`, etc.
-- Patterns : code postal 5 chiffres OU nom de region/ville connu
+**Comment ca marche**
+- Recherche automatique : filtrer par departement/region + secteur d'activite
+- Recherche IA (Premium) : decrire en langage naturel ce que vous cherchez
+- Emails trouves via l'API hunter.io a partir du site web de l'entreprise
+- Connexion Gmail necessaire pour envoyer des emails
+- Campagnes : envoi differe, suivi, relances automatiques apres X jours
+- Score CV ATS : uploader CV + fiche de poste, obtenir un score de compatibilite
 
-### Frontend - UX post-analyse
+**Plans et credits**
+- Gratuit : 5 envois/mois, recherche auto departement
+- Standard (14EUR/mois) : 100 envois/mois, recherche auto departement
+- Premium (39EUR/mois) : 400 envois/mois, recherche IA, emails IA, lettres de motivation, offres d'emploi
+- Tokens supplementaires : Pack 50 (5EUR), Pack 100 (9EUR)
 
-Quand `result` est non-null :
-- Les deux cartes de saisie (fiche de poste + CV) disparaissent
-- Les resultats s'affichent en pleine largeur (plus de grid 2 colonnes)
-- Un bouton "Nouvelle analyse" en haut des resultats reset `result`, `cvText`, `cvFile`, `jobTitle`, `jobDescription` pour revenir au formulaire
+**Conseils et bonnes pratiques**
+- Personnaliser les emails pour chaque entreprise
+- Commencer par 40 emails/jour max par campagne
+- Activer les relances automatiques (10 jours par defaut)
+- Connecter Gmail pour un meilleur delivrabilite
+- Utiliser le Score CV pour optimiser son CV avant de postuler
+
+**FAQ**
+- "Comment trouver des emails ?" -> Onglet Recherche > sauvegarder des entreprises > Recherche de contact
+- "Comment envoyer des emails ?" -> Connecter Gmail dans Parametres puis aller dans Campagnes
+- "Pourquoi mes emails rebondissent ?" -> L'email de l'entreprise n'est peut-etre plus valide
+- "C'est quoi les tokens ?" -> Credits supplementaires pour envoyer des emails au-dela du quota mensuel
+- "Comment fonctionne le score ATS ?" -> Il analyse les mots-cles de la fiche de poste et verifie leur presence dans votre CV
+
+Implementation : streaming SSE via Lovable AI gateway (`google/gemini-2.5-flash` pour rapidite et cout faible).
+
+### 2. Widget ChatbotWidget
+
+- Bouton flottant en bas a droite (comme l'actuel)
+- Au clic : ouvre un panneau/sheet avec 2 onglets (Tabs)
+  - **Assistant** : interface de chat avec messages, input, streaming en temps reel
+  - **Ticket** : formulaire actuel (sujet + description)
+- Messages rendus en markdown (react-markdown a installer)
+- Historique des messages en memoire locale (pas de persistence DB)
+- Limite de contexte : envoyer les 20 derniers messages max
+
+### 3. UI du chat
+
+- Panneau fixe en bas a droite, style moderne
+- Messages utilisateur a droite, messages IA a gauche
+- Indicateur de chargement pendant le streaming
+- Input avec bouton envoi
+- Responsive mobile : le panneau prend toute la largeur sur mobile
 
