@@ -30,8 +30,6 @@ import {
   AdminDashboard, 
   AdminUsers, 
   AdminUserDetail, 
-  AdminAnalytics, 
-  AdminActivity, 
   AdminTeam,
   AdminTickets,
   AdminDataCenter,
@@ -40,6 +38,7 @@ import {
   AdminSEO,
   AdminBlockEditor,
 } from "./pages/Admin";
+import AdminTicketDetail from "./pages/Admin/AdminTicketDetail";
 import BlogPost from "./pages/BlogPost";
 
 const queryClient = new QueryClient();
@@ -75,10 +74,9 @@ const App = () => (
             <Route path="users" element={<AdminUsers />} />
             <Route path="users/:userId" element={<AdminUserDetail />} />
             <Route path="data" element={<AdminDataCenter />} />
-            <Route path="analytics" element={<AdminAnalytics />} />
-            <Route path="activity" element={<AdminActivity />} />
             <Route path="team" element={<AdminTeam />} />
             <Route path="tickets" element={<AdminTickets />} />
+            <Route path="tickets/:ticketId" element={<AdminTicketDetail />} />
             <Route path="cms" element={<AdminCMS />} />
             <Route path="seo" element={<AdminSEO />} />
           </Route>

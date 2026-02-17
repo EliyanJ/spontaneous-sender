@@ -3,8 +3,6 @@ import { Outlet, NavLink, useNavigate } from "react-router-dom";
 import { 
   LayoutDashboard, 
   Users, 
-  BarChart3, 
-  Activity, 
   UserCog, 
   ArrowLeft,
   Shield,
@@ -23,8 +21,6 @@ const adminNavItems = [
   { title: "Utilisateurs", icon: Users, path: "/admin/users" },
   { title: "Data", icon: Database, path: "/admin/data" },
   { title: "Tickets", icon: MessageSquare, path: "/admin/tickets" },
-  { title: "Analytics", icon: BarChart3, path: "/admin/analytics" },
-  { title: "Activité", icon: Activity, path: "/admin/activity" },
   { title: "Équipe", icon: UserCog, path: "/admin/team" },
   { title: "CMS", icon: FileText, path: "/admin/cms" },
   { title: "SEO", icon: Search, path: "/admin/seo" },

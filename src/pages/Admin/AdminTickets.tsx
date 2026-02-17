@@ -1,14 +1,13 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
-import { Loader2, MessageSquare, Clock, CheckCircle, XCircle, RefreshCw, ExternalLink } from "lucide-react";
+import { Loader2, MessageSquare, Clock, CheckCircle, XCircle, RefreshCw } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 
@@ -20,6 +19,9 @@ interface SupportTicket {
   screenshot_url: string | null;
   current_page: string | null;
   status: string;
+  category: string | null;
+  urgency: string | null;
+  assigned_to: string | null;
   admin_response: string | null;
   responded_at: string | null;
   created_at: string;
@@ -33,13 +35,25 @@ const STATUS_CONFIG = {
   rejected: { label: "Rejeté", color: "bg-red-100 text-red-800", icon: XCircle },
 };
 
+const CATEGORY_CONFIG: Record<string, { label: string; className: string }> = {
+  bug: { label: "Bug", className: "bg-red-500/20 text-red-400" },
+  evolution: { label: "Évolution", className: "bg-purple-500/20 text-purple-400" },
+  support: { label: "Support", className: "bg-blue-500/20 text-blue-400" },
+  question: { label: "Question", className: "bg-cyan-500/20 text-cyan-400" },
+  other: { label: "Autre", className: "bg-gray-500/20 text-gray-400" },
+};
+
+const URGENCY_CONFIG: Record<string, { label: string; className: string }> = {
+  low: { label: "Faible", className: "bg-green-500/20 text-green-400" },
+  medium: { label: "Moyen", className: "bg-yellow-500/20 text-yellow-400" },
+  high: { label: "Élevé", className: "bg-orange-500/20 text-orange-400" },
+  critical: { label: "Critique", className: "bg-red-500/20 text-red-400" },
+};
+
 const AdminTickets = () => {
+  const navigate = useNavigate();
   const [tickets, setTickets] = useState<SupportTicket[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedTicket, setSelectedTicket] = useState<SupportTicket | null>(null);
-  const [response, setResponse] = useState("");
-  const [newStatus, setNewStatus] = useState("");
-  const [updating, setUpdating] = useState(false);
   const [filter, setFilter] = useState<string>("all");
 
   const fetchTickets = async () => {
@@ -69,44 +83,6 @@ const AdminTickets = () => {
     fetchTickets();
   }, [filter]);
 
-  const handleOpenTicket = (ticket: SupportTicket) => {
-    setSelectedTicket(ticket);
-    setResponse(ticket.admin_response || "");
-    setNewStatus(ticket.status);
-  };
-
-  const handleUpdateTicket = async () => {
-    if (!selectedTicket) return;
-
-    setUpdating(true);
-    try {
-      const updates: Partial<SupportTicket> = {
-        status: newStatus,
-      };
-
-      if (response.trim()) {
-        updates.admin_response = response.trim();
-        updates.responded_at = new Date().toISOString();
-      }
-
-      const { error } = await supabase
-        .from('support_tickets')
-        .update(updates)
-        .eq('id', selectedTicket.id);
-
-      if (error) throw error;
-
-      toast.success("Ticket mis à jour avec succès");
-      setSelectedTicket(null);
-      fetchTickets();
-    } catch (error: any) {
-      console.error('Error updating ticket:', error);
-      toast.error("Erreur lors de la mise à jour");
-    } finally {
-      setUpdating(false);
-    }
-  };
-
   const getStatusBadge = (status: string) => {
     const config = STATUS_CONFIG[status as keyof typeof STATUS_CONFIG] || STATUS_CONFIG.open;
     const Icon = config.icon;
@@ -116,6 +92,16 @@ const AdminTickets = () => {
         {config.label}
       </Badge>
     );
+  };
+
+  const getCategoryBadge = (category: string | null) => {
+    const config = CATEGORY_CONFIG[category || 'support'] || CATEGORY_CONFIG.support;
+    return <Badge className={config.className}>{config.label}</Badge>;
+  };
+
+  const getUrgencyBadge = (urgency: string | null) => {
+    const config = URGENCY_CONFIG[urgency || 'medium'] || URGENCY_CONFIG.medium;
+    return <Badge className={config.className}>{config.label}</Badge>;
   };
 
   if (loading) {
@@ -168,7 +154,8 @@ const AdminTickets = () => {
                 <TableRow>
                   <TableHead>Date</TableHead>
                   <TableHead>Sujet</TableHead>
-                  <TableHead>Page</TableHead>
+                  <TableHead>Thématique</TableHead>
+                  <TableHead>Urgence</TableHead>
                   <TableHead>Statut</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -179,15 +166,14 @@ const AdminTickets = () => {
                     <TableCell className="whitespace-nowrap">
                       {format(new Date(ticket.created_at), "dd MMM yyyy HH:mm", { locale: fr })}
                     </TableCell>
-                    <TableCell className="max-w-[300px] truncate font-medium">
+                    <TableCell className="max-w-[250px] truncate font-medium">
                       {ticket.subject}
                     </TableCell>
-                    <TableCell className="max-w-[150px] truncate text-muted-foreground">
-                      <code className="text-xs">{ticket.current_page}</code>
-                    </TableCell>
                     <TableCell>{getStatusBadge(ticket.status)}</TableCell>
+                    <TableCell>{getCategoryBadge(ticket.category)}</TableCell>
+                    <TableCell>{getUrgencyBadge(ticket.urgency)}</TableCell>
                     <TableCell className="text-right">
-                      <Button size="sm" onClick={() => handleOpenTicket(ticket)}>
+                      <Button size="sm" onClick={() => navigate(`/admin/tickets/${ticket.id}`)}>
                         Voir
                       </Button>
                     </TableCell>
@@ -198,89 +184,6 @@ const AdminTickets = () => {
           )}
         </CardContent>
       </Card>
-
-      <Dialog open={!!selectedTicket} onOpenChange={() => setSelectedTicket(null)}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Ticket: {selectedTicket?.subject}</DialogTitle>
-            <DialogDescription>
-              Créé le {selectedTicket && format(new Date(selectedTicket.created_at), "dd MMMM yyyy à HH:mm", { locale: fr })}
-            </DialogDescription>
-          </DialogHeader>
-
-          {selectedTicket && (
-            <div className="space-y-4">
-              <div className="bg-muted p-4 rounded-lg">
-                <h4 className="font-medium mb-2">Description:</h4>
-                <p className="whitespace-pre-wrap">{selectedTicket.description}</p>
-              </div>
-
-              {selectedTicket.current_page && (
-                <div className="flex items-center gap-2 text-sm">
-                  <span className="text-muted-foreground">Page:</span>
-                  <code className="bg-muted px-2 py-1 rounded">{selectedTicket.current_page}</code>
-                  <a 
-                    href={`https://getcronos.fr${selectedTicket.current_page}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-primary hover:underline flex items-center gap-1"
-                  >
-                    <ExternalLink className="h-3 w-3" />
-                    Ouvrir
-                  </a>
-                </div>
-              )}
-
-              <div className="space-y-2">
-                <label className="font-medium">Statut:</label>
-                <Select value={newStatus} onValueChange={setNewStatus}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="open">Ouvert</SelectItem>
-                    <SelectItem value="in_progress">En cours</SelectItem>
-                    <SelectItem value="closed">Fermé</SelectItem>
-                    <SelectItem value="rejected">Rejeté</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <label className="font-medium">Réponse admin:</label>
-                <Textarea
-                  value={response}
-                  onChange={(e) => setResponse(e.target.value)}
-                  placeholder="Votre réponse..."
-                  rows={4}
-                />
-              </div>
-
-              {selectedTicket.responded_at && (
-                <p className="text-sm text-muted-foreground">
-                  Dernière réponse: {format(new Date(selectedTicket.responded_at), "dd MMM yyyy HH:mm", { locale: fr })}
-                </p>
-              )}
-
-              <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => setSelectedTicket(null)}>
-                  Annuler
-                </Button>
-                <Button onClick={handleUpdateTicket} disabled={updating}>
-                  {updating ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Mise à jour...
-                    </>
-                  ) : (
-                    "Mettre à jour"
-                  )}
-                </Button>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };
