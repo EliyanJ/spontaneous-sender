@@ -387,7 +387,7 @@ export const CVComparator = () => {
                 <CardHeader className="pb-3">
                   <CardTitle className="text-sm flex items-center gap-2">
                     <Mail className="h-4 w-4 text-primary" />
-                    Informations de contact ({result.contactInfo?.score ?? 0}/{result.contactInfo?.maxScore ?? 10} pts)
+                    Informations de contact
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-1.5">
@@ -404,8 +404,8 @@ export const CVComparator = () => {
                   <CheckItem
                     ok={result.profileSection?.found ?? false}
                     label={result.profileSection?.found
-                      ? `Section Profil/Résumé détectée (+${result.profileSection?.score ?? 0} pts)`
-                      : "Aucune section Profil ou Résumé détectée (0 pts)"}
+                      ? "Section Profil/Résumé détectée"
+                      : "Aucune section Profil ou Résumé détectée"}
                   />
                 </CardContent>
               </Card>
@@ -415,12 +415,12 @@ export const CVComparator = () => {
                 <CardHeader className="pb-3">
                   <CardTitle className="text-sm flex items-center gap-2">
                     <FileText className="h-4 w-4 text-primary" />
-                    Sections obligatoires ({result.sections?.score ?? 0}/{result.sections?.maxScore ?? 10} pts)
+                    Sections obligatoires
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-1.5">
                   {(result.sections?.checks ?? []).map((s, i) => (
-                    <CheckItem key={i} ok={s.found} label={s.found ? `Section '${s.section}' détectée (+${s.points} pts)` : `Section '${s.section}' non détectée`} />
+                    <CheckItem key={i} ok={s.found} label={s.found ? `Section '${s.section}' détectée` : `Section '${s.section}' non détectée`} />
                   ))}
                 </CardContent>
               </Card>
@@ -446,7 +446,7 @@ export const CVComparator = () => {
                 <CardHeader className="pb-3">
                   <CardTitle className="text-sm flex items-center gap-2">
                     <Target className="h-4 w-4 text-primary" />
-                    Compétences techniques ({result.primaryKeywords.total.toFixed(1)}/{result.primaryKeywords.maxTotal} pts)
+                    Compétences techniques
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-2">
@@ -457,13 +457,13 @@ export const CVComparator = () => {
                         variant={k.points >= k.maxPoints * 0.8 ? "default" : k.points > 0 ? "secondary" : "outline"}
                         className={`text-xs ${k.points >= k.maxPoints * 0.8 ? '' : k.points > 0 ? 'border-orange-500/50 text-orange-600 dark:text-orange-400' : 'opacity-50'}`}
                       >
-                        {k.points >= k.maxPoints * 0.8 ? '✅' : k.points > 0 ? '⚠️' : '❌'} {k.keyword} ({k.points.toFixed(1)}/{k.maxPoints})
+                        {k.points >= k.maxPoints * 0.8 ? '✅' : k.points > 0 ? '⚠️' : '❌'} {k.keyword}
                       </Badge>
                     ))}
                   </div>
                   {result.primaryKeywords.bonusKeywords.length > 0 && (
                     <div className="mt-2 text-xs text-muted-foreground">
-                      <span className="font-medium">Bonus:</span> {result.primaryKeywords.bonusKeywords.map(b => b.keyword).join(', ')} (+{result.primaryKeywords.bonus} pts)
+                      <span className="font-medium">Bonus:</span> {result.primaryKeywords.bonusKeywords.map(b => b.keyword).join(', ')}
                     </div>
                   )}
                 </CardContent>
@@ -474,7 +474,7 @@ export const CVComparator = () => {
                 <CardHeader className="pb-3">
                   <CardTitle className="text-sm flex items-center gap-2">
                     <Brain className="h-4 w-4 text-primary" />
-                    Compétences transversales ({result.secondaryKeywords.total.toFixed(1)}/{result.secondaryKeywords.maxTotal} pts)
+                    Compétences transversales
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -487,7 +487,7 @@ export const CVComparator = () => {
                   </div>
                   {result.secondaryKeywords.bonusKeywords.length > 0 && (
                     <div className="mt-2 text-xs text-muted-foreground">
-                      <span className="font-medium">Bonus:</span> {result.secondaryKeywords.bonusKeywords.map(b => b.keyword).join(', ')} (+{result.secondaryKeywords.bonus} pts)
+                      <span className="font-medium">Bonus:</span> {result.secondaryKeywords.bonusKeywords.map(b => b.keyword).join(', ')}
                     </div>
                   )}
                 </CardContent>
@@ -498,7 +498,7 @@ export const CVComparator = () => {
                 <CardHeader className="pb-3">
                   <CardTitle className="text-sm flex items-center gap-2">
                     <Heart className="h-4 w-4 text-primary" />
-                    Soft skills ({result.softSkills.total.toFixed(1)}/{result.softSkills.maxTotal} pts)
+                    Soft skills
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -517,7 +517,7 @@ export const CVComparator = () => {
                 <CardHeader className="pb-3">
                   <CardTitle className="text-sm flex items-center gap-2">
                     <Hash className="h-4 w-4 text-primary" />
-                    Résultats mesurables ({result.measurableResults?.score ?? 0}/{result.measurableResults?.maxScore ?? 5} pts)
+                    Résultats mesurables
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -541,7 +541,7 @@ export const CVComparator = () => {
                   <div className="flex items-center gap-2 text-sm">
                     <FileType className="h-4 w-4 text-primary shrink-0" />
                     <span className={(result.wordCount?.score ?? 0) >= 5 ? 'text-green-600 dark:text-green-400' : (result.wordCount?.score ?? 0) >= 3 ? 'text-orange-600 dark:text-orange-400' : 'text-red-500'}>
-                      {result.wordCount?.count ?? 0} mots ({result.wordCount?.score ?? 0}/{result.wordCount?.maxScore ?? 5} pts)
+                      {result.wordCount?.count ?? 0} mots
                       {(result.wordCount?.count ?? 0) < 200 && ' — CV trop court'}
                       {(result.wordCount?.count ?? 0) >= 200 && (result.wordCount?.count ?? 0) < 400 && ' — Un peu court, visez 400-1200 mots'}
                       {(result.wordCount?.count ?? 0) >= 400 && (result.wordCount?.count ?? 0) <= 1200 && ' — Longueur idéale'}
@@ -557,8 +557,8 @@ export const CVComparator = () => {
                   <CheckItem
                     ok={result.titleCheck?.found ?? false}
                     label={result.titleCheck?.found
-                      ? `Intitulé du poste présent dans le CV (+${result.titleCheck?.score ?? 0} pts)`
-                      : `Intitulé du poste non mentionné dans le CV (${result.titleCheck?.score ?? 0} pts)`}
+                      ? "Intitulé du poste présent dans le CV"
+                      : "Intitulé du poste non mentionné dans le CV"}
                   />
                 </CardContent>
               </Card>
@@ -569,8 +569,8 @@ export const CVComparator = () => {
                   <CheckItem
                     ok={!!result.contractType?.found}
                     label={result.contractType?.found
-                      ? `Type de contrat '${result.contractType.found}' mentionné (+${result.contractType?.score ?? 0} pts)`
-                      : `Type de contrat non spécifié (${result.contractType?.score ?? 0} pts)`}
+                      ? `Type de contrat '${result.contractType.found}' mentionné`
+                      : "Type de contrat non spécifié"}
                   />
                 </CardContent>
               </Card>
