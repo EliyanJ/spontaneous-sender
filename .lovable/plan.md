@@ -1,90 +1,95 @@
 
+# Amelioration du workflow d'envoi d'emails
 
-# Admin : Codes promo Stripe + Changement de plan utilisateur
+## Problemes identifies et corrections
 
-## Contexte
+### 1. Plan Plus : conserver l'acces au mode manuel
 
-Actuellement, l'admin peut uniquement reset un abonnement au plan Free. Il n'existe aucune fonctionnalite pour :
-- Creer/gerer des codes de reduction Stripe
-- Upgrader/downgrader manuellement le plan d'un utilisateur
+**Probleme** : Sur le plan Plus, quand les toggles IA sont desactives, le formulaire manuel s'affiche bien. Mais il manque de clarte UX pour l'utilisateur.
 
-## Plan d'implementation
-
-### 1. Gestion des coupons Stripe dans l'admin
-
-Ajouter un nouvel onglet **"Promos"** dans la navigation admin (`AdminLayout.tsx`) qui pointe vers une nouvelle page `AdminPromos.tsx`.
-
-Cette page permettra :
-- **Lister** les coupons existants sur Stripe (via l'API Stripe)
-- **Creer** un nouveau coupon (nom, pourcentage ou montant fixe, duree : une fois / X mois / pour toujours)
-- **Voir** les codes promo associes
-
-Tout passe par une nouvelle Edge Function `admin-manage-promos` qui utilise la cle Stripe pour interagir avec l'API Stripe coupons/promotion codes.
-
-#### Edge Function `admin-manage-promos/index.ts`
-
-Actions supportees :
-- `list` : appelle `stripe.coupons.list()` + `stripe.promotionCodes.list()` pour lister les coupons et codes promo actifs
-- `create_coupon` : appelle `stripe.coupons.create()` avec les parametres (name, percent_off ou amount_off, duration, duration_in_months)
-- `create_promo_code` : appelle `stripe.promotionCodes.create()` pour generer un code texte associe a un coupon (ex: "LAUNCH20")
-- `deactivate_promo` : appelle `stripe.promotionCodes.update()` pour desactiver un code promo
-
-La fonction verifie que l'appelant est admin via `has_role`.
-
-#### Page `AdminPromos.tsx`
-
-- Section haute : formulaire de creation de coupon (nom, type de reduction %, montant, duree)
-- Bouton pour generer un code promo textuel a partir du coupon cree
-- Liste des codes promos existants avec statut actif/inactif et bouton de desactivation
-- Les codes generes peuvent etre copies en un clic
-
-### 2. Application des coupons au checkout
-
-Modifier `create-checkout/index.ts` pour accepter un parametre optionnel `promoCode`. Si present, l'ajouter a la session Stripe via `allow_promotion_codes: true` (ou `discounts` avec un coupon specifique).
-
-L'approche la plus simple : activer `allow_promotion_codes: true` sur toutes les sessions checkout. Ainsi, les utilisateurs peuvent entrer un code promo directement sur la page Stripe Checkout sans changement cote frontend.
-
-### 3. Changement de plan admin dans la fiche utilisateur
-
-Modifier `AdminUserDetail.tsx` pour ajouter dans l'onglet "Informations" une section **Abonnement** affichant :
-- Le plan actuel (free/simple/plus)
-- Les credits restants (sends_remaining, tokens_remaining)
-- Un selecteur pour changer le plan manuellement
-
-Le changement de plan passera par une mise a jour directe de la table `subscriptions` via la Edge Function `admin-reset-user-data` en ajoutant un nouveau `resetType: "upgrade_plan"` qui accepte un `targetPlan` (free, simple, plus) et met a jour :
-- `plan_type` au nouveau plan
-- `sends_remaining` et `sends_limit` selon le plan (free=5, simple=100, plus=400)
-- `status` = 'active'
-
-Pas besoin de passer par Stripe pour un changement admin manuel (c'est du testing/debug), on modifie uniquement la BDD locale.
+**Solution** : Ajouter un texte explicatif dans la section "Options IA" indiquant clairement que desactiver les toggles permet d'utiliser le mode manuel classique. Pas de changement de logique, juste un meilleur guidage.
 
 ---
 
-## Details techniques
+### 2. Previsualisation : pouvoir retirer des entreprises
 
-### Fichiers crees
+**Probleme** : Dans l'onglet "Previsualisation", la liste des emails generes n'offre aucun bouton de suppression. On ne peut que voir/editer.
 
-- `supabase/functions/admin-manage-promos/index.ts` : Edge Function pour CRUD coupons/promos Stripe
-- `src/pages/Admin/AdminPromos.tsx` : Page admin de gestion des codes promo
+**Solution** : Ajouter un bouton "Retirer" (icone X ou Trash) sur chaque ligne d'email dans la preview. Ce bouton supprimera l'entree du tableau `generatedEmails` via un `filter()`.
 
-### Fichiers modifies
+**Fichier modifie** : `src/components/dashboard/UnifiedEmailSender.tsx`
+- Ajouter une fonction `handleRemoveGeneratedEmail(company_id)`
+- Ajouter un bouton a cote de Eye et Edit3 dans la preview list (lignes 1151-1154)
 
-- `src/pages/Admin/AdminLayout.tsx` : Ajout de l'onglet "Promos" dans la nav
-- `src/pages/Admin/index.ts` : Export de AdminPromos
-- `src/App.tsx` : Route `/admin/promos`
-- `supabase/functions/create-checkout/index.ts` : Ajout de `allow_promotion_codes: true`
-- `supabase/functions/admin-reset-user-data/index.ts` : Ajout du resetType `upgrade_plan`
-- `src/pages/Admin/AdminUserDetail.tsx` : Section abonnement avec selecteur de plan + affichage credits
+---
 
-### Aucune migration BDD necessaire
+### 3. Previsualisation : editer la lettre de motivation
 
-Tout passe par l'API Stripe pour les coupons (pas de table locale) et par la table `subscriptions` existante pour le changement de plan.
+**Probleme** : Le dialogue d'edition ne contient que l'objet et le corps du mail. La lettre de motivation n'est pas editable.
 
-### Ordre d'implementation
+**Solution** : Ajouter un champ `Textarea` supplementaire dans le dialogue d'edition pour la lettre de motivation, conditionnel a la presence de `editingEmail?.coverLetter`. Sauvegarder la valeur editee dans `generatedEmails`.
 
-1. `allow_promotion_codes: true` dans create-checkout (1 ligne)
-2. Edge Function `admin-manage-promos`
-3. Page `AdminPromos` + routing
-4. Ajout `upgrade_plan` dans `admin-reset-user-data`
-5. Section abonnement dans `AdminUserDetail`
+**Fichier modifie** : `src/components/dashboard/UnifiedEmailSender.tsx`
+- Ajouter un state `editedCoverLetter`
+- Populer ce state dans `handleEditEmail`
+- Afficher le textarea dans le Edit Dialog quand `coverLetter` est present
+- Mettre a jour `handleSaveEdit` pour inclure `coverLetter`
 
+---
+
+### 4. Emails manuels visibles en previsualisation (tous les plans)
+
+**Probleme** : Les emails manuels ne sont visibles que si on clique "Preparer". Or l'utilisateur s'attend a les voir apparaitre directement dans la preview.
+
+**Solution** : Quand l'utilisateur ajoute un email manuel et que du contenu (objet/body) est saisi, ces emails doivent etre automatiquement ajoutes a `generatedEmails` pour apparaitre en preview, sans forcer un clic sur "Preparer". Alternative plus simple : rendre le bouton "Preparer" plus visible et s'assurer que les emails manuels y sont bien inclus (ce qui est deja le cas dans le code, mais peu evident pour l'utilisateur).
+
+**Approche retenue** : On va synchroniser automatiquement les emails manuels dans la liste `generatedEmails` a chaque changement de `manualRecipients`, `subject` ou `body` quand on est en mode non-IA. Cela permettra de voir immediatement les destinataires dans la preview.
+
+**Fichier modifie** : `src/components/dashboard/UnifiedEmailSender.tsx`
+- Ajouter un `useEffect` qui met a jour `generatedEmails` pour les destinataires manuels quand `manualRecipients`, `subject`, ou `body` changent (en mode non-IA uniquement)
+
+---
+
+### 5. Ne pas re-generer les emails deja generes (merge intelligent)
+
+**Probleme** : Quand on retourne dans "Configuration" apres avoir genere, cliquer "Generer" efface tout et regenere pour toutes les entreprises selectionnees, y compris celles deja traitees.
+
+**Solution** : Implementer un systeme de merge :
+- Avant de generer, identifier les entreprises deja presentes dans `generatedEmails`
+- Ne generer que pour les **nouvelles** entreprises selectionnees (celles pas encore dans `generatedEmails`)
+- Fusionner les anciens resultats avec les nouveaux
+- Ajouter un bouton "Regenerer tout" pour forcer une re-generation complete si l'utilisateur le souhaite
+
+**Fichier modifie** : `src/components/dashboard/UnifiedEmailSender.tsx`
+- Modifier `handleGenerate` pour filtrer les entreprises deja generees
+- Merger les nouveaux resultats avec les anciens via spread operator
+- Ajouter un bouton "Regenerer tout" avec un `forceRegenerate` flag
+
+---
+
+### 6. Plan Plus : auto-generation IA pour emails manuels
+
+**Probleme** : Si un utilisateur Plus ajoute manuellement un email (sans entreprise associee), il n'y a pas de generation IA automatique pour cet email.
+
+**Solution** : Quand un utilisateur Plus a les toggles IA actives et ajoute un email manuel, generer automatiquement un objet et un contenu IA base sur le CV mais sans info entreprise specifique (generation generique). Cela passe par un appel a `generate-personalized-emails` avec un "company" fictif construit a partir de l'email.
+
+**Fichier modifie** : `src/components/dashboard/UnifiedEmailSender.tsx`
+- Dans `handleGenerate`, si `enableAIEmails` et qu'il y a des `manualRecipients`, creer des objets "company" factices et les inclure dans la generation IA
+- Fusionner les resultats des manuels avec ceux des entreprises
+
+---
+
+## Resume des modifications
+
+| Fichier | Modifications |
+|---------|-------------|
+| `UnifiedEmailSender.tsx` | Bouton retirer en preview, edition lettre de motivation, sync auto emails manuels, merge intelligent, generation IA manuels |
+
+## Ordre d'implementation
+
+1. Bouton de suppression dans la preview (rapide, critique UX)
+2. Edition de la lettre de motivation dans le dialogue
+3. Merge intelligent pour eviter la re-generation
+4. Sync automatique des emails manuels dans la preview
+5. Generation IA pour emails manuels (Plan Plus)
+6. Texte explicatif mode manuel sur le plan Plus
