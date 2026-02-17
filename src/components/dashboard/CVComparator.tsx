@@ -461,6 +461,17 @@ export const CVComparator = () => {
                       </Badge>
                     ))}
                   </div>
+                  {(() => {
+                    const missing = result.primaryKeywords.scores.filter(k => k.points === 0);
+                    const weak = result.primaryKeywords.scores.filter(k => k.points > 0 && k.points < k.maxPoints * 0.8);
+                    return (missing.length > 0 || weak.length > 0) ? (
+                      <p className="text-xs text-muted-foreground mt-2 bg-accent/50 rounded-md p-2">
+                        💡 <span className="font-medium">Conseil :</span>
+                        {missing.length > 0 && <> Ajoutez les mots-clés manquants dans votre CV : <span className="font-medium">{missing.map(k => `"${k.keyword}"`).join(', ')}</span>.</>}
+                        {weak.length > 0 && <> Renforcez la présence de : <span className="font-medium">{weak.map(k => `"${k.keyword}"`).join(', ')}</span> en les mentionnant davantage.</>}
+                      </p>
+                    ) : null;
+                  })()}
                   {result.primaryKeywords.bonusKeywords.length > 0 && (
                     <div className="mt-2 text-xs text-muted-foreground">
                       <span className="font-medium">Bonus:</span> {result.primaryKeywords.bonusKeywords.map(b => b.keyword).join(', ')}
@@ -485,6 +496,14 @@ export const CVComparator = () => {
                       </Badge>
                     ))}
                   </div>
+                  {(() => {
+                    const missing = result.secondaryKeywords.scores.filter(k => k.points === 0);
+                    return missing.length > 0 ? (
+                      <p className="text-xs text-muted-foreground mt-2 bg-accent/50 rounded-md p-2">
+                        💡 <span className="font-medium">Conseil :</span> Intégrez ces termes dans vos descriptions d'expériences : <span className="font-medium">{missing.map(k => `"${k.keyword}"`).join(', ')}</span>.
+                      </p>
+                    ) : null;
+                  })()}
                   {result.secondaryKeywords.bonusKeywords.length > 0 && (
                     <div className="mt-2 text-xs text-muted-foreground">
                       <span className="font-medium">Bonus:</span> {result.secondaryKeywords.bonusKeywords.map(b => b.keyword).join(', ')}
@@ -509,6 +528,14 @@ export const CVComparator = () => {
                       </Badge>
                     ))}
                   </div>
+                  {(() => {
+                    const missing = result.softSkills.scores.filter(s => !s.found);
+                    return missing.length > 0 ? (
+                      <p className="text-xs text-muted-foreground mt-2 bg-accent/50 rounded-md p-2">
+                        💡 <span className="font-medium">Conseil :</span> Mentionnez ces qualités dans vos expériences ou votre profil : <span className="font-medium">{missing.map(s => `"${s.skill}"`).join(', ')}</span>.
+                      </p>
+                    ) : null;
+                  })()}
                 </CardContent>
               </Card>
 
@@ -523,7 +550,7 @@ export const CVComparator = () => {
                 <CardContent>
                   <p className="text-sm text-muted-foreground">
                     {result.measurableResults?.count ?? 0} résultat(s) chiffré(s) détecté(s)
-                    {(result.measurableResults?.count ?? 0) >= 5 ? ' — Excellent !' : (result.measurableResults?.count ?? 0) >= 1 ? ' — Ajoutez plus de chiffres pour maximiser votre score.' : ' — Ajoutez des chiffres, pourcentages et KPIs dans vos expériences.'}
+                    {(result.measurableResults?.count ?? 0) >= 5 ? ' — Excellent !' : (result.measurableResults?.count ?? 0) >= 1 ? ' — Ajoutez plus de chiffres.' : ''}
                   </p>
                   {(result.measurableResults?.examples ?? []).length > 0 && (
                     <div className="flex flex-wrap gap-1 mt-2">
@@ -532,6 +559,9 @@ export const CVComparator = () => {
                       ))}
                     </div>
                   )}
+                  <p className="text-xs text-muted-foreground mt-2 bg-accent/50 rounded-md p-2">
+                    💡 <span className="font-medium">Conseil :</span> Privilégiez les pourcentages et chiffres concrets dans vos expériences. Ex : "Augmentation du trafic de <span className="font-medium">+35%</span>", "Gestion d'un budget de <span className="font-medium">50k€</span>", "Réduction des délais de <span className="font-medium">20%</span>". Les recruteurs et ATS valorisent les résultats mesurables.
+                  </p>
                 </CardContent>
               </Card>
 
