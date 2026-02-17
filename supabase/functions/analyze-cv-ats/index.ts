@@ -136,7 +136,12 @@ serve(async (req) => {
     // ===== ETAPE 1: Contact Information (10 pts) =====
     const emailFound = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/.test(cvText);
     const phoneFound = /(?:0[67]\s?(?:\d{2}\s?){4}|\+33\s?[67]\s?(?:\d{2}\s?){4}|(?:\d{2}[\s.-]){4}\d{2})/.test(cvText);
-    const addressFound = /\b\d{5}\b/.test(cvText); // French postal code
+    // Expanded address detection: postal code OR region/city names
+    const FRENCH_REGIONS = ['ile de france', 'ile-de-france', 'idf', 'auvergne', 'rhone-alpes', 'rhone alpes', 'bretagne', 'normandie', 'occitanie', 'paca', 'provence', 'nouvelle aquitaine', 'nouvelle-aquitaine', 'grand est', 'hauts de france', 'hauts-de-france', 'pays de la loire', 'centre val de loire', 'bourgogne', 'franche comte', 'corse'];
+    const FRENCH_CITIES = ['paris', 'lyon', 'marseille', 'toulouse', 'bordeaux', 'nantes', 'lille', 'strasbourg', 'montpellier', 'rennes', 'nice', 'grenoble', 'rouen', 'toulon', 'dijon', 'angers', 'nimes', 'saint-etienne', 'saint etienne', 'le mans', 'clermont-ferrand', 'clermont ferrand', 'brest', 'tours', 'amiens', 'metz', 'besancon', 'orleans', 'mulhouse', 'perpignan', 'caen', 'nancy', 'argenteuil', 'montreuil', 'saint-denis', 'saint denis', 'versailles', 'creteil', 'boulogne', 'nanterre', 'vitry', 'colombes', 'courbevoie', 'asnieres'];
+    const postalCodeFound = /\b\d{5}\b/.test(cvText);
+    const regionOrCityFound = [...FRENCH_REGIONS, ...FRENCH_CITIES].some(loc => normalizedCV.includes(normalize(loc)));
+    const addressFound = postalCodeFound || regionOrCityFound;
     const webFound = /(?:linkedin\.com|github\.com|https?:\/\/[^\s]+|www\.[^\s]+)/i.test(cvText);
     
     const contactScore = (emailFound ? 3 : 0) + (phoneFound ? 3 : 0) + (addressFound ? 2 : 0) + (webFound ? 2 : 0);
@@ -149,14 +154,18 @@ serve(async (req) => {
 
     // ===== ETAPE 3: Required sections (10 pts = 2.5 x 4) =====
     const sectionChecks = [
-      { section: 'Expériences', keywords: ['experience', 'experiences', 'experience professionnelle', 'parcours professionnel', 'postes occupes'] },
-      { section: 'Compétences', keywords: ['competence', 'competences', 'skills', 'savoir-faire', 'savoir faire', 'aptitudes'] },
-      { section: 'Formation', keywords: ['formation', 'formations', 'education', 'diplome', 'diplomes', 'cursus', 'etudes'] },
-      { section: 'Langues / Certifications', keywords: ['langue', 'langues', 'certification', 'certifications', 'certificat', 'habilitation'] },
+      { section: 'Expériences', keywords: ['experience', 'experiences', 'experience professionnelle', 'experiences professionnelles', 'parcours', 'parcours professionnel', 'postes', 'postes occupes', 'emplois', 'historique professionnel', 'career', 'work history', 'work experience'] },
+      { section: 'Compétences', keywords: ['competence', 'competences', 'skills', 'savoir-faire', 'savoir faire', 'aptitudes', 'expertise', 'outils', 'technologies', 'tech', 'hard skills', 'competences techniques', 'competences cles'] },
+      { section: 'Formation', keywords: ['formation', 'formations', 'education', 'diplome', 'diplomes', 'cursus', 'etudes', 'scolarite', 'academic', 'qualification', 'qualifications', 'parcours academique', 'parcours scolaire'] },
+      { section: 'Langues / Certifications', keywords: ['langue', 'langues', 'certification', 'certifications', 'certificat', 'habilitation', 'langues parlees', 'languages', 'certifie', 'certifiee', 'langues etrangeres', 'niveau langue', 'toeic', 'toefl', 'delf', 'dalf'] },
     ];
 
+    // Permissive detection: substring includes OR ortoflex regex
     const sectionsResult = sectionChecks.map(s => {
-      const found = s.keywords.some(kw => ortoflexFind(kw, normalizedCV));
+      const found = s.keywords.some(kw => {
+        const normalizedKw = normalize(kw);
+        return normalizedCV.includes(normalizedKw) || ortoflexFind(kw, normalizedCV);
+      });
       return { section: s.section, found, points: found ? 2.5 : 0 };
     });
     const sectionsScore = sectionsResult.reduce((sum, s) => sum + s.points, 0);

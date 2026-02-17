@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
-import { Upload, FileText, Loader2, CheckCircle2, XCircle, AlertTriangle, Target, Brain, Heart, Image, Briefcase, FileCheck, Mail, Phone, MapPin, Globe, User, Hash, FileType } from "lucide-react";
+import { Upload, FileText, Loader2, CheckCircle2, XCircle, AlertTriangle, Target, Brain, Heart, Image, Briefcase, FileCheck, Mail, Phone, MapPin, Globe, User, Hash, FileType, RotateCcw } from "lucide-react";
 
 interface AnalysisResult {
   totalScore: number;
@@ -212,122 +212,143 @@ export const CVComparator = () => {
         <p className="text-muted-foreground mt-1">Comparez un CV avec une fiche de poste pour évaluer la correspondance</p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* LEFT: Form */}
-        <div className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <Briefcase className="h-5 w-5 text-primary" />
-                Fiche de poste
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <label className="text-sm font-medium text-foreground mb-1.5 block">Intitulé du poste</label>
-                <Input
-                  placeholder="Ex: Alternance Chef de Projets Marketing H/F"
-                  value={jobTitle}
-                  onChange={(e) => setJobTitle(e.target.value)}
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium text-foreground mb-1.5 block">Description du poste</label>
-                <Textarea
-                  placeholder="Collez ici le contenu complet de la fiche de poste..."
-                  value={jobDescription}
-                  onChange={(e) => setJobDescription(e.target.value)}
-                  className="min-h-[200px]"
-                />
-              </div>
-            </CardContent>
-          </Card>
+      {/* Form - hidden when results are shown */}
+      {!result && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* LEFT: Form */}
+          <div className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <Briefcase className="h-5 w-5 text-primary" />
+                  Fiche de poste
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <label className="text-sm font-medium text-foreground mb-1.5 block">Intitulé du poste</label>
+                  <Input
+                    placeholder="Ex: Alternance Chef de Projets Marketing H/F"
+                    value={jobTitle}
+                    onChange={(e) => setJobTitle(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-foreground mb-1.5 block">Description du poste</label>
+                  <Textarea
+                    placeholder="Collez ici le contenu complet de la fiche de poste..."
+                    value={jobDescription}
+                    onChange={(e) => setJobDescription(e.target.value)}
+                    className="min-h-[200px]"
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <FileText className="h-5 w-5 text-primary" />
-                CV à analyser
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div
-                onClick={() => fileInputRef.current?.click()}
-                className="border-2 border-dashed border-border rounded-xl p-8 text-center cursor-pointer hover:border-primary/50 hover:bg-accent/30 transition-all"
-              >
-                {isParsing ? (
-                  <div className="flex flex-col items-center gap-2">
-                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                    <p className="text-sm text-muted-foreground">Extraction du texte...</p>
-                  </div>
-                ) : cvFile ? (
-                  <div className="flex flex-col items-center gap-2">
-                    <FileCheck className="h-8 w-8 text-green-500" />
-                    <p className="text-sm font-medium text-foreground">{cvFile.name}</p>
-                    <p className="text-xs text-muted-foreground">{cvText.length} caractères extraits</p>
-                  </div>
-                ) : (
-                  <div className="flex flex-col items-center gap-2">
-                    <Upload className="h-8 w-8 text-muted-foreground" />
-                    <p className="text-sm text-muted-foreground">Cliquez pour importer un CV</p>
-                    <p className="text-xs text-muted-foreground">PDF, DOCX ou TXT</p>
-                  </div>
-                )}
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept=".pdf,.docx,.txt"
-                  onChange={handleFileUpload}
-                  className="hidden"
-                />
-              </div>
+          {/* RIGHT: CV upload */}
+          <div className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <FileText className="h-5 w-5 text-primary" />
+                  CV à analyser
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div
+                  onClick={() => fileInputRef.current?.click()}
+                  className="border-2 border-dashed border-border rounded-xl p-8 text-center cursor-pointer hover:border-primary/50 hover:bg-accent/30 transition-all"
+                >
+                  {isParsing ? (
+                    <div className="flex flex-col items-center gap-2">
+                      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                      <p className="text-sm text-muted-foreground">Extraction du texte...</p>
+                    </div>
+                  ) : cvFile ? (
+                    <div className="flex flex-col items-center gap-2">
+                      <FileCheck className="h-8 w-8 text-green-500" />
+                      <p className="text-sm font-medium text-foreground">{cvFile.name}</p>
+                      <p className="text-xs text-muted-foreground">{cvText.length} caractères extraits</p>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center gap-2">
+                      <Upload className="h-8 w-8 text-muted-foreground" />
+                      <p className="text-sm text-muted-foreground">Cliquez pour importer un CV</p>
+                      <p className="text-xs text-muted-foreground">PDF, DOCX ou TXT</p>
+                    </div>
+                  )}
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".pdf,.docx,.txt"
+                    onChange={handleFileUpload}
+                    className="hidden"
+                  />
+                </div>
 
-              <Button
-                onClick={handleAnalyze}
-                disabled={isAnalyzing || !cvText || !jobDescription || !jobTitle}
-                className="w-full"
-                size="lg"
-              >
-                {isAnalyzing ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                    Analyse en cours...
-                  </>
-                ) : (
-                  <>
-                    <Target className="h-4 w-4 mr-2" />
-                    Analyser la correspondance
-                  </>
-                )}
-              </Button>
-            </CardContent>
-          </Card>
+                <Button
+                  onClick={handleAnalyze}
+                  disabled={isAnalyzing || !cvText || !jobDescription || !jobTitle}
+                  className="w-full"
+                  size="lg"
+                >
+                  {isAnalyzing ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      Analyse en cours...
+                    </>
+                  ) : (
+                    <>
+                      <Target className="h-4 w-4 mr-2" />
+                      Analyser la correspondance
+                    </>
+                  )}
+                </Button>
+              </CardContent>
+            </Card>
+
+            {!result && !isAnalyzing && (
+              <Card className="flex items-center justify-center min-h-[200px]">
+                <div className="text-center text-muted-foreground p-8">
+                  <Target className="h-16 w-16 mx-auto mb-4 opacity-30" />
+                  <p className="text-lg font-medium">En attente d'analyse</p>
+                  <p className="text-sm mt-1">Importez un CV et une fiche de poste pour commencer</p>
+                </div>
+              </Card>
+            )}
+
+            {isAnalyzing && (
+              <Card className="flex items-center justify-center min-h-[200px]">
+                <div className="text-center p-8">
+                  <Loader2 className="h-16 w-16 mx-auto mb-4 animate-spin text-primary" />
+                  <p className="text-lg font-medium text-foreground">Analyse en cours...</p>
+                  <p className="text-sm text-muted-foreground mt-1">Identification du métier et calcul du score</p>
+                </div>
+              </Card>
+            )}
+          </div>
         </div>
+      )}
 
-        {/* RIGHT: Results */}
+      {/* Results - full width when shown */}
+      {result && (
         <div className="space-y-4">
-          {!result && !isAnalyzing && (
-            <Card className="h-full flex items-center justify-center min-h-[400px]">
-              <div className="text-center text-muted-foreground p-8">
-                <Target className="h-16 w-16 mx-auto mb-4 opacity-30" />
-                <p className="text-lg font-medium">En attente d'analyse</p>
-                <p className="text-sm mt-1">Importez un CV et une fiche de poste pour commencer</p>
-              </div>
-            </Card>
-          )}
-
-          {isAnalyzing && (
-            <Card className="h-full flex items-center justify-center min-h-[400px]">
-              <div className="text-center p-8">
-                <Loader2 className="h-16 w-16 mx-auto mb-4 animate-spin text-primary" />
-                <p className="text-lg font-medium text-foreground">Analyse en cours...</p>
-                <p className="text-sm text-muted-foreground mt-1">Identification du métier et calcul du score</p>
-              </div>
-            </Card>
-          )}
-
-          {result && (
-            <div className="space-y-4">
+          <Button
+            onClick={() => {
+              setResult(null);
+              setCvText("");
+              setCvFile(null);
+              setJobTitle("");
+              setJobDescription("");
+              if (fileInputRef.current) fileInputRef.current.value = "";
+            }}
+            variant="outline"
+            className="gap-2"
+          >
+            <RotateCcw className="h-4 w-4" />
+            Nouvelle analyse
+          </Button>
               {/* Extraction Warning */}
               {result.extractionWarning && (
                 <Card className="border-orange-500/50 bg-orange-500/5">
@@ -581,10 +602,8 @@ export const CVComparator = () => {
                   </CardContent>
                 </Card>
               )}
-            </div>
-          )}
-        </div>
-      </div>
+          </div>
+        )}
     </div>
   );
 };
