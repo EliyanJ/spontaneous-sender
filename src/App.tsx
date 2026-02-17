@@ -24,7 +24,7 @@ import LegalNoticeEn from "./pages/LegalNoticeEn";
 import Pricing from "./pages/Pricing";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { AdminRoute } from "./components/AdminRoute";
-import { HelpBubble } from "./components/HelpBubble";
+import { ChatbotWidget } from "./components/ChatbotWidget";
 import { 
   AdminLayout, 
   AdminDashboard, 
@@ -95,7 +95,7 @@ const App = () => (
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
-        <HelpBubble />
+        <ChatbotWidget />
       </TooltipProvider>
     </BrowserRouter>
   </QueryClientProvider>
