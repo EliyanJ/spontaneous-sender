@@ -571,9 +571,9 @@ export const UnifiedEmailSender = () => {
         // Generate AI emails for manual recipients (Plus plan)
         if (manualRecipientsToGenerate.length > 0) {
           addLog('info', `📧 Génération IA pour ${manualRecipientsToGenerate.length} email(s) manuel(s)...`);
-          const fakeCompanies = manualRecipientsToGenerate.map(email => ({
+          const manualCompanyObjects = manualRecipientsToGenerate.map(email => ({
             id: `manual:${email}`,
-            nom: email.split('@')[1]?.split('.')[0] || email,
+            nom: 'Candidature générique',
             selected_email: email,
             website_url: null,
             ville: null,
@@ -581,9 +581,9 @@ export const UnifiedEmailSender = () => {
             siren: `manual-${email}`,
           }));
 
-          for (let i = 0; i < fakeCompanies.length; i += batchSize) {
-            const batch = fakeCompanies.slice(i, i + batchSize);
-            setCurrentStep(`Emails manuels ${i + 1}-${Math.min(i + batchSize, fakeCompanies.length)}`);
+          for (let i = 0; i < manualCompanyObjects.length; i += batchSize) {
+            const batch = manualCompanyObjects.slice(i, i + batchSize);
+            setCurrentStep(`Emails manuels ${i + 1}-${Math.min(i + batchSize, manualCompanyObjects.length)}`);
 
             const { data, error } = await supabase.functions.invoke("generate-personalized-emails", {
               body: { companies: batch, template: template || null, cvContent: cvContent || null, subjectType: selectedSubjectType, tone: selectedTone },
@@ -593,7 +593,6 @@ export const UnifiedEmailSender = () => {
             if (error) {
               batch.forEach(c => allResults.push({ company_id: c.id, company_name: c.nom, company_email: c.selected_email || undefined, success: false, error: error.message }));
             } else if (data?.results) {
-              // Fix company_email for manual results
               const results = data.results.map((r: GeneratedEmail, idx: number) => ({
                 ...r,
                 company_email: batch[idx]?.selected_email || r.company_email,
@@ -601,7 +600,7 @@ export const UnifiedEmailSender = () => {
               allResults.push(...results);
             }
 
-            if (i + batchSize < fakeCompanies.length) await new Promise(r => setTimeout(r, 1000));
+            if (i + batchSize < manualCompanyObjects.length) await new Promise(r => setTimeout(r, 1000));
           }
         }
       } else {
