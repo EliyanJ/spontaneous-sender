@@ -1,80 +1,50 @@
 
-# Plan : CMS ameliore + Blog avec direction artistique Cronos
+# Ameliorations de la page de connexion
 
-## Problemes identifies
+## 1. Message d'erreur inline (au lieu du toast)
 
-1. **L'editeur CMS actuel** est un simple editeur texte avec une mini-preview dans une sidebar -- pas de preview live au centre style Webflow/Shopify
-2. **La page blog** (`BlogPost.tsx`) est toute blanche sans header Cronos, sans navigation, sans footer
-3. **Le slug est prefixe /blog/** meme pour des pages qui ne sont pas des articles
-4. **Pas de distinction** entre "article de blog" et "page custom" dans le CMS
+**Probleme** : Quand la connexion echoue, le message "Invalid login credentials" apparait en toast en bas a droite, en anglais.
 
-## Changements prevus
-
-### 1. Refonte de l'editeur CMS (`AdminPageEditor.tsx`)
-
-Nouveau layout style Webflow : **preview live au centre** avec panneaux de configuration sur les cotes.
-
-Structure en 3 colonnes :
-- **Gauche** : barre d'outils d'edition (formatage, couleurs, liens, ancres, images) -- verticale et compacte
-- **Centre** : iframe/preview live qui montre le rendu exact de la page avec le header et footer Cronos appliques. L'edition se fait directement dans cette preview (contentEditable dans un cadre qui simule le rendu final)
-- **Droite** : panneau de proprietes (titre, slug, type de page, SEO, statut)
-
-Ajout d'un champ **type de page** :
-- `blog` : article de blog, accessible sur `/blog/slug`
-- `page` : page custom, accessible sur `/p/slug`
-
-Le slug sera prefixe automatiquement selon le type choisi.
-
-### 2. Ajout d'une colonne `page_type` a la table `cms_pages`
-
-Migration SQL pour ajouter :
-```text
-ALTER TABLE cms_pages ADD COLUMN page_type text NOT NULL DEFAULT 'blog';
-```
-
-Valeurs possibles : `blog`, `page`
-
-### 3. Refonte de la page blog publique (`BlogPost.tsx`)
-
-Integrer la direction artistique Cronos :
-- **Header** : logo Cronos + navigation (Accueil, Aide, Connexion) avec le meme style que Landing.tsx
-- **Background** : gradients subtils comme sur la landing (primary/5, primary/10 blur)
-- **Footer** : identique a celui de Landing.tsx (logo, liens legaux, copyright)
-- **Contenu** : centre dans un container max-w-3xl avec typographie prose coherente
-- **Theme** : support dark/light mode natif
-
-### 4. Route pour les pages custom
-
-Ajouter une route `/p/:slug` dans `App.tsx` qui utilise le meme composant `BlogPost` (ou un nouveau `DynamicPage.tsx`) mais sans l'affichage "article" (date, etc.)
-
-### 5. Verification des chemins d'acces
-
-- Articles de blog : `getcronos.fr/blog/mon-article`
-- Pages custom : `getcronos.fr/p/ma-page`
-- L'apercu Google dans l'editeur refletera le bon prefixe selon le type
-
----
-
-## Details techniques
+**Solution** : Ajouter un state `loginError` dans `Login.tsx` et `AuthDialog.tsx`. Quand `signInWithPassword` retourne une erreur, afficher un message traduit ("Adresse email ou mot de passe incorrect") directement sous les champs email/mot de passe, dans un encadre rouge visible.
 
 ### Fichiers modifies
 
-- **`src/pages/Admin/AdminPageEditor.tsx`** : Refonte complete du layout. Preview live au centre dans un conteneur qui reproduit le header/footer Cronos. Barre d'outils verticale a gauche. Panneau proprietes (titre, slug, type, SEO) a droite. Le contentEditable est place dans un cadre qui simule la page finale (avec le background gradient, le header et le footer visibles en preview).
+- **`src/pages/Login.tsx`** :
+  - Ajouter un state `loginError: string | null`
+  - Dans `handleEmailLogin`, remplacer `toast.error(error.message)` par `setLoginError("Adresse email ou mot de passe incorrect")`
+  - Ajouter un bloc d'erreur rouge entre les champs et le bouton de soumission
+  - Effacer l'erreur quand l'utilisateur modifie email ou mot de passe
 
-- **`src/pages/BlogPost.tsx`** : Ajout du header Cronos (logo + nav avec liens Accueil, Aide, Tarifs, Connexion), du background gradient, et du footer identique a Landing.tsx. Distinction entre type `blog` (affiche date, titre article) et type `page` (affiche juste le contenu).
+- **`src/components/AuthDialog.tsx`** :
+  - Meme logique : state `loginError`, affichage inline, traduction du message
 
-- **`src/pages/Admin/AdminCMS.tsx`** : Ajout d'un badge indiquant le type (Blog / Page) a cote du statut. Ajout de filtres par type.
+## 2. Email de reinitialisation en francais
 
-- **`src/App.tsx`** : Ajout de la route `/p/:slug` pointant vers le meme composant BlogPost avec un prop pour differencier.
+**Probleme** : L'email de reinitialisation de mot de passe est envoye par le systeme d'authentification interne en anglais ("Reset your password...").
 
-### Migration base de donnees
+**Solution** : Creer une edge function `custom-reset-password` qui :
+1. Genere le lien de reinitialisation via l'API admin
+2. Envoie l'email en francais via Resend (deja configure avec `noreply@getcronos.fr`)
+3. Utilise le meme design que les autres emails Cronos (header gradient, footer, branding)
 
-Ajout de la colonne `page_type` sur `cms_pages` avec valeur par defaut `'blog'` pour ne pas casser les pages existantes.
+### Fichiers modifies/crees
 
-### Points cles UX
+- **`supabase/functions/custom-reset-password/index.ts`** (nouveau) :
+  - Recoit l'email de l'utilisateur
+  - Utilise l'API admin Supabase pour generer un lien de reinitialisation (`generateLink` type `recovery`)
+  - Envoie un email en francais via Resend avec le template Cronos (header gradient violet, bouton "Reinitialiser mon mot de passe", footer avec liens legaux)
+  - Template du mail :
+    - Sujet : "Reinitialiser votre mot de passe Cronos"
+    - Corps : "Bonjour, Vous avez demande la reinitialisation de votre mot de passe. Cliquez sur le bouton ci-dessous pour en choisir un nouveau. [Bouton] Si vous n'etes pas a l'origine de cette demande, ignorez cet email."
 
-- La preview centrale montre le rendu reel avec header + footer + gradients -- on voit exactement ce que le visiteur verra
-- L'edition se fait directement dans la preview (contentEditable) -- pas besoin d'aller dans un onglet separe
-- La barre d'outils de formatage est toujours visible sur le cote gauche
-- Les proprietes SEO et parametres de publication sont accessibles dans le panneau droit
-- Le tout est responsive : sur mobile la preview prend toute la largeur et les panneaux passent en dessous
+- **`supabase/config.toml`** : Ajouter `[functions.custom-reset-password]` avec `verify_jwt = false`
+
+- **`src/pages/ForgotPassword.tsx`** :
+  - Remplacer l'appel `supabase.auth.resetPasswordForEmail()` par un appel a la nouvelle edge function `custom-reset-password`
+  - Garder le meme comportement UI (ecran de succes, etc.)
+
+### Details techniques
+
+- La fonction utilise `SUPABASE_SERVICE_ROLE_KEY` pour `generateLink` (deja disponible dans les edge functions)
+- L'email est envoye via Resend avec le meme `FROM_EMAIL` que les autres emails systeme (`Cronos <noreply@getcronos.fr>`)
+- Le lien de reinitialisation redirige vers `/reset-password` comme actuellement
