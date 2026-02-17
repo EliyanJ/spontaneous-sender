@@ -80,6 +80,7 @@ serve(async (req) => {
         },
       ],
       mode: mode,
+      allow_promotion_codes: true,
       success_url: `${req.headers.get("origin")}/dashboard?payment=success`,
       cancel_url: `${req.headers.get("origin")}/dashboard?payment=canceled`,
       metadata: {

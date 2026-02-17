@@ -9,7 +9,8 @@ import {
   MessageSquare,
   Database,
   FileText,
-  Search
+  Search,
+  Tag
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import cronosLogo from "@/assets/cronos-logo.png";
@@ -21,6 +22,7 @@ const adminNavItems = [
   { title: "Utilisateurs", icon: Users, path: "/admin/users" },
   { title: "Data", icon: Database, path: "/admin/data" },
   { title: "Tickets", icon: MessageSquare, path: "/admin/tickets" },
+  { title: "Promos", icon: Tag, path: "/admin/promos" },
   { title: "Équipe", icon: UserCog, path: "/admin/team" },
   { title: "CMS", icon: FileText, path: "/admin/cms" },
   { title: "SEO", icon: Search, path: "/admin/seo" },

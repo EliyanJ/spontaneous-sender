@@ -6,12 +6,13 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ArrowLeft, Building2, Mail, Search, Clock, Activity, ExternalLink, Globe, Trash2, RotateCcw, AlertTriangle } from "lucide-react";
+import { ArrowLeft, Building2, Mail, Search, Clock, Activity, ExternalLink, Globe, Trash2, RotateCcw, AlertTriangle, CreditCard } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 
 interface UserProfile {
@@ -57,6 +58,14 @@ interface EmailCampaign {
   response_category: string | null;
 }
 
+interface Subscription {
+  plan_type: string;
+  sends_remaining: number;
+  sends_limit: number;
+  tokens_remaining: number;
+  status: string;
+}
+
 export const AdminUserDetail = () => {
   const { userId } = useParams<{ userId: string }>();
   const navigate = useNavigate();
@@ -66,6 +75,7 @@ export const AdminUserDetail = () => {
   const [activities, setActivities] = useState<ActivityLog[]>([]);
   const [companies, setCompanies] = useState<Company[]>([]);
   const [emails, setEmails] = useState<EmailCampaign[]>([]);
+  const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [loading, setLoading] = useState(true);
 
   // Delete/Reset state
@@ -74,6 +84,7 @@ export const AdminUserDetail = () => {
   const [resetType, setResetType] = useState<'gmail' | 'companies' | 'subscription'>('gmail');
   const [confirmEmail, setConfirmEmail] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
+  const [changingPlan, setChangingPlan] = useState(false);
 
   useEffect(() => {
     if (!userId) return;
@@ -136,6 +147,13 @@ export const AdminUserDetail = () => {
 
         setEmails(emailsData || []);
 
+        // Fetch subscription
+        const { data: subData } = await supabase
+          .from('subscriptions')
+          .select('plan_type, sends_remaining, sends_limit, tokens_remaining, status')
+          .eq('user_id', userId)
+          .single();
+        setSubscription(subData);
         const { data: { session } } = await supabase.auth.getSession();
         if (session) {
           const { data } = await supabase.functions.invoke('admin-get-users', {
@@ -209,6 +227,36 @@ export const AdminUserDetail = () => {
       toast.error(error.message || "Erreur lors du reset");
     } finally {
       setActionLoading(false);
+    }
+  };
+
+  const handleChangePlan = async (newPlan: string) => {
+    setChangingPlan(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("Not authenticated");
+
+      const { data, error } = await supabase.functions.invoke('admin-reset-user-data', {
+        body: { userId, resetType: 'upgrade_plan', targetPlan: newPlan },
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
+
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      const planLabels: Record<string, string> = { free: 'Free', simple: 'Simple', plus: 'Plus' };
+      toast.success(`Plan changé en ${planLabels[newPlan] || newPlan}`);
+      // Refresh subscription data
+      const { data: subData } = await supabase
+        .from('subscriptions')
+        .select('plan_type, sends_remaining, sends_limit, tokens_remaining, status')
+        .eq('user_id', userId)
+        .single();
+      setSubscription(subData);
+    } catch (error: any) {
+      toast.error(error.message || "Erreur lors du changement de plan");
+    } finally {
+      setChangingPlan(false);
     }
   };
 
@@ -548,6 +596,58 @@ export const AdminUserDetail = () => {
               </div>
             </CardContent>
           </Card>
+
+          {/* Subscription management */}
+          {subscription && (
+            <Card className="bg-card/50 border-border/50 mt-4">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <CreditCard className="h-5 w-5 text-primary" />
+                  Abonnement
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Plan actuel</p>
+                    <Badge className="mt-1 capitalize">{subscription.plan_type}</Badge>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Envois restants</p>
+                    <p className="font-medium">{subscription.sends_remaining} / {subscription.sends_limit}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Tokens restants</p>
+                    <p className="font-medium">{subscription.tokens_remaining}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Statut</p>
+                    <Badge variant="outline" className="mt-1 capitalize">{subscription.status}</Badge>
+                  </div>
+                </div>
+                <div className="pt-4 border-t border-border/50">
+                  <Label className="mb-2 block">Changer le plan</Label>
+                  <div className="flex gap-2">
+                    {['free', 'simple', 'plus'].map((plan) => (
+                      <Button
+                        key={plan}
+                        variant={subscription.plan_type === plan ? "default" : "outline"}
+                        size="sm"
+                        disabled={changingPlan || subscription.plan_type === plan}
+                        onClick={() => handleChangePlan(plan)}
+                        className="capitalize"
+                      >
+                        {plan}
+                      </Button>
+                    ))}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Le changement met à jour le plan et réinitialise les crédits d'envoi selon le plan choisi.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
       </Tabs>
 
