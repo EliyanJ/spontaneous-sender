@@ -7,33 +7,26 @@ const corsHeaders = {
 };
 
 // ===== ORTOFLEX =====
-// Normalize: lowercase + remove accents
 function normalize(str: string): string {
   return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
 }
 
-// Generate ORTOFLEX variants (plural/singular tolerance)
 function ortoflexVariants(word: string): string[] {
   const n = normalize(word);
   const variants = new Set<string>();
   variants.add(n);
-  // Add/remove trailing 's'
   if (n.endsWith('s')) variants.add(n.slice(0, -1));
   else variants.add(n + 's');
-  // Add/remove trailing 'es'
   if (n.endsWith('es')) variants.add(n.slice(0, -2));
   else variants.add(n + 'es');
-  // feminine 'e'
   if (n.endsWith('e')) variants.add(n.slice(0, -1));
   else variants.add(n + 'e');
   return [...variants];
 }
 
-// Check if a word/phrase is found in normalized text using ORTOFLEX
 function ortoflexFind(keyword: string, normalizedText: string): boolean {
   const variants = ortoflexVariants(keyword);
   for (const v of variants) {
-    // Use word boundary-ish matching
     const escaped = v.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const regex = new RegExp(`(?:^|[\\s,;.!?()\\[\\]/\\-'])${escaped}(?:$|[\\s,;.!?()\\[\\]/\\-'])`, 'i');
     if (regex.test(normalizedText)) return true;
@@ -41,7 +34,6 @@ function ortoflexFind(keyword: string, normalizedText: string): boolean {
   return false;
 }
 
-// Count occurrences of a keyword in text (case-insensitive, accent-insensitive)
 function countOccurrences(keyword: string, normalizedText: string): number {
   const variants = ortoflexVariants(keyword);
   let maxCount = 0;
@@ -54,7 +46,6 @@ function countOccurrences(keyword: string, normalizedText: string): number {
   return maxCount;
 }
 
-// Find position of keyword in text for proximity check
 function findPosition(keyword: string, normalizedText: string): number {
   const variants = ortoflexVariants(keyword);
   for (const v of variants) {
@@ -64,14 +55,47 @@ function findPosition(keyword: string, normalizedText: string): number {
   return -1;
 }
 
-// Short-word exceptions for job title filtering
 const SHORT_WORD_EXCEPTIONS = new Set(['ia', 'rh', 'it', 'qa', 'ux', 'ui', 'bi', 'si', 'rn', 'pm', 'po', 'vp', 'dg', 'dsi', 'dpo', 'cto', 'cfo', 'ceo']);
-
-// Contract type keywords
 const CONTRACT_TYPES = ['Stage', 'CDI', 'CDD', 'Alternance', 'Apprentissage', 'Professionnalisation'];
 
-// Required sections
-const REQUIRED_SECTIONS = ['Expériences', 'Compétences', 'Formation'];
+// French stop words to filter out when extracting keywords from job description
+const FRENCH_STOP_WORDS = new Set([
+  'dans', 'avec', 'pour', 'plus', 'nous', 'vous', 'leur', 'sont', 'sera', 'etre', 'avoir', 'fait', 'faire',
+  'comme', 'tout', 'tous', 'toute', 'toutes', 'quel', 'quelle', 'quels', 'quelles', 'mais', 'donc', 'puis',
+  'aussi', 'bien', 'tres', 'cette', 'cela', 'ceci', 'chez', 'entre', 'vers', 'sous', 'avant', 'apres',
+  'depuis', 'lors', 'notre', 'votre', 'leurs', 'elle', 'elles', 'dont', 'auquel', 'auxquels', 'autre',
+  'autres', 'meme', 'memes', 'sans', 'sous', 'encore', 'ainsi', 'tant', 'moins', 'peut', 'doit',
+  'etant', 'ayant', 'quelques', 'chaque', 'plusieurs', 'certains', 'certaines', 'devra', 'devrez',
+  'serez', 'mission', 'missions', 'poste', 'profil', 'entreprise', 'societe', 'equipe', 'candidat',
+  'experience', 'annee', 'annees', 'minimum', 'maximum', 'environ', 'recherche', 'recherchons',
+  'competences', 'competence', 'formation', 'niveau', 'connaissance', 'connaissances', 'capacite',
+  'capacites', 'bonne', 'bonnes', 'premiere', 'premier', 'travail', 'activite', 'activites',
+  'type', 'temps', 'plein', 'lieu', 'date', 'debut', 'contrat', 'salaire', 'remuneration',
+  'avantages', 'avantage', 'offre', 'description', 'responsabilites', 'responsabilite',
+  'charge', 'projet', 'projets', 'mise', 'place', 'cadre', 'sein', 'rattache',
+]);
+
+// Extract significant keywords directly from text
+function extractKeywordsFromText(text: string): Map<string, number> {
+  const normalized = normalize(text);
+  const words = normalized.split(/[\s,;.!?()[\]/\-'"]+/).filter(w => w.length >= 4);
+  const wordCounts = new Map<string, number>();
+  
+  for (const word of words) {
+    if (FRENCH_STOP_WORDS.has(word)) continue;
+    if (/^\d+$/.test(word)) continue;
+    wordCounts.set(word, (wordCounts.get(word) || 0) + 1);
+  }
+  
+  return wordCounts;
+}
+
+// Generous scoring formula: present >= 1 time = min 50% of points
+function generousScore(cvCount: number, jobCount: number, maxPoints: number): number {
+  if (cvCount === 0) return 0;
+  if (jobCount === 0) return maxPoints * 0.5;
+  return Math.round((0.5 + 0.5 * Math.min(1, cvCount / jobCount)) * maxPoints * 10) / 10;
+}
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -105,170 +129,263 @@ serve(async (req) => {
     const normalizedJob = normalize(jobDescription);
     const normalizedTitle = normalize(jobTitle);
 
-    // ===== ETAPE 10: Quality check =====
+    // ===== ETAPE 0: Quality check =====
     const charCountNoSpaces = cvText.replace(/\s/g, '').length;
     const extractionWarning = charCountNoSpaces < 100;
 
-    // ===== ETAPE 1: Required sections check =====
-    const sectionsCheck = REQUIRED_SECTIONS.map(section => {
-      const found = ortoflexFind(section, normalizedCV);
-      return { section, found, penalty: found ? 0 : -5 };
-    });
-    const sectionsPenalty = sectionsCheck.reduce((sum, s) => sum + s.penalty, 0);
-
-    // ===== ETAPE 2: Identify profession =====
-    const { data: professions } = await supabase.from('ats_professions').select('*');
-    if (!professions || professions.length === 0) {
-      return new Response(JSON.stringify({ error: 'No professions in database' }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-    }
-
-    // 1st check: count keyword matches in job description for each profession
-    const professionScores = professions.map(prof => {
-      const primaryKws = (prof.primary_keywords as string[]) || [];
-      const secondaryKws = (prof.secondary_keywords as string[]) || [];
-      let score = 0;
-      for (const kw of primaryKws) {
-        if (ortoflexFind(kw, normalizedJob)) score += 2;
-      }
-      for (const kw of secondaryKws) {
-        if (ortoflexFind(kw, normalizedJob)) score += 1;
-      }
-      return { profession: prof, score };
-    });
-
-    professionScores.sort((a, b) => b.score - a.score);
-
-    // 2nd check: cross-check with job title
-    const topScore = professionScores[0].score;
-    const topCandidates = professionScores.filter(p => p.score >= topScore * 0.8 && p.score > 0);
+    // ===== ETAPE 1: Contact Information (10 pts) =====
+    const emailFound = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/.test(cvText);
+    const phoneFound = /(?:0[67]\s?(?:\d{2}\s?){4}|\+33\s?[67]\s?(?:\d{2}\s?){4}|(?:\d{2}[\s.-]){4}\d{2})/.test(cvText);
+    const addressFound = /\b\d{5}\b/.test(cvText); // French postal code
+    const webFound = /(?:linkedin\.com|github\.com|https?:\/\/[^\s]+|www\.[^\s]+)/i.test(cvText);
     
-    let selectedProfession = topCandidates[0];
-    let isPartialMatch = false;
+    const contactScore = (emailFound ? 3 : 0) + (phoneFound ? 3 : 0) + (addressFound ? 2 : 0) + (webFound ? 2 : 0);
+    const contactDetails = { email: emailFound, phone: phoneFound, address: addressFound, web: webFound, score: contactScore, maxScore: 10 };
 
-    // Check if job title contains profession name
-    for (const candidate of topCandidates) {
-      const profNameNorm = normalize(candidate.profession.name);
-      if (normalizedTitle.includes(profNameNorm) || profNameNorm.includes(normalizedTitle)) {
-        selectedProfession = candidate;
-        break;
+    // ===== ETAPE 2: Resume/Profile section (5 pts) =====
+    const profileSectionKeywords = ['profil', 'resume', 'a propos', 'objectif', 'presentation', 'synthese', 'about me', 'summary'];
+    const profileFound = profileSectionKeywords.some(kw => ortoflexFind(kw, normalizedCV));
+    const profileScore = profileFound ? 5 : 0;
+
+    // ===== ETAPE 3: Required sections (10 pts = 2.5 x 4) =====
+    const sectionChecks = [
+      { section: 'Expériences', keywords: ['experience', 'experiences', 'experience professionnelle', 'parcours professionnel', 'postes occupes'] },
+      { section: 'Compétences', keywords: ['competence', 'competences', 'skills', 'savoir-faire', 'savoir faire', 'aptitudes'] },
+      { section: 'Formation', keywords: ['formation', 'formations', 'education', 'diplome', 'diplomes', 'cursus', 'etudes'] },
+      { section: 'Langues / Certifications', keywords: ['langue', 'langues', 'certification', 'certifications', 'certificat', 'habilitation'] },
+    ];
+
+    const sectionsResult = sectionChecks.map(s => {
+      const found = s.keywords.some(kw => ortoflexFind(kw, normalizedCV));
+      return { section: s.section, found, points: found ? 2.5 : 0 };
+    });
+    const sectionsScore = sectionsResult.reduce((sum, s) => sum + s.points, 0);
+
+    // ===== ETAPE 4: Identify profession =====
+    const { data: professions } = await supabase.from('ats_professions').select('*');
+    
+    let profession = null;
+    let isPartialMatch = false;
+    let professionConfidence = 0;
+    let dbPrimaryKeywords: string[] = [];
+    let dbSecondaryKeywords: string[] = [];
+    let dbSoftSkills: string[] = [];
+
+    if (professions && professions.length > 0) {
+      const professionScores = professions.map(prof => {
+        const primaryKws = (prof.primary_keywords as string[]) || [];
+        const secondaryKws = (prof.secondary_keywords as string[]) || [];
+        let score = 0;
+        for (const kw of primaryKws) {
+          if (ortoflexFind(kw, normalizedJob)) score += 2;
+        }
+        for (const kw of secondaryKws) {
+          if (ortoflexFind(kw, normalizedJob)) score += 1;
+        }
+        return { profession: prof, score };
+      });
+
+      professionScores.sort((a, b) => b.score - a.score);
+      const topScore = professionScores[0].score;
+      const topCandidates = professionScores.filter(p => p.score >= topScore * 0.8 && p.score > 0);
+      
+      if (topCandidates.length > 0) {
+        let selected = topCandidates[0];
+        for (const candidate of topCandidates) {
+          const profNameNorm = normalize(candidate.profession.name);
+          if (normalizedTitle.includes(profNameNorm) || profNameNorm.includes(normalizedTitle)) {
+            selected = candidate;
+            break;
+          }
+        }
+        if (topCandidates.length > 1 && selected === topCandidates[0]) {
+          isPartialMatch = true;
+        }
+        profession = selected.profession;
+        professionConfidence = selected.score;
+        dbPrimaryKeywords = (profession.primary_keywords as string[]) || [];
+        dbSecondaryKeywords = (profession.secondary_keywords as string[]) || [];
+        dbSoftSkills = (profession.soft_skills as string[]) || [];
       }
     }
 
-    if (topCandidates.length > 1 && selectedProfession === topCandidates[0]) {
-      // Ambiguity - pick random among top candidates
-      selectedProfession = topCandidates[Math.floor(Math.random() * Math.min(topCandidates.length, 3))];
-      isPartialMatch = true;
+    // ===== ETAPE 5: HYBRID Hard skills extraction (30 pts) =====
+    // Extract keywords directly from job description
+    const jobKeywords = extractKeywordsFromText(jobDescription);
+    
+    // Combine with DB keywords - DB keywords that appear in job get priority
+    const hybridPrimaryMap = new Map<string, { jobCount: number; fromDb: boolean }>();
+    
+    // Add DB primary keywords found in job
+    for (const kw of dbPrimaryKeywords) {
+      const jc = countOccurrences(kw, normalizedJob);
+      if (jc > 0) {
+        hybridPrimaryMap.set(normalize(kw), { jobCount: jc * 2, fromDb: true }); // double weight for DB matches
+      }
+    }
+    
+    // Add top extracted keywords from job description (not already in DB set)
+    const sortedJobKw = [...jobKeywords.entries()].sort((a, b) => b[1] - a[1]);
+    for (const [word, count] of sortedJobKw) {
+      if (hybridPrimaryMap.size >= 20) break;
+      if (!hybridPrimaryMap.has(word) && count >= 2) {
+        hybridPrimaryMap.set(word, { jobCount: count, fromDb: false });
+      }
     }
 
-    const profession = selectedProfession.profession;
-    const primaryKeywords: string[] = (profession.primary_keywords as string[]) || [];
-    const secondaryKeywords: string[] = (profession.secondary_keywords as string[]) || [];
-    const softSkills: string[] = (profession.soft_skills as string[]) || [];
-
-    // ===== ETAPE 3: Primary keywords scoring (50 points) =====
-    // Rank primary keywords by occurrences in job description
-    const primaryRanked = primaryKeywords
-      .map(kw => ({ keyword: kw, jobCount: countOccurrences(kw, normalizedJob), cvCount: countOccurrences(kw, normalizedCV) }))
-      .filter(k => k.jobCount > 0)
+    // Rank and score top 10
+    const hybridPrimaryRanked = [...hybridPrimaryMap.entries()]
+      .map(([kw, data]) => ({
+        keyword: kw,
+        jobCount: data.jobCount,
+        cvCount: countOccurrences(kw, normalizedCV),
+        fromDb: data.fromDb,
+      }))
       .sort((a, b) => b.jobCount - a.jobCount);
 
-    const top10Primary = primaryRanked.slice(0, 10);
-    const bonusPrimary = primaryRanked.slice(10);
+    const top10Primary = hybridPrimaryRanked.slice(0, 10);
+    const bonusPrimary = hybridPrimaryRanked.slice(10);
 
     const primaryScores = top10Primary.map(k => {
-      const ratio = k.jobCount > 0 ? Math.min(1, k.cvCount / k.jobCount) : 0;
-      const points = Math.round(ratio * 5 * 10) / 10; // 1 decimal
-      return { keyword: k.keyword, jobCount: k.jobCount, cvCount: k.cvCount, ratio, points, maxPoints: 5 };
+      const points = generousScore(k.cvCount, k.jobCount, 3); // 3 pts each, 10 x 3 = 30
+      return { keyword: k.keyword, jobCount: k.jobCount, cvCount: k.cvCount, points, maxPoints: 3 };
     });
-
-    // Fill up to 10 with 0-score entries
-    while (primaryScores.length < 10) {
-      const nextKw = primaryKeywords.find(kw => !primaryScores.some(p => normalize(p.keyword) === normalize(kw)) && !bonusPrimary.some(b => normalize(b.keyword) === normalize(kw)));
-      if (nextKw) {
-        primaryScores.push({ keyword: nextKw, jobCount: 0, cvCount: 0, ratio: 0, points: 0, maxPoints: 5 });
-      } else break;
-    }
 
     const primaryTotal = primaryScores.reduce((sum, k) => sum + k.points, 0);
 
-    // Bonus for keywords beyond top 10
     let primaryBonus = 0;
     const primaryBonusDetails: Array<{ keyword: string; bonus: number }> = [];
     for (const k of bonusPrimary) {
-      if (k.cvCount >= 1 && k.jobCount >= 1) {
+      if (k.cvCount >= 1) {
         primaryBonus += 1.5;
         primaryBonusDetails.push({ keyword: k.keyword, bonus: 1.5 });
       }
     }
 
-    // ===== ETAPE 4: Secondary keywords scoring (25 points) =====
-    const secondaryRanked = secondaryKeywords
-      .map(kw => ({ keyword: kw, jobCount: countOccurrences(kw, normalizedJob), cvCount: countOccurrences(kw, normalizedCV) }))
-      .filter(k => k.jobCount > 0)
+    // ===== ETAPE 6: Secondary keywords (15 pts) =====
+    const hybridSecondaryMap = new Map<string, number>();
+    
+    for (const kw of dbSecondaryKeywords) {
+      const jc = countOccurrences(kw, normalizedJob);
+      if (jc > 0) {
+        hybridSecondaryMap.set(normalize(kw), jc);
+      }
+    }
+    
+    // Also add some extracted keywords not already used
+    for (const [word, count] of sortedJobKw) {
+      if (hybridSecondaryMap.size >= 10) break;
+      if (!hybridPrimaryMap.has(word) && !hybridSecondaryMap.has(word) && count >= 1) {
+        hybridSecondaryMap.set(word, count);
+      }
+    }
+
+    const secondaryRanked = [...hybridSecondaryMap.entries()]
+      .map(([kw, jobCount]) => ({
+        keyword: kw,
+        jobCount,
+        cvCount: countOccurrences(kw, normalizedCV),
+      }))
       .sort((a, b) => b.jobCount - a.jobCount);
 
     const top5Secondary = secondaryRanked.slice(0, 5);
     const bonusSecondary = secondaryRanked.slice(5);
 
     const secondaryScores = top5Secondary.map(k => {
-      const ratio = k.jobCount > 0 ? Math.min(1, k.cvCount / k.jobCount) : 0;
-      const points = Math.round(ratio * 5 * 10) / 10;
-      return { keyword: k.keyword, jobCount: k.jobCount, cvCount: k.cvCount, ratio, points, maxPoints: 5 };
+      const points = generousScore(k.cvCount, k.jobCount, 3); // 3 pts each, 5 x 3 = 15
+      return { keyword: k.keyword, jobCount: k.jobCount, cvCount: k.cvCount, points, maxPoints: 3 };
     });
-
-    while (secondaryScores.length < 5) {
-      const nextKw = secondaryKeywords.find(kw => !secondaryScores.some(p => normalize(p.keyword) === normalize(kw)) && !bonusSecondary.some(b => normalize(b.keyword) === normalize(kw)));
-      if (nextKw) {
-        secondaryScores.push({ keyword: nextKw, jobCount: 0, cvCount: 0, ratio: 0, points: 0, maxPoints: 5 });
-      } else break;
-    }
 
     const secondaryTotal = secondaryScores.reduce((sum, k) => sum + k.points, 0);
 
     let secondaryBonus = 0;
     const secondaryBonusDetails: Array<{ keyword: string; bonus: number }> = [];
     for (const k of bonusSecondary) {
-      if (k.cvCount >= 1 && k.jobCount >= 1) {
+      if (k.cvCount >= 1) {
         secondaryBonus += 1.5;
         secondaryBonusDetails.push({ keyword: k.keyword, bonus: 1.5 });
       }
     }
 
-    // ===== ETAPE 5: Soft skills scoring (14 points) =====
-    const softSkillsInJob = softSkills.filter(sk => ortoflexFind(sk, normalizedJob));
-    const softSkillsFound = softSkills.filter(sk => ortoflexFind(sk, normalizedCV));
+    // ===== ETAPE 7: Soft skills (10 pts) =====
+    // Combine DB soft skills with common ones
+    const commonSoftSkills = [
+      'communication', 'autonomie', 'rigueur', 'organisation', 'adaptabilite', 'creativite',
+      'esprit equipe', 'leadership', 'motivation', 'proactivite', 'gestion stress',
+      'resolution problemes', 'collaboration', 'ecoute', 'initiative', 'polyvalence',
+    ];
+    const allSoftSkills = [...new Set([...dbSoftSkills, ...commonSoftSkills])];
+    const relevantSoftSkills = allSoftSkills.filter(sk => ortoflexFind(sk, normalizedJob));
+    const softSkillsToCheck = relevantSoftSkills.length > 0 ? relevantSoftSkills : allSoftSkills.slice(0, 8);
     
-    // Distribute 14 points across soft skills found in both job and CV
-    const relevantSoftSkills = softSkillsInJob.length > 0 ? softSkillsInJob : softSkills;
-    const pointsPerSoftSkill = relevantSoftSkills.length > 0 ? 14 / relevantSoftSkills.length : 0;
-    
-    const softSkillScores = relevantSoftSkills.map(sk => {
+    const pointsPerSoftSkill = softSkillsToCheck.length > 0 ? 10 / softSkillsToCheck.length : 0;
+    const softSkillScores = softSkillsToCheck.map(sk => {
       const found = ortoflexFind(sk, normalizedCV);
       return { skill: sk, found, points: found ? Math.round(pointsPerSoftSkill * 10) / 10 : 0 };
     });
-    const softSkillTotal = Math.min(14, softSkillScores.reduce((sum, s) => sum + s.points, 0));
+    const softSkillTotal = Math.min(10, softSkillScores.reduce((sum, s) => sum + s.points, 0));
 
-    // ===== ETAPE 6: Image check (5 points) =====
+    // ===== ETAPE 8: Measurable results (5 pts) =====
+    const measurablePatterns = /(?:\d+\s*%|\d+\s*€|\d+\s*k€|\d+\s*M€|\+\s*\d+|x\s*\d+|\d+\s*(?:clients|utilisateurs|projets|personnes|collaborateurs|membres))/gi;
+    const measurableMatches = cvText.match(measurablePatterns) || [];
+    const measurableCount = measurableMatches.length;
+    let measurableScore = 0;
+    if (measurableCount >= 5) measurableScore = 5;
+    else if (measurableCount >= 3) measurableScore = 3;
+    else if (measurableCount >= 1) measurableScore = 2;
+
+    // ===== ETAPE 9: Word count (5 pts) =====
+    const wordCount = cvText.split(/\s+/).filter(w => w.length > 0).length;
+    let wordCountScore = 0;
+    if (wordCount >= 400 && wordCount <= 1200) wordCountScore = 5;
+    else if (wordCount >= 200) wordCountScore = 3;
+    else if (wordCount > 0) wordCountScore = 1;
+    if (wordCount > 1200) wordCountScore = 3;
+
+    // ===== ETAPE 10: Job title check (5 pts / -5 malus) =====
+    const titleWords = jobTitle.split(/[\s,;.!?()[\]/\-']+/).filter((w: string) => {
+      const wNorm = normalize(w);
+      if (wNorm.length < 3 && !SHORT_WORD_EXCEPTIONS.has(wNorm)) return false;
+      if (/^[hfm]$/i.test(w)) return false;
+      return true;
+    });
+    
+    const filteredTitle = titleWords.map((w: string) => normalize(w)).join(' ');
+    const titleFoundInCV = filteredTitle.length > 0 && normalizedCV.includes(filteredTitle);
+    const titleScore = titleFoundInCV ? 5 : -5;
+
+    // ===== ETAPE 11: Contract type check (5 pts / -5 malus) =====
+    let contractTypeFound = '';
+    for (const ct of CONTRACT_TYPES) {
+      if (ortoflexFind(ct, normalizedCV)) {
+        contractTypeFound = ct;
+        break;
+      }
+    }
+    const contractScore = contractTypeFound ? 5 : -5;
+
+    // ===== ETAPE 12: Image check (-5 penalty) =====
     const imageRegex = /\.(png|jpg|jpeg|gif|svg|bmp|webp|tiff)/gi;
     const imageMatches = cvText.match(imageRegex) || [];
     const imageCount = imageMatches.length;
     const imagePenalty = imageCount > 5 ? -5 : 0;
 
-    // ===== ETAPE 7: Proximity bonus (max +6) =====
+    // ===== ETAPE 13: Proximity bonus (max +6) =====
     let proximityBonus = 0;
     const proximityDetails: Array<{ primary: string; secondary: string }> = [];
     let proxCount = 0;
     
-    for (const sec of secondaryKeywords) {
+    const allSecondaryKws = secondaryScores.map(s => s.keyword);
+    const allPrimaryKws = primaryScores.map(s => s.keyword);
+    
+    for (const sec of allSecondaryKws) {
       if (proxCount >= 3) break;
       const secPos = findPosition(sec, normalizedCV);
       if (secPos === -1) continue;
-      
-      for (const pri of primaryKeywords) {
+      for (const pri of allPrimaryKws) {
         if (proxCount >= 3) break;
         const priPos = findPosition(pri, normalizedCV);
         if (priPos === -1) continue;
-        
         if (Math.abs(secPos - priPos) <= 50) {
           proximityBonus += 2;
           proximityDetails.push({ primary: pri, secondary: sec });
@@ -278,72 +395,62 @@ serve(async (req) => {
       }
     }
 
-    // ===== ETAPE 8: Job title check (-8 points) =====
-    const titleWords = jobTitle.split(/[\s,;.!?()[\]/\-']+/).filter((w: string) => {
-      const wNorm = normalize(w);
-      if (wNorm.length < 3 && !SHORT_WORD_EXCEPTIONS.has(wNorm)) return false;
-      // Filter out H/F, M/F patterns
-      if (/^[hfm]$/i.test(w)) return false;
-      return true;
-    });
-    
-    const filteredTitle = titleWords.map((w: string) => normalize(w)).join(' ');
-    const titleFoundInCV = filteredTitle.length > 0 && normalizedCV.includes(filteredTitle);
-    const titlePenalty = titleFoundInCV ? 0 : -8;
-
-    // ===== ETAPE 9: Contract type check (-6 points) =====
-    let contractTypeFound = '';
-    for (const ct of CONTRACT_TYPES) {
-      if (ortoflexFind(ct, normalizedCV)) {
-        contractTypeFound = ct;
-        break;
-      }
-    }
-    const contractPenalty = contractTypeFound ? 0 : -6;
-
     // ===== COMPUTE TOTAL SCORE =====
-    const baseScore = primaryTotal + secondaryTotal + softSkillTotal;
+    const baseScore = contactScore + profileScore + sectionsScore + primaryTotal + secondaryTotal + softSkillTotal + measurableScore + wordCountScore;
     const bonuses = primaryBonus + secondaryBonus + proximityBonus;
-    const penalties = sectionsPenalty + imagePenalty + titlePenalty + contractPenalty;
+    const titleAndContract = titleScore + contractScore;
     
-    let totalScore = Math.round((baseScore + bonuses + penalties) * 10) / 10;
+    let totalScore = Math.round((baseScore + bonuses + titleAndContract + imagePenalty) * 10) / 10;
     totalScore = Math.max(0, Math.min(100, totalScore));
 
     const result = {
       totalScore,
       extractionWarning,
+      contactInfo: contactDetails,
+      profileSection: { found: profileFound, score: profileScore, maxScore: 5 },
       sections: {
-        checks: sectionsCheck,
-        penalty: sectionsPenalty,
+        checks: sectionsResult,
+        score: sectionsScore,
+        maxScore: 10,
       },
       profession: {
-        name: profession.name,
+        name: profession?.name || 'Non identifié',
         isPartialMatch,
-        confidence: selectedProfession.score,
+        confidence: professionConfidence,
       },
       primaryKeywords: {
         scores: primaryScores,
         total: primaryTotal,
-        maxTotal: 50,
+        maxTotal: 30,
         bonusKeywords: primaryBonusDetails,
         bonus: primaryBonus,
       },
       secondaryKeywords: {
         scores: secondaryScores,
         total: secondaryTotal,
-        maxTotal: 25,
+        maxTotal: 15,
         bonusKeywords: secondaryBonusDetails,
         bonus: secondaryBonus,
       },
       softSkills: {
         scores: softSkillScores,
         total: Math.round(softSkillTotal * 10) / 10,
-        maxTotal: 14,
+        maxTotal: 10,
+      },
+      measurableResults: {
+        count: measurableCount,
+        score: measurableScore,
+        maxScore: 5,
+        examples: measurableMatches.slice(0, 5),
+      },
+      wordCount: {
+        count: wordCount,
+        score: wordCountScore,
+        maxScore: 5,
       },
       images: {
         count: imageCount,
         penalty: imagePenalty,
-        maxPoints: 5,
       },
       proximity: {
         bonus: proximityBonus,
@@ -353,23 +460,27 @@ serve(async (req) => {
       titleCheck: {
         filteredTitle: titleWords.join(' '),
         found: titleFoundInCV,
-        penalty: titlePenalty,
+        score: titleScore,
       },
       contractType: {
         found: contractTypeFound,
-        penalty: contractPenalty,
+        score: contractScore,
       },
       breakdown: {
+        contactInfo: contactScore,
+        profileSection: profileScore,
+        sections: sectionsScore,
         primaryKeywords: primaryTotal,
         primaryBonus,
         secondaryKeywords: secondaryTotal,
         secondaryBonus,
         softSkills: Math.round(softSkillTotal * 10) / 10,
+        measurableResults: measurableScore,
+        wordCount: wordCountScore,
+        titleCheck: titleScore,
+        contractType: contractScore,
         imagePenalty,
         proximityBonus,
-        sectionsPenalty,
-        titlePenalty,
-        contractPenalty,
       }
     };
 
