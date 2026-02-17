@@ -34,7 +34,7 @@ export const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     } else if (!loading && !user) {
       setOnboardingChecked(true);
     }
-  }, [user, loading]);
+  }, [user, loading, location.pathname]);
 
   if (loading || !onboardingChecked) {
     return (

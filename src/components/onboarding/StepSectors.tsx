@@ -1,6 +1,9 @@
-import { Badge } from "@/components/ui/badge";
+import { useState } from "react";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Plus, X } from "lucide-react";
 import { ACTIVITY_SECTORS } from "@/lib/activity-sectors";
 
 const SECTOR_LABELS = ACTIVITY_SECTORS.map((s) => s.label);
@@ -18,6 +21,8 @@ export const StepSectors = ({
   onSectorsChange,
   onTargetJobsChange,
 }: StepSectorsProps) => {
+  const [customSector, setCustomSector] = useState("");
+
   const toggle = (sector: string) => {
     onSectorsChange(
       selectedSectors.includes(sector)
@@ -25,6 +30,24 @@ export const StepSectors = ({
         : [...selectedSectors, sector]
     );
   };
+
+  const addCustomSector = () => {
+    const trimmed = customSector.trim();
+    if (trimmed && !selectedSectors.includes(trimmed)) {
+      onSectorsChange([...selectedSectors, trimmed]);
+      setCustomSector("");
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      addCustomSector();
+    }
+  };
+
+  // Custom sectors are those not in the predefined list
+  const customSelected = selectedSectors.filter((s) => !SECTOR_LABELS.includes(s));
 
   return (
     <div className="space-y-6">
@@ -56,6 +79,35 @@ export const StepSectors = ({
               </button>
             );
           })}
+          {customSelected.map((sector) => (
+            <button
+              key={sector}
+              onClick={() => toggle(sector)}
+              className="flex items-center gap-1 px-4 py-2 rounded-lg border border-primary bg-primary/10 text-primary text-sm font-medium transition-all"
+            >
+              {sector}
+              <X className="h-3 w-3" />
+            </button>
+          ))}
+        </div>
+
+        <div className="flex gap-2">
+          <Input
+            value={customSector}
+            onChange={(e) => setCustomSector(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="Ajouter un secteur personnalisé..."
+            className="flex-1"
+          />
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            onClick={addCustomSector}
+            disabled={!customSector.trim()}
+          >
+            <Plus className="h-4 w-4" />
+          </Button>
         </div>
       </div>
 
