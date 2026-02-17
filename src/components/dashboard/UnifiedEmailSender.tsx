@@ -88,7 +88,23 @@ interface GeneratedEmail {
   error?: string;
   scraped_info?: boolean;
   coverLetter?: string;
+  subject_type?: string;
+  tone?: string;
 }
+
+const SUBJECT_TYPES = [
+  { value: 'corporate', label: 'Corporate / RH', description: 'Sécurisant, ATS-friendly' },
+  { value: 'value', label: 'Valeur ajoutée', description: 'Montre l\'apport sans se vendre' },
+  { value: 'manager', label: 'Manager', description: 'Proximité métier, concret' },
+  { value: 'question', label: 'Question', description: 'Engagement doux' },
+];
+
+const TONE_OPTIONS = [
+  { value: 'formal', label: 'Formel', description: 'Ton RH classique' },
+  { value: 'balanced', label: 'Équilibré', description: 'Professionnel mais accessible' },
+  { value: 'direct', label: 'Direct', description: 'Orienté manager/action' },
+  { value: 'soft', label: 'Adouci', description: 'Question ouverte, non pressant' },
+];
 
 interface ProcessLog {
   id: string;
@@ -136,6 +152,8 @@ export const UnifiedEmailSender = () => {
   // AI configuration
   const [template, setTemplate] = useState("");
   const [cvContent, setCvContent] = useState("");
+  const [selectedSubjectType, setSelectedSubjectType] = useState("corporate");
+  const [selectedTone, setSelectedTone] = useState("balanced");
   const [savedCvProfiles, setSavedCvProfiles] = useState<SavedCvProfile[]>([]);
   const [savedTemplates, setSavedTemplates] = useState<SavedTemplate[]>([]);
   const [selectedCvProfileId, setSelectedCvProfileId] = useState("");
@@ -498,7 +516,7 @@ export const UnifiedEmailSender = () => {
           setCurrentStep(`Lot ${Math.floor(i / batchSize) + 1}/${Math.ceil(selectedList.length / batchSize)}`);
 
           const { data, error } = await supabase.functions.invoke("generate-personalized-emails", {
-            body: { companies: batch, template: template || null, cvContent: cvContent || null },
+            body: { companies: batch, template: template || null, cvContent: cvContent || null, subjectType: selectedSubjectType, tone: selectedTone },
             headers: { Authorization: `Bearer ${session.access_token}` }
           });
 
@@ -618,7 +636,9 @@ export const UnifiedEmailSender = () => {
                 recipients: [email.company_email],
                 subject: email.subject,
                 body: finalBody,
-                attachments: uploadedAttachments
+                attachments: uploadedAttachments,
+                subject_type: email.subject_type || selectedSubjectType,
+                tone: email.tone || selectedTone,
               },
               headers: { Authorization: `Bearer ${session.access_token}` }
             });
@@ -877,6 +897,48 @@ export const UnifiedEmailSender = () => {
                     </div>
                     <Switch checked={enableCoverLetter} onCheckedChange={setEnableCoverLetter} />
                   </div>
+
+                  {/* Subject Type & Tone selectors */}
+                  {enableAIEmails && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium">Type d'approche</Label>
+                        <Select value={selectedSubjectType} onValueChange={setSelectedSubjectType}>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {SUBJECT_TYPES.map(t => (
+                              <SelectItem key={t.value} value={t.value}>
+                                <div className="flex flex-col">
+                                  <span>{t.label}</span>
+                                  <span className="text-xs text-muted-foreground">{t.description}</span>
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium">Ton de l'email</Label>
+                        <Select value={selectedTone} onValueChange={setSelectedTone}>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {TONE_OPTIONS.map(t => (
+                              <SelectItem key={t.value} value={t.value}>
+                                <div className="flex flex-col">
+                                  <span>{t.label}</span>
+                                  <span className="text-xs text-muted-foreground">{t.description}</span>
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             ) : (

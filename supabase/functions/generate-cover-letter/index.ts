@@ -107,26 +107,48 @@ serve(async (req) => {
       }
     }
 
-    const systemPrompt = `Tu es un expert en rédaction de lettres de motivation professionnelles en français.
+    const systemPrompt = `Tu es un expert en rédaction de lettres de motivation pour candidatures spontanées en français.
 
-OBJECTIF:
-Rédiger une lettre de motivation personnalisée qui fait le lien entre le profil du candidat et l'entreprise ciblée.
+STRUCTURE OBLIGATOIRE — 3 PARAGRAPHES (pas plus, pas moins) :
 
-STRUCTURE:
-1. Accroche percutante (pourquoi cette entreprise spécifiquement)
-2. Présentation du candidat (parcours, compétences clés)
-3. Mise en perspective compétences ↔ besoins de l'entreprise
-4. Ce qui attire le candidat (croissance, valeurs, RSE, secteur, projets...)
-5. Conclusion avec appel à l'action
+PARAGRAPHE 1 — Présentation :
+- Qui je suis (statut actuel)
+- Spécialisation / domaine
+- Compétences principales + outils maîtrisés
+- Formation (optionnel, si pertinent)
 
-RÈGLES:
-- Ton professionnel mais authentique
-- Maximum 400 mots
-- Mentionner des éléments SPÉCIFIQUES de l'entreprise
-- Faire ressortir la motivation RÉELLE du candidat
-- Si informations RSE ou valeurs trouvées, les mentionner
-- Éviter les formulations génériques
-- Format lettre française classique (lieu, date, objet, etc.)`;
+PARAGRAPHE 2 — Entreprise :
+- Ce qui attire chez cette entreprise SPÉCIFIQUEMENT
+- Un projet, une valeur, un positionnement PRÉCIS (issu du scraping si disponible)
+- Alignement personnel avec l'entreprise
+
+PARAGRAPHE 3 — Apport :
+- Ce que je peux apporter CONCRÈTEMENT
+- Appui / renfort / regard neuf
+- Ouverture à l'échange
+
+RÈGLES STRICTES :
+- Maximum 1 page (~350 mots)
+- Ton professionnel, fluide, PAS familier
+- Pas de langage commercial ou de prospection
+- Ne JAMAIS mentionner le type de contrat (CDI, CDD, stage, alternance...)
+- Personnalisation RÉELLE de l'entreprise (au moins 1 élément concret du scraping)
+- Ne laisser AUCUN placeholder [XXX]
+- PAS de format lettre classique (pas de lieu/date/objet en en-tête)
+- Commencer directement par "Bonjour [Prénom si trouvé, sinon 'l'équipe'],"
+- Terminer par "Bien cordialement," suivi du nom
+
+FORMAT :
+Bonjour [destinataire],
+
+[Paragraphe 1 - Présentation]
+
+[Paragraphe 2 - Entreprise]
+
+[Paragraphe 3 - Apport]
+
+Bien cordialement,
+[Nom du candidat]`;
 
     const userPrompt = `ENTREPRISE CIBLE:
 - Nom: ${company.nom}
@@ -146,7 +168,7 @@ ${userProfile ? `INFORMATIONS CANDIDAT:
 - LinkedIn: ${userProfile.linkedinUrl || 'Non spécifié'}
 ` : ''}
 
-Génère une lettre de motivation PERSONNALISÉE pour cette entreprise.`;
+Génère une lettre de motivation PERSONNALISÉE pour cette entreprise en respectant STRICTEMENT la structure 3 paragraphes et les règles ci-dessus.`;
 
     const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
