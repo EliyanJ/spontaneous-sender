@@ -789,7 +789,7 @@ export const UnifiedEmailSender = () => {
   const manualCount = manualRecipients.length;
   const prepareCount = selectedCount + manualCount;
   const isAiMode = enableAIEmails || enableCoverLetter;
-  const isPrepareDisabled = isGenerating || !gmailConnected || (isAiMode ? selectedCount === 0 : prepareCount === 0);
+  const isPrepareDisabled = isGenerating || !gmailConnected || prepareCount === 0;
 
   // Show loading state while plan is loading
   if (planLoading) {
@@ -1216,7 +1216,13 @@ export const UnifiedEmailSender = () => {
             {/* Generate Button */}
             <Button onClick={handleGenerate} disabled={isPrepareDisabled} className="w-full gap-2" size="lg">
               {isGenerating ? <Loader2 className="h-5 w-5 animate-spin" /> : <Sparkles className="h-5 w-5" />}
-              {isAiMode ? `Générer pour ${selectedCount} entreprise(s)` : `Préparer ${prepareCount} email(s)`}
+              {isAiMode
+                ? (selectedCount > 0 && manualCount > 0
+                  ? `Générer pour ${selectedCount} entreprise(s) + ${manualCount} email(s)`
+                  : selectedCount > 0
+                    ? `Générer pour ${selectedCount} entreprise(s)`
+                    : `Générer pour ${manualCount} email(s) manuel(s)`)
+                : `Préparer ${prepareCount} email(s)`}
             </Button>
           </TabsContent>
 
