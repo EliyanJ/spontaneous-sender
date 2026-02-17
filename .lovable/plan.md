@@ -1,123 +1,72 @@
 
-# Onboarding post-inscription : etapes de personnalisation du profil
 
-## Objectif
+# Onboarding post-inscription : personnalisation du profil
 
-Creer un parcours d'onboarding en plusieurs etapes qui s'affiche apres la premiere connexion de l'utilisateur. Ce parcours collecte des informations cles pour personnaliser l'experience : objectifs, secteur d'activite, metiers vises, et upload du CV (avec synthese IA et stockage du PDF).
+## Ce qui va etre cree
 
-## Architecture
+Un parcours en 4 etapes qui s'affiche automatiquement apres la premiere connexion. Il collecte les informations cles pour personnaliser l'experience de l'utilisateur.
 
-### Flux utilisateur
+### Les 4 etapes
 
-```text
-Inscription -> Confirmation email -> Connexion -> /onboarding (si pas complete) -> /dashboard
-```
+1. **Vos objectifs** - "Que recherchez-vous ?" : stage, alternance, premier emploi, CDI/CDD, freelance (selection multiple)
+2. **Secteur et metiers** - Selection du secteur d'activite (depuis la liste existante) + champ texte libre pour les metiers/postes vises
+3. **Ce qui vous plait** - Centres d'interet professionnels : travail en equipe, autonomie, creativite, technique, international, management, etc. (tags cliquables)
+4. **Votre CV** - Upload du CV (PDF/DOCX/TXT), parsing automatique par l'IA pour generer une synthese editable, stockage du fichier PDF pour l'envoyer en piece jointe dans les candidatures
 
-Le `ProtectedRoute` verifiera si l'onboarding est complete. Si non, redirection vers `/onboarding`.
+### Fonctionnement
 
-### Etapes du wizard (4 etapes)
-
-1. **Objectifs** : "Que recherchez-vous ?" (stage, alternance, premier emploi, CDI, freelance...)
-2. **Secteur & Metiers** : Secteur d'activite prefere + metiers/postes vises (champ texte libre)
-3. **Ce qui vous plait** : Centres d'interet professionnels (travail en equipe, autonomie, creativite, international...)
-4. **CV** : Upload du CV (PDF/DOCX) avec parsing IA pour generer une synthese, et apercu de la synthese avant validation
+- Apres inscription et confirmation email, la premiere connexion redirige automatiquement vers `/onboarding`
+- Tant que l'onboarding n'est pas termine, l'utilisateur ne peut pas acceder au dashboard
+- La synthese du CV et le fichier PDF sont stockes dans le profil
+- L'utilisateur peut refaire l'onboarding plus tard depuis les Parametres
 
 ---
 
-## Modifications base de donnees
+## Details techniques
 
-### Migration SQL - Nouvelles colonnes dans `profiles`
+### 1. Migration base de donnees
 
-Ajouter les colonnes suivantes a la table `profiles` :
+Nouvelles colonnes dans la table `profiles` :
 
-- `objective` (text) : objectif principal (stage, alternance, emploi...)
-- `target_sectors` (jsonb, default '[]') : liste des secteurs d'activite vises
-- `target_jobs` (text) : metiers/postes vises (texte libre)
-- `professional_interests` (jsonb, default '[]') : centres d'interet professionnels
-- `cv_file_url` (text) : URL du fichier CV stocke dans le bucket storage
-- `onboarding_completed` (boolean, default false) : flag pour savoir si l'onboarding est termine
+| Colonne | Type | Description |
+|---------|------|-------------|
+| `objective` | text | Objectif principal (stage, alternance...) |
+| `target_sectors` | jsonb (default `[]`) | Secteurs d'activite vises |
+| `target_jobs` | text | Metiers/postes vises (texte libre) |
+| `professional_interests` | jsonb (default `[]`) | Centres d'interet pro |
+| `cv_file_url` | text | URL du fichier CV dans le storage |
+| `onboarding_completed` | boolean (default `false`) | Flag onboarding termine |
 
-### Storage - Bucket pour les CV
+Creation d'un bucket prive `user-cvs` avec policies RLS :
+- INSERT/SELECT/DELETE : uniquement dans le dossier `user_id/` de l'utilisateur
 
-Creer un bucket `user-cvs` (prive) pour stocker les fichiers CV des utilisateurs, avec des policies RLS :
-- INSERT : l'utilisateur peut uploader dans son propre dossier (`user_id/`)
-- SELECT : l'utilisateur peut lire ses propres fichiers
-- DELETE : l'utilisateur peut supprimer ses propres fichiers
+### 2. Nouveaux fichiers
 
----
+| Fichier | Role |
+|---------|------|
+| `src/pages/Onboarding.tsx` | Page wizard avec barre de progression, navigation precedent/suivant |
+| `src/components/onboarding/StepObjectives.tsx` | Etape 1 - Selection des objectifs |
+| `src/components/onboarding/StepSectors.tsx` | Etape 2 - Secteurs + metiers vises |
+| `src/components/onboarding/StepInterests.tsx` | Etape 3 - Interets professionnels |
+| `src/components/onboarding/StepCV.tsx` | Etape 4 - Upload CV + synthese IA |
 
-## Nouveaux fichiers
+### 3. Fichiers modifies
 
-### `src/pages/Onboarding.tsx`
+| Fichier | Modification |
+|---------|-------------|
+| `src/App.tsx` | Ajout route `/onboarding` protegee |
+| `src/components/ProtectedRoute.tsx` | Verification `onboarding_completed`, redirection vers `/onboarding` si `false` (exclut la route `/onboarding` elle-meme) |
+| `src/components/dashboard/Settings.tsx` | Section CV (telecharger/re-uploader) + lien "Modifier mes preferences" vers `/onboarding` |
 
-Page principale du wizard d'onboarding avec :
-- Barre de progression (4 etapes)
-- Navigation Precedent/Suivant
-- Sauvegarde incrementale a chaque etape
-- A la derniere etape, met `onboarding_completed = true` et redirige vers `/dashboard`
+### 4. Etape CV - Detail du flux
 
-### `src/components/onboarding/StepObjectives.tsx`
+1. L'utilisateur upload un fichier (drag & drop ou clic)
+2. Le fichier est envoye dans le bucket `user-cvs` (dossier `user_id/`)
+3. Le fichier est envoye a la edge function `parse-cv-document` (deja existante) pour extraction du texte
+4. La synthese est affichee dans un textarea editable
+5. A la validation : `cv_content` (synthese) et `cv_file_url` (lien storage) sont sauves dans `profiles`
 
-Etape 1 - Selection multiple parmi :
-- Stage
-- Alternance
-- Premier emploi
-- CDI / CDD
-- Freelance / Mission
-
-### `src/components/onboarding/StepSectors.tsx`
-
-Etape 2 - Utilise les secteurs existants de `src/lib/activity-sectors.ts` pour la selection, plus un champ texte libre pour les metiers/postes vises.
-
-### `src/components/onboarding/StepInterests.tsx`
-
-Etape 3 - Selection multiple parmi des tags predefinits (travail en equipe, autonomie, creativite, technique, international, management, etc.) + champ "Autre" optionnel.
-
-### `src/components/onboarding/StepCV.tsx`
-
-Etape 4 - Zone d'upload drag & drop pour le CV (PDF, DOCX, TXT). Apres upload :
-1. Le fichier est envoye au bucket `user-cvs`
-2. Le fichier est parse via la edge function existante `parse-cv-document`
-3. La synthese est affichee a l'utilisateur dans un textarea editable
-4. L'utilisateur peut valider/modifier avant de sauvegarder
-5. Le `cv_content` (synthese) et `cv_file_url` (lien storage) sont sauves dans `profiles`
-
----
-
-## Modifications aux fichiers existants
-
-### `src/App.tsx`
-
-- Ajouter la route `/onboarding` protegee
-
-### `src/components/ProtectedRoute.tsx`
-
-- Apres verification de l'auth, verifier si `onboarding_completed` est `true`
-- Si non, rediriger vers `/onboarding`
-- Exclure la route `/onboarding` elle-meme de cette verification (pour eviter une boucle)
-
-### `src/components/dashboard/Settings.tsx`
-
-- Dans la section Profil, ajouter un lien "Modifier mes objectifs et preferences" qui redirige vers `/onboarding` (pour permettre de refaire l'onboarding)
-- Ajouter une section CV : afficher le CV actuel (lien de telechargement), possibilite d'en uploader un nouveau
-
----
-
-## Resume des fichiers
-
-| Fichier | Action |
-|---------|--------|
-| Migration SQL | Ajouter colonnes profiles + bucket user-cvs |
-| `src/pages/Onboarding.tsx` | Nouveau - wizard principal |
-| `src/components/onboarding/StepObjectives.tsx` | Nouveau - etape 1 |
-| `src/components/onboarding/StepSectors.tsx` | Nouveau - etape 2 |
-| `src/components/onboarding/StepInterests.tsx` | Nouveau - etape 3 |
-| `src/components/onboarding/StepCV.tsx` | Nouveau - etape 4 |
-| `src/App.tsx` | Modifier - ajouter route /onboarding |
-| `src/components/ProtectedRoute.tsx` | Modifier - redirection onboarding |
-| `src/components/dashboard/Settings.tsx` | Modifier - section CV + lien onboarding |
-
-## Ordre d'implementation
+### 5. Ordre d'implementation
 
 1. Migration DB (colonnes + bucket storage)
 2. Composants onboarding (4 etapes)
@@ -125,3 +74,4 @@ Etape 4 - Zone d'upload drag & drop pour le CV (PDF, DOCX, TXT). Apres upload :
 4. ProtectedRoute (redirection)
 5. App.tsx (route)
 6. Settings.tsx (acces CV et re-onboarding)
+
