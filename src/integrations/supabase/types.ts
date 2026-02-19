@@ -151,6 +151,36 @@ export type Database = {
         }
         Relationships: []
       }
+      chatbot_config: {
+        Row: {
+          id: string
+          is_active: boolean | null
+          knowledge_base: string | null
+          model: string | null
+          system_prompt: string
+          updated_at: string | null
+          updated_by: string | null
+        }
+        Insert: {
+          id?: string
+          is_active?: boolean | null
+          knowledge_base?: string | null
+          model?: string | null
+          system_prompt: string
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Update: {
+          id?: string
+          is_active?: boolean | null
+          knowledge_base?: string | null
+          model?: string | null
+          system_prompt?: string
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       cms_blocks: {
         Row: {
           category: string | null
