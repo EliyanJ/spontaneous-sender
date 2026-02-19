@@ -39,6 +39,7 @@ import {
   AdminBlockEditor,
   AdminPromos,
   AdminATSTraining,
+  AdminChatbot,
 } from "./pages/Admin";
 import AdminTicketDetail from "./pages/Admin/AdminTicketDetail";
 import BlogPost from "./pages/BlogPost";
@@ -85,6 +86,7 @@ const App = () => (
             <Route path="ats" element={<AdminATSTraining />} />
             <Route path="cms" element={<AdminCMS />} />
             <Route path="seo" element={<AdminSEO />} />
+            <Route path="chatbot" element={<AdminChatbot />} />
           </Route>
           
           {/* CMS Editor — fullscreen, outside AdminLayout */}
