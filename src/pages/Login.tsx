@@ -3,11 +3,11 @@ import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
+
 import { supabase } from "@/integrations/supabase/client";
 import { signInWithGoogle } from "@/lib/auth-utils";
 import { toast } from "sonner";
-import { Mail, Key, Loader2 } from "lucide-react";
+import { Mail, Loader2, ArrowLeft } from "lucide-react";
 import cronosLogo from "@/assets/cronos-logo.png";
 
 const Login = () => {
@@ -70,11 +70,6 @@ const Login = () => {
     }
   };
 
-  const handlePasskeyClick = () => {
-    toast.info("Les clés d'accès seront bientôt disponibles !", {
-      description: "Utilisez Google ou votre email pour vous connecter.",
-    });
-  };
 
   // Overlay de redirection Google
   if (isRedirecting) {
@@ -97,6 +92,15 @@ const Login = () => {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-indigo-900 via-purple-900 to-teal-800 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 px-4">
+      {/* Lien retour accueil */}
+      <Link
+        to="/"
+        className="w-full max-w-md mb-4 flex items-center gap-2 text-sm text-white/70 hover:text-white transition-colors"
+      >
+        <ArrowLeft className="h-4 w-4" />
+        Retour à l'accueil
+      </Link>
+
       {/* Carte blanche centrale */}
       <div className="w-full max-w-md bg-white dark:bg-gray-900 rounded-2xl shadow-2xl p-8 sm:p-10 border border-gray-200 dark:border-gray-700">
         {/* Logo et titre */}
@@ -118,24 +122,6 @@ const Login = () => {
                 <Mail className="h-5 w-5" />
                 Continuer avec Email
               </Button>
-
-              {/* Bouton Passkey - Désactivé */}
-              <div className="relative">
-                <Button
-                  variant="outline"
-                  className="w-full h-12 justify-start gap-3 text-base border-2 border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-400 dark:text-gray-500 cursor-not-allowed opacity-60"
-                  onClick={handlePasskeyClick}
-                >
-                  <Key className="h-5 w-5" />
-                  Connexion avec clé d'accès
-                </Button>
-                <Badge 
-                  variant="secondary" 
-                  className="absolute -top-2 -right-2 text-xs bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300 border-0"
-                >
-                  Bientôt
-                </Badge>
-              </div>
 
               {/* Bouton Google */}
               <Button
