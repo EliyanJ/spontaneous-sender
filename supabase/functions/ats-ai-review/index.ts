@@ -34,34 +34,108 @@ serve(async (req) => {
       return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
-    const { analysis } = await req.json();
+    const body = await req.json();
+    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+    if (!LOVABLE_API_KEY) {
+      return new Response(JSON.stringify({ error: 'AI not configured' }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
+    // ===== MODE: EXTRACT KEYWORDS FROM TEXT =====
+    if (body.mode === 'extract_keywords') {
+      const { text, profession_name, existing_primary, existing_secondary, existing_soft_skills } = body;
+      if (!text) {
+        return new Response(JSON.stringify({ error: 'Missing text' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+
+      const extractPrompt = `Tu es un expert en recrutement et ATS. Analyse le texte suivant et extrais les mots-clés pertinents pour la thématique "${profession_name || 'générale'}".
+
+Texte à analyser:
+${text.substring(0, 8000)}
+
+Mots-clés déjà existants (NE PAS les inclure dans ta réponse):
+- Primary: ${(existing_primary || []).join(', ')}
+- Secondary: ${(existing_secondary || []).join(', ')}
+- Soft skills: ${(existing_soft_skills || []).join(', ')}
+
+Extrais UNIQUEMENT les NOUVEAUX mots-clés qui ne sont pas déjà dans les listes ci-dessus. Catégorise-les en:
+- primary: compétences techniques principales (outils, technologies, méthodologies clés)
+- secondary: compétences secondaires (connaissances complémentaires)
+- soft_skill: savoir-être et compétences comportementales
+
+Ne retourne que des compétences spécifiques et pertinentes, pas de mots génériques.`;
+
+      const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'google/gemini-2.5-flash',
+          messages: [
+            { role: 'system', content: 'Tu es un expert RH/ATS. Réponds uniquement via le tool call demandé.' },
+            { role: 'user', content: extractPrompt },
+          ],
+          tools: [{
+            type: 'function',
+            function: {
+              name: 'extract_keywords',
+              description: 'Extract and categorize keywords from text',
+              parameters: {
+                type: 'object',
+                properties: {
+                  keywords: {
+                    type: 'array',
+                    items: {
+                      type: 'object',
+                      properties: {
+                        keyword: { type: 'string' },
+                        category: { type: 'string', enum: ['primary', 'secondary', 'soft_skill'] },
+                      },
+                      required: ['keyword', 'category'],
+                    },
+                  },
+                },
+                required: ['keywords'],
+              },
+            },
+          }],
+          tool_choice: { type: 'function', function: { name: 'extract_keywords' } },
+        }),
+      });
+
+      if (!aiResponse.ok) {
+        const errText = await aiResponse.text();
+        console.error('AI extract error:', aiResponse.status, errText);
+        throw new Error('AI extraction failed');
+      }
+
+      const aiData = await aiResponse.json();
+      const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
+      let keywords = [];
+      if (toolCall?.function?.arguments) {
+        const parsed = JSON.parse(toolCall.function.arguments);
+        keywords = parsed.keywords || [];
+      }
+
+      return new Response(JSON.stringify({ keywords }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // ===== MODE: REVIEW ANALYSIS KEYWORDS =====
+    const { analysis } = body;
     if (!analysis?.analysis_result) {
       return new Response(JSON.stringify({ error: 'Missing analysis data' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
-    // Extract all keywords from the analysis
     const keywords: Array<{ keyword: string; category: string }> = [];
     const result = analysis.analysis_result;
-
     if (result?.primaryKeywords?.scores) {
-      for (const s of result.primaryKeywords.scores) {
-        keywords.push({ keyword: s.keyword, category: 'primary' });
-      }
+      for (const s of result.primaryKeywords.scores) keywords.push({ keyword: s.keyword, category: 'primary' });
     }
     if (result?.secondaryKeywords?.scores) {
-      for (const s of result.secondaryKeywords.scores) {
-        keywords.push({ keyword: s.keyword, category: 'secondary' });
-      }
+      for (const s of result.secondaryKeywords.scores) keywords.push({ keyword: s.keyword, category: 'secondary' });
     }
     if (result?.softSkills?.scores) {
-      for (const s of result.softSkills.scores) {
-        keywords.push({ keyword: s.skill, category: 'soft_skill' });
-      }
-    }
-
-    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
-    if (!LOVABLE_API_KEY) {
-      return new Response(JSON.stringify({ error: 'AI not configured' }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      for (const s of result.softSkills.scores) keywords.push({ keyword: s.skill, category: 'soft_skill' });
     }
 
     const prompt = `Tu es un expert en recrutement et en analyse de CV/ATS. 
@@ -76,14 +150,11 @@ Voici les mots-clés identifiés par notre algorithme de scoring ATS. Pour chaqu
 Mots-clés à analyser:
 ${keywords.map(k => `- "${k.keyword}" (catégorie actuelle: ${k.category})`).join('\n')}
 
-IMPORTANT: Les mots courants du français (articles, prépositions, verbes génériques comme "faire", "avoir", "être", mots de liaison) ne sont PAS des compétences. Les mots trop génériques comme "gestion", "suivi", "mise en place" seuls ne sont pas des compétences spécifiques.`;
+IMPORTANT: Les mots courants du français ne sont PAS des compétences. Les mots trop génériques seuls ne sont pas des compétences spécifiques.`;
 
     const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
+      headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
         model: 'google/gemini-2.5-flash',
         messages: [
