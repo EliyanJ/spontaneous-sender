@@ -10,7 +10,8 @@ import {
   Database,
   FileText,
   Search,
-  Tag
+  Tag,
+  Bot
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import cronosLogo from "@/assets/cronos-logo.png";
@@ -27,6 +28,7 @@ const adminNavItems = [
   { title: "Équipe", icon: UserCog, path: "/admin/team" },
   { title: "CMS", icon: FileText, path: "/admin/cms" },
   { title: "SEO", icon: Search, path: "/admin/seo" },
+  { title: "Chatbot", icon: Bot, path: "/admin/chatbot" },
 ];
 
 export const AdminLayout = () => {

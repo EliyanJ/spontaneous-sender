@@ -11,3 +11,4 @@ export { AdminSEO } from './AdminSEO';
 export { AdminBlockEditor } from './AdminBlockEditor';
 export { AdminPromos } from './AdminPromos';
 export { AdminATSTraining } from './AdminATSTraining';
+export { AdminChatbot } from './AdminChatbot';
