@@ -23,6 +23,7 @@ const adminNavItems = [
   { title: "Data", icon: Database, path: "/admin/data" },
   { title: "Tickets", icon: MessageSquare, path: "/admin/tickets" },
   { title: "Promos", icon: Tag, path: "/admin/promos" },
+  { title: "ATS", icon: Shield, path: "/admin/ats" },
   { title: "Équipe", icon: UserCog, path: "/admin/team" },
   { title: "CMS", icon: FileText, path: "/admin/cms" },
   { title: "SEO", icon: Search, path: "/admin/seo" },

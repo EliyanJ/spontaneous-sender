@@ -14,30 +14,89 @@ export type Database = {
   }
   public: {
     Tables: {
-      ats_professions: {
+      ats_keyword_feedback: {
         Row: {
+          admin_notes: string | null
+          corrected_category: string
           created_at: string
           id: string
+          is_valid: boolean
+          keyword: string
+          original_category: string
+          profession_id: string
+          source: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          corrected_category: string
+          created_at?: string
+          id?: string
+          is_valid?: boolean
+          keyword: string
+          original_category: string
+          profession_id: string
+          source?: string
+        }
+        Update: {
+          admin_notes?: string | null
+          corrected_category?: string
+          created_at?: string
+          id?: string
+          is_valid?: boolean
+          keyword?: string
+          original_category?: string
+          profession_id?: string
+          source?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ats_keyword_feedback_profession_id_fkey"
+            columns: ["profession_id"]
+            isOneToOne: false
+            referencedRelation: "ats_professions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ats_professions: {
+        Row: {
+          aliases: Json | null
+          category: string | null
+          created_at: string
+          excluded_words: Json | null
+          id: string
+          last_trained_at: string | null
           name: string
           primary_keywords: Json
           secondary_keywords: Json
           soft_skills: Json
+          training_count: number | null
         }
         Insert: {
+          aliases?: Json | null
+          category?: string | null
           created_at?: string
+          excluded_words?: Json | null
           id?: string
+          last_trained_at?: string | null
           name: string
           primary_keywords?: Json
           secondary_keywords?: Json
           soft_skills?: Json
+          training_count?: number | null
         }
         Update: {
+          aliases?: Json | null
+          category?: string | null
           created_at?: string
+          excluded_words?: Json | null
           id?: string
+          last_trained_at?: string | null
           name?: string
           primary_keywords?: Json
           secondary_keywords?: Json
           soft_skills?: Json
+          training_count?: number | null
         }
         Relationships: []
       }
@@ -304,6 +363,59 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      cv_analyses: {
+        Row: {
+          admin_feedback: Json | null
+          admin_reviewed: boolean
+          analysis_result: Json
+          created_at: string
+          cv_text: string
+          id: string
+          job_description: string
+          job_title: string
+          profession_id: string | null
+          profession_name: string | null
+          total_score: number
+          user_id: string
+        }
+        Insert: {
+          admin_feedback?: Json | null
+          admin_reviewed?: boolean
+          analysis_result?: Json
+          created_at?: string
+          cv_text: string
+          id?: string
+          job_description: string
+          job_title: string
+          profession_id?: string | null
+          profession_name?: string | null
+          total_score?: number
+          user_id: string
+        }
+        Update: {
+          admin_feedback?: Json | null
+          admin_reviewed?: boolean
+          analysis_result?: Json
+          created_at?: string
+          cv_text?: string
+          id?: string
+          job_description?: string
+          job_title?: string
+          profession_id?: string | null
+          profession_name?: string | null
+          total_score?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cv_analyses_profession_id_fkey"
+            columns: ["profession_id"]
+            isOneToOne: false
+            referencedRelation: "ats_professions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       email_campaigns: {
         Row: {
