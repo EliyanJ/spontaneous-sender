@@ -10,3 +10,4 @@ export { AdminPageEditor } from './AdminPageEditor';
 export { AdminSEO } from './AdminSEO';
 export { AdminBlockEditor } from './AdminBlockEditor';
 export { AdminPromos } from './AdminPromos';
+export { AdminATSTraining } from './AdminATSTraining';

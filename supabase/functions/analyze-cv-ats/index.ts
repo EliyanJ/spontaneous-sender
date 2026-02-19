@@ -76,7 +76,7 @@ const FRENCH_STOP_WORDS = new Set([
 ]);
 
 // Extract significant keywords directly from text
-function extractKeywordsFromText(text: string): Map<string, number> {
+function extractKeywordsFromText(text: string, excludedWords?: Set<string>): Map<string, number> {
   const normalized = normalize(text);
   const words = normalized.split(/[\s,;.!?()[\]/\-'"]+/).filter(w => w.length >= 4);
   const wordCounts = new Map<string, number>();
@@ -84,6 +84,7 @@ function extractKeywordsFromText(text: string): Map<string, number> {
   for (const word of words) {
     if (FRENCH_STOP_WORDS.has(word)) continue;
     if (/^\d+$/.test(word)) continue;
+    if (excludedWords && excludedWords.has(word)) continue;
     wordCounts.set(word, (wordCounts.get(word) || 0) + 1);
   }
   
@@ -173,7 +174,7 @@ serve(async (req) => {
     const sectionsScore = sectionsResult.reduce((sum, s) => sum + s.points, 0);
 
     // ===== ETAPE 4: Identify profession =====
-    const { data: professions } = await supabase.from('ats_professions').select('*');
+    const { data: professions } = await supabase.from('ats_professions').select('*, category, aliases, excluded_words');
     
     let profession = null;
     let isPartialMatch = false;
@@ -186,12 +187,20 @@ serve(async (req) => {
       const professionScores = professions.map(prof => {
         const primaryKws = (prof.primary_keywords as string[]) || [];
         const secondaryKws = (prof.secondary_keywords as string[]) || [];
+        const aliases = (prof.aliases as string[]) || [];
         let score = 0;
         for (const kw of primaryKws) {
           if (ortoflexFind(kw, normalizedJob)) score += 2;
         }
         for (const kw of secondaryKws) {
           if (ortoflexFind(kw, normalizedJob)) score += 1;
+        }
+        // Check aliases for title matching bonus
+        for (const alias of aliases) {
+          if (normalizedTitle.includes(normalize(alias)) || normalize(alias).includes(normalizedTitle)) {
+            score += 3;
+            break;
+          }
         }
         return { profession: prof, score };
       });
@@ -220,9 +229,17 @@ serve(async (req) => {
       }
     }
 
+    // Load excluded_words for the identified profession and filter them out
+    const excludedWords: Set<string> = new Set();
+    if (profession && profession.excluded_words) {
+      for (const w of (profession.excluded_words as string[])) {
+        excludedWords.add(normalize(w));
+      }
+    }
+
     // ===== ETAPE 5: HYBRID Hard skills extraction (30 pts) =====
-    // Extract keywords directly from job description
-    const jobKeywords = extractKeywordsFromText(jobDescription);
+    // Extract keywords directly from job description (filtering excluded words)
+    const jobKeywords = extractKeywordsFromText(jobDescription, excludedWords);
     
     // Combine with DB keywords - DB keywords that appear in job get priority
     const hybridPrimaryMap = new Map<string, { jobCount: number; fromDb: boolean }>();
@@ -494,6 +511,23 @@ serve(async (req) => {
         proximityBonus,
       }
     };
+
+    // ===== SAVE ANALYSIS TO cv_analyses for admin review =====
+    try {
+      await supabase.from('cv_analyses').insert({
+        user_id: user.id,
+        job_title: jobTitle,
+        job_description: jobDescription.substring(0, 10000),
+        cv_text: cvText.substring(0, 10000),
+        profession_id: profession?.id || null,
+        profession_name: profession?.name || 'Non identifié',
+        total_score: totalScore,
+        analysis_result: result,
+        admin_reviewed: false,
+      });
+    } catch (saveErr) {
+      console.error('Failed to save cv_analysis (non-blocking):', saveErr);
+    }
 
     return new Response(JSON.stringify(result), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }

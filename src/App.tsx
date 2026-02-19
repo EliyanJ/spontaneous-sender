@@ -38,6 +38,7 @@ import {
   AdminSEO,
   AdminBlockEditor,
   AdminPromos,
+  AdminATSTraining,
 } from "./pages/Admin";
 import AdminTicketDetail from "./pages/Admin/AdminTicketDetail";
 import BlogPost from "./pages/BlogPost";
@@ -81,6 +82,7 @@ const App = () => (
             <Route path="tickets" element={<AdminTickets />} />
             <Route path="tickets/:ticketId" element={<AdminTicketDetail />} />
             <Route path="promos" element={<AdminPromos />} />
+            <Route path="ats" element={<AdminATSTraining />} />
             <Route path="cms" element={<AdminCMS />} />
             <Route path="seo" element={<AdminSEO />} />
           </Route>
