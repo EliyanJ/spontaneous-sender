@@ -1,89 +1,103 @@
 
-# Refonte de la page "Offres d'emploi" (JobOffers)
+
+# Refonte de la page "Recherche de contact" (ContactSearch)
 
 ## Vue d'ensemble
 
-Redesign complet du composant `JobOffers.tsx` pour appliquer le style glassmorphisme de la maquette HTML fournie. La logique metier (recherche France Travail, chargement des details, states) reste 100% identique, seul le JSX/UI est reecrit.
+Redesign complet du composant `ContactSearch.tsx` pour appliquer le style glassmorphisme de la maquette HTML fournie. La logique metier (recherche emails, timer, states, handlers, Sheet) reste 100% identique, seul le JSX/UI est reecrit.
 
 ## Changements visuels principaux
 
 ### 1. Header de page
-- Titre "Offres d'emploi" en `text-2xl md:text-3xl font-bold text-white`
-- Sous-titre avec badge "France Travail" : `bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 rounded px-2 py-0.5`
-- Pilule compteur a droite : pastille verte animee + "X offres trouvees" dans un encart glassmorphisme arrondi
+- Titre "Recherche de contact" en `text-2xl lg:text-3xl font-bold text-white tracking-tight`
+- Sous-titre : "Gerez vos recherches d'emails et suivez vos campagnes." en `text-sm text-gray-400`
 
-### 2. Carte de recherche (glassmorphisme)
-- Panel `bg-[#18181b]/60 backdrop-blur-xl border border-white/[0.08] rounded-2xl p-6`
-- Glow decoratif `bg-indigo-600/10 blur-3xl` en arriere-plan
-- Grille `grid-cols-12` :
-  - **Col-span-8** : 2 inputs cote a cote (Mots-cles avec icone loupe + Localisation avec icone pin)
-  - **Col-span-4** : 2 selects (Type contrat + Distance) + bouton "Rechercher" gradient indigo-violet avec shadow
-- Inputs style `glass-input` : `bg-[#121215]/60 border border-white/10 rounded-xl py-3 focus:border-indigo-500 focus:ring-indigo-500/20`
+### 2. Top Grid Layout (2 + 1 colonnes)
 
-### 3. Etat de chargement
-- Spinner custom : cercle `border-4 border-white/10` + `border-t-indigo-500 animate-spin`
-- Texte "Recherche des meilleures offres en cours..." en `text-gray-400 animate-pulse`
+**a) CTA Card principale (col-span-2)**
+- `glass-panel rounded-2xl p-6 relative overflow-hidden`
+- Glow decoratif : `absolute -right-20 -top-20 w-64 h-64 bg-indigo-600/10 rounded-full blur-3xl`
+- Icone loupe dans carre `w-12 h-12 rounded-xl bg-indigo-500/10 border border-indigo-500/20`
+- Titre "Rechercher les informations" + sous-texte "X entreprises en attente..."
+- Bouton gradient `bg-gradient-to-r from-indigo-600 to-violet-600` avec icone eclair + shadow `shadow-indigo-500/20`
+- Hover : `scale-[1.02]`, Active : `scale-[0.98]`
 
-### 4. Liste des resultats (cards offres)
-- Cards glassmorphisme : `bg-[#18181b]/60 backdrop-blur-xl border border-white/[0.08] rounded-xl p-5`
-- `border-l-4 border-l-transparent hover:border-l-indigo-500`
-- Hover : `hover:bg-indigo-500/5` avec transition
-- Chaque card :
-  - **Titre** : `text-lg font-semibold text-white group-hover:text-indigo-300`
-  - **Badge contrat** : couleurs semantiques (indigo pour CDI, purple pour CDD, blue pour interim)
-  - **Nom entreprise** : `text-indigo-400 font-medium text-sm`
-  - **Metadata** : icones lucide (MapPin, Clock, Euro) + texte `text-xs text-gray-400`
-  - **Description** : `text-sm text-gray-300/80 line-clamp-2`
-  - **Competences** : pills `bg-[#27272a]/80 text-gray-300 text-xs border border-white/5 rounded-full`
-  - **Bouton bookmark** a droite (desktop) : cercle `bg-[#18181b] border border-white/10 rounded-full`
-  - **"Voir details"** en hover : `text-xs text-indigo-400 opacity-0 group-hover:opacity-100`
+**b) Stats Card "Emails trouves" (col-span-1)**
+- `glass-panel rounded-2xl p-6` avec icone envelope-check en vert
+- Badge `+X%` en `bg-green-400/10 text-green-400 rounded-full`
+- Chiffre en `text-3xl font-bold text-white`
+- Mini chart SVG decoratif en `absolute bottom-0 right-0 opacity-30`
 
-### 5. Etat vide (pas de resultats)
-- Cercle avec icone loupe en glassmorphisme
-- Titre "Lancez une recherche" + sous-texte
+### 3. Stats Row (4 colonnes)
+- 4 cards `glass-panel rounded-2xl p-5 flex items-center gap-4`
+- Chaque card : cercle icone `w-10 h-10 rounded-full bg-zinc-800` + label uppercase `text-xs text-gray-500` + valeur `text-xl font-bold`
+  - "En attente" : icone Clock, valeur blanche
+  - "Sans email" : icone Ban/XCircle, valeur blanche
+  - "Taux succes" : icone Target, valeur `text-indigo-400`
+  - "Voir la liste" : bouton interactif `border-dashed border-white/20 hover:border-indigo-500/50`, ouvre le Sheet
 
-### 6. Modal detail offre (glassmorphisme)
-- Overlay `bg-black/60 backdrop-blur-sm`
-- Contenu : `bg-[#121215]/95 backdrop-blur-2xl border border-white/[0.08] rounded-2xl max-w-3xl`
-- **Header sticky** : titre `text-2xl font-bold`, entreprise avec icone building en indigo, bouton X
-- **Badges metadata** : encarts `bg-[#18181b]/60 border border-white/10 rounded-lg` avec icones indigo
-- Badge salaire specifique : `bg-green-500/10 border-green-500/20 text-green-400`
-- **Sections** avec `border-l-2 border-indigo-500 pl-3` sur les titres :
-  - Description du poste (texte + liste a puces)
-  - Competences : pills `bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 rounded-full`
-  - Formation : items avec bullet indigo
-  - A propos de l'entreprise : encart `bg-[#18181b]/40 border border-white/10 rounded-xl`
-- **Footer CTA** : bouton "Postuler sur le site" en `bg-white text-black font-semibold rounded-xl shadow-[0_0_20px_rgba(255,255,255,0.15)]`
-- Sous-texte : "Vous serez redirige vers le site du recruteur..."
+### 4. Tableau "Derniers resultats"
+- Panel `glass-panel rounded-2xl overflow-hidden`
+- Header : titre "Derniers resultats" + barre de recherche `bg-[#09090b] border border-white/[0.1] rounded-lg` + bouton filtre
+- En-tete tableau : `bg-white/[0.02] border-b border-white/[0.05]` avec colonnes grid-cols-12 (Entreprise, Localisation, Statut, Action)
+- Lignes : `hover:bg-white/[0.02]` avec :
+  - Avatar initiale dans carre colore `w-8 h-8 rounded font-bold text-xs`
+  - Nom entreprise `text-sm font-medium text-white` + secteur `text-xs text-gray-500`
+  - Localisation `text-sm text-gray-400`
+  - Badges statut :
+    - Vert "Email trouve" : `bg-green-500/10 text-green-400 border-green-500/20` + pastille verte
+    - Jaune "En recherche" : `bg-yellow-500/10 text-yellow-400 border-yellow-500/20` + pastille animee
+    - Rouge "Sans email" : `bg-red-500/10 text-red-400 border-red-500/20` + icone X
+  - Bouton ellipsis en hover : `opacity-0 group-hover:opacity-100`
+
+### 5. Overlay de recherche (inchange visuellement)
+- Garde le pattern plein ecran `fixed inset-0 z-[100]` avec jauge SVG circulaire
+- Applique le glassmorphisme au conteneur : `glass-panel rounded-2xl` au lieu de `Card`
+- Stats row : `bg-[#18181b]/50 rounded-lg` au lieu de `bg-muted/50`
+- Barre live results : `bg-[#18181b]/50 rounded` au lieu de `bg-muted/50`
+
+### 6. Ecran "Recherche terminee"
+- Card glassmorphisme `glass-panel rounded-2xl` avec gradient subtil
+- Cercle succes `bg-green-500/20` avec CheckCircle en vert
+- Bouton CTA "Lancer une campagne" en `bg-white text-black font-semibold rounded-xl shadow-[0_0_20px_rgba(255,255,255,0.15)]`
+
+### 7. Sheet (panneau lateral)
+- Style glassmorphisme sur le contenu : `bg-[#09090b] border-l border-white/[0.08]`
+- Cards entreprises : `glass-panel p-4 rounded-xl border border-white/[0.05] hover:border-indigo-500/30`
+- Chaque card : nom en bold, code postal dans badge `bg-zinc-800 text-gray-400 text-[10px] rounded`, pastille couleur statut
 
 ## Fichier a modifier
 
 | Fichier | Action |
 |---------|--------|
-| `src/components/dashboard/JobOffers.tsx` | Reecriture complete du JSX avec le design glassmorphisme. Toute la logique metier (states, handlers, API calls, interfaces) reste 100% identique. |
+| `src/components/dashboard/ContactSearch.tsx` | Reecriture complete du JSX avec le design glassmorphisme. Toute la logique metier reste 100% identique. |
 
 ## Details techniques
 
-### Mapping des badges contrat
+### Couleurs des avatars initiales (rotation)
 ```text
-CDI       -> bg-indigo-500/20 text-indigo-300 border-indigo-500/30
-CDD       -> bg-purple-500/20 text-purple-300 border-purple-500/30
-MIS       -> bg-blue-500/20 text-blue-300 border-blue-500/30
-SAI       -> bg-amber-500/20 text-amber-300 border-amber-500/30
-LIB       -> bg-teal-500/20 text-teal-300 border-teal-500/30
-default   -> bg-gray-500/20 text-gray-300 border-gray-500/30
+Index 0 -> bg-white text-black
+Index 1 -> bg-indigo-600 text-white
+Index 2 -> bg-blue-500 text-white
+Index 3 -> bg-purple-600 text-white
+Index 4 -> bg-emerald-600 text-white
+Index 5 -> bg-amber-500 text-black
 ```
 
-### Date relative
-- Utiliser `date-fns` (deja installe) avec `formatDistanceToNow` + `{ locale: fr }` pour afficher "Publie il y a X jours"
+### Taux de succes
+- Calcul : `companiesWithEmail.length / companies.length * 100` affiche en `text-indigo-400`
 
 ### Ce qui ne change PAS
-- Interface `JobOffer` et `SearchResponse`
-- States : loading, offers, selectedOffer, searchParams
-- Handlers : handleSearch, loadOfferDetails, handleOfferClick
-- Appels API : supabase.functions.invoke (france-travail)
-- Le composant CommuneSearch pour la localisation
+- Interfaces TypeScript (SearchResult, CompanyInfo, ContactSearchProps)
+- Tous les states (companies, companiesWithoutEmail, companiesWithEmail, loading, isSearching, results, summary, etc.)
+- Tous les handlers (handleSearch, handleGoToCampaigns, loadCompanies)
+- useEffect pour le timer et le chargement
+- Le composant CreditsNeededModal
+- Le Sheet et ScrollArea pour la liste entreprises
+- L'overlay de recherche en cours (logique identique, juste le style glassmorphisme)
 
 ### Responsive
-- Desktop : grille 12 colonnes pour la recherche, cards avec bookmark a droite
-- Mobile : empilement vertical, bookmark masque, metadata en flex-wrap
+- Desktop : grid 3 colonnes pour le top, 4 colonnes pour les stats, tableau complet
+- Tablette : 2 colonnes, tableau simplifie
+- Mobile : empilement vertical, tableau masque au profit d'une liste cards
+
