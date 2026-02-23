@@ -44,6 +44,7 @@ import {
 import AdminTicketDetail from "./pages/Admin/AdminTicketDetail";
 import BlogPost from "./pages/BlogPost";
 import Onboarding from "./pages/Onboarding";
+import CVBuilder from "./pages/CVBuilder";
 
 const queryClient = new QueryClient();
 
@@ -71,6 +72,7 @@ const App = () => (
           <Route path="/legal-notice" element={<LegalNoticeEn />} />
           <Route path="/pricing" element={<Pricing />} />
           <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
+          <Route path="/cv-builder" element={<ProtectedRoute><CVBuilder /></ProtectedRoute>} />
           <Route path="/dashboard" element={<ProtectedRoute><Index /></ProtectedRoute>} />
           
           {/* Admin Routes */}

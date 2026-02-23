@@ -1,6 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, Building2, Briefcase, Send, Shield, Lock, ChevronDown, FileBarChart } from "lucide-react";
+import { Search, Building2, Briefcase, Send, Shield, Lock, ChevronDown, FileBarChart, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAdminCheck } from "@/hooks/useAdminCheck";
 import { usePlanFeatures } from "@/hooks/usePlanFeatures";
@@ -146,6 +146,15 @@ export const HorizontalNav = ({ activeTab, onTabChange }: HorizontalNavProps) =>
         </button>
       )}
       
+      {/* CV Builder button */}
+      <button
+        onClick={() => navigate('/cv-builder')}
+        className="flex items-center gap-2 px-3 md:px-4 py-2 md:py-2.5 rounded-xl font-medium text-sm transition-all duration-300 shrink-0 text-muted-foreground hover:text-foreground hover:bg-accent"
+      >
+        <FileText className="h-4 w-4" />
+        <span className="hidden lg:inline">CV Builder</span>
+      </button>
+
       {/* Admin: Score CV button */}
       {isAdmin && (
         <button
