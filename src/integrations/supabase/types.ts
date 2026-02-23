@@ -447,6 +447,69 @@ export type Database = {
           },
         ]
       }
+      cv_sector_phrases: {
+        Row: {
+          category: string
+          context: string | null
+          created_at: string
+          id: string
+          keywords: Json | null
+          phrase: string
+          sector: string
+        }
+        Insert: {
+          category: string
+          context?: string | null
+          created_at?: string
+          id?: string
+          keywords?: Json | null
+          phrase: string
+          sector: string
+        }
+        Update: {
+          category?: string
+          context?: string | null
+          created_at?: string
+          id?: string
+          keywords?: Json | null
+          phrase?: string
+          sector?: string
+        }
+        Relationships: []
+      }
+      cv_templates: {
+        Row: {
+          created_at: string
+          css_styles: string
+          html_template: string
+          id: string
+          is_active: boolean
+          name: string
+          sector: string
+          thumbnail_url: string | null
+        }
+        Insert: {
+          created_at?: string
+          css_styles?: string
+          html_template?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          sector: string
+          thumbnail_url?: string | null
+        }
+        Update: {
+          created_at?: string
+          css_styles?: string
+          html_template?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          sector?: string
+          thumbnail_url?: string | null
+        }
+        Relationships: []
+      }
       email_campaigns: {
         Row: {
           attachments: Json | null
@@ -1254,6 +1317,53 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      user_generated_cvs: {
+        Row: {
+          ats_score: number | null
+          created_at: string
+          cv_data: Json
+          generated_html: string | null
+          id: string
+          job_description: string | null
+          name: string
+          template_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          ats_score?: number | null
+          created_at?: string
+          cv_data?: Json
+          generated_html?: string | null
+          id?: string
+          job_description?: string | null
+          name?: string
+          template_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          ats_score?: number | null
+          created_at?: string
+          cv_data?: Json
+          generated_html?: string | null
+          id?: string
+          job_description?: string | null
+          name?: string
+          template_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_generated_cvs_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "cv_templates"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_notifications: {
         Row: {
