@@ -1,107 +1,110 @@
 
 
-# Refonte de la page Recherche du Dashboard
+# Refonte de la page "Envoyer une campagne"
 
 ## Vue d'ensemble
 
-Redesign complet de la page de recherche (`SearchCompanies`) pour correspondre a la maquette UX Pilot. Le changement principal est le passage d'un flow multi-etapes (select -> filters -> results) a un **layout 2 colonnes simultane** (panneau de recherche a gauche, resultats a droite).
+Redesign complet de `UnifiedEmailSender.tsx` pour passer du layout actuel (tabs sequentiels Configuration/Preview empiles verticalement) a un **layout 2 colonnes simultane** (panneau config a gauche, preview a droite) conforme a la maquette HTML fournie.
 
 ## Changements visuels principaux
 
 ### 1. Layout general
-- **Actuel** : Flow en etapes sequentielles (mode -> filtres -> resultats)
-- **Nouveau** : Grille `grid-cols-12` avec panneau gauche (col-span-4) et resultats a droite (col-span-8), visibles en meme temps
+- **Actuel** : Tabs pleine largeur (Configuration | Preview) avec contenu empile
+- **Nouveau** : Grille `grid-cols-12` avec panneau gauche (col-span-4) et panneau droit (col-span-8), visibles simultanement
 
-### 2. Toggle Mode IA / Manuel (centre en haut)
-- Pilule arrondie avec 2 boutons : "Mode IA" (icone wand/sparkles) et "Manuel"
-- Indicateur anime (slider indigo) sur le mode actif
-- Identique a la maquette
+### 2. Panneau gauche (col-span-4) - 4 cartes empilees
 
-### 3. Panneau gauche (col-span-4)
-3 cartes empilees :
+**a) Carte "Statut Gmail"**
+- Glassmorphisme avec icone Google en watermark
+- Pastille verte animee "Connecte" ou bouton "Connecter Gmail"
+- Email + quota restant en sous-texte
+- Bouton refresh discret
 
-**a) Carte "Assistant Recherche" (IA)**
-- Badge "Beta" en haut a droite
-- Icone robot + titre
-- Textarea (placeholder: "Je cherche une startup tech a Paris...")
-- Compteur caracteres (0/500)
-- Bouton gradient indigo/violet "Lancer la recherche IA"
+**b) Carte "Destinataires"**
+- Input pour ajout manuel d'email (avec bouton +)
+- Liste scrollable des entreprises avec checkbox
+- Chaque item : nom, email, tags colores (secteur), localisation
+- Items selectionnes : bordure indigo + fond indigo/10
+- Items non selectionnes : opacite reduite, fond neutre
+- Footer : "Tout selectionner" / "Vider la liste" + compteur "X/Y selectionnee(s)"
 
-**b) Carte "Filtres Manuels"**
-- Bordure superieure teal
-- 4 champs : Secteur (dropdown avec badge compteur), Departement (dropdown), Code APE (input), Taille (dropdown)
-- Bouton "Appliquer les filtres"
-- Lien "Reinitialiser"
+**c) Carte "Options IA" (Premium)**
+- Badge dore "Premium" en haut a droite
+- Blur violet decoratif en arriere-plan
+- 2 toggles avec icones dans des carres colores :
+  - Emails personnalises (icone envelope, fond indigo)
+  - Lettres de motivation (icone file, fond purple)
+- Separateur
+- 2 dropdowns en grille 2 colonnes : Approche + Ton
+- Pour non-Premium : carte verrouillee avec upgrade banner
 
-**c) Carte "Passe au Premium" (upgrade banner)**
-- Bordure gradient indigo/violet
-- Icone couronne
-- Texte + lien "Voir les offres"
-- Visible uniquement pour les plans non-Premium
+**d) Bouton d'action principal**
+- Pleine largeur, gradient indigo-violet
+- Texte dynamique : "Generer pour X entreprises"
+- Icone wand-sparkles animee au hover
 
-### 4. Panneau droit (col-span-8) - Resultats
-**Header des resultats :**
-- Titre "Resultats" + compteur entre parentheses
-- Sous-titre "Base sur tes criteres..."
-- Tri par : dropdown (Pertinence, Date, Taille)
-- Toggle vue grille/liste
+### 3. Panneau droit (col-span-8)
 
-**Cards entreprise (grille 2 colonnes) :**
-- Design glassmorphisme (glass-panel)
-- Logo : carre blanc avec initiale du nom en gras
-- Nom de l'entreprise (hover -> couleur indigo)
-- Localisation + secteur sous le nom
-- Tags colores : type (Startup/Scale-up/Licorne en teal), taille (en violet), secteur (en bleu)
-- Description courte (line-clamp-2)
-- Boutons : "Ajouter" (indigo) + lien externe (icone)
-- Etat "Deja ajoute" (grise, disabled)
-- Icone bookmark en haut a droite
+**Header tabs :**
+- Pilule glassmorphisme avec 2 boutons : "Configuration" et "Previsualisation"
+- Badge compteur sur Previsualisation
 
-**Pagination en bas :**
-- "Affichage X-Y sur Z"
-- Boutons de pages numerotees
+**Onglet Configuration (panneau droit) :**
+- Contenu de l'email (objet + body + variables + pieces jointes)
+- CV / Profil (upload, profils sauvegardes, textarea)
+- Templates (charger/sauvegarder)
 
-## Fichiers a modifier
+**Onglet Previsualisation :**
+- Liste verticale de cards email generees
+- Chaque card :
+  - Header colore : icone check vert (succes) ou X rouge (erreur)
+  - Nom entreprise + email
+  - Badge "Lettre jointe" si cover letter
+  - Boutons : oeil (preview), crayon (edit), X (supprimer)
+  - Body : objet en gras + apercu du corps (line-clamp-2)
+  - Etat erreur : fond rouge, bouton "Corriger manuellement"
+
+**Carte "Options d'envoi" (en bas du panneau droit) :**
+- Grille 2 colonnes :
+  - Gauche : radio "Envoyer maintenant" / "Programmer l'envoi"
+  - Droite : conseil pro (fond indigo) + bouton "Envoyer X emails prets" (fond blanc, texte noir)
+
+### 4. Overlay de generation (inchange)
+- Le composant `GenerationOverlay` reste identique
+
+## Fichier a modifier
 
 | Fichier | Action |
 |---------|--------|
-| `src/components/dashboard/SearchCompanies.tsx` | Reecriture du composant principal : layout 2 colonnes, integration des panels AI + filtres + resultats simultanes |
-| `src/components/dashboard/search/SearchResultsStep.tsx` | Reecriture complete : nouveau design des cards (logo initiale, tags, bookmark, description) + pagination |
-| `src/components/dashboard/search/AISearchMode.tsx` | Redesign : carte glassmorphisme avec textarea, badge Beta, compteur caracteres |
-| `src/components/dashboard/search/ManualSearchMode.tsx` | Adaptation en panneau compact pour le layout colonne gauche (filtres inline au lieu de grille 3 colonnes) |
-| `src/components/dashboard/search/SearchFiltersStep.tsx` | Potentiellement integre dans le panneau gauche (fusion avec ManualSearchMode) |
+| `src/components/dashboard/UnifiedEmailSender.tsx` | Reecriture complete du JSX : layout 2 colonnes, glassmorphisme, nouveau design des cartes. La logique metier (states, handlers, API calls) reste 100% identique. |
 
 ## Details techniques
 
-### Cards entreprise - nouveau design
-- Initiale du nom dans un carre blanc arrondi (`w-12 h-12 rounded-xl bg-white`)
-- Tags avec couleurs semantiques : `bg-teal-500/10 text-teal-400 border-teal-500/20` pour le type, `bg-purple-500/10` pour la taille
-- Hover effect : `translateY(-2px)` + glow indigo
-- Bookmark toggle (outline/solid)
-
-### Glassmorphisme des panneaux
-```css
-background: rgba(26, 26, 46, 0.85);
-backdrop-filter: blur(12px);
-border: 1px solid rgba(255, 255, 255, 0.08);
-border-radius: 1.5rem;
+### Glassmorphisme unifie
+Toutes les cartes utilisent la classe pattern :
 ```
-Traduit en Tailwind : `bg-card/85 backdrop-blur-xl border border-white/[0.08] rounded-3xl`
+bg-[#121215]/60 backdrop-blur-xl border border-white/[0.08] rounded-2xl
+```
 
-### Flow simplifie
-- Plus de navigation par etapes (select -> filters -> results)
-- Les filtres et les resultats sont visibles en meme temps
-- La recherche se lance et les resultats apparaissent dans le panneau droit
-- Le job progress s'affiche dans le panneau droit en remplacement temporaire des resultats
+### Cards destinataires
+- Selectionne : `border-indigo-500/30 bg-indigo-500/10`
+- Non selectionne : `border-white/[0.08] bg-[#121215]/30 opacity-70 hover:opacity-100`
+- Tags secteur : couleurs semantiques (teal pour SaaS, purple pour Design, etc.)
+
+### Bouton d'envoi final
+- Style inverse (fond blanc, texte noir) : `bg-white text-black hover:bg-gray-200`
+- Shadow glow : `shadow-[0_0_20px_rgba(255,255,255,0.1)]`
 
 ### Ce qui ne change PAS
-- La logique metier (appels API search-companies, job-worker)
-- Le systeme de sauvegarde des entreprises (saveCompany, saveAllCompanies)
-- Le feature gating par plan (AutomaticSearch pour Free/Standard sans AI/Manual)
-- Le hook useJobQueue et le composant JobProgressCard (juste repositionne)
-- La navigation header et le footer (geres par Index.tsx)
+- Tous les states et hooks (useState, useEffect)
+- Tous les handlers (handleGenerate, handleSendAll, handleEditEmail, etc.)
+- Les appels API (supabase.functions.invoke)
+- Le composant GenerationOverlay
+- Le feature gating (usePlanFeatures, isPremium)
+- Les dialogs d'edition et de sauvegarde
+- La logique de smart merge et sync des destinataires manuels
 
 ### Responsive
 - Desktop : 2 colonnes (4+8)
-- Mobile : empilement vertical, panneau filtres repliable, cards en colonne unique
+- Mobile : empilement vertical, panneau destinataires avec hauteur reduite
 
