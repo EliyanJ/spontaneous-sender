@@ -19,7 +19,7 @@ import { CreditsDisplay } from "@/components/CreditsDisplay";
 import { ProfileDropdown } from "@/components/ProfileDropdown";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
-import cronosLogo from "@/assets/cronos-logo.png";
+import logoTransparent from "@/assets/logo-transparent.png";
 
 const Index = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -134,7 +134,7 @@ const Index = () => {
 
           {/* Logo - hidden on mobile to make room for navigation */}
           <div className="hidden sm:flex items-center gap-2 shrink-0">
-            <img src={cronosLogo} alt="Cronos" className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg" />
+            <img src={logoTransparent} alt="Cronos" className="h-7 w-auto sm:h-8" />
             <span className="font-semibold text-foreground hidden sm:inline">Cronos</span>
           </div>
           
@@ -142,7 +142,7 @@ const Index = () => {
           {isMobile && (
             <div className="flex items-center gap-2">
               <CreditsDisplay />
-              <img src={cronosLogo} alt="Cronos" className="w-7 h-7 rounded-lg" />
+              <img src={logoTransparent} alt="Cronos" className="h-7 w-auto" />
             </div>
           )}
 
@@ -189,8 +189,8 @@ const Index = () => {
         <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4">
           <div className="flex flex-col items-center gap-2 sm:gap-4">
             <div className="flex items-center gap-2">
-              <img src={cronosLogo} alt="Cronos" className="h-4 w-4 sm:h-5 sm:w-5" />
-              <span className="font-display font-semibold text-foreground text-sm sm:text-base">Cronos</span>
+              <img src={logoTransparent} alt="Cronos" className="h-4 w-auto sm:h-5" />
+              <span className="font-display font-semibold text-foreground text-sm sm:text-base hidden sm:inline">Cronos</span>
             </div>
             <div className="flex flex-wrap justify-center gap-2 sm:gap-4 md:gap-6 text-[10px] sm:text-sm text-muted-foreground">
               <a href="/privacy-policy" className="hover:text-primary transition-colors duration-300">Confidentialité</a>

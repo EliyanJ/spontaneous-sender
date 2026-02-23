@@ -14,7 +14,7 @@ import {
   Bot
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import cronosLogo from "@/assets/cronos-logo.png";
+import logoTransparent from "@/assets/logo-transparent.png";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useState, useEffect } from "react";
 
@@ -58,8 +58,8 @@ export const AdminLayout = () => {
               <span className="hidden sm:inline">Retour</span>
             </button>
             <div className="flex items-center gap-2">
-              <img src={cronosLogo} alt="Cronos" className="w-8 h-8 rounded-lg" />
-              <span className="font-semibold text-foreground">Admin</span>
+              <img src={logoTransparent} alt="Cronos" className="h-8 w-auto" />
+              <span className="font-semibold text-foreground hidden sm:inline">Admin</span>
               <Shield className="h-4 w-4 text-primary" />
             </div>
           </div>

@@ -24,7 +24,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import cronosLogo from "@/assets/cronos-logo.png";
+import logoTransparent from "@/assets/logo-transparent.png";
 
 const Landing = () => {
   const [isDark, setIsDark] = useState(() => {
@@ -70,7 +70,7 @@ const Landing = () => {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between items-center h-20">
               <div className="flex items-center gap-3">
-                <img src={cronosLogo} alt="Cronos" className="h-10 w-10 rounded-xl shadow-lg shadow-primary/20" />
+                <img src={logoTransparent} alt="Cronos" className="h-10 w-auto" />
                 <span className="text-2xl font-bold tracking-tight text-foreground font-display">Cronos</span>
               </div>
 
@@ -613,7 +613,7 @@ const Landing = () => {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex flex-col md:flex-row justify-between items-center mb-12">
               <div className="flex items-center gap-3 mb-6 md:mb-0">
-                <img src={cronosLogo} alt="Cronos" className="h-8 w-8 rounded-lg" />
+                <img src={logoTransparent} alt="Cronos" className="h-8 w-auto" />
                 <span className="text-xl font-bold text-foreground font-display">Cronos</span>
               </div>
               

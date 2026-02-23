@@ -17,7 +17,7 @@ import {
   Heading1, Heading2, Heading3, AlignLeft, AlignCenter, AlignRight, Anchor, Image, Film,
   Search, PanelRightClose, PanelRight, Eye, Blocks
 } from "lucide-react";
-import cronosLogo from "@/assets/cronos-logo.png";
+import logoTransparent from "@/assets/logo-transparent.png";
 import { MediaLibrary } from "@/components/cms/MediaLibrary";
 import { ColorPickerPopover } from "@/components/cms/ColorPickerPopover";
 import { BlockInserter } from "@/components/cms/BlockInserter";
@@ -351,7 +351,7 @@ export const AdminPageEditor = () => {
               {/* Simulated header */}
               <div className="bg-card/80 backdrop-blur-sm border-b border-border/30 px-6 py-3.5 flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
-                  <img src={cronosLogo} alt="Cronos" className="h-7 w-7 rounded-lg" />
+                  <img src={logoTransparent} alt="Cronos" className="h-7 w-auto" />
                   <span className="font-display text-sm font-bold text-foreground">Cronos</span>
                 </div>
                 <div className="flex gap-5 text-xs text-muted-foreground/60">
@@ -402,7 +402,7 @@ export const AdminPageEditor = () => {
               <div className="border-t border-border/30 bg-card/30 px-6 py-5">
                 <div className="flex items-center justify-between text-xs text-muted-foreground/50">
                   <div className="flex items-center gap-2">
-                    <img src={cronosLogo} alt="Cronos" className="h-4 w-4 opacity-50" />
+                    <img src={logoTransparent} alt="Cronos" className="h-4 w-auto opacity-50" />
                     <span className="font-semibold">Cronos</span>
                   </div>
                   <span>© 2026 Cronos</span>
