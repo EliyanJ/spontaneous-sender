@@ -1,7 +1,8 @@
 import React, { useState } from "react";
-import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Search, Sparkles, Loader2 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Bot, Sparkles, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 
@@ -14,9 +15,10 @@ interface AIResponse {
 
 interface AISearchModeProps {
   onSectorsValidated: (codes: string[]) => void;
+  loading?: boolean;
 }
 
-export const AISearchMode = ({ onSectorsValidated }: AISearchModeProps) => {
+export const AISearchMode = ({ onSectorsValidated, loading: externalLoading }: AISearchModeProps) => {
   const [keyword, setKeyword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [clarification, setClarification] = useState<string | null>(null);
@@ -49,7 +51,6 @@ export const AISearchMode = ({ onSectorsValidated }: AISearchModeProps) => {
       if (data.clarification) {
         setClarification(data.clarification);
       } else if (data.codes && data.codes.length > 0) {
-        // Passer directement aux filtres avec les codes aléatoires
         toast({ 
           title: `${data.codes.length} secteurs sélectionnés`, 
           description: data.description || "Secteurs diversifiés automatiquement" 
@@ -70,72 +71,61 @@ export const AISearchMode = ({ onSectorsValidated }: AISearchModeProps) => {
     }
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !isLoading) handleSearch();
-  };
+  const busy = isLoading || externalLoading;
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6 sm:space-y-8 px-2 sm:px-0">
-      {/* Search Bar - Centered OpenAI style */}
-      <div className="space-y-4">
-        <div className="text-center space-y-2">
-          <div className="flex items-center justify-center gap-2 text-primary">
-            <Sparkles className="h-5 w-5" />
-            <span className="text-sm font-medium">Recherche IA intelligente</span>
+    <div className="rounded-2xl bg-card/85 backdrop-blur-xl border border-border/50 p-5 space-y-4 animate-fade-in">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <div className="p-1.5 rounded-lg bg-primary/10">
+            <Bot className="h-4 w-4 text-primary" />
           </div>
-          <p className="text-muted-foreground text-xs sm:text-sm">
-            Tapez un domaine et l'IA sélectionnera automatiquement des secteurs diversifiés
-          </p>
+          <h3 className="font-semibold text-sm">Assistant Recherche</h3>
         </div>
-
-        <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 h-4 sm:h-5 w-4 sm:w-5 text-muted-foreground" />
-            <Input
-              placeholder="Ex: marketing, finance, RH..."
-              value={keyword}
-              onChange={(e) => setKeyword(e.target.value)}
-              onKeyDown={handleKeyDown}
-              disabled={isLoading}
-              className="pl-10 sm:pl-12 h-12 sm:h-14 text-base sm:text-lg bg-card border-border/50 focus:border-primary/50 rounded-xl"
-            />
-          </div>
-          <Button 
-            onClick={handleSearch} 
-            size="lg" 
-            disabled={isLoading || !keyword.trim()}
-            className="h-12 sm:h-14 px-6 sm:px-8 btn-premium rounded-xl whitespace-nowrap shrink-0"
-            tabIndex={isLoading ? -1 : 0}
-          >
-            {isLoading ? (
-              <Loader2 className="h-5 w-5 animate-spin" />
-            ) : (
-              "Rechercher"
-            )}
-          </Button>
-        </div>
+        <Badge variant="secondary" className="text-[10px] px-2 py-0.5 bg-primary/10 text-primary border-primary/20">
+          Beta
+        </Badge>
       </div>
 
-      {/* Loading State */}
-      {isLoading && (
-        <div className="flex flex-col items-center justify-center py-12 animate-fade-in">
-          <div className="relative">
-            <div className="h-16 w-16 rounded-full border-4 border-primary/20 animate-pulse" />
-            <Sparkles className="absolute inset-0 m-auto h-6 w-6 text-primary animate-bounce" />
-          </div>
-          <p className="mt-4 text-muted-foreground">L'IA analyse et diversifie les secteurs...</p>
-          <p className="text-xs text-muted-foreground/60 mt-1">Sélection automatique et aléatoire en cours</p>
+      <p className="text-xs text-muted-foreground">
+        Décris le type d'entreprise que tu cherches et l'IA trouvera les meilleurs secteurs.
+      </p>
+
+      {/* Textarea */}
+      <div className="relative">
+        <Textarea
+          placeholder="Je cherche une startup tech à Paris qui recrute des développeurs..."
+          value={keyword}
+          onChange={(e) => setKeyword(e.target.value.slice(0, 500))}
+          disabled={busy}
+          className="min-h-[100px] bg-background/50 border-border/50 rounded-xl resize-none text-sm"
+        />
+        <span className="absolute bottom-2 right-3 text-[10px] text-muted-foreground">
+          {keyword.length}/500
+        </span>
+      </div>
+
+      {/* Clarification */}
+      {clarification && !isLoading && (
+        <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-sm text-amber-200">
+          💡 {clarification}
         </div>
       )}
 
-      {/* Clarification Message */}
-      {clarification && !isLoading && (
-        <div className="p-6 rounded-xl bg-amber-500/10 border border-amber-500/30 animate-fade-in">
-          <p className="text-amber-200 text-center text-lg">
-            💡 {clarification}
-          </p>
-        </div>
-      )}
+      {/* Search Button */}
+      <Button 
+        onClick={handleSearch} 
+        disabled={busy || !keyword.trim()}
+        className="w-full h-10 rounded-xl bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-sm font-medium"
+      >
+        {busy ? (
+          <Loader2 className="h-4 w-4 animate-spin mr-2" />
+        ) : (
+          <Sparkles className="h-4 w-4 mr-2" />
+        )}
+        {busy ? "Recherche en cours..." : "Lancer la recherche IA"}
+      </Button>
     </div>
   );
 };

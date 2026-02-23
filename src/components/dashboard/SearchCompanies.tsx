@@ -4,14 +4,15 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { AISearchMode } from "./search/AISearchMode";
 import { ManualSearchMode } from "./search/ManualSearchMode";
-import { SearchFiltersStep } from "./search/SearchFiltersStep";
 import { SearchResultsStep } from "./search/SearchResultsStep";
 import { JobProgressCard } from "./JobProgressCard";
 import { AutomaticSearch } from "./AutomaticSearch";
+import { UpgradeBanner } from "@/components/UpgradeBanner";
 import { useJobQueue } from "@/hooks/useJobQueue";
 import { usePlanFeatures } from "@/hooks/usePlanFeatures";
 import { Sparkles, Grid3X3, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+
 interface Company {
   siren: string;
   siret: string;
@@ -34,7 +35,6 @@ interface Company {
 }
 
 type SearchMode = "ai" | "manual";
-type SearchStep = "select" | "filters" | "results" | "processing";
 
 interface SearchCompaniesProps {
   onNavigateToTab?: (tab: string) => void;
@@ -43,7 +43,6 @@ interface SearchCompaniesProps {
 export const SearchCompanies = ({ onNavigateToTab }: SearchCompaniesProps = {}) => {
   const [, setSearchParams] = useSearchParams();
   const [mode, setMode] = useState<SearchMode>("ai");
-  const [step, setStep] = useState<SearchStep>("select");
   const [loading, setLoading] = useState(false);
   const [savingCompany, setSavingCompany] = useState<string | null>(null);
   const [companies, setCompanies] = useState<Company[]>([]);
@@ -51,38 +50,26 @@ export const SearchCompanies = ({ onNavigateToTab }: SearchCompaniesProps = {}) 
   const [villes, setVilles] = useState<string[]>([]);
   const [minResults, setMinResults] = useState("20");
   const [minEmployees, setMinEmployees] = useState("5-100");
+  const [isProcessing, setIsProcessing] = useState(false);
 
-  // Plan features hook
-  const { features, isLoading: planLoading } = usePlanFeatures();
+  const { features, isLoading: planLoading, isPremium } = usePlanFeatures();
 
-  // Job queue hook
   const handleJobComplete = useCallback((job: any) => {
-    // Auto-redirect to results when job completes
     if (job.results && job.results.length > 0) {
       setCompanies(job.results);
-      setStep("results");
     }
+    setIsProcessing(false);
   }, []);
 
   const { currentJob, isLoading: jobLoading, createJob, subscribeToJob, unsubscribe } = useJobQueue(handleJobComplete);
 
-  // Cleanup subscription on unmount
   useEffect(() => {
     return () => unsubscribe();
   }, [unsubscribe]);
 
-  const handleSectorsValidated = (codes: string[]) => {
-    setSelectedCodes(codes);
-    setStep("filters");
-  };
-
-  const handleBackToSelect = () => {
-    setStep("select");
-    setCompanies([]);
-  };
-
-  const handleSearch = async () => {
-    if (selectedCodes.length === 0 && villes.length === 0) {
+  const handleSearch = async (codes?: string[]) => {
+    const searchCodes = codes || selectedCodes;
+    if (searchCodes.length === 0 && villes.length === 0) {
       toast.error("Sélectionne au moins un secteur ou une ville");
       return;
     }
@@ -101,9 +88,8 @@ export const SearchCompanies = ({ onNavigateToTab }: SearchCompaniesProps = {}) 
         return;
       }
 
-      // Step 1: Fetch companies from API (quick search)
       const allResults: Company[] = [];
-      const codesToSearch = selectedCodes.length > 0 ? selectedCodes : [''];
+      const codesToSearch = searchCodes.length > 0 ? searchCodes : [''];
 
       for (const codeApe of codesToSearch) {
         const searchPayload: any = {
@@ -145,9 +131,8 @@ export const SearchCompanies = ({ onNavigateToTab }: SearchCompaniesProps = {}) 
         return;
       }
 
-      // Step 2: Create job in queue for further processing (emails, websites)
       const searchParams = {
-        selectedCodes,
+        selectedCodes: searchCodes,
         villes,
         minResults: minResultsNum,
         minEmployees,
@@ -157,14 +142,10 @@ export const SearchCompanies = ({ onNavigateToTab }: SearchCompaniesProps = {}) 
       
       if (jobId) {
         subscribeToJob(jobId);
-        setStep("processing");
-        
-        // Trigger the worker to start processing
+        setIsProcessing(true);
         supabase.functions.invoke('job-worker', { body: {} }).catch(console.error);
       } else {
-        // Fallback: show results directly if job creation fails
         setCompanies(uniqueResults);
-        setStep("results");
       }
 
       toast.success(`${uniqueResults.length} entreprise(s) trouvée(s), traitement en cours...`);
@@ -175,6 +156,19 @@ export const SearchCompanies = ({ onNavigateToTab }: SearchCompaniesProps = {}) 
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleAISectorsValidated = (codes: string[]) => {
+    setSelectedCodes(codes);
+    handleSearch(codes);
+  };
+
+  const handleManualSearch = (codes: string[], locations: string[], employees: string, count: string) => {
+    setSelectedCodes(codes);
+    setVilles(locations);
+    setMinEmployees(employees);
+    setMinResults(count);
+    handleSearch(codes);
   };
 
   const saveCompany = async (company: Company) => {
@@ -221,7 +215,6 @@ export const SearchCompanies = ({ onNavigateToTab }: SearchCompaniesProps = {}) 
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Generate a unique batch ID for this search session
       const searchBatchId = crypto.randomUUID();
       const searchBatchDate = new Date().toISOString();
 
@@ -263,7 +256,6 @@ export const SearchCompanies = ({ onNavigateToTab }: SearchCompaniesProps = {}) 
       const { error } = await supabase.from('companies').insert(toInsert);
       if (error) throw error;
 
-      // Store the batch ID in session for EmailSearchSection to use
       sessionStorage.setItem('latest_search_batch_id', searchBatchId);
       sessionStorage.setItem('latest_search_batch_count', String(toInsert.length));
 
@@ -275,7 +267,6 @@ export const SearchCompanies = ({ onNavigateToTab }: SearchCompaniesProps = {}) 
       toast.success(`${toInsert.length} entreprise(s) sauvegardée(s)`);
       setCompanies([]);
       
-      // Redirect to entreprises tab
       if (onNavigateToTab) {
         onNavigateToTab('entreprises');
       } else {
@@ -288,7 +279,6 @@ export const SearchCompanies = ({ onNavigateToTab }: SearchCompaniesProps = {}) 
     }
   };
 
-  // If plan is loading, show skeleton
   if (planLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -297,103 +287,128 @@ export const SearchCompanies = ({ onNavigateToTab }: SearchCompaniesProps = {}) 
     );
   }
 
-  // If user doesn't have AI/Manual search access, show AutomaticSearch
   if (!features.canUseAISearch && !features.canUseManualSearch) {
     return <AutomaticSearch onNavigateToTab={onNavigateToTab} />;
   }
 
   return (
-    <div className="h-full">
-      {/* Mode Tabs - Only visible during selection step */}
-      {step === "select" && (
-        <div className="flex justify-center mb-8 animate-fade-in">
-          <div className="inline-flex p-1.5 rounded-2xl bg-card border border-border/50">
-            {features.canUseAISearch && (
-              <button
-                onClick={() => setMode("ai")}
-                className={cn(
-                  "flex items-center gap-2 px-6 py-3 rounded-xl font-medium text-sm transition-all duration-300",
-                  mode === "ai"
-                    ? "bg-primary text-primary-foreground shadow-lg"
-                    : "text-muted-foreground hover:text-foreground hover:bg-accent"
-                )}
-                style={mode === "ai" ? { boxShadow: '0 0 20px hsl(var(--primary) / 0.3)' } : {}}
-              >
-                <Sparkles className="h-4 w-4" />
-                Recherche IA
-              </button>
+    <div className="h-full space-y-6">
+      {/* Mode Toggle - Pill centered */}
+      <div className="flex justify-center animate-fade-in">
+        <div className="relative inline-flex p-1 rounded-2xl bg-card/80 backdrop-blur-xl border border-border/50">
+          {/* Animated slider */}
+          <div
+            className={cn(
+              "absolute top-1 bottom-1 rounded-xl bg-primary transition-all duration-300 ease-out",
+              mode === "ai" ? "left-1" : "",
+              mode === "manual" ? "right-1" : ""
             )}
-            {features.canUseManualSearch && (
-              <button
-                onClick={() => setMode("manual")}
-                className={cn(
-                  "flex items-center gap-2 px-6 py-3 rounded-xl font-medium text-sm transition-all duration-300",
-                  mode === "manual"
-                    ? "bg-primary text-primary-foreground shadow-lg"
-                    : "text-muted-foreground hover:text-foreground hover:bg-accent"
-                )}
-                style={mode === "manual" ? { boxShadow: '0 0 20px hsl(var(--primary) / 0.3)' } : {}}
-              >
-                <Grid3X3 className="h-4 w-4" />
-                Recherche manuelle
-              </button>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Content based on step */}
-      <div className="relative">
-        {step === "select" && (
-          <div className="animate-fade-in">
-            {mode === "ai" && features.canUseAISearch ? (
-              <AISearchMode onSectorsValidated={handleSectorsValidated} />
-            ) : mode === "manual" && features.canUseManualSearch ? (
-              <ManualSearchMode onSectorsValidated={handleSectorsValidated} />
-            ) : null}
-          </div>
-        )}
-
-        {step === "filters" && (
-          <SearchFiltersStep
-            selectedCodesCount={selectedCodes.length}
-            villes={villes}
-            setVilles={setVilles}
-            minResults={minResults}
-            setMinResults={setMinResults}
-            minEmployees={minEmployees}
-            setMinEmployees={setMinEmployees}
-            loading={loading}
-            onSearch={handleSearch}
-            onBack={handleBackToSelect}
+            style={{
+              width: 'calc(50% - 4px)',
+              left: mode === "ai" ? '4px' : 'calc(50%)',
+              boxShadow: '0 0 20px hsl(var(--primary) / 0.3)',
+            }}
           />
-        )}
+          {features.canUseAISearch && (
+            <button
+              onClick={() => setMode("ai")}
+              className={cn(
+                "relative z-10 flex items-center gap-2 px-6 py-2.5 rounded-xl font-medium text-sm transition-colors duration-300",
+                mode === "ai"
+                  ? "text-primary-foreground"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <Sparkles className="h-4 w-4" />
+              Mode IA
+            </button>
+          )}
+          {features.canUseManualSearch && (
+            <button
+              onClick={() => setMode("manual")}
+              className={cn(
+                "relative z-10 flex items-center gap-2 px-6 py-2.5 rounded-xl font-medium text-sm transition-colors duration-300",
+                mode === "manual"
+                  ? "text-primary-foreground"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <Grid3X3 className="h-4 w-4" />
+              Manuel
+            </button>
+          )}
+        </div>
+      </div>
 
-        {step === "processing" && currentJob && (
-          <div className="max-w-2xl mx-auto animate-fade-in">
-            <JobProgressCard 
-              job={currentJob} 
-              onViewResults={() => {
-                if (currentJob.results && currentJob.results.length > 0) {
-                  setCompanies(currentJob.results);
-                }
-                setStep("results");
+      {/* 2-Column Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* Left Panel - Search Controls */}
+        <div className="lg:col-span-4 space-y-4">
+          {/* AI or Manual Panel */}
+          {mode === "ai" && features.canUseAISearch ? (
+            <AISearchMode 
+              onSectorsValidated={handleAISectorsValidated} 
+              loading={loading}
+            />
+          ) : mode === "manual" && features.canUseManualSearch ? (
+            <ManualSearchMode 
+              onSearch={handleManualSearch}
+              loading={loading}
+            />
+          ) : null}
+
+          {/* Upgrade Banner */}
+          {!isPremium && (
+            <div className="rounded-2xl border border-primary/30 bg-gradient-to-br from-primary/5 to-primary/10 p-4 backdrop-blur-xl">
+              <div className="flex items-start gap-3">
+                <div className="p-2 rounded-lg bg-primary/20">
+                  <Sparkles className="h-5 w-5 text-primary" />
+                </div>
+                <div className="flex-1">
+                  <h4 className="font-semibold text-sm mb-1">Passe au Premium</h4>
+                  <p className="text-xs text-muted-foreground mb-2">
+                    Débloquez la recherche IA, les emails personnalisés et plus encore.
+                  </p>
+                  <a 
+                    href="/pricing" 
+                    className="text-xs font-medium text-primary hover:underline"
+                  >
+                    Voir les offres →
+                  </a>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Right Panel - Results */}
+        <div className="lg:col-span-8">
+          {isProcessing && currentJob ? (
+            <div className="animate-fade-in">
+              <JobProgressCard 
+                job={currentJob} 
+                onViewResults={() => {
+                  if (currentJob.results && currentJob.results.length > 0) {
+                    setCompanies(currentJob.results);
+                  }
+                  setIsProcessing(false);
+                }}
+              />
+            </div>
+          ) : (
+            <SearchResultsStep
+              companies={companies}
+              loading={loading}
+              savingCompany={savingCompany}
+              onSaveCompany={saveCompany}
+              onSaveAll={saveAllCompanies}
+              onNewSearch={() => {
+                setCompanies([]);
+                setSelectedCodes([]);
               }}
             />
-          </div>
-        )}
-
-        {step === "results" && (
-          <SearchResultsStep
-            companies={companies}
-            loading={loading}
-            savingCompany={savingCompany}
-            onSaveCompany={saveCompany}
-            onSaveAll={saveAllCompanies}
-            onBack={() => setStep("filters")}
-            onNewSearch={handleBackToSelect}
-          />
-        )}
+          )}
+        </div>
       </div>
     </div>
   );
