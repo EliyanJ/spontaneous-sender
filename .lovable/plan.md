@@ -1,110 +1,111 @@
 
 
-# Refonte de la page "Envoyer une campagne"
+# Refonte de la page "Historiques & Relances" (CampaignsHub)
 
 ## Vue d'ensemble
 
-Redesign complet de `UnifiedEmailSender.tsx` pour passer du layout actuel (tabs sequentiels Configuration/Preview empiles verticalement) a un **layout 2 colonnes simultane** (panneau config a gauche, preview a droite) conforme a la maquette HTML fournie.
+Redesign complet du composant `CampaignsHub.tsx` pour appliquer le style glassmorphisme de la maquette HTML fournie. La structure reste identique (2 micro-onglets Campagnes / Suivi) mais le rendu visuel est entierement revu.
 
 ## Changements visuels principaux
 
-### 1. Layout general
-- **Actuel** : Tabs pleine largeur (Configuration | Preview) avec contenu empile
-- **Nouveau** : Grille `grid-cols-12` avec panneau gauche (col-span-4) et panneau droit (col-span-8), visibles simultanement
+### 1. Header de page
+- Titre "Campagnes" en `text-2xl font-bold text-white`
+- Sous-titre gris : "Gere tes campagnes, relances et suivi des candidatures"
+- Bouton engrenage (parametres delai) avec popover glassmorphisme
+- Bouton "Actualiser" en `bg-indigo-600 hover:bg-indigo-700` avec shadow indigo
 
-### 2. Panneau gauche (col-span-4) - 4 cartes empilees
+### 2. Tabs Campagnes / Suivi
+- Pilule glassmorphisme (`glass-panel`) avec 2 boutons
+- Onglet actif : `bg-indigo-500/10 text-indigo-400 border border-indigo-500/20`
+- Onglet inactif : `text-muted hover:text-white`
+- Icones : paper-plane (Campagnes) + chart-line (Suivi)
 
-**a) Carte "Statut Gmail"**
-- Glassmorphisme avec icone Google en watermark
-- Pastille verte animee "Connecte" ou bouton "Connecter Gmail"
-- Email + quota restant en sous-texte
-- Bouton refresh discret
+### 3. Onglet Campagnes
 
-**b) Carte "Destinataires"**
-- Input pour ajout manuel d'email (avec bouton +)
-- Liste scrollable des entreprises avec checkbox
-- Chaque item : nom, email, tags colores (secteur), localisation
-- Items selectionnes : bordure indigo + fond indigo/10
-- Items non selectionnes : opacite reduite, fond neutre
-- Footer : "Tout selectionner" / "Vider la liste" + compteur "X/Y selectionnee(s)"
+**a) Barre de recherche**
+- Pleine largeur, glassmorphisme, icone loupe
+- `bg-[#18181b]/30 border-white/20 rounded-xl focus:ring-indigo-500/50`
 
-**c) Carte "Options IA" (Premium)**
-- Badge dore "Premium" en haut a droite
-- Blur violet decoratif en arriere-plan
-- 2 toggles avec icones dans des carres colores :
-  - Emails personnalises (icone envelope, fond indigo)
-  - Lettres de motivation (icone file, fond purple)
-- Separateur
-- 2 dropdowns en grille 2 colonnes : Approche + Ton
-- Pour non-Premium : carte verrouillee avec upgrade banner
+**b) Banner "Relances necessaires" (orange)**
+- `bg-orange-500/10 border-orange-500/20 rounded-xl`
+- Icone exclamation dans cercle orange
+- Texte "X batch(es) ont depasse le delai..."
+- Bouton "Tout relancer" en `bg-orange-500`
 
-**d) Bouton d'action principal**
-- Pleine largeur, gradient indigo-violet
-- Texte dynamique : "Generer pour X entreprises"
-- Icone wand-sparkles animee au hover
+**c) Section "Emails programmes"**
+- Titre avec icone horloge indigo
+- Grille de cards glassmorphisme (1-3 colonnes)
+- Chaque card : icone calendrier, badge countdown (`bg-indigo-500/10 text-indigo-300`), sujet, tags recipients, bouton "Annuler l'envoi" en rouge
 
-### 3. Panneau droit (col-span-8)
+**d) Section "Historique des envois"**
+- Titre avec icone clock-rotate-left en teal
+- Batches repliables :
+  - Header : icone avion dans cercle colore, titre campagne, date, badge nb emails, badge statut (orange "Relance requise" / vert "En cours")
+  - Chevron up/down
+  - Contenu deploye : liste d'emails avec :
+    - Avatar initiales dans cercle gradient
+    - Email + "Envoye il y a X jours"
+    - Badges statut : vert "Repondu" / gris "Pas de reponse"
+    - Feedback thumbs up/down
+    - Resume AI de la reponse dans encart `bg-surface/30` avec tag colore `[Positif]` / `[Negatif]`
+    - Boutons : notes, exclure, relancer (indigo)
+  - Footer batch : bouton "Relancer tout le batch" en `bg-white text-black`
 
-**Header tabs :**
-- Pilule glassmorphisme avec 2 boutons : "Configuration" et "Previsualisation"
-- Badge compteur sur Previsualisation
+### 4. Onglet Suivi (Pipeline)
 
-**Onglet Configuration (panneau droit) :**
-- Contenu de l'email (objet + body + variables + pieces jointes)
-- CV / Profil (upload, profils sauvegardes, textarea)
-- Templates (charger/sauvegarder)
+**a) Header**
+- Titre "Tracking candidature" en `text-xl font-bold`
+- Toggle liste/stats : pilule avec 2 boutons icones
 
-**Onglet Previsualisation :**
-- Liste verticale de cards email generees
-- Chaque card :
-  - Header colore : icone check vert (succes) ou X rouge (erreur)
-  - Nom entreprise + email
-  - Badge "Lettre jointe" si cover letter
-  - Boutons : oeil (preview), crayon (edit), X (supprimer)
-  - Body : objet en gras + apercu du corps (line-clamp-2)
-  - Etat erreur : fond rouge, bouton "Corriger manuellement"
+**b) Vue Liste**
+- Barre de recherche + bouton "Filtres"
+- Pipeline vertical par phase :
+  - Titre phase avec emoji + compteur dans badge gris
+  - Cards glassmorphisme avec `border-l-4` colore par phase
+  - Hover : `translate-x-1`
+  - Card : nom bold, localisation + email en sous-texte, badge statut, dropdown pour changer de phase
 
-**Carte "Options d'envoi" (en bas du panneau droit) :**
-- Grille 2 colonnes :
-  - Gauche : radio "Envoyer maintenant" / "Programmer l'envoi"
-  - Droite : conseil pro (fond indigo) + bouton "Envoyer X emails prets" (fond blanc, texte noir)
-
-### 4. Overlay de generation (inchange)
-- Le composant `GenerationOverlay` reste identique
+**c) Vue Stats**
+- 4 KPI cards glassmorphisme avec `border-l-4` colore (Total, Envoyees, Entretiens, Acceptes)
+- 2 graphiques Recharts dans des panneaux glassmorphisme (Pie chart donut + Bar chart horizontal)
+- Card "Taux de conversion" avec 3 colonnes : pourcentages en gros + fleches entre colonnes
 
 ## Fichier a modifier
 
 | Fichier | Action |
 |---------|--------|
-| `src/components/dashboard/UnifiedEmailSender.tsx` | Reecriture complete du JSX : layout 2 colonnes, glassmorphisme, nouveau design des cartes. La logique metier (states, handlers, API calls) reste 100% identique. |
+| `src/components/dashboard/CampaignsHub.tsx` | Reecriture complete du JSX avec le design glassmorphisme. Toute la logique metier (states, handlers, hooks, useMemo) reste 100% identique. |
 
 ## Details techniques
 
-### Glassmorphisme unifie
-Toutes les cartes utilisent la classe pattern :
+### Classes glassmorphisme reutilisees
 ```
-bg-[#121215]/60 backdrop-blur-xl border border-white/[0.08] rounded-2xl
+glass-panel: bg-[#18181b]/60 backdrop-blur-xl border border-white/[0.08]
+glass-card: bg-[#27272a]/40 backdrop-blur-lg border border-white/[0.05] hover:bg-[#27272a]/60 hover:border-indigo-500/30
 ```
 
-### Cards destinataires
-- Selectionne : `border-indigo-500/30 bg-indigo-500/10`
-- Non selectionne : `border-white/[0.08] bg-[#121215]/30 opacity-70 hover:opacity-100`
-- Tags secteur : couleurs semantiques (teal pour SaaS, purple pour Design, etc.)
+### Avatars initiales dans les email rows
+- Cercle `w-8 h-8 rounded-full bg-gradient-to-br from-gray-700 to-gray-800`
+- Initiales en `text-xs font-medium text-white`
 
-### Bouton d'envoi final
-- Style inverse (fond blanc, texte noir) : `bg-white text-black hover:bg-gray-200`
-- Shadow glow : `shadow-[0_0_20px_rgba(255,255,255,0.1)]`
+### Pipeline cards
+- `border-l-4` avec couleur du stage (blue, violet, yellow, orange, indigo, green, red, emerald)
+- Card "active" (entretien) : bordure indigo + fond `bg-indigo-500/5`
+
+### Resume AI des reponses
+- Encart `bg-[#18181b]/30 rounded p-2 border border-[#27272a]`
+- Tag colore : `text-green-400 font-semibold` pour positif, `text-red-400` pour negatif, `text-blue-400` pour info
 
 ### Ce qui ne change PAS
-- Tous les states et hooks (useState, useEffect)
-- Tous les handlers (handleGenerate, handleSendAll, handleEditEmail, etc.)
-- Les appels API (supabase.functions.invoke)
-- Le composant GenerationOverlay
-- Le feature gating (usePlanFeatures, isPremium)
-- Les dialogs d'edition et de sauvegarde
-- La logique de smart merge et sync des destinataires manuels
+- Tous les states et hooks (useState, useEffect, useMemo)
+- Tous les handlers (handleSendFollowUp, handleRelanceBatch, handleCancelScheduled, etc.)
+- Les interfaces TypeScript (Campaign, ScheduledEmail, CampaignBatch, etc.)
+- PIPELINE_STAGES et toute la logique de pipeline
+- Les appels Supabase et le systeme de feedback
+- Les graphiques Recharts (juste le wrapper glassmorphisme change)
+- Les AlertDialog de confirmation
 
 ### Responsive
-- Desktop : 2 colonnes (4+8)
-- Mobile : empilement vertical, panneau destinataires avec hauteur reduite
+- Desktop : layout complet avec grilles multi-colonnes
+- Mobile : empilement vertical, email rows en flex-col, badges compacts
 
