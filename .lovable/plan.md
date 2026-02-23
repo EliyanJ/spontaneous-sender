@@ -1,202 +1,94 @@
 
-# CV Builder - Createur de CV Sectoriel avec IA
 
-## Vue d'ensemble
+# Refonte du CV Builder : layout split avec formulaire interactif et drag & drop
 
-Nouvelle page `/cv-builder` accessible depuis le dashboard (nouvel onglet "CV Builder" dans la navigation). L'utilisateur peut creer un CV professionnel type Finance, Marketing, Tech, etc. a partir de ses donnees existantes, avec generation de phrases IA adaptees au secteur et adaptation automatique a une fiche de poste.
+## Probleme actuel
 
-## Architecture generale
+Le flow actuel impose 3 etapes sequentielles (intro -> import texte brut -> editeur). L'utilisateur doit coller du texte brut puis generer, ce qui est peu intuitif. La preview n'apparait qu'a la fin.
+
+## Nouvelle architecture UX
+
+Le CV Builder devient une **page unique en layout split** (4 colonnes gauche / 8 colonnes droite) des le depart, coherent avec le design system glassmorphisme du dashboard.
 
 ```text
-+------------------+     +------------------+     +------------------+
-|   CV existant    |     |  Fiche de poste  |     |  Base phrases    |
-|  (PDF/DOCX/txt)  |     |  (optionnel)     |     |  sectorielles    |
-+--------+---------+     +--------+---------+     +--------+---------+
-         |                        |                        |
-         v                        v                        v
-+--------+---------+     +--------+---------+     +--------+---------+
-| parse-cv-document|     | analyze-cv-ats   |     |  cv_sector_data  |
-| (existant)       |     | (existant)       |     |  (nouvelle table)|
-+--------+---------+     +--------+---------+     +--------+---------+
-         |                        |                        |
-         +------------+-----------+------------------------+
-                      |
-                      v
-         +------------+-------------+
-         |  generate-cv-content     |
-         |  (nouvelle edge function)|
-         +------------+-------------+
-                      |
-                      v
-         +------------+-------------+
-         |   CV Builder UI          |
-         |   - Formulaire structuré |
-         |   - Preview A4 live      |
-         |   - Export PDF           |
-         +------------+-------------+
++-------------------------------------------+
+|  Header: Logo + "CV Builder" + Sauvegarder |
++-------------------------------------------+
+|  LEFT (4 cols)       |  RIGHT (8 cols)     |
+|  - Mode tabs         |  - Preview A4 live  |
+|    (Creer / Adapter) |    qui se met a     |
+|  - Zone drop CV      |    jour en temps    |
+|  - Secteur           |    reel             |
+|  - Formulaire        |                     |
+|    sections          |                     |
+|  - Fiche de poste    |                     |
+|    (mode adapter)    |                     |
++-------------------------------------------+
 ```
 
-## Etape 1 : Base de donnees
+## Changements detailles
 
-### Nouvelle table `cv_templates`
-Stocke les templates HTML/CSS par secteur.
+### 1. Suppression du flow multi-etapes
 
-| Colonne | Type | Description |
-|---------|------|-------------|
-| id | uuid | PK |
-| name | text | "Finance", "Marketing", "Tech"... |
-| sector | text | Secteur cible |
-| html_template | text | Template HTML avec placeholders ({{name}}, {{title}}, etc.) |
-| css_styles | text | CSS specifique au template |
-| thumbnail_url | text | Apercu miniature |
-| is_active | boolean | Actif ou non |
-| created_at | timestamptz | Date creation |
+- Plus de `step = "intro" | "import" | "editor"`. La page affiche directement le layout split.
+- En haut du panneau gauche : deux onglets "Creer un CV" / "Adapter a une offre" pour changer de mode.
 
-RLS : Lecture publique pour les utilisateurs authentifies, ecriture admin uniquement.
+### 2. Zone de drop-and-drag pour le CV
 
-### Nouvelle table `cv_sector_phrases`
-Base de phrases optimisees par secteur pour nourrir l'IA.
+- En haut du panneau gauche, une zone de drag & drop (dotted border) ou l'utilisateur peut :
+  - Glisser un PDF/DOCX/TXT
+  - Cliquer pour ouvrir le file picker
+  - Ou selectionner un CV depuis sa base de donnees (bouton "Mes CVs")
+- Quand un fichier est depose, il est parse automatiquement et les champs du formulaire se remplissent.
+- La zone se reduit apres import (petite barre avec le nom du fichier + bouton "Changer").
 
-| Colonne | Type | Description |
-|---------|------|-------------|
-| id | uuid | PK |
-| sector | text | "finance", "marketing", "tech"... |
-| category | text | "experience", "competence", "accroche", "objectif" |
-| phrase | text | La phrase modele |
-| context | text | Dans quel contexte utiliser cette phrase |
-| keywords | jsonb | Mots-cles associes |
-| created_at | timestamptz | Date creation |
+### 3. Formulaire toujours visible
 
-RLS : Lecture pour utilisateurs authentifies, ecriture admin uniquement.
+- Le formulaire (infos perso, accroche, experiences, formation, competences, langues) est **toujours affiche** sous la zone de drop.
+- Les champs sont pre-remplis si un CV a ete importe, sinon vides pour saisie manuelle.
+- Chaque modification met a jour la preview en temps reel.
 
-### Nouvelle table `user_generated_cvs`
-Sauvegarde des CVs generes par les utilisateurs.
+### 4. Mode "Adapter a une offre"
 
-| Colonne | Type | Description |
-|---------|------|-------------|
-| id | uuid | PK |
-| user_id | uuid | Proprietaire |
-| template_id | uuid | FK vers cv_templates |
-| name | text | Nom du CV ("Mon CV Finance") |
-| cv_data | jsonb | Donnees structurees du CV (nom, titre, experiences, etc.) |
-| generated_html | text | HTML final genere |
-| job_description | text | Fiche de poste utilisee (optionnel) |
-| ats_score | numeric | Score ATS si analyse faite |
-| created_at | timestamptz | |
-| updated_at | timestamptz | |
+- Quand l'onglet "Adapter" est selectionne, un champ "Fiche de poste" apparait entre la zone de drop et le formulaire.
+- Un bouton "Optimiser avec IA" analyse le CV vs la fiche de poste et reformule les bullets.
 
-RLS : CRUD pour le proprietaire uniquement.
+### 5. Preview A4 toujours visible
 
-## Etape 2 : Edge Function `generate-cv-content`
+- Le panneau droit affiche la preview A4 en permanence, meme quand les champs sont vides (template vide avec placeholders grises).
+- Responsive : sur mobile, la preview est masquee avec un bouton "Voir l'apercu" qui l'affiche en plein ecran.
 
-Nouvelle edge function qui utilise l'IA (Lovable AI Gateway) pour :
+### 6. Selection de CV depuis la base de donnees
 
-1. **Structurer un CV brut** : Prend le texte du CV parse et extrait les donnees structurees (nom, titre, experiences avec dates/entreprise/description, formation, competences, langues)
-2. **Generer des phrases optimisees** : En fonction du secteur cible et de la base `cv_sector_phrases`, reformule les descriptions d'experience pour etre percutantes
-3. **Adapter a une fiche de poste** : Si une fiche de poste est fournie, integre les mots-cles manquants (issus du comparatif ATS) dans les reformulations
+- Un bouton "Mes CVs" dans la zone de drop ouvre un petit popover listant les `user_cv_profiles` de l'utilisateur.
+- Cliquer sur un CV pre-remplit le texte brut puis lance le parsing IA.
 
-L'IA recoit :
-- Le texte brut du CV
-- Le secteur cible
-- Les phrases modeles du secteur (depuis `cv_sector_phrases`)
-- Optionnellement : la fiche de poste + les mots-cles manquants du score ATS
-
-Elle retourne un objet JSON structure :
-```text
-{
-  personalInfo: { firstName, lastName, title, email, phone, address, linkedin },
-  summary: "...",
-  experiences: [{ company, role, dates, bullets: [...] }],
-  education: [{ school, degree, dates }],
-  skills: { technical: [...], soft: [...] },
-  languages: [...],
-  sectorKeywords: [...]
-}
-```
-
-## Etape 3 : Interface utilisateur (CV Builder Page)
-
-### 3.1 Ecran d'accueil : Choix du mode
-
-Deux cartes glassmorphisme :
-
-- **"Creer un CV"** : Partir de zero ou d'un CV existant
-- **"Adapter a une offre"** : Importer un CV + une fiche de poste pour generer un CV optimise
-
-### 3.2 Formulaire structure (Step 1)
-
-Apres import du CV (ou saisie manuelle), l'utilisateur voit un formulaire editable en sections :
-
-- **Informations personnelles** : Prenom, Nom, Titre, Email, Telephone, Adresse, LinkedIn
-- **Accroche / Resume** : Textarea avec bouton "Regenerer avec IA"
-- **Experiences** : Liste editable avec company, role, dates, bullets. Bouton "Optimiser cette experience" par bloc
-- **Formation** : Liste editable
-- **Competences** : Tags editables (techniques + soft skills)
-- **Langues** : Liste
-
-Chaque section a un bouton "IA" qui reformule le contenu pour le secteur choisi.
-
-### 3.3 Choix du template (Step 2)
-
-Grille de templates disponibles (Finance, Marketing, Tech...) avec preview miniature. L'utilisateur clique pour selectionner.
-
-Pour commencer : on implemente 1 template "Finance/Corporate" base sur le HTML que tu m'as fourni (mise en page A4 avec colonnes, typo serif/sans-serif, couleurs sobres bleu fonce).
-
-### 3.4 Preview live A4 (Step 3)
-
-Panneau split :
-- **Gauche** : Formulaire editable (compact)
-- **Droite** : Preview A4 en temps reel qui se met a jour quand on modifie les champs
-
-Le preview utilise un `<div>` avec des dimensions A4 (210mm x 297mm) et le CSS du template choisi. Le contenu est injecte via les donnees structurees.
-
-### 3.5 Export
-
-- **Impression navigateur** (`window.print()`) avec CSS `@media print` pour generer un PDF propre
-- Sauvegarde du CV dans `user_generated_cvs` pour le retrouver plus tard
-
-## Etape 4 : Integration avec le systeme ATS existant
-
-Le flux "Adapter a une offre" :
-
-1. L'utilisateur importe son CV + colle une fiche de poste
-2. Le systeme lance `analyze-cv-ats` pour obtenir le score et les mots-cles manquants
-3. Ces donnees sont passees a `generate-cv-content` qui reformule le CV en integrant les mots-cles manquants
-4. L'utilisateur voit le CV adapte avec les ameliorations en surbrillance
-5. Il peut accepter/rejeter chaque suggestion avant d'exporter
-
-## Etape 5 : Admin - Gestion des phrases sectorielles
-
-Dans le panel admin existant, nouvel onglet pour gerer `cv_sector_phrases` :
-- Ajouter/modifier/supprimer des phrases par secteur et categorie
-- Importer en lot (CSV ou via IA)
-- Voir quelles phrases sont les plus utilisees
-
-## Fichiers a creer / modifier
+## Fichiers a modifier
 
 | Fichier | Action |
 |---------|--------|
-| `src/pages/CVBuilder.tsx` | Creer - Page principale du CV Builder |
-| `src/components/cv-builder/CVBuilderForm.tsx` | Creer - Formulaire structure |
-| `src/components/cv-builder/CVPreview.tsx` | Creer - Preview A4 live |
-| `src/components/cv-builder/TemplateSelector.tsx` | Creer - Grille de selection de templates |
-| `src/components/cv-builder/SectionEditor.tsx` | Creer - Editeur de section avec IA |
-| `src/components/cv-builder/CVBuilderIntro.tsx` | Creer - Ecran d'accueil avec choix du mode |
-| `supabase/functions/generate-cv-content/index.ts` | Creer - Edge function IA |
-| `src/App.tsx` | Modifier - Ajouter route `/cv-builder` |
-| `src/pages/Index.tsx` | Modifier - Ajouter onglet "CV Builder" dans la nav |
-| `src/components/HorizontalNav.tsx` | Modifier - Ajouter item navigation |
-| Migration SQL | Tables `cv_templates`, `cv_sector_phrases`, `user_generated_cvs` + RLS |
+| `src/pages/CVBuilder.tsx` | **Rewrite** - Supprimer le flow multi-etapes, implementer le layout split direct avec tabs mode, zone drop, formulaire et preview |
+| `src/components/cv-builder/CVBuilderIntro.tsx` | **Supprimer** - Plus necessaire, les modes sont des tabs dans le panneau gauche |
+| `src/components/cv-builder/CVBuilderForm.tsx` | **Modifier** - Ajouter la zone drag & drop en haut, selection depuis DB, et champ fiche de poste conditionnel |
+| `src/components/cv-builder/CVPreview.tsx` | **Modifier leger** - Afficher des placeholders quand les donnees sont vides |
 
-## Ordre d'implementation recommande
+## Details techniques
 
-1. Migration DB (tables + RLS)
-2. Edge function `generate-cv-content`
-3. Page CVBuilder + composants UI (formulaire, preview, templates)
-4. Integration route + navigation
-5. Integration avec ATS existant (flux "adapter a une offre")
-6. Admin phrases sectorielles (iteration future)
+### Zone Drag & Drop
+- Utiliser les evenements natifs `onDragOver`, `onDragLeave`, `onDrop` sur une div stylisee.
+- Au drop : detecter le type de fichier et lancer le meme parsing base64 que le flow actuel.
+- Etat visuel : bordure en pointilles au repos, highlight bleu au survol, nom du fichier apres import.
 
-## Template Finance initial
+### Tabs de mode
+- Deux boutons stylises en haut du panneau gauche : "Creer" et "Adapter".
+- Le mode "Adapter" ajoute le champ fiche de poste + le bouton "Optimiser avec IA".
 
-Le template sera inspire du CV HTML fourni : layout A4 epure, police professionnelle, en-tete avec nom et titre en grand, sections clairement delimitees avec lignes de separation, couleurs sobres (bleu fonce, gris). Le CSS sera pur (pas de Tailwind dans le template) pour garantir un rendu fidele a l'impression PDF.
+### Bouton "Mes CVs"
+- Requete vers `user_cv_profiles` pour lister les CVs sauvegardes.
+- Affichage dans un Popover avec le nom et la date de chaque CV.
+
+### Layout
+- `grid grid-cols-1 lg:grid-cols-12 gap-6`
+- Gauche : `lg:col-span-4` avec scroll interne
+- Droite : `lg:col-span-8` avec preview fixe
+
