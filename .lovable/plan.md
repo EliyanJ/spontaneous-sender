@@ -1,111 +1,89 @@
 
-
-# Refonte de la page "Historiques & Relances" (CampaignsHub)
+# Refonte de la page "Offres d'emploi" (JobOffers)
 
 ## Vue d'ensemble
 
-Redesign complet du composant `CampaignsHub.tsx` pour appliquer le style glassmorphisme de la maquette HTML fournie. La structure reste identique (2 micro-onglets Campagnes / Suivi) mais le rendu visuel est entierement revu.
+Redesign complet du composant `JobOffers.tsx` pour appliquer le style glassmorphisme de la maquette HTML fournie. La logique metier (recherche France Travail, chargement des details, states) reste 100% identique, seul le JSX/UI est reecrit.
 
 ## Changements visuels principaux
 
 ### 1. Header de page
-- Titre "Campagnes" en `text-2xl font-bold text-white`
-- Sous-titre gris : "Gere tes campagnes, relances et suivi des candidatures"
-- Bouton engrenage (parametres delai) avec popover glassmorphisme
-- Bouton "Actualiser" en `bg-indigo-600 hover:bg-indigo-700` avec shadow indigo
+- Titre "Offres d'emploi" en `text-2xl md:text-3xl font-bold text-white`
+- Sous-titre avec badge "France Travail" : `bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 rounded px-2 py-0.5`
+- Pilule compteur a droite : pastille verte animee + "X offres trouvees" dans un encart glassmorphisme arrondi
 
-### 2. Tabs Campagnes / Suivi
-- Pilule glassmorphisme (`glass-panel`) avec 2 boutons
-- Onglet actif : `bg-indigo-500/10 text-indigo-400 border border-indigo-500/20`
-- Onglet inactif : `text-muted hover:text-white`
-- Icones : paper-plane (Campagnes) + chart-line (Suivi)
+### 2. Carte de recherche (glassmorphisme)
+- Panel `bg-[#18181b]/60 backdrop-blur-xl border border-white/[0.08] rounded-2xl p-6`
+- Glow decoratif `bg-indigo-600/10 blur-3xl` en arriere-plan
+- Grille `grid-cols-12` :
+  - **Col-span-8** : 2 inputs cote a cote (Mots-cles avec icone loupe + Localisation avec icone pin)
+  - **Col-span-4** : 2 selects (Type contrat + Distance) + bouton "Rechercher" gradient indigo-violet avec shadow
+- Inputs style `glass-input` : `bg-[#121215]/60 border border-white/10 rounded-xl py-3 focus:border-indigo-500 focus:ring-indigo-500/20`
 
-### 3. Onglet Campagnes
+### 3. Etat de chargement
+- Spinner custom : cercle `border-4 border-white/10` + `border-t-indigo-500 animate-spin`
+- Texte "Recherche des meilleures offres en cours..." en `text-gray-400 animate-pulse`
 
-**a) Barre de recherche**
-- Pleine largeur, glassmorphisme, icone loupe
-- `bg-[#18181b]/30 border-white/20 rounded-xl focus:ring-indigo-500/50`
+### 4. Liste des resultats (cards offres)
+- Cards glassmorphisme : `bg-[#18181b]/60 backdrop-blur-xl border border-white/[0.08] rounded-xl p-5`
+- `border-l-4 border-l-transparent hover:border-l-indigo-500`
+- Hover : `hover:bg-indigo-500/5` avec transition
+- Chaque card :
+  - **Titre** : `text-lg font-semibold text-white group-hover:text-indigo-300`
+  - **Badge contrat** : couleurs semantiques (indigo pour CDI, purple pour CDD, blue pour interim)
+  - **Nom entreprise** : `text-indigo-400 font-medium text-sm`
+  - **Metadata** : icones lucide (MapPin, Clock, Euro) + texte `text-xs text-gray-400`
+  - **Description** : `text-sm text-gray-300/80 line-clamp-2`
+  - **Competences** : pills `bg-[#27272a]/80 text-gray-300 text-xs border border-white/5 rounded-full`
+  - **Bouton bookmark** a droite (desktop) : cercle `bg-[#18181b] border border-white/10 rounded-full`
+  - **"Voir details"** en hover : `text-xs text-indigo-400 opacity-0 group-hover:opacity-100`
 
-**b) Banner "Relances necessaires" (orange)**
-- `bg-orange-500/10 border-orange-500/20 rounded-xl`
-- Icone exclamation dans cercle orange
-- Texte "X batch(es) ont depasse le delai..."
-- Bouton "Tout relancer" en `bg-orange-500`
+### 5. Etat vide (pas de resultats)
+- Cercle avec icone loupe en glassmorphisme
+- Titre "Lancez une recherche" + sous-texte
 
-**c) Section "Emails programmes"**
-- Titre avec icone horloge indigo
-- Grille de cards glassmorphisme (1-3 colonnes)
-- Chaque card : icone calendrier, badge countdown (`bg-indigo-500/10 text-indigo-300`), sujet, tags recipients, bouton "Annuler l'envoi" en rouge
-
-**d) Section "Historique des envois"**
-- Titre avec icone clock-rotate-left en teal
-- Batches repliables :
-  - Header : icone avion dans cercle colore, titre campagne, date, badge nb emails, badge statut (orange "Relance requise" / vert "En cours")
-  - Chevron up/down
-  - Contenu deploye : liste d'emails avec :
-    - Avatar initiales dans cercle gradient
-    - Email + "Envoye il y a X jours"
-    - Badges statut : vert "Repondu" / gris "Pas de reponse"
-    - Feedback thumbs up/down
-    - Resume AI de la reponse dans encart `bg-surface/30` avec tag colore `[Positif]` / `[Negatif]`
-    - Boutons : notes, exclure, relancer (indigo)
-  - Footer batch : bouton "Relancer tout le batch" en `bg-white text-black`
-
-### 4. Onglet Suivi (Pipeline)
-
-**a) Header**
-- Titre "Tracking candidature" en `text-xl font-bold`
-- Toggle liste/stats : pilule avec 2 boutons icones
-
-**b) Vue Liste**
-- Barre de recherche + bouton "Filtres"
-- Pipeline vertical par phase :
-  - Titre phase avec emoji + compteur dans badge gris
-  - Cards glassmorphisme avec `border-l-4` colore par phase
-  - Hover : `translate-x-1`
-  - Card : nom bold, localisation + email en sous-texte, badge statut, dropdown pour changer de phase
-
-**c) Vue Stats**
-- 4 KPI cards glassmorphisme avec `border-l-4` colore (Total, Envoyees, Entretiens, Acceptes)
-- 2 graphiques Recharts dans des panneaux glassmorphisme (Pie chart donut + Bar chart horizontal)
-- Card "Taux de conversion" avec 3 colonnes : pourcentages en gros + fleches entre colonnes
+### 6. Modal detail offre (glassmorphisme)
+- Overlay `bg-black/60 backdrop-blur-sm`
+- Contenu : `bg-[#121215]/95 backdrop-blur-2xl border border-white/[0.08] rounded-2xl max-w-3xl`
+- **Header sticky** : titre `text-2xl font-bold`, entreprise avec icone building en indigo, bouton X
+- **Badges metadata** : encarts `bg-[#18181b]/60 border border-white/10 rounded-lg` avec icones indigo
+- Badge salaire specifique : `bg-green-500/10 border-green-500/20 text-green-400`
+- **Sections** avec `border-l-2 border-indigo-500 pl-3` sur les titres :
+  - Description du poste (texte + liste a puces)
+  - Competences : pills `bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 rounded-full`
+  - Formation : items avec bullet indigo
+  - A propos de l'entreprise : encart `bg-[#18181b]/40 border border-white/10 rounded-xl`
+- **Footer CTA** : bouton "Postuler sur le site" en `bg-white text-black font-semibold rounded-xl shadow-[0_0_20px_rgba(255,255,255,0.15)]`
+- Sous-texte : "Vous serez redirige vers le site du recruteur..."
 
 ## Fichier a modifier
 
 | Fichier | Action |
 |---------|--------|
-| `src/components/dashboard/CampaignsHub.tsx` | Reecriture complete du JSX avec le design glassmorphisme. Toute la logique metier (states, handlers, hooks, useMemo) reste 100% identique. |
+| `src/components/dashboard/JobOffers.tsx` | Reecriture complete du JSX avec le design glassmorphisme. Toute la logique metier (states, handlers, API calls, interfaces) reste 100% identique. |
 
 ## Details techniques
 
-### Classes glassmorphisme reutilisees
+### Mapping des badges contrat
+```text
+CDI       -> bg-indigo-500/20 text-indigo-300 border-indigo-500/30
+CDD       -> bg-purple-500/20 text-purple-300 border-purple-500/30
+MIS       -> bg-blue-500/20 text-blue-300 border-blue-500/30
+SAI       -> bg-amber-500/20 text-amber-300 border-amber-500/30
+LIB       -> bg-teal-500/20 text-teal-300 border-teal-500/30
+default   -> bg-gray-500/20 text-gray-300 border-gray-500/30
 ```
-glass-panel: bg-[#18181b]/60 backdrop-blur-xl border border-white/[0.08]
-glass-card: bg-[#27272a]/40 backdrop-blur-lg border border-white/[0.05] hover:bg-[#27272a]/60 hover:border-indigo-500/30
-```
 
-### Avatars initiales dans les email rows
-- Cercle `w-8 h-8 rounded-full bg-gradient-to-br from-gray-700 to-gray-800`
-- Initiales en `text-xs font-medium text-white`
-
-### Pipeline cards
-- `border-l-4` avec couleur du stage (blue, violet, yellow, orange, indigo, green, red, emerald)
-- Card "active" (entretien) : bordure indigo + fond `bg-indigo-500/5`
-
-### Resume AI des reponses
-- Encart `bg-[#18181b]/30 rounded p-2 border border-[#27272a]`
-- Tag colore : `text-green-400 font-semibold` pour positif, `text-red-400` pour negatif, `text-blue-400` pour info
+### Date relative
+- Utiliser `date-fns` (deja installe) avec `formatDistanceToNow` + `{ locale: fr }` pour afficher "Publie il y a X jours"
 
 ### Ce qui ne change PAS
-- Tous les states et hooks (useState, useEffect, useMemo)
-- Tous les handlers (handleSendFollowUp, handleRelanceBatch, handleCancelScheduled, etc.)
-- Les interfaces TypeScript (Campaign, ScheduledEmail, CampaignBatch, etc.)
-- PIPELINE_STAGES et toute la logique de pipeline
-- Les appels Supabase et le systeme de feedback
-- Les graphiques Recharts (juste le wrapper glassmorphisme change)
-- Les AlertDialog de confirmation
+- Interface `JobOffer` et `SearchResponse`
+- States : loading, offers, selectedOffer, searchParams
+- Handlers : handleSearch, loadOfferDetails, handleOfferClick
+- Appels API : supabase.functions.invoke (france-travail)
+- Le composant CommuneSearch pour la localisation
 
 ### Responsive
-- Desktop : layout complet avec grilles multi-colonnes
-- Mobile : empilement vertical, email rows en flex-col, badges compacts
-
+- Desktop : grille 12 colonnes pour la recherche, cards avec bookmark a droite
+- Mobile : empilement vertical, bookmark masque, metadata en flex-wrap
