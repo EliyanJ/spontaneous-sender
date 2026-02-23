@@ -54,32 +54,26 @@ const CVBuilder = () => {
       return;
     }
 
-    // For PDF, use parse-cv-document edge function
-    if (file.type === "application/pdf") {
+    // For PDF or DOCX, use parse-cv-document edge function
+    if (file.type === "application/pdf" || file.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" || file.name.endsWith(".pdf") || file.name.endsWith(".docx")) {
       setIsLoading(true);
       try {
-        const formData = new FormData();
-        formData.append("file", file);
-
-        // Upload to storage first
-        const filePath = `${user?.id}/${Date.now()}_${file.name}`;
-        const { error: uploadError } = await supabase.storage
-          .from("user-cvs")
-          .upload(filePath, file);
-
-        if (uploadError) throw uploadError;
-
-        const { data: urlData } = supabase.storage
-          .from("user-cvs")
-          .getPublicUrl(filePath);
+        // Convert file to base64
+        const arrayBuffer = await file.arrayBuffer();
+        const bytes = new Uint8Array(arrayBuffer);
+        let binary = "";
+        for (let i = 0; i < bytes.length; i++) {
+          binary += String.fromCharCode(bytes[i]);
+        }
+        const fileBase64 = btoa(binary);
 
         const { data, error } = await supabase.functions.invoke("parse-cv-document", {
-          body: { fileUrl: urlData.publicUrl, fileName: file.name },
+          body: { fileBase64, fileName: file.name, fileType: file.type },
         });
 
         if (error) throw error;
         if (data?.text) setCvText(data.text);
-        else toast.error("Impossible d'extraire le texte du PDF");
+        else toast.error("Impossible d'extraire le texte du fichier");
       } catch (err: any) {
         toast.error("Erreur lors du parsing: " + (err.message || "Erreur inconnue"));
       } finally {
@@ -88,7 +82,7 @@ const CVBuilder = () => {
       return;
     }
 
-    toast.error("Format non supporté. Utilisez un fichier .txt ou .pdf");
+    toast.error("Format non supporté. Utilisez un fichier .txt, .pdf ou .docx");
   };
 
   const handleGenerateCV = async () => {
@@ -220,7 +214,7 @@ const CVBuilder = () => {
               <div className="flex items-center justify-between mb-2">
                 <Label className="text-sm">Texte du CV</Label>
                 <label className="cursor-pointer">
-                  <input type="file" accept=".txt,.pdf" onChange={handleFileUpload} className="hidden" />
+                  <input type="file" accept=".txt,.pdf,.docx" onChange={handleFileUpload} className="hidden" />
                   <span className="inline-flex items-center gap-1.5 text-xs text-primary hover:underline">
                     <Upload className="h-3.5 w-3.5" />
                     Importer un fichier
