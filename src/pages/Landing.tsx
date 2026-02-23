@@ -75,9 +75,9 @@ const Landing = () => {
               </div>
 
               <nav className="hidden md:flex items-center gap-8">
-                <button onClick={() => scrollToSection('features')} className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Fonctionnalités</button>
-                <button onClick={() => scrollToSection('how-it-works')} className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Comment ça marche</button>
-                <button onClick={() => scrollToSection('pricing')} className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Tarification</button>
+                <button onClick={() => navigate('/dashboard?tab=cv-score')} className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Comparatif de CV</button>
+                <button onClick={() => navigate('/cv-builder')} className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Création de CV</button>
+                <button onClick={() => navigate('/dashboard?tab=cv-advice')} className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Conseil personnalisé</button>
               </nav>
 
               <div className="hidden md:flex items-center gap-4">
@@ -131,7 +131,7 @@ const Landing = () => {
                 <Button 
                   size="lg" 
                   variant="outline"
-                  onClick={() => scrollToSection('how-it-works')}
+                  onClick={() => navigate('/login')}
                   className="w-full sm:w-auto px-8 h-14 bg-card/30 border-border/50 text-foreground text-lg font-semibold rounded-full backdrop-blur-sm hover:bg-card/50"
                 >
                   <Play className="mr-2 h-4 w-4 text-primary" />

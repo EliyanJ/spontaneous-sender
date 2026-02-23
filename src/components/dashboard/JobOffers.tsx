@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search, MapPin, Briefcase, Clock, ExternalLink, Euro, Bookmark, Building2, X, GraduationCap } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -58,6 +58,7 @@ export const JobOffers = () => {
   const [loading, setLoading] = useState(false);
   const [offers, setOffers] = useState<JobOffer[]>([]);
   const [selectedOffer, setSelectedOffer] = useState<JobOffer | null>(null);
+  const initialLoadDone = useRef(false);
   
   const [searchParams, setSearchParams] = useState({
     motsCles: "",
@@ -66,6 +67,14 @@ export const JobOffers = () => {
     typeContrat: "all",
     distance: "10",
   });
+
+  // Auto-load offers on mount
+  useEffect(() => {
+    if (!initialLoadDone.current) {
+      initialLoadDone.current = true;
+      handleSearch();
+    }
+  }, []);
 
   const handleSearch = async () => {
     setLoading(true);
