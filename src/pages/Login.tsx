@@ -8,7 +8,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { signInWithGoogle } from "@/lib/auth-utils";
 import { toast } from "sonner";
 import { Mail, Loader2, ArrowLeft } from "lucide-react";
-import cronosLogo from "@/assets/cronos-logo.png";
+import logoTransparent from "@/assets/logo-transparent.png";
+import logoBlue from "@/assets/logo-blue.png";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -76,7 +77,7 @@ const Login = () => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-900 via-purple-900 to-teal-800">
         <div className="flex flex-col items-center space-y-6 animate-fade-in">
-          <img src={cronosLogo} alt="Cronos" className="h-20 w-20" />
+          <img src={logoTransparent} alt="Cronos" className="h-20 w-auto" />
           <span className="text-2xl font-bold text-white">Cronos</span>
           <Loader2 className="h-10 w-10 animate-spin text-white" />
           <p className="text-lg font-medium text-white">
@@ -105,7 +106,7 @@ const Login = () => {
       <div className="w-full max-w-md bg-white dark:bg-gray-900 rounded-2xl shadow-2xl p-8 sm:p-10 border border-gray-200 dark:border-gray-700">
         {/* Logo et titre */}
         <div className="flex flex-col items-center space-y-4 mb-8">
-          <img src={cronosLogo} alt="Cronos" className="h-16 w-16" />
+          <img src={logoBlue} alt="Cronos" className="h-16 w-auto" />
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Cronos</h1>
         </div>
 

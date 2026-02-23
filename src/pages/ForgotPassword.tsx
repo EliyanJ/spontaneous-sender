@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { Loader2, ArrowLeft, Mail, CheckCircle } from "lucide-react";
-import cronosLogo from "@/assets/cronos-logo.png";
+import logoTransparent from "@/assets/logo-transparent.png";
 
 export const ForgotPassword = () => {
   const navigate = useNavigate();
@@ -49,7 +49,7 @@ export const ForgotPassword = () => {
       <div className="w-full max-w-md space-y-6">
         {/* Logo */}
         <div className="flex flex-col items-center gap-4">
-          <img src={cronosLogo} alt="Cronos" className="w-16 h-16 rounded-2xl" />
+          <img src={logoTransparent} alt="Cronos" className="h-16 w-auto" />
           <h1 className="text-2xl font-bold text-foreground">Cronos</h1>
         </div>
 

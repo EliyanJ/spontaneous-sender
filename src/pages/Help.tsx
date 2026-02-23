@@ -2,7 +2,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Mail, Key, HelpCircle, MessageCircle } from "lucide-react";
-import cronosLogo from "@/assets/cronos-logo.png";
+import logoTransparent from "@/assets/logo-transparent.png";
 
 const Help = () => {
   return (
@@ -11,7 +11,7 @@ const Help = () => {
       <header className="border-b border-border/50">
         <div className="container mx-auto px-6 py-4 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-3">
-            <img src={cronosLogo} alt="Cronos" className="h-8 w-8" />
+            <img src={logoTransparent} alt="Cronos" className="h-8 w-auto" />
             <span className="font-display text-lg font-bold text-foreground">Cronos</span>
           </Link>
           <Button variant="ghost" size="sm" asChild>

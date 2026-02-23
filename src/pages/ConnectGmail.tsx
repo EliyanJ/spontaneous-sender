@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { Loader2, Mail, Shield, Check, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import cronosLogo from "@/assets/cronos-logo.png";
+import logoTransparent from "@/assets/logo-transparent.png";
 
 type Language = 'fr' | 'en';
 
@@ -155,7 +155,7 @@ const ConnectGmail = () => {
         <CardHeader className="text-center space-y-4 pt-12">
           <div className="flex justify-center">
             <div className="relative">
-              <img src={cronosLogo} alt="Cronos" className="h-16 w-16" />
+              <img src={logoTransparent} alt="Cronos" className="h-16 w-auto" />
               <div className="absolute -bottom-1 -right-1 bg-primary rounded-full p-1">
                 <Mail className="h-4 w-4 text-primary-foreground" />
               </div>

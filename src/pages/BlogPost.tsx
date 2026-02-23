@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { ArrowLeft, Moon, Sun, Clock, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import cronosLogo from "@/assets/cronos-logo.png";
+import logoTransparent from "@/assets/logo-transparent.png";
 
 const BlogPost = () => {
   const { slug } = useParams();
@@ -104,7 +104,7 @@ const BlogPost = () => {
         <header className="sticky top-0 z-50 border-b border-border/30 bg-background/80 backdrop-blur-xl">
           <div className="container mx-auto flex items-center justify-between px-4 sm:px-6 py-3.5">
             <a href="/" className="flex items-center gap-2.5 group">
-              <img src={cronosLogo} alt="Cronos" className="h-8 w-8 rounded-xl transition-transform group-hover:scale-105" />
+              <img src={logoTransparent} alt="Cronos" className="h-8 w-auto transition-transform group-hover:scale-105" />
               <span className="font-display text-lg font-bold text-foreground">Cronos</span>
             </a>
 
@@ -201,7 +201,7 @@ const BlogPost = () => {
           <div className="container mx-auto px-6 py-10">
             <div className="flex flex-col md:flex-row items-center justify-between gap-4">
               <a href="/" className="flex items-center gap-2 group">
-                <img src={cronosLogo} alt="Cronos" className="h-5 w-5 transition-transform group-hover:scale-105" />
+                <img src={logoTransparent} alt="Cronos" className="h-5 w-auto transition-transform group-hover:scale-105" />
                 <span className="font-display font-semibold text-foreground">Cronos</span>
               </a>
               <div className="flex flex-wrap justify-center gap-4 md:gap-6 text-sm text-muted-foreground">
