@@ -2,7 +2,7 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import { 
   Search, Building2, Briefcase, Send, Shield, 
-  Menu, Moon, Sun, FileBarChart
+  Menu, Moon, Sun, FileBarChart, FileText, FilePlus, MessageSquare
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAdminCheck } from "@/hooks/useAdminCheck";
@@ -36,6 +36,15 @@ const menuGroups = [
     ]
   },
   {
+    title: "CV",
+    icon: FileText,
+    items: [
+      { title: "Comparatif de CV", value: "cv-score" },
+      { title: "Création de CV", value: "cv-builder", route: "/cv-builder" },
+      { title: "Conseil personnalisé", value: "cv-advice" },
+    ]
+  },
+  {
     title: "Offres d'emploi",
     icon: Briefcase,
     value: "jobs",
@@ -58,7 +67,12 @@ export const MobileNav = ({ activeTab, onTabChange, isDark, onToggleTheme }: Mob
 
   const currentSection = sessionStorage.getItem('emails_initial_section');
 
-  const handleTabClick = (value: string, section?: string) => {
+  const handleTabClick = (value: string, section?: string, route?: string) => {
+    if (route) {
+      navigate(route);
+      setOpen(false);
+      return;
+    }
     onTabChange(value, section);
     setOpen(false);
   };
@@ -133,7 +147,7 @@ export const MobileNav = ({ activeTab, onTabChange, isDark, onToggleTheme }: Mob
                     return (
                       <button
                         key={`${item.value}-${item.section || 'default'}`}
-                        onClick={() => handleTabClick(item.value, item.section)}
+                        onClick={() => handleTabClick(item.value, item.section, (item as any).route)}
                         className={cn(
                           "flex items-center gap-3 px-4 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 w-full text-left ml-2",
                           isActive 
