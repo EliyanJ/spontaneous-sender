@@ -1,41 +1,77 @@
 
+# Ajout de templates multiples + personnalisation design + photo de profil
 
-# Mise a jour de la navigation Landing + Offres par defaut
+## Vue d'ensemble de l'image de référence
 
-## 1. Header de la Landing Page (`src/pages/Landing.tsx`)
+L'image montre 4 templates distincts :
+1. **Classique** - Fond blanc, sidebar gauche bleu foncé avec photo ronde, contenu à droite
+2. **Sombre** - Fond noir total, sidebar gauche noire, accent vert/doré
+3. **Clair bicolore** - Header vert clair, fond blanc, accents verts
+4. **Géométrique** - Header avec formes géométriques grises, photo carrée en haut à droite
 
-Remplacer les 3 liens d'ancre actuels ("Fonctionnalites", "Comment ca marche", "Tarification") par 3 liens de navigation vers les pages CV :
+## Ce qui change
 
-| Ancien | Nouveau | Action |
-|--------|---------|--------|
-| Fonctionnalites (ancre `#features`) | Comparatif de CV | Navigue vers `/dashboard?tab=cv-score` |
-| Comment ca marche (ancre `#how-it-works`) | Creation de CV | Navigue vers `/cv-builder` |
-| Tarification (ancre `#pricing`) | Conseil personnalise | Navigue vers une section dediee (ou `/dashboard?tab=cv-advice`) |
+### 1. `src/lib/cv-templates.ts` — Ajout de 4 templates + `CVDesignOptions`
 
-- Les `scrollToSection()` sont remplaces par des `navigate()` vers les routes correspondantes.
-- Le bouton "Voir la demo" dans le hero qui pointe vers `#how-it-works` sera aussi mis a jour pour pointer vers `/login`.
-- Le lien "Tarification" reste accessible dans le footer ou via `/pricing`.
-
-## 2. Offres d'emploi : chargement par defaut (`src/components/dashboard/JobOffers.tsx`)
-
-Actuellement, la page affiche un formulaire vide et attend que l'utilisateur clique "Rechercher". 
-
-Modification : ajouter un `useEffect` au montage qui lance automatiquement une recherche sans filtres (ou avec des parametres generiques) pour afficher des offres des le chargement de l'onglet.
-
-```text
-useEffect au montage -> appel france-travail sans motsCles ni commune
--> affiche les offres les plus recentes par defaut
+Ajouter une interface `CVDesignOptions` :
+```ts
+interface CVDesignOptions {
+  primaryColor: string;    // couleur header/sections
+  textColor: string;       // couleur texte principal
+  accentColor: string;     // couleur titres, accents
+  photoUrl?: string;       // base64 ou URL de la photo
+}
 ```
 
-## 3. Navigation mobile (`src/components/MobileNav.tsx`)
+Ajouter 4 templates avec des structures HTML distinctes (pas juste du CSS différent) :
+- **Classique** (actuel finance, sidebar gauche bleue + photo ronde)
+- **Sombre** (fond noir, sidebar + accent clair)
+- **Clair** (header coloré léger, fond blanc)
+- **Géométrique** (header avec formes, accent géométrique)
 
-Ajouter les memes items CV (Comparatif, Creation, Conseil) dans le menu mobile pour garder la coherence.
+Chaque template expose une fonction `render(cvData, designOptions)` qui retourne le JSX/HTML.
 
-## Fichiers modifies
+### 2. `src/pages/CVBuilder.tsx` — Sélecteur de template + panneau design
 
-| Fichier | Modification |
-|---------|-------------|
-| `src/pages/Landing.tsx` | Remplacer les 3 liens d'ancre par des liens de navigation (Comparatif CV, Creation CV, Conseil perso) |
-| `src/components/dashboard/JobOffers.tsx` | Ajouter `useEffect` pour charger des offres par defaut au montage |
-| `src/components/MobileNav.tsx` | Ajouter les items CV dans le menu mobile (optionnel, coherence) |
+Dans le panneau gauche, ajouter **au-dessus** du sélecteur de secteur :
 
+**Sélecteur de templates** : grille 2×2 de miniatures cliquables (petites previews SVG/div stylisées) avec le nom dessous. Template actif surligné avec anneau de couleur primary.
+
+**Panneau de personnalisation** (accordéon ou section inline sous le sélecteur de template) :
+- Couleur principale (header/fond sections) → `<input type="color" />`
+- Couleur du texte → `<input type="color" />`
+- Couleur accent → `<input type="color" />`
+- Upload photo → zone cliquable small avec preview
+
+### 3. `src/components/cv-builder/CVPreview.tsx` — Rendu multi-template
+
+- Accepter `templateId`, `designOptions` et `photoUrl` en props
+- Chaque template a sa propre structure JSX dans `CVPreview` (switch sur templateId)
+- Les couleurs du CSS sont injectées via CSS variables ou style inline avec les valeurs de `designOptions`
+- La photo est affichée dans le header si présente (img ronde ou carrée selon le template)
+
+### 4. `src/components/cv-builder/CVBuilderForm.tsx`
+
+- Ajouter un champ "Photo de profil" dans la section Informations personnelles
+  - Input file `accept="image/*"` → converti en base64 → stocké dans `designOptions.photoUrl`
+
+## Nouveaux props transmis
+
+```text
+CVBuilder (state) ──► CVPreview
+  templateId: "classic" | "dark" | "light" | "geo"
+  designOptions: { primaryColor, textColor, accentColor, photoUrl }
+
+CVBuilder (state) ──► CVBuilderForm
+  designOptions + onDesignChange
+  (pour l'upload photo dans les infos perso)
+```
+
+## Fichiers modifiés
+
+| Fichier | Action |
+|---------|--------|
+| `src/lib/cv-templates.ts` | Ajouter 3 nouveaux templates + interface `CVDesignOptions` + couleurs par défaut par template |
+| `src/pages/CVBuilder.tsx` | Ajouter state `templateId` + `designOptions`, grille sélecteur de templates, panneau couleurs |
+| `src/components/cv-builder/CVPreview.tsx` | Rendu conditionnel par template, injection des couleurs custom, affichage photo |
+| `src/components/cv-builder/CVBuilderForm.tsx` | Ajout upload photo dans infos perso |
