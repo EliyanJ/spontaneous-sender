@@ -45,6 +45,7 @@ import AdminTicketDetail from "./pages/Admin/AdminTicketDetail";
 import BlogPost from "./pages/BlogPost";
 import Onboarding from "./pages/Onboarding";
 import CVBuilder from "./pages/CVBuilder";
+import { CookieBanner } from "./components/CookieBanner";
 
 const queryClient = new QueryClient();
 
@@ -102,6 +103,7 @@ const App = () => (
           <Route path="*" element={<NotFound />} />
         </Routes>
         <ChatbotWidget />
+        <CookieBanner />
       </TooltipProvider>
     </BrowserRouter>
   </QueryClientProvider>
