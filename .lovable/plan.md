@@ -1,77 +1,107 @@
 
-# Ajout de templates multiples + personnalisation design + photo de profil
+## Stratégie cookies + analytics — Ce que je propose d'implémenter
 
-## Vue d'ensemble de l'image de référence
+### Contexte : ce que le projet a déjà
+- `useActivityTracking` : tracking interne (sessions, clics, recherches) → stocké en base dans `user_activity_logs`
+- `AdminActivity` : visualisation admin des logs d'activité
+- `AdminAnalytics` : dashboard analytics basé sur les données internes
 
-L'image montre 4 templates distincts :
-1. **Classique** - Fond blanc, sidebar gauche bleu foncé avec photo ronde, contenu à droite
-2. **Sombre** - Fond noir total, sidebar gauche noire, accent vert/doré
-3. **Clair bicolore** - Header vert clair, fond blanc, accents verts
-4. **Géométrique** - Header avec formes géométriques grises, photo carrée en haut à droite
+### Ce que je vais implémenter — 100% maison, sans service tiers
 
-## Ce qui change
+#### Approche : analytics first-party + bannière RGPD
 
-### 1. `src/lib/cv-templates.ts` — Ajout de 4 templates + `CVDesignOptions`
+**Pourquoi éviter les solutions tierces (Google Analytics, Hotjar, etc.) ?**
+- Elles posent des problèmes RGPD sévères (transfert de données hors UE)
+- Elles ralentissent le site (scripts tiers)
+- Tu possèdes déjà une infrastructure de tracking interne dans `user_activity_logs`
 
-Ajouter une interface `CVDesignOptions` :
+**Ce qui sera implémenté :**
+
+---
+
+### 1. Bannière de consentement cookies (`src/components/CookieBanner.tsx`)
+
+Bannière en bas de page avec 3 options :
+- **Tout accepter** → active le tracking comportemental étendu
+- **Essentiels uniquement** → session auth seulement (fonctionnement du site)
+- **Personnaliser** → popover avec 3 catégories toggle :
+  - ✅ Cookies essentiels (toujours actifs, non désactivables)
+  - 🔘 Cookies analytiques (comportement : pages vues, durée, clics)
+  - 🔘 Cookies de préférences (thème, dernière page visitée, filtres)
+
+Le choix est stocké dans `localStorage` sous `cookie_consent` et dans la base de données (table `cookie_consents`).
+
+---
+
+### 2. Hook `useCookieConsent` (`src/hooks/useCookieConsent.ts`)
+
+Expose :
 ```ts
-interface CVDesignOptions {
-  primaryColor: string;    // couleur header/sections
-  textColor: string;       // couleur texte principal
-  accentColor: string;     // couleur titres, accents
-  photoUrl?: string;       // base64 ou URL de la photo
-}
+{ hasConsented, analyticsEnabled, preferencesEnabled, acceptAll, rejectAll, updateConsent }
 ```
 
-Ajouter 4 templates avec des structures HTML distinctes (pas juste du CSS différent) :
-- **Classique** (actuel finance, sidebar gauche bleue + photo ronde)
-- **Sombre** (fond noir, sidebar + accent clair)
-- **Clair** (header coloré léger, fond blanc)
-- **Géométrique** (header avec formes, accent géométrique)
+Le hook `useActivityTracking` lira ce hook avant d'enregistrer quoi que ce soit → **respect du consentement garanti**.
 
-Chaque template expose une fonction `render(cvData, designOptions)` qui retourne le JSX/HTML.
+---
 
-### 2. `src/pages/CVBuilder.tsx` — Sélecteur de template + panneau design
+### 3. Extension du tracking analytics (avec consentement)
 
-Dans le panneau gauche, ajouter **au-dessus** du sélecteur de secteur :
+Nouveaux events trackés si `analyticsEnabled` :
+- `page_view` avec le chemin
+- `feature_used` (CV builder, recherche d'email, etc.)
+- `time_on_page` (durée passée sur chaque onglet)
+- `button_click` (actions critiques)
 
-**Sélecteur de templates** : grille 2×2 de miniatures cliquables (petites previews SVG/div stylisées) avec le nom dessous. Template actif surligné avec anneau de couleur primary.
+---
 
-**Panneau de personnalisation** (accordéon ou section inline sous le sélecteur de template) :
-- Couleur principale (header/fond sections) → `<input type="color" />`
-- Couleur du texte → `<input type="color" />`
-- Couleur accent → `<input type="color" />`
-- Upload photo → zone cliquable small avec preview
+### 4. Table `cookie_consents` en base
 
-### 3. `src/components/cv-builder/CVPreview.tsx` — Rendu multi-template
-
-- Accepter `templateId`, `designOptions` et `photoUrl` en props
-- Chaque template a sa propre structure JSX dans `CVPreview` (switch sur templateId)
-- Les couleurs du CSS sont injectées via CSS variables ou style inline avec les valeurs de `designOptions`
-- La photo est affichée dans le header si présente (img ronde ou carrée selon le template)
-
-### 4. `src/components/cv-builder/CVBuilderForm.tsx`
-
-- Ajouter un champ "Photo de profil" dans la section Informations personnelles
-  - Input file `accept="image/*"` → converti en base64 → stocké dans `designOptions.photoUrl`
-
-## Nouveaux props transmis
-
-```text
-CVBuilder (state) ──► CVPreview
-  templateId: "classic" | "dark" | "light" | "geo"
-  designOptions: { primaryColor, textColor, accentColor, photoUrl }
-
-CVBuilder (state) ──► CVBuilderForm
-  designOptions + onDesignChange
-  (pour l'upload photo dans les infos perso)
+```sql
+CREATE TABLE cookie_consents (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid,           -- null si visiteur non connecté
+  session_fingerprint text,  -- hash IP+UserAgent anonymisé
+  analytics_accepted boolean DEFAULT false,
+  preferences_accepted boolean DEFAULT false,
+  consented_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now()
+);
 ```
 
-## Fichiers modifiés
+Utile pour :
+- Prouver le consentement (obligation RGPD)
+- Voir dans l'admin combien d'utilisateurs ont accepté/refusé
+
+---
+
+### 5. Dashboard admin enrichi (`src/pages/Admin/AdminAnalytics.tsx`)
+
+Ajout de 2 widgets :
+- **Taux d'acceptation cookies** : % accepté / essentiels / refusé
+- **Top fonctionnalités utilisées** : basé sur `feature_used` events
+
+---
+
+### Fichiers créés/modifiés
 
 | Fichier | Action |
 |---------|--------|
-| `src/lib/cv-templates.ts` | Ajouter 3 nouveaux templates + interface `CVDesignOptions` + couleurs par défaut par template |
-| `src/pages/CVBuilder.tsx` | Ajouter state `templateId` + `designOptions`, grille sélecteur de templates, panneau couleurs |
-| `src/components/cv-builder/CVPreview.tsx` | Rendu conditionnel par template, injection des couleurs custom, affichage photo |
-| `src/components/cv-builder/CVBuilderForm.tsx` | Ajout upload photo dans infos perso |
+| `src/components/CookieBanner.tsx` | Nouveau — bannière RGPD |
+| `src/hooks/useCookieConsent.ts` | Nouveau — gestion consentement |
+| `src/hooks/useActivityTracking.ts` | Modifier — respecter le consentement |
+| `src/App.tsx` | Ajouter `<CookieBanner />` |
+| `src/pages/Admin/AdminAnalytics.tsx` | Ajouter widget taux d'acceptation |
+| Migration SQL | Table `cookie_consents` + RLS |
+
+---
+
+### Comment exploiter les données
+
+Une fois implémenté, dans l'admin (`/admin` → Analytics) :
+- Voir quelles features sont les plus utilisées
+- Voir les pages les plus visitées
+- Voir le taux de conversion (landing → inscription)
+- Voir la durée moyenne des sessions
+- Voir combien d'users ont accepté le tracking
+
+Tout est **first-party**, hébergé dans ta propre base, **conforme RGPD** car tu as le consentement explicite.
