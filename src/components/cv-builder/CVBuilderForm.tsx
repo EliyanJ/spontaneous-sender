@@ -3,11 +3,11 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Sparkles, Plus, Trash2, Upload, FileText, X, Database } from "lucide-react";
+import { Sparkles, Plus, Trash2, Upload, FileText, X, Database, Camera } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import type { CVData } from "@/lib/cv-templates";
+import type { CVData, CVDesignOptions } from "@/lib/cv-templates";
 
 interface CVBuilderFormProps {
   cvData: CVData;
@@ -17,6 +17,8 @@ interface CVBuilderFormProps {
   isLoading: boolean;
   importedFileName: string | null;
   onClearImport: () => void;
+  designOptions?: CVDesignOptions;
+  onDesignChange?: (options: CVDesignOptions) => void;
 }
 
 export const CVBuilderForm = ({
@@ -27,12 +29,26 @@ export const CVBuilderForm = ({
   isLoading,
   importedFileName,
   onClearImport,
+  designOptions,
+  onDesignChange,
 }: CVBuilderFormProps) => {
   const { user } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const photoInputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [savedCVs, setSavedCVs] = useState<{ id: string; name: string; content: string; updated_at: string }[]>([]);
   const [cvPopoverOpen, setCvPopoverOpen] = useState(false);
+
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !onDesignChange || !designOptions) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      onDesignChange({ ...designOptions, photoUrl: ev.target?.result as string });
+    };
+    reader.readAsDataURL(file);
+    if (photoInputRef.current) photoInputRef.current.value = "";
+  };
 
   // Drag & Drop handlers
   const handleDragOver = useCallback((e: React.DragEvent) => {
@@ -230,6 +246,37 @@ export const CVBuilderForm = ({
       {/* Personal Info */}
       <section>
         <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Informations personnelles</h3>
+        {/* Photo upload */}
+        {onDesignChange && designOptions && (
+          <div className="mb-2 flex items-center gap-3">
+            <div
+              className="relative cursor-pointer rounded-full overflow-hidden border-2 border-dashed border-border hover:border-primary/50 transition-colors"
+              style={{ width: 52, height: 52 }}
+              onClick={() => photoInputRef.current?.click()}
+            >
+              {designOptions.photoUrl ? (
+                <img src={designOptions.photoUrl} alt="Photo" className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center bg-muted">
+                  <Camera className="h-4 w-4 text-muted-foreground" />
+                </div>
+              )}
+              <input ref={photoInputRef} type="file" accept="image/*" onChange={handlePhotoChange} className="hidden" />
+            </div>
+            <div className="flex-1">
+              <p className="text-xs font-medium text-foreground">Photo de profil</p>
+              <p className="text-[10px] text-muted-foreground">Cliquez pour ajouter</p>
+              {designOptions.photoUrl && (
+                <button
+                  className="text-[10px] text-destructive hover:underline mt-0.5"
+                  onClick={() => onDesignChange({ ...designOptions, photoUrl: undefined })}
+                >
+                  Supprimer
+                </button>
+              )}
+            </div>
+          </div>
+        )}
         <div className="grid grid-cols-2 gap-2">
           <div>
             <Label className="text-xs">Prénom</Label>

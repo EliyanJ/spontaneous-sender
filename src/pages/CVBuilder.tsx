@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Loader2, Sparkles, Save, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -10,7 +10,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { CVBuilderForm } from "@/components/cv-builder/CVBuilderForm";
 import { CVPreview } from "@/components/cv-builder/CVPreview";
-import { emptyCVData, type CVData } from "@/lib/cv-templates";
+import { emptyCVData, CV_TEMPLATES, type CVData, type CVDesignOptions, type TemplateId } from "@/lib/cv-templates";
 import { useAuth } from "@/hooks/useAuth";
 import logoTransparent from "@/assets/logo-transparent.png";
 
@@ -24,6 +24,67 @@ const SECTORS = [
   { value: "general", label: "Généraliste" },
 ];
 
+// Template thumbnail mini-preview
+const TemplateThumbnail = ({ id, name, active, onClick }: { id: TemplateId; name: string; active: boolean; onClick: () => void }) => {
+  const previews: Record<TemplateId, React.ReactNode> = {
+    classic: (
+      <div style={{ width: "100%", height: "100%", display: "flex" }}>
+        <div style={{ width: "38%", background: "#0f1b3d", height: "100%" }} />
+        <div style={{ flex: 1, background: "#fff", padding: 4 }}>
+          <div style={{ width: "70%", height: 4, background: "#c9a84c", marginBottom: 3, borderRadius: 1 }} />
+          <div style={{ width: "50%", height: 3, background: "#ddd", marginBottom: 6, borderRadius: 1 }} />
+          {[1,2,3].map(i => <div key={i} style={{ width: "90%", height: 2, background: "#eee", marginBottom: 2, borderRadius: 1 }} />)}
+        </div>
+      </div>
+    ),
+    dark: (
+      <div style={{ width: "100%", height: "100%", display: "flex", background: "#111827" }}>
+        <div style={{ width: "40%", borderRight: "1px solid #10b981", padding: 4 }}>
+          <div style={{ width: "80%", height: 4, background: "#10b981", marginBottom: 3, borderRadius: 1 }} />
+          {[1,2,3].map(i => <div key={i} style={{ width: "90%", height: 2, background: "#374151", marginBottom: 2, borderRadius: 1 }} />)}
+        </div>
+        <div style={{ flex: 1, padding: 4 }}>
+          {[1,2,3,4].map(i => <div key={i} style={{ width: "90%", height: 2, background: "#374151", marginBottom: 2, borderRadius: 1 }} />)}
+        </div>
+      </div>
+    ),
+    light: (
+      <div style={{ width: "100%", height: "100%", background: "#fff" }}>
+        <div style={{ background: "#16a34a", height: "30%", width: "100%", marginBottom: 4 }} />
+        <div style={{ padding: "0 4px" }}>
+          {[1,2,3,4].map(i => <div key={i} style={{ width: "90%", height: 2, background: "#eee", marginBottom: 2, borderRadius: 1 }} />)}
+        </div>
+      </div>
+    ),
+    geo: (
+      <div style={{ width: "100%", height: "100%", background: "#fff" }}>
+        <div style={{ background: "#475569", height: "28%", width: "100%", marginBottom: 4, position: "relative", overflow: "hidden" }}>
+          <div style={{ position: "absolute", top: -8, right: 10, width: 20, height: 20, background: "rgba(255,255,255,0.1)", transform: "rotate(45deg)" }} />
+        </div>
+        <div style={{ height: 2, background: "linear-gradient(90deg, #3b82f6, #475569)", marginBottom: 4 }} />
+        <div style={{ padding: "0 4px", display: "flex", gap: 3 }}>
+          <div style={{ flex: 2 }}>{[1,2,3].map(i => <div key={i} style={{ width: "90%", height: 2, background: "#eee", marginBottom: 2, borderRadius: 1 }} />)}</div>
+          <div style={{ flex: 1 }}>{[1,2].map(i => <div key={i} style={{ width: "90%", height: 2, background: "#3b82f620", marginBottom: 2, borderRadius: 1 }} />)}</div>
+        </div>
+      </div>
+    ),
+  };
+  return (
+    <button
+      onClick={onClick}
+      className="flex flex-col items-center gap-1 group"
+    >
+      <div
+        className={`rounded-md overflow-hidden transition-all duration-150 ${active ? "ring-2 ring-primary shadow-md" : "ring-1 ring-border hover:ring-primary/50"}`}
+        style={{ width: 72, height: 52 }}
+      >
+        {previews[id]}
+      </div>
+      <span className={`text-[10px] font-medium ${active ? "text-primary" : "text-muted-foreground"}`}>{name}</span>
+    </button>
+  );
+};
+
 const CVBuilder = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -35,6 +96,18 @@ const CVBuilder = () => {
   const [isOptimizing, setIsOptimizing] = useState(false);
   const [showMobilePreview, setShowMobilePreview] = useState(false);
   const [importedFileName, setImportedFileName] = useState<string | null>(null);
+  const [templateId, setTemplateId] = useState<TemplateId>("classic");
+  const [designOptions, setDesignOptions] = useState<CVDesignOptions>({
+    primaryColor: "#0f1b3d",
+    textColor: "#1a1a2e",
+    accentColor: "#c9a84c",
+  });
+
+  const handleTemplateChange = (id: TemplateId) => {
+    setTemplateId(id);
+    const tpl = CV_TEMPLATES.find(t => t.id === id);
+    if (tpl) setDesignOptions(prev => ({ ...tpl.defaultDesign, photoUrl: prev.photoUrl }));
+  };
 
   // Parse a file (PDF/DOCX/TXT) and fill cvData via AI
   const handleFileParsed = useCallback(async (file: File) => {
@@ -201,6 +274,58 @@ const CVBuilder = () => {
               </TabsList>
             </Tabs>
 
+            {/* Template selector */}
+            <div className="rounded-xl border border-border/50 bg-card/30 p-3">
+              <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 block">Modèle de CV</Label>
+              <div className="grid grid-cols-4 gap-2">
+                {CV_TEMPLATES.map(tpl => (
+                  <TemplateThumbnail
+                    key={tpl.id}
+                    id={tpl.id}
+                    name={tpl.name}
+                    active={templateId === tpl.id}
+                    onClick={() => handleTemplateChange(tpl.id)}
+                  />
+                ))}
+              </div>
+              {/* Color customization */}
+              <div className="mt-3 pt-3 border-t border-border/50 space-y-2">
+                <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block">Personnalisation</Label>
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="flex flex-col items-center gap-1">
+                    <input
+                      type="color"
+                      value={designOptions.primaryColor}
+                      onChange={e => setDesignOptions(prev => ({ ...prev, primaryColor: e.target.value }))}
+                      className="w-8 h-8 rounded cursor-pointer border border-border"
+                      title="Couleur principale"
+                    />
+                    <span className="text-[9px] text-muted-foreground">Principal</span>
+                  </div>
+                  <div className="flex flex-col items-center gap-1">
+                    <input
+                      type="color"
+                      value={designOptions.accentColor}
+                      onChange={e => setDesignOptions(prev => ({ ...prev, accentColor: e.target.value }))}
+                      className="w-8 h-8 rounded cursor-pointer border border-border"
+                      title="Couleur accent"
+                    />
+                    <span className="text-[9px] text-muted-foreground">Accent</span>
+                  </div>
+                  <div className="flex flex-col items-center gap-1">
+                    <input
+                      type="color"
+                      value={designOptions.textColor}
+                      onChange={e => setDesignOptions(prev => ({ ...prev, textColor: e.target.value }))}
+                      className="w-8 h-8 rounded cursor-pointer border border-border"
+                      title="Couleur texte"
+                    />
+                    <span className="text-[9px] text-muted-foreground">Texte</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             {/* Sector */}
             <div>
               <Label className="text-xs mb-1 block text-muted-foreground">Secteur cible</Label>
@@ -251,13 +376,15 @@ const CVBuilder = () => {
                 isLoading={isLoading}
                 importedFileName={importedFileName}
                 onClearImport={() => setImportedFileName(null)}
+                designOptions={designOptions}
+                onDesignChange={setDesignOptions}
               />
             </div>
           </div>
 
           {/* RIGHT PANEL - 8 cols: Preview */}
           <div className="lg:col-span-8 hidden lg:block overflow-hidden">
-            <CVPreview cvData={cvData} />
+            <CVPreview cvData={cvData} templateId={templateId} designOptions={designOptions} />
           </div>
         </div>
 
@@ -271,7 +398,7 @@ const CVBuilder = () => {
               </Button>
             </div>
             <div className="flex-1 overflow-auto p-4">
-              <CVPreview cvData={cvData} />
+              <CVPreview cvData={cvData} templateId={templateId} designOptions={designOptions} />
             </div>
           </div>
         )}
