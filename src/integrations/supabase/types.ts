@@ -394,6 +394,36 @@ export type Database = {
         }
         Relationships: []
       }
+      cookie_consents: {
+        Row: {
+          analytics_accepted: boolean
+          consented_at: string
+          id: string
+          preferences_accepted: boolean
+          session_fingerprint: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          analytics_accepted?: boolean
+          consented_at?: string
+          id?: string
+          preferences_accepted?: boolean
+          session_fingerprint?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          analytics_accepted?: boolean
+          consented_at?: string
+          id?: string
+          preferences_accepted?: boolean
+          session_fingerprint?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       cv_analyses: {
         Row: {
           admin_feedback: Json | null

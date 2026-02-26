@@ -1,6 +1,7 @@
 import { useRef, useCallback, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useCookieConsent } from "@/hooks/useCookieConsent";
 import type { Json } from "@/integrations/supabase/types";
 
 type ActionType = 
@@ -23,6 +24,7 @@ type ActionType =
 
 export const useActivityTracking = () => {
   const { user } = useAuth();
+  const { analyticsEnabled } = useCookieConsent();
   const sessionId = useRef<string>(crypto.randomUUID());
   const sessionStartTime = useRef<number>(Date.now());
 
@@ -32,6 +34,8 @@ export const useActivityTracking = () => {
     durationMs?: number
   ) => {
     if (!user) return;
+    // Only track if analytics consent is given
+    if (!analyticsEnabled) return;
 
     try {
       const { error } = await supabase.from('user_activity_logs').insert([{
