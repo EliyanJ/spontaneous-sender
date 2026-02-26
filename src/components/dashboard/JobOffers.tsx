@@ -1,11 +1,13 @@
 import { useState, useEffect, useRef } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, MapPin, Briefcase, Clock, ExternalLink, Euro, Bookmark, Building2, X, GraduationCap } from "lucide-react";
+import { Search, MapPin, Briefcase, Clock, ExternalLink, Euro, Bookmark, Building2, X, GraduationCap, ChevronLeft, ChevronRight } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { CommuneSearch } from "@/components/ui/commune-search";
 import { supabase } from "@/integrations/supabase/client";
 import { formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
+
+const PAGE_SIZE = 10;
 
 interface JobOffer {
   id: string;
@@ -58,6 +60,7 @@ export const JobOffers = () => {
   const [loading, setLoading] = useState(false);
   const [offers, setOffers] = useState<JobOffer[]>([]);
   const [selectedOffer, setSelectedOffer] = useState<JobOffer | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
   const initialLoadDone = useRef(false);
   
   const [searchParams, setSearchParams] = useState({
@@ -128,6 +131,7 @@ export const JobOffers = () => {
 
       const data: SearchResponse = await response.json();
       setOffers(data.resultats || []);
+      setCurrentPage(1);
       
       if (!data.resultats?.length) {
         toast({
@@ -183,6 +187,9 @@ export const JobOffers = () => {
   const handleOfferClick = (offer: JobOffer) => {
     loadOfferDetails(offer.id);
   };
+
+  const totalPages = Math.ceil(offers.length / PAGE_SIZE);
+  const paginatedOffers = offers.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
   return (
     <div className="space-y-6">
@@ -337,7 +344,7 @@ export const JobOffers = () => {
       {/* Results list */}
       {!loading && offers.length > 0 && (
         <div className="space-y-3">
-          {offers.map((offer) => (
+          {paginatedOffers.map((offer) => (
             <div
               key={offer.id}
               onClick={() => handleOfferClick(offer)}
@@ -425,6 +432,42 @@ export const JobOffers = () => {
               </div>
             </div>
           ))}
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-center gap-2 pt-2">
+              <button
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="flex items-center justify-center w-8 h-8 rounded-full bg-[#18181b] border border-white/10 text-gray-400 hover:text-white hover:border-white/20 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                <button
+                  key={page}
+                  onClick={() => setCurrentPage(page)}
+                  className={`w-8 h-8 rounded-full text-sm font-medium transition-colors ${
+                    page === currentPage
+                      ? "bg-indigo-600 text-white border border-indigo-500"
+                      : "bg-[#18181b] border border-white/10 text-gray-400 hover:text-white hover:border-white/20"
+                  }`}
+                >
+                  {page}
+                </button>
+              ))}
+              <button
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+                className="flex items-center justify-center w-8 h-8 rounded-full bg-[#18181b] border border-white/10 text-gray-400 hover:text-white hover:border-white/20 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
+          )}
+          <p className="text-center text-xs text-gray-500 pb-1">
+            {offers.length} offre{offers.length > 1 ? "s" : ""} · page {currentPage}/{totalPages}
+          </p>
         </div>
       )}
 
