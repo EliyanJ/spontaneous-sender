@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, MapPin, Briefcase, Clock, ExternalLink, Euro, Bookmark, Building2, X, GraduationCap, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, MapPin, Briefcase, Clock, ExternalLink, Euro, Bookmark, BookmarkCheck, Building2, X, GraduationCap, ChevronLeft, ChevronRight } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { CommuneSearch } from "@/components/ui/commune-search";
 import { supabase } from "@/integrations/supabase/client";
@@ -55,13 +55,32 @@ const getContractBadgeClasses = (type?: string) => {
   }
 };
 
+const FAVORITES_KEY = "job_favorites";
+
 export const JobOffers = () => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [offers, setOffers] = useState<JobOffer[]>([]);
   const [selectedOffer, setSelectedOffer] = useState<JobOffer | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [showFavorites, setShowFavorites] = useState(false);
+  const [favorites, setFavorites] = useState<JobOffer[]>(() => {
+    try { return JSON.parse(localStorage.getItem(FAVORITES_KEY) || "[]"); } catch { return []; }
+  });
   const initialLoadDone = useRef(false);
+
+  const toggleFavorite = (offer: JobOffer, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setFavorites(prev => {
+      const exists = prev.some(f => f.id === offer.id);
+      const next = exists ? prev.filter(f => f.id !== offer.id) : [...prev, offer];
+      localStorage.setItem(FAVORITES_KEY, JSON.stringify(next));
+      toast({ title: exists ? "Retiré des favoris" : "Ajouté aux favoris", description: offer.intitule });
+      return next;
+    });
+  };
+
+  const isFavorite = (id: string) => favorites.some(f => f.id === id);
   
   const [searchParams, setSearchParams] = useState({
     motsCles: "",
@@ -188,8 +207,9 @@ export const JobOffers = () => {
     loadOfferDetails(offer.id);
   };
 
-  const totalPages = Math.ceil(offers.length / PAGE_SIZE);
-  const paginatedOffers = offers.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+  const displayedOffers = showFavorites ? favorites : offers;
+  const totalPages = Math.ceil(displayedOffers.length / PAGE_SIZE);
+  const paginatedOffers = displayedOffers.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
   return (
     <div className="space-y-6">
@@ -204,17 +224,31 @@ export const JobOffers = () => {
             </span>
           </p>
         </div>
-        {offers.length > 0 && !loading && (
-          <div className="flex items-center gap-2 bg-[#18181b]/60 backdrop-blur-xl border border-white/[0.08] rounded-full px-4 py-2">
-            <span className="relative flex h-2.5 w-2.5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500" />
-            </span>
-            <span className="text-sm text-gray-300">
-              {offers.length} offre{offers.length > 1 ? "s" : ""} trouvée{offers.length > 1 ? "s" : ""}
-            </span>
-          </div>
-        )}
+        <div className="flex items-center gap-3">
+          {/* Favorites toggle */}
+          <button
+            onClick={() => { setShowFavorites(v => !v); setCurrentPage(1); }}
+            className={`flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium border transition-all ${
+              showFavorites
+                ? "bg-amber-500/20 border-amber-500/40 text-amber-300"
+                : "bg-[#18181b]/60 border-white/[0.08] text-gray-400 hover:text-amber-300 hover:border-amber-500/30"
+            }`}
+          >
+            {showFavorites ? <BookmarkCheck className="h-4 w-4" /> : <Bookmark className="h-4 w-4" />}
+            Favoris {favorites.length > 0 && <span className="bg-amber-500/30 text-amber-300 text-xs rounded-full px-1.5 py-0.5 ml-0.5">{favorites.length}</span>}
+          </button>
+          {offers.length > 0 && !loading && !showFavorites && (
+            <div className="flex items-center gap-2 bg-[#18181b]/60 backdrop-blur-xl border border-white/[0.08] rounded-full px-4 py-2">
+              <span className="relative flex h-2.5 w-2.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500" />
+              </span>
+              <span className="text-sm text-gray-300">
+                {offers.length} offre{offers.length > 1 ? "s" : ""} trouvée{offers.length > 1 ? "s" : ""}
+              </span>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Search Card */}
@@ -328,8 +362,21 @@ export const JobOffers = () => {
         </div>
       )}
 
+      {/* Empty state favorites */}
+      {showFavorites && favorites.length === 0 && (
+        <div className="flex flex-col items-center justify-center py-20 gap-4">
+          <div className="w-20 h-20 rounded-full bg-[#18181b]/60 backdrop-blur-xl border border-white/[0.08] flex items-center justify-center">
+            <Bookmark className="h-8 w-8 text-gray-500" />
+          </div>
+          <h3 className="text-lg font-semibold text-white">Aucun favori</h3>
+          <p className="text-sm text-gray-400 text-center max-w-sm">
+            Cliquez sur l'icône <Bookmark className="inline h-3.5 w-3.5" /> d'une offre pour l'ajouter à vos favoris
+          </p>
+        </div>
+      )}
+
       {/* Empty state */}
-      {!loading && offers.length === 0 && (
+      {!showFavorites && !loading && offers.length === 0 && (
         <div className="flex flex-col items-center justify-center py-20 gap-4">
           <div className="w-20 h-20 rounded-full bg-[#18181b]/60 backdrop-blur-xl border border-white/[0.08] flex items-center justify-center">
             <Search className="h-8 w-8 text-gray-500" />
@@ -342,7 +389,7 @@ export const JobOffers = () => {
       )}
 
       {/* Results list */}
-      {!loading && offers.length > 0 && (
+      {!loading && displayedOffers.length > 0 && (
         <div className="space-y-3">
           {paginatedOffers.map((offer) => (
             <div
@@ -422,12 +469,16 @@ export const JobOffers = () => {
                   </span>
                 </div>
 
-                {/* Bookmark button (desktop) */}
+                {/* Bookmark button */}
                 <button
-                  onClick={(e) => { e.stopPropagation(); }}
-                  className="hidden md:flex items-center justify-center w-9 h-9 rounded-full bg-[#18181b] border border-white/10 text-gray-400 hover:text-indigo-400 hover:border-indigo-500/30 transition-colors shrink-0"
+                  onClick={(e) => toggleFavorite(offer, e)}
+                  className={`flex items-center justify-center w-9 h-9 rounded-full border transition-all shrink-0 ${
+                    isFavorite(offer.id)
+                      ? "bg-amber-500/20 border-amber-500/40 text-amber-400"
+                      : "bg-[#18181b] border-white/10 text-gray-400 hover:text-amber-400 hover:border-amber-500/30"
+                  }`}
                 >
-                  <Bookmark className="h-4 w-4" />
+                  {isFavorite(offer.id) ? <BookmarkCheck className="h-4 w-4" /> : <Bookmark className="h-4 w-4" />}
                 </button>
               </div>
             </div>
