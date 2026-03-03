@@ -12,6 +12,7 @@ import { Save, Search, Globe, ChevronDown, ChevronUp } from "lucide-react";
 
 const SITE_PAGES = [
   { path: "/", label: "Accueil (Landing)" },
+  { path: "/score-cv", label: "Comparateur CV / ATS (SEO principal)" },
   { path: "/pricing", label: "Tarifs" },
   { path: "/login", label: "Connexion" },
   { path: "/register", label: "Inscription" },

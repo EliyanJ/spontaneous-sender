@@ -303,6 +303,155 @@ const GeoTemplate = ({ cvData, d }: { cvData: CVData; d: CVDesignOptions }) => {
   );
 };
 
+// ─── TEMPLATE: MODERN ───────────────────────────────────────────────────────
+const ModernTemplate = ({ cvData, d }: { cvData: CVData; d: CVDesignOptions }) => {
+  const allSkills = [...cvData.skills.technical, ...cvData.skills.soft];
+  return (
+    <div className="cv-page" style={{ display: "flex", minHeight: "297mm", fontFamily: "'Helvetica Neue', Arial, sans-serif", fontSize: "10pt", color: d.textColor, background: "#fff" }}>
+      {/* Left sidebar */}
+      <div style={{ width: "68mm", background: d.primaryColor, padding: "32px 20px", display: "flex", flexDirection: "column", gap: "18px", flexShrink: 0 }}>
+        {d.photoUrl && (
+          <div style={{ textAlign: "center" }}>
+            <img src={d.photoUrl} alt="Photo" style={{ width: "80px", height: "80px", borderRadius: "50%", objectFit: "cover", border: `3px solid ${d.accentColor}` }} />
+          </div>
+        )}
+        <div>
+          <p style={{ fontSize: "17pt", fontWeight: 700, color: "#fff", lineHeight: 1.2 }}>
+            {cvData.personalInfo.firstName || cvData.personalInfo.lastName
+              ? `${cvData.personalInfo.firstName} ${cvData.personalInfo.lastName}`
+              : <span style={{ color: "#aaa", fontStyle: "italic" }}>Prénom Nom</span>}
+          </p>
+          <div style={{ height: 2, background: d.accentColor, width: 40, margin: "6px 0 8px" }} />
+          <p style={{ fontSize: "9pt", color: d.accentColor, letterSpacing: "1px", textTransform: "uppercase" }}>
+            {cvData.personalInfo.title || ""}
+          </p>
+          <div style={{ marginTop: 12, fontSize: "8pt", color: "rgba(255,255,255,0.7)", lineHeight: 1.9 }}>
+            {cvData.personalInfo.email && <div>✉ {cvData.personalInfo.email}</div>}
+            {cvData.personalInfo.phone && <div>✆ {cvData.personalInfo.phone}</div>}
+            {cvData.personalInfo.address && <div>⌖ {cvData.personalInfo.address}</div>}
+            {cvData.personalInfo.linkedin && <div>in {cvData.personalInfo.linkedin}</div>}
+          </div>
+        </div>
+        {allSkills.length > 0 && (
+          <div>
+            <div style={{ fontSize: "8pt", fontWeight: 700, color: d.accentColor, textTransform: "uppercase", letterSpacing: "2px", marginBottom: 8 }}>Compétences</div>
+            {allSkills.map((s, i) => (
+              <div key={i} style={{ fontSize: "8pt", color: "rgba(255,255,255,0.8)", padding: "2px 0", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>{s}</div>
+            ))}
+          </div>
+        )}
+        {cvData.languages.some(l => l.name) && (
+          <div>
+            <div style={{ fontSize: "8pt", fontWeight: 700, color: d.accentColor, textTransform: "uppercase", letterSpacing: "2px", marginBottom: 8 }}>Langues</div>
+            {cvData.languages.filter(l => l.name).map((l, i) => (
+              <div key={i} style={{ fontSize: "8.5pt", color: "rgba(255,255,255,0.8)", marginBottom: 4 }}>
+                <span style={{ fontWeight: 600 }}>{l.name}</span>{l.level && <span style={{ opacity: 0.6 }}> — {l.level}</span>}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+      {/* Right content */}
+      <div style={{ flex: 1, padding: "28px 26px" }}>
+        {cvData.summary && (
+          <div style={{ background: `${d.primaryColor}08`, borderLeft: `4px solid ${d.accentColor}`, padding: "10px 14px", marginBottom: 20, fontSize: "9.5pt", lineHeight: 1.7, borderRadius: "0 6px 6px 0", color: "#444" }}>
+            {cvData.summary}
+          </div>
+        )}
+        <SectionTitle label="Expériences" color={d.primaryColor} accentColor={d.accentColor} />
+        {cvData.experiences.filter(e => e.role || e.company).map((exp, i) => (
+          <ExpItem key={i} exp={exp} accentColor={d.accentColor} />
+        ))}
+        <SectionTitle label="Formation" color={d.primaryColor} accentColor={d.accentColor} />
+        {cvData.education.filter(e => e.degree || e.school).map((edu, i) => (
+          <EduItem key={i} edu={edu} />
+        ))}
+      </div>
+    </div>
+  );
+};
+
+// ─── TEMPLATE: MINIMAL ──────────────────────────────────────────────────────
+const MinimalTemplate = ({ cvData, d }: { cvData: CVData; d: CVDesignOptions }) => {
+  const allSkills = [...cvData.skills.technical, ...cvData.skills.soft];
+  return (
+    <div className="cv-page" style={{ minHeight: "297mm", fontFamily: "'Georgia', serif", fontSize: "10pt", color: d.textColor, background: "#fff", padding: "36px 40px" }}>
+      {/* Header */}
+      <div style={{ borderBottom: `3px solid ${d.primaryColor}`, paddingBottom: 14, marginBottom: 20 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
+          {d.photoUrl && (
+            <img src={d.photoUrl} alt="Photo" style={{ width: "65px", height: "65px", borderRadius: "50%", objectFit: "cover", border: `2px solid ${d.accentColor}` }} />
+          )}
+          <div>
+            <p style={{ fontSize: "22pt", fontWeight: 700, letterSpacing: "-0.5px" }}>
+              {cvData.personalInfo.firstName || cvData.personalInfo.lastName
+                ? `${cvData.personalInfo.firstName} ${cvData.personalInfo.lastName}`
+                : <span style={{ color: "#bbb" }}>Prénom Nom</span>}
+            </p>
+            <p style={{ fontSize: "11pt", color: d.accentColor, fontStyle: "italic", marginTop: 2 }}>
+              {cvData.personalInfo.title || ""}
+            </p>
+            <div style={{ display: "flex", gap: 14, marginTop: 6, fontSize: "8.5pt", color: "#666" }}>
+              {cvData.personalInfo.email && <span>{cvData.personalInfo.email}</span>}
+              {cvData.personalInfo.phone && <span>{cvData.personalInfo.phone}</span>}
+              {cvData.personalInfo.address && <span>{cvData.personalInfo.address}</span>}
+            </div>
+          </div>
+        </div>
+      </div>
+      {cvData.summary && (
+        <p style={{ fontSize: "9.5pt", lineHeight: 1.8, marginBottom: 20, color: "#555", fontStyle: "italic" }}>{cvData.summary}</p>
+      )}
+      {/* Two-col layout */}
+      <div style={{ display: "flex", gap: 28 }}>
+        <div style={{ flex: 2 }}>
+          <div style={{ fontSize: "9pt", fontWeight: 700, textTransform: "uppercase", letterSpacing: "3px", color: d.primaryColor, marginBottom: 10 }}>Expériences</div>
+          {cvData.experiences.filter(e => e.role || e.company).map((exp, i) => (
+            <div key={i} style={{ marginBottom: 14, paddingLeft: 0 }}>
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <span style={{ fontWeight: 700 }}>{exp.role}</span>
+                <span style={{ fontSize: "8pt", color: "#888" }}>{exp.dates}</span>
+              </div>
+              <div style={{ color: d.accentColor, fontSize: "9pt" }}>{exp.company}</div>
+              {exp.bullets.filter(Boolean).length > 0 && (
+                <ul style={{ paddingLeft: 16, marginTop: 3 }}>
+                  {exp.bullets.filter(Boolean).map((b, bi) => <li key={bi} style={{ fontSize: "8.5pt", color: "#444", lineHeight: 1.6 }}>{b}</li>)}
+                </ul>
+              )}
+            </div>
+          ))}
+          <div style={{ fontSize: "9pt", fontWeight: 700, textTransform: "uppercase", letterSpacing: "3px", color: d.primaryColor, marginBottom: 10, marginTop: 16 }}>Formation</div>
+          {cvData.education.filter(e => e.degree || e.school).map((edu, i) => (
+            <EduItem key={i} edu={edu} />
+          ))}
+        </div>
+        <div style={{ flex: 1 }}>
+          {allSkills.length > 0 && (
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ fontSize: "9pt", fontWeight: 700, textTransform: "uppercase", letterSpacing: "3px", color: d.primaryColor, marginBottom: 8 }}>Compétences</div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
+                {allSkills.map((s, i) => (
+                  <span key={i} style={{ fontSize: "8pt", padding: "2px 8px", background: `${d.accentColor}15`, color: d.primaryColor, border: `1px solid ${d.accentColor}40`, borderRadius: 3 }}>{s}</span>
+                ))}
+              </div>
+            </div>
+          )}
+          {cvData.languages.some(l => l.name) && (
+            <div>
+              <div style={{ fontSize: "9pt", fontWeight: 700, textTransform: "uppercase", letterSpacing: "3px", color: d.primaryColor, marginBottom: 8 }}>Langues</div>
+              {cvData.languages.filter(l => l.name).map((l, i) => (
+                <div key={i} style={{ fontSize: "9pt", marginBottom: 4 }}>
+                  <span style={{ fontWeight: 600 }}>{l.name}</span>{l.level && <span style={{ color: "#666" }}> — {l.level}</span>}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // ─── Shared sub-components ───────────────────────────────────────────────────
 const SectionTitle = ({ label, color, accentColor }: { label: string; color: string; accentColor: string }) => (
   <div style={{ fontSize: "10pt", fontWeight: 700, textTransform: "uppercase", letterSpacing: "2px", color, borderBottom: `2px solid ${color}`, paddingBottom: 3, marginBottom: 10, marginTop: 16 }}>{label}</div>
@@ -354,6 +503,8 @@ export const CVPreview = ({ cvData, templateId = "classic", designOptions }: CVP
     dark: { primaryColor: "#111827", textColor: "#e5e7eb", accentColor: "#10b981" },
     light: { primaryColor: "#16a34a", textColor: "#1a1a1a", accentColor: "#15803d" },
     geo: { primaryColor: "#475569", textColor: "#1e293b", accentColor: "#3b82f6" },
+    modern: { primaryColor: "#7c3aed", textColor: "#1e1b4b", accentColor: "#a78bfa" },
+    minimal: { primaryColor: "#18181b", textColor: "#27272a", accentColor: "#f97316" },
   };
 
   const d: CVDesignOptions = { ...defaultDesigns[templateId], ...designOptions };
@@ -376,6 +527,8 @@ export const CVPreview = ({ cvData, templateId = "classic", designOptions }: CVP
       case "dark": return <DarkTemplate cvData={cvData} d={d} />;
       case "light": return <LightTemplate cvData={cvData} d={d} />;
       case "geo": return <GeoTemplate cvData={cvData} d={d} />;
+      case "modern": return <ModernTemplate cvData={cvData} d={d} />;
+      case "minimal": return <MinimalTemplate cvData={cvData} d={d} />;
       default: return <ClassicTemplate cvData={cvData} d={d} />;
     }
   };

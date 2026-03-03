@@ -129,6 +129,12 @@ export const AdminPageEditor = () => {
     execCmd("foreColor", color);
   };
 
+  const handleHighlightSelect = (color: string) => {
+    document.execCommand("hiliteColor", false, color);
+    editorRef.current?.focus();
+    syncHtmlFromEditor();
+  };
+
   const handleBlockInsert = (html: string, css: string) => {
     const block = css ? `<style>${css}</style>${html}` : html;
     document.execCommand("insertHTML", false, block);
@@ -340,6 +346,14 @@ export const AdminPageEditor = () => {
                 <p className="text-[8px] text-muted-foreground/50 uppercase tracking-widest text-center mb-1">Couleur</p>
                 <div className="flex flex-col items-center">
                   <ColorPickerPopover onColorSelect={handleColorSelect} />
+                </div>
+              </div>
+              {/* Highlight */}
+              <div className="px-1.5">
+                <div className="h-px bg-border/30 my-2" />
+                <p className="text-[8px] text-muted-foreground/50 uppercase tracking-widest text-center mb-1">Surligner</p>
+                <div className="flex flex-col items-center">
+                  <ColorPickerPopover onColorSelect={handleHighlightSelect} defaultColors={["#fef08a","#fbcfe8","#bfdbfe","#bbf7d0","#fed7aa","transparent"]} />
                 </div>
               </div>
             </div>

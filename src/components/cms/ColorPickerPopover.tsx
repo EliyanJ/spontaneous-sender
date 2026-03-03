@@ -5,6 +5,8 @@ import { Palette } from "lucide-react";
 
 interface ColorPickerPopoverProps {
   onColorSelect: (color: string) => void;
+  defaultColors?: string[];
+  tooltipLabel?: string;
 }
 
 const PRESET_COLORS = [
@@ -22,9 +24,13 @@ const PRESET_COLORS = [
   { label: "Violet", value: "#a855f7" },
 ];
 
-export const ColorPickerPopover: React.FC<ColorPickerPopoverProps> = ({ onColorSelect }) => {
+export const ColorPickerPopover: React.FC<ColorPickerPopoverProps> = ({ onColorSelect, defaultColors, tooltipLabel = "Couleur" }) => {
   const [customColor, setCustomColor] = useState("#8b5cf6");
   const [open, setOpen] = useState(false);
+
+  const colors = defaultColors
+    ? defaultColors.map((v, i) => ({ label: v, value: v }))
+    : PRESET_COLORS;
 
   const handleSelect = (color: string) => {
     onColorSelect(color);
@@ -44,12 +50,12 @@ export const ColorPickerPopover: React.FC<ColorPickerPopoverProps> = ({ onColorS
             </button>
           </PopoverTrigger>
         </TooltipTrigger>
-        <TooltipContent side="right">Couleur</TooltipContent>
+        <TooltipContent side="right">{tooltipLabel}</TooltipContent>
       </Tooltip>
       <PopoverContent side="right" align="start" className="w-52 p-3 rounded-xl">
         <p className="text-[10px] font-semibold uppercase text-muted-foreground/60 tracking-widest mb-2">Présets</p>
         <div className="grid grid-cols-6 gap-1.5 mb-3">
-          {PRESET_COLORS.map((c) => (
+          {colors.map((c) => (
             <button
               key={c.value}
               title={c.label}

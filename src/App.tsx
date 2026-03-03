@@ -46,6 +46,7 @@ import BlogPost from "./pages/BlogPost";
 import Onboarding from "./pages/Onboarding";
 import CVBuilder from "./pages/CVBuilder";
 import { CookieBanner } from "./components/CookieBanner";
+import { CVScorePage } from "./pages/CVScorePage";
 
 const queryClient = new QueryClient();
 
@@ -72,6 +73,7 @@ const App = () => (
           <Route path="/mentions-legales" element={<LegalNotice />} />
           <Route path="/legal-notice" element={<LegalNoticeEn />} />
           <Route path="/pricing" element={<Pricing />} />
+          <Route path="/score-cv" element={<CVScorePage />} />
           <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
           <Route path="/cv-builder" element={<ProtectedRoute><CVBuilder /></ProtectedRoute>} />
           <Route path="/dashboard" element={<ProtectedRoute><Index /></ProtectedRoute>} />

@@ -5,7 +5,7 @@ export interface CVDesignOptions {
   photoUrl?: string;
 }
 
-export type TemplateId = "classic" | "dark" | "light" | "geo";
+export type TemplateId = "classic" | "dark" | "light" | "geo" | "modern" | "minimal";
 
 export interface CVTemplateConfig {
   id: TemplateId;
@@ -33,6 +33,16 @@ export const CV_TEMPLATES: CVTemplateConfig[] = [
     id: "geo",
     name: "Géométrique",
     defaultDesign: { primaryColor: "#475569", textColor: "#1e293b", accentColor: "#3b82f6" },
+  },
+  {
+    id: "modern",
+    name: "Moderne",
+    defaultDesign: { primaryColor: "#7c3aed", textColor: "#1e1b4b", accentColor: "#a78bfa" },
+  },
+  {
+    id: "minimal",
+    name: "Minimaliste",
+    defaultDesign: { primaryColor: "#18181b", textColor: "#27272a", accentColor: "#f97316" },
   },
 ];
 
