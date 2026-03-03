@@ -90,6 +90,35 @@ const TemplateCard = ({
         </div>
       </div>
     ),
+    modern: (
+      <div style={{ width: "100%", height: "100%", background: "#fff", display: "flex" }}>
+        <div style={{ width: "38%", background: defaultDesign.primaryColor, padding: "10px 8px" }}>
+          <div style={{ width: 28, height: 28, borderRadius: "50%", background: defaultDesign.accentColor, opacity: 0.7, marginBottom: 6 }} />
+          <div style={{ height: 2.5, background: "rgba(255,255,255,0.8)", borderRadius: 2, width: "80%", marginBottom: 3 }} />
+          <div style={{ height: 1.5, background: defaultDesign.accentColor, borderRadius: 2, width: "55%", opacity: 0.8, marginBottom: 8 }} />
+          {[1,2,3,4].map(i => <div key={i} style={{ height: 1.5, background: "rgba(255,255,255,0.15)", borderRadius: 2, width: "90%", marginBottom: 3 }} />)}
+        </div>
+        <div style={{ flex: 1, padding: "10px 8px" }}>
+          <div style={{ height: 2, background: defaultDesign.primaryColor, borderRadius: 2, width: "60%", marginBottom: 3, opacity: 0.7 }} />
+          <div style={{ height: 1.5, background: defaultDesign.accentColor, borderRadius: 2, width: "40%", marginBottom: 8, opacity: 0.5 }} />
+          {[85,65,75,55,70].map((w, i) => <div key={i} style={{ height: 1.5, background: "#eee", borderRadius: 2, width: `${w}%`, marginBottom: 3 }} />)}
+        </div>
+      </div>
+    ),
+    minimal: (
+      <div style={{ width: "100%", height: "100%", background: "#fff", padding: "12px" }}>
+        <div style={{ borderBottom: `3px solid ${defaultDesign.primaryColor}`, paddingBottom: 6, marginBottom: 8 }}>
+          <div style={{ height: 3, background: defaultDesign.primaryColor, borderRadius: 2, width: "60%", marginBottom: 3 }} />
+          <div style={{ height: 1.5, background: defaultDesign.accentColor, borderRadius: 2, width: "40%" }} />
+        </div>
+        {[1,2,3].map(i => (
+          <div key={i} style={{ marginBottom: 5 }}>
+            <div style={{ height: 2, background: `${defaultDesign.primaryColor}60`, borderRadius: 2, width: "35%", marginBottom: 2 }} />
+            {[90,70,80].map((w, j) => <div key={j} style={{ height: 1.5, background: "#eee", borderRadius: 2, width: `${w}%`, marginBottom: 2 }} />)}
+          </div>
+        ))}
+      </div>
+    ),
   };
 
   return (
@@ -120,6 +149,8 @@ const TemplateCard = ({
             {id === "classic" ? "Sidebar · Photo ronde" :
              id === "dark" ? "Fond sombre · Accent vif" :
              id === "light" ? "Header coloré · Épuré" :
+             id === "modern" ? "2 colonnes · Violet" :
+             id === "minimal" ? "Épuré · Typographie" :
              "Géométrique · Moderne"}
           </p>
         </div>

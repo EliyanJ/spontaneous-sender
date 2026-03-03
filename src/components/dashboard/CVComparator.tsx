@@ -119,7 +119,12 @@ const getSubScoreBadgeClass = (total: number, max: number) => {
   return "bg-red-500/10 text-red-400 border-red-500/20";
 };
 
-export const CVComparator = () => {
+interface CVComparatorProps {
+  isPublic?: boolean;
+  onAnalysisComplete?: () => void;
+}
+
+export const CVComparator = ({ isPublic, onAnalysisComplete }: CVComparatorProps = {}) => {
   const [jobTitle, setJobTitle] = useState("");
   const [jobDescription, setJobDescription] = useState("");
   const [cvFile, setCvFile] = useState<File | null>(null);
@@ -206,6 +211,7 @@ export const CVComparator = () => {
 
       setResult(response.data);
       toast.success("Analyse terminée !");
+      if (onAnalysisComplete) onAnalysisComplete();
     } catch (error) {
       console.error('Analysis error:', error);
       toast.error("Erreur lors de l'analyse");
