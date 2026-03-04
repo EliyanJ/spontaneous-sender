@@ -117,14 +117,6 @@ export const JobOffersPublic = () => {
         'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
       };
 
-      // Add auth if logged in
-      if (user) {
-        const { createClient } = await import('@supabase/supabase-js');
-        const { supabase } = await import('@/integrations/supabase/client');
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session) headers['Authorization'] = `Bearer ${session.access_token}`;
-      }
-
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/france-travail?${new URLSearchParams(params)}`,
         { headers }
@@ -151,11 +143,6 @@ export const JobOffersPublic = () => {
       const headers: Record<string, string> = {
         'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
       };
-      if (user) {
-        const { supabase } = await import('@/integrations/supabase/client');
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session) headers['Authorization'] = `Bearer ${session.access_token}`;
-      }
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/france-travail?action=details&id=${offer.id}`,
         { headers }
