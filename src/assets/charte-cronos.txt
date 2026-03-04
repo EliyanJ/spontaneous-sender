@@ -1,0 +1,211 @@
+# ADN DE MARQUE
+
+## 🎯 Positionnement
+
+GetCronos est :
+
+> Une plateforme moderne d’optimisation stratégique de recherche d’emploi pour étudiants et jeunes diplômés ambitieux.
+> 
+
+Ce n’est pas :
+
+- ❌ Un job board
+- ❌ Un outil RH administratif
+- ❌ Un simple assistant IA
+
+C’est :
+
+> Un système qui maximise intelligemment les opportunités.
+> 
+
+---
+
+## 👤 Personnalité de marque
+
+Si GetCronos était une personne :
+
+- Un hacker carrière
+- Bienveillant
+- Structuré
+- Stratège
+- Moderne
+- Pas arrogant
+- Pas élitiste
+
+---
+
+## 🧠 Ressenti utilisateur recherché
+
+L’utilisateur doit se sentir :
+
+- ✅ En contrôle
+- ✅ Boosté
+- ✅ Accompagné
+- ✅ Stratégiquement supérieur
+
+Mais sans arrogance.
+
+Plutôt : “Je suis mieux préparé que les autres.”
+
+---
+
+# 2️⃣ CIBLE & PSYCHOLOGIE
+
+## 🎓 Étudiants & jeunes diplômés
+
+Profils :
+
+- Licence à Grandes Écoles
+- Tous domaines
+- Stage / alternance / premier CDI
+
+État mental :
+
+- Stressés
+- Ambitieux
+- Pression sociale
+- Besoin de résultats rapides
+
+Ce qu’ils veulent :
+
+- Gagner du temps
+- Multiplier leurs chances
+- Optimiser intelligemment
+- Avoir un avantage
+
+---
+
+# 3️⃣ STRATÉGIE COULEUR — RÉFLEXION PSYCHOLOGIQUE
+
+Tu veux :
+
+- Thème clair par défaut
+- Dark mode en option
+- Violet subtil
+- Identité neutre et universelle
+- Image moderne, premium, rassurante
+
+---
+
+# 🎨 THÈME CLAIR (DEFAULT STRATÉGIQUE)
+
+## Pourquoi le clair ?
+
+Psychologiquement :
+
+Le blanc évoque :
+
+- Clarté
+- Organisation
+- Transparence
+- Rigueur
+
+Pour un étudiant stressé :
+
+> Le blanc rassure.
+> 
+
+Un dark par défaut aurait envoyé :
+
+- Tech
+- Puissance
+- Mais moins accessible
+
+Donc le choix light-first est stratégique pour la conversion.
+
+---
+
+## Palette recommandée (Light)
+
+Fond principal :
+
+`#FFFFFF`
+
+Fond secondaire :
+
+`#F8FAFC`
+
+Texte principal :
+
+`#0F172A`
+
+Texte secondaire :
+
+`#64748B`
+
+Accent principal (violet subtil) :
+
+`#7C3AED`
+
+Hover accent :
+
+`#6D28D9`
+
+Success :
+
+`#22C55E`
+
+---
+
+# 🟣 Pourquoi le violet (subtil) ?
+
+Psychologie :
+
+- Intelligence
+- Innovation
+- Futur
+- Stratégie
+- Technologie maîtrisée
+
+Différenciation :
+
+Le marché emploi est saturé en :
+
+- Bleu institutionnel
+- Bleu corporate
+- Bleu + rose startup RH
+
+Le violet te positionne :
+
+- Plus tech
+- Plus stratégique
+- Plus distinctif
+
+Mais tu veux qu’il soit subtil.
+
+Donc :
+
+- Pas de fond violet massif
+- Pas de dégradés agressifs
+- Utilisé pour :
+    - Boutons primaires
+    - États actifs
+    - Indicateurs importants
+    - Micro-éléments
+
+Le violet devient un signal d’intelligence.
+
+---
+
+# 🟢 Rôle du vert
+
+Vert = progression.
+
+Il doit servir pour :
+
+- Score CV
+- Taux d’optimisation
+- Statut validé
+- Amélioration réussie
+
+Psychologie :
+
+- Réussite
+- Croissance
+- Validation
+- Résultat concret
+
+Il soutient la promesse :
+
+> Tu progresses.
+>

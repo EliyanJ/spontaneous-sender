@@ -6,8 +6,8 @@
 
 @layer base {
   :root {
-    /* Light Mode - Clean, Pure, Modern */
-    --background: 220 20% 97%;
+    /* Light Mode — GetCronos Brand (violet #7C3AED) */
+    --background: 0 0% 100%;
     --foreground: 222 47% 11%;
 
     --card: 0 0% 100%;
@@ -16,24 +16,28 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222 47% 11%;
 
-    --primary: 217 91% 55%;
+    /* Violet GetCronos #7C3AED → hsl(263 75% 58%) */
+    --primary: 263 75% 58%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 220 14% 96%;
+    /* Fond secondaire légèrement teinté violet */
+    --secondary: 248 20% 96%;
     --secondary-foreground: 222 47% 11%;
 
-    --muted: 220 14% 96%;
+    --muted: 248 15% 95%;
     --muted-foreground: 220 9% 46%;
 
-    --accent: 220 14% 96%;
-    --accent-foreground: 222 47% 11%;
+    /* Accent violet pâle — visible dans les hover/cartes */
+    --accent: 263 30% 94%;
+    --accent-foreground: 263 75% 40%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 220 13% 91%;
-    --input: 220 13% 91%;
-    --ring: 217 91% 55%;
+    /* Bordures avec légère teinte violette */
+    --border: 263 20% 88%;
+    --input: 263 20% 88%;
+    --ring: 263 75% 58%;
 
     --radius: 0.75rem;
 
@@ -44,49 +48,50 @@
     --warning-foreground: 222 47% 11%;
 
     /* Custom tokens - Light */
-    --gradient-primary: linear-gradient(135deg, hsl(217 91% 55%), hsl(217 91% 45%));
-    --gradient-accent: linear-gradient(135deg, hsl(217 91% 60%), hsl(240 60% 65%));
-    --gradient-surface: linear-gradient(180deg, hsl(220 20% 98%), hsl(220 20% 95%));
-    --glow-primary: 0 0 40px hsl(217 91% 55% / 0.2);
-    --glow-accent: 0 0 60px hsl(217 91% 55% / 0.1);
+    --gradient-primary: linear-gradient(135deg, hsl(263 75% 58%), hsl(263 75% 45%));
+    --gradient-accent: linear-gradient(135deg, hsl(263 75% 58%), hsl(280 60% 60%));
+    --gradient-surface: linear-gradient(180deg, hsl(248 20% 99%), hsl(248 20% 96%));
+    --glow-primary: 0 0 40px hsl(263 75% 58% / 0.2);
+    --glow-accent: 0 0 60px hsl(263 75% 58% / 0.1);
   }
 
   .dark {
-    /* Dark Mode - Premium, Futuristic */
-    --background: 222 47% 6%;
+    /* Dark Mode — GetCronos violet */
+    --background: 263 20% 6%;
     --foreground: 210 40% 98%;
 
-    --card: 222 47% 8%;
+    --card: 263 20% 8%;
     --card-foreground: 210 40% 98%;
 
-    --popover: 222 47% 10%;
+    --popover: 263 20% 10%;
     --popover-foreground: 210 40% 98%;
 
-    --primary: 217 91% 60%;
-    --primary-foreground: 222 47% 6%;
+    /* Violet plus lumineux en dark */
+    --primary: 263 75% 63%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 217 33% 17%;
+    --secondary: 263 25% 17%;
     --secondary-foreground: 210 40% 98%;
 
-    --muted: 217 33% 14%;
-    --muted-foreground: 215 20% 55%;
+    --muted: 263 20% 14%;
+    --muted-foreground: 263 15% 55%;
 
-    --accent: 217 33% 17%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 263 25% 17%;
+    --accent-foreground: 263 75% 80%;
 
     --destructive: 0 63% 45%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 217 33% 18%;
-    --input: 217 33% 18%;
-    --ring: 217 91% 60%;
+    --border: 263 25% 18%;
+    --input: 263 25% 18%;
+    --ring: 263 75% 63%;
 
     /* Custom tokens - Dark */
-    --gradient-primary: linear-gradient(135deg, hsl(217 91% 60%), hsl(217 91% 45%));
-    --gradient-accent: linear-gradient(135deg, hsl(217 91% 45%), hsl(260 60% 45%));
-    --gradient-surface: linear-gradient(180deg, hsl(222 47% 8%), hsl(222 47% 6%));
-    --glow-primary: 0 0 40px hsl(217 91% 60% / 0.3);
-    --glow-accent: 0 0 60px hsl(217 91% 60% / 0.15);
+    --gradient-primary: linear-gradient(135deg, hsl(263 75% 63%), hsl(263 75% 48%));
+    --gradient-accent: linear-gradient(135deg, hsl(263 75% 50%), hsl(280 60% 45%));
+    --gradient-surface: linear-gradient(180deg, hsl(263 20% 8%), hsl(263 20% 6%));
+    --glow-primary: 0 0 40px hsl(263 75% 63% / 0.3);
+    --glow-accent: 0 0 60px hsl(263 75% 63% / 0.15);
   }
 }
 
@@ -164,10 +169,10 @@
 
   @keyframes glow-pulse {
     0%, 100% {
-      box-shadow: 0 0 20px hsl(217 91% 60% / 0.3);
+      box-shadow: 0 0 20px hsl(263 75% 58% / 0.3);
     }
     50% {
-      box-shadow: 0 0 40px hsl(217 91% 60% / 0.5);
+      box-shadow: 0 0 40px hsl(263 75% 58% / 0.5);
     }
   }
 
@@ -289,7 +294,7 @@
   /* Gradient text */
   .gradient-text {
     @apply bg-clip-text text-transparent;
-    background-image: linear-gradient(135deg, hsl(var(--primary)), hsl(260 60% 60%));
+    background-image: linear-gradient(135deg, hsl(var(--primary)), hsl(280 60% 60%));
   }
 
   /* Card glow effect */
