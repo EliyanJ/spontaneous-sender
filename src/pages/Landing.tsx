@@ -78,6 +78,7 @@ const Landing = () => {
                 <button onClick={() => navigate('/dashboard?tab=cv-score')} className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Comparatif de CV</button>
                 <button onClick={() => navigate('/cv-builder')} className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Création de CV</button>
                 <button onClick={() => navigate('/dashboard?tab=cv-advice')} className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Conseil personnalisé</button>
+                <button onClick={() => navigate('/offres-emploi')} className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Offres d'emploi</button>
               </nav>
 
               <div className="hidden md:flex items-center gap-4">

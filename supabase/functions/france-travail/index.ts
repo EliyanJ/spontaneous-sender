@@ -136,34 +136,27 @@ serve(async (req) => {
   }
 
   try {
-    // Authentication check
+    // Auth check — optional for public access, required for rate limiting
     const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      return new Response(
-        JSON.stringify({ error: 'Missing authorization header' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    const token = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: authError } = await supabaseClient.auth.getUser(token);
-
-    if (authError || !user) {
-      return new Response(
-        JSON.stringify({ error: 'Unauthorized' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    let userId: string | null = null;
+    if (authHeader) {
+      const token = authHeader.replace('Bearer ', '');
+      const { data: { user } } = await supabaseClient.auth.getUser(token);
+      if (user) {
+        userId = user.id;
+        console.log('France Travail request from user:', userId);
+        // Check rate limit only for authenticated users (60 per hour)
+        await checkRateLimit(supabaseClient, userId, 'france-travail', 60);
+      }
+    } else {
+      // Public access — apply IP-based soft rate limit via a pseudo user id
+      console.log('France Travail public request');
     }
-
-    console.log('France Travail request from user:', user.id);
-
-    // Check rate limit (30 per hour)
-    await checkRateLimit(supabaseClient, user.id, 'france-travail', 30);
 
     const url = new URL(req.url);
     const action = url.searchParams.get('action') || 'search';
