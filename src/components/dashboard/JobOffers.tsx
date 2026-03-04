@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, MapPin, Briefcase, Clock, ExternalLink, Euro, Bookmark, BookmarkCheck, Building2, X, GraduationCap, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, MapPin, Briefcase, Clock, ExternalLink, Euro, Bookmark, BookmarkCheck, Building2, X, GraduationCap, ChevronLeft, ChevronRight, Sparkles, TrendingUp } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { CommuneSearch } from "@/components/ui/commune-search";
 import { supabase } from "@/integrations/supabase/client";
@@ -13,49 +13,52 @@ interface JobOffer {
   id: string;
   intitule: string;
   description?: string;
-  lieuTravail?: {
-    libelle?: string;
-    commune?: string;
-  };
-  entreprise?: {
-    nom?: string;
-    description?: string;
-  };
+  lieuTravail?: { libelle?: string; commune?: string };
+  entreprise?: { nom?: string; description?: string };
   typeContrat?: string;
   typeContratLibelle?: string;
   dureeTravailLibelle?: string;
-  salaire?: {
-    libelle?: string;
-  };
+  salaire?: { libelle?: string };
   dateCreation?: string;
-  origineOffre?: {
-    urlOrigine?: string;
-  };
-  competences?: Array<{
-    libelle: string;
-  }>;
-  formations?: Array<{
-    niveauLibelle: string;
-  }>;
+  origineOffre?: { urlOrigine?: string };
+  competences?: Array<{ libelle: string }>;
+  formations?: Array<{ niveauLibelle: string }>;
 }
 
 interface SearchResponse {
   resultats?: JobOffer[];
-  filtresPossibles?: any;
+  filtresPossibles?: unknown;
 }
 
-const getContractBadgeClasses = (type?: string) => {
+const getContractBadge = (type?: string) => {
   switch (type) {
-    case "CDI": return "bg-indigo-500/20 text-indigo-300 border border-indigo-500/30";
-    case "CDD": return "bg-purple-500/20 text-purple-300 border border-purple-500/30";
-    case "MIS": return "bg-blue-500/20 text-blue-300 border border-blue-500/30";
-    case "SAI": return "bg-amber-500/20 text-amber-300 border border-amber-500/30";
-    case "LIB": return "bg-teal-500/20 text-teal-300 border border-teal-500/30";
-    default: return "bg-gray-500/20 text-gray-300 border border-gray-500/30";
+    case "CDI": return { bg: "bg-primary/10 text-primary border border-primary/20", label: "CDI" };
+    case "CDD": return { bg: "bg-violet-500/10 text-violet-600 border border-violet-500/20", label: "CDD" };
+    case "MIS": return { bg: "bg-blue-500/10 text-blue-600 border border-blue-500/20", label: "Intérim" };
+    case "SAI": return { bg: "bg-amber-500/10 text-amber-600 border border-amber-500/20", label: "Saisonnier" };
+    case "LIB": return { bg: "bg-teal-500/10 text-teal-600 border border-teal-500/20", label: "Libéral" };
+    default: return { bg: "bg-muted text-muted-foreground border border-border", label: type || "Autre" };
   }
 };
 
 const FAVORITES_KEY = "job_favorites";
+
+const CompanyInitial = ({ name }: { name?: string }) => {
+  const initial = name?.[0]?.toUpperCase() || "?";
+  const colors = [
+    "bg-primary/10 text-primary",
+    "bg-violet-500/10 text-violet-600",
+    "bg-blue-500/10 text-blue-600",
+    "bg-teal-500/10 text-teal-600",
+    "bg-amber-500/10 text-amber-600",
+  ];
+  const colorIndex = initial.charCodeAt(0) % colors.length;
+  return (
+    <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-xl font-bold flex-shrink-0 ${colors[colorIndex]}`}>
+      {initial}
+    </div>
+  );
+};
 
 export const JobOffers = () => {
   const { toast } = useToast();
@@ -81,7 +84,7 @@ export const JobOffers = () => {
   };
 
   const isFavorite = (id: string) => favorites.some(f => f.id === id);
-  
+
   const [searchParams, setSearchParams] = useState({
     motsCles: "",
     commune: "",
@@ -90,7 +93,6 @@ export const JobOffers = () => {
     distance: "10",
   });
 
-  // Auto-load offers on mount
   useEffect(() => {
     if (!initialLoadDone.current) {
       initialLoadDone.current = true;
@@ -102,38 +104,20 @@ export const JobOffers = () => {
     setLoading(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        throw new Error('Vous devez être connecté pour rechercher des offres');
-      }
+      if (!session) throw new Error('Vous devez être connecté');
 
-      const params: Record<string, string> = {
-        action: 'search',
-        distance: searchParams.distance,
-      };
-      
-      if (searchParams.motsCles.trim()) {
-        params.motsCles = searchParams.motsCles.trim();
-      }
-      
+      const params: Record<string, string> = { action: 'search', distance: searchParams.distance };
+      if (searchParams.motsCles.trim()) params.motsCles = searchParams.motsCles.trim();
       if (searchParams.codePostal.trim()) {
         params.location = searchParams.codePostal.trim();
       } else if (searchParams.commune.trim()) {
         const match = searchParams.commune.match(/\((\d{5})\)/);
-        if (match) {
-          params.location = match[1];
-        } else {
-          params.location = searchParams.commune.trim();
-        }
+        params.location = match ? match[1] : searchParams.commune.trim();
       }
-      
-      if (searchParams.typeContrat && searchParams.typeContrat !== 'all') {
-        params.typeContrat = searchParams.typeContrat;
-      }
+      if (searchParams.typeContrat !== 'all') params.typeContrat = searchParams.typeContrat;
 
-      const queryString = new URLSearchParams(params).toString();
-      
       const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/france-travail?${queryString}`,
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/france-travail?${new URLSearchParams(params)}`,
         {
           headers: {
             'Authorization': `Bearer ${session.access_token}`,
@@ -144,41 +128,30 @@ export const JobOffers = () => {
 
       if (!response.ok) {
         const errorData = await response.json();
-        console.error('API error:', errorData);
         throw new Error(errorData.error || 'Erreur lors de la recherche');
       }
 
       const data: SearchResponse = await response.json();
       setOffers(data.resultats || []);
       setCurrentPage(1);
-      
       if (!data.resultats?.length) {
-        toast({
-          title: "Aucun résultat",
-          description: "Essayez de modifier vos critères de recherche",
-        });
+        toast({ title: "Aucun résultat", description: "Essayez de modifier vos critères" });
       }
     } catch (error) {
       console.error('Search error:', error);
-      toast({
-        variant: "destructive",
-        title: "Erreur",
-        description: "Impossible de charger les offres d'emploi",
-      });
+      toast({ variant: "destructive", title: "Erreur", description: "Impossible de charger les offres" });
     } finally {
       setLoading(false);
     }
   };
 
-  const loadOfferDetails = async (offerId: string) => {
+  const loadOfferDetails = async (offer: JobOffer) => {
+    setSelectedOffer(offer);
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        throw new Error('Vous devez être connecté pour voir les détails');
-      }
-
+      if (!session) return;
       const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/france-travail?action=details&id=${offerId}`,
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/france-travail?action=details&id=${offer.id}`,
         {
           headers: {
             'Authorization': `Bearer ${session.access_token}`,
@@ -186,25 +159,13 @@ export const JobOffers = () => {
           },
         }
       );
-
-      if (!response.ok) {
-        throw new Error('Erreur lors du chargement des détails');
+      if (response.ok) {
+        const data: JobOffer = await response.json();
+        setSelectedOffer(data);
       }
-
-      const data: JobOffer = await response.json();
-      setSelectedOffer(data);
     } catch (error) {
       console.error('Details error:', error);
-      toast({
-        variant: "destructive",
-        title: "Erreur",
-        description: "Impossible de charger les détails de l'offre",
-      });
     }
-  };
-
-  const handleOfferClick = (offer: JobOffer) => {
-    loadOfferDetails(offer.id);
   };
 
   const displayedOffers = showFavorites ? favorites : offers;
@@ -212,390 +173,387 @@ export const JobOffers = () => {
   const paginatedOffers = displayedOffers.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-4">
-        <div>
-          <h2 className="text-2xl md:text-3xl font-bold text-white">Offres d'emploi</h2>
-          <p className="text-sm text-gray-400 mt-1">
-            Recherchez des offres via{" "}
-            <span className="inline-flex items-center bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 rounded px-2 py-0.5 text-xs font-medium">
+    <div className="min-h-screen bg-background">
+      {/* Hero Section */}
+      <div className="relative overflow-hidden bg-gradient-to-br from-primary/5 via-background to-violet-500/5 border-b border-border/50">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,hsl(var(--primary)/0.08)_0%,transparent_60%)]" />
+        <div className="relative px-4 sm:px-6 py-10 max-w-5xl mx-auto">
+          <div className="flex items-center gap-2 mb-3">
+            <div className="flex items-center gap-2 bg-primary/10 text-primary text-xs font-semibold px-3 py-1.5 rounded-full border border-primary/20">
+              <Sparkles className="h-3 w-3" />
               France Travail
-            </span>
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          {/* Favorites toggle */}
-          <button
-            onClick={() => { setShowFavorites(v => !v); setCurrentPage(1); }}
-            className={`flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium border transition-all ${
-              showFavorites
-                ? "bg-amber-500/20 border-amber-500/40 text-amber-300"
-                : "bg-[#18181b]/60 border-white/[0.08] text-gray-400 hover:text-amber-300 hover:border-amber-500/30"
-            }`}
-          >
-            {showFavorites ? <BookmarkCheck className="h-4 w-4" /> : <Bookmark className="h-4 w-4" />}
-            Favoris {favorites.length > 0 && <span className="bg-amber-500/30 text-amber-300 text-xs rounded-full px-1.5 py-0.5 ml-0.5">{favorites.length}</span>}
-          </button>
-          {offers.length > 0 && !loading && !showFavorites && (
-            <div className="flex items-center gap-2 bg-[#18181b]/60 backdrop-blur-xl border border-white/[0.08] rounded-full px-4 py-2">
-              <span className="relative flex h-2.5 w-2.5">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
-                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500" />
-              </span>
-              <span className="text-sm text-gray-300">
-                {offers.length} offre{offers.length > 1 ? "s" : ""} trouvée{offers.length > 1 ? "s" : ""}
-              </span>
             </div>
-          )}
-        </div>
-      </div>
+            {!loading && offers.length > 0 && (
+              <div className="flex items-center gap-1.5 bg-green-500/10 text-green-600 text-xs font-medium px-3 py-1.5 rounded-full border border-green-500/20">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500" />
+                </span>
+                {offers.length} offres trouvées
+              </div>
+            )}
+          </div>
 
-      {/* Search Card */}
-      <div className="relative">
-        <div className="absolute -top-10 left-1/2 -translate-x-1/2 w-72 h-72 bg-indigo-600/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="relative bg-[#18181b]/60 backdrop-blur-xl border border-white/[0.08] rounded-2xl p-6">
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
-            {/* Keywords */}
-            <div className="md:col-span-4 space-y-1.5">
-              <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">Mots-clés</label>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
-                <input
-                  type="text"
-                  placeholder="Développeur, Commercial..."
-                  className="w-full bg-[#121215]/60 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-sm text-white placeholder:text-gray-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/20 transition-colors"
-                  value={searchParams.motsCles}
-                  onChange={(e) => setSearchParams({ ...searchParams, motsCles: e.target.value })}
+          <h1 className="text-3xl sm:text-4xl font-bold text-foreground mb-2">
+            Offres d'emploi
+          </h1>
+          <p className="text-muted-foreground text-base mb-8">
+            Découvrez les dernières offres publiées par France Travail en temps réel
+          </p>
+
+          {/* Search bar */}
+          <div className="bg-card/80 backdrop-blur border border-border rounded-2xl shadow-lg p-4 sm:p-5">
+            <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
+              {/* Keywords */}
+              <div className="sm:col-span-4 space-y-1">
+                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Mots-clés</label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <input
+                    type="text"
+                    placeholder="Développeur, Commercial..."
+                    className="w-full bg-background border border-border rounded-xl py-2.5 pl-10 pr-4 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
+                    value={searchParams.motsCles}
+                    onChange={(e) => setSearchParams({ ...searchParams, motsCles: e.target.value })}
+                    onKeyPress={(e) => e.key === "Enter" && handleSearch()}
+                  />
+                </div>
+              </div>
+
+              {/* Location */}
+              <div className="sm:col-span-4 space-y-1">
+                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Localisation</label>
+                <CommuneSearch
+                  value={searchParams.commune}
+                  onChange={(value, codePostal) => setSearchParams({ ...searchParams, commune: value, codePostal: codePostal || "" })}
+                  placeholder="Paris, Lyon, 75001..."
                   onKeyPress={(e) => e.key === "Enter" && handleSearch()}
                 />
               </div>
+
+              {/* Contract */}
+              <div className="sm:col-span-2 space-y-1">
+                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Contrat</label>
+                <Select value={searchParams.typeContrat} onValueChange={(v) => setSearchParams({ ...searchParams, typeContrat: v })}>
+                  <SelectTrigger className="bg-background border-border rounded-xl h-[42px] text-sm">
+                    <SelectValue placeholder="Tous" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tous</SelectItem>
+                    <SelectItem value="CDI">CDI</SelectItem>
+                    <SelectItem value="CDD">CDD</SelectItem>
+                    <SelectItem value="MIS">Intérim</SelectItem>
+                    <SelectItem value="SAI">Saisonnier</SelectItem>
+                    <SelectItem value="LIB">Libéral</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Distance + Search button */}
+              <div className="sm:col-span-2 space-y-1">
+                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Rayon</label>
+                <Select value={searchParams.distance} onValueChange={(v) => setSearchParams({ ...searchParams, distance: v })}>
+                  <SelectTrigger className="bg-background border-border rounded-xl h-[42px] text-sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="10">10 km</SelectItem>
+                    <SelectItem value="20">20 km</SelectItem>
+                    <SelectItem value="30">30 km</SelectItem>
+                    <SelectItem value="50">50 km</SelectItem>
+                    <SelectItem value="100">100 km</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
-            {/* Location */}
-            <div className="md:col-span-4 space-y-1.5">
-              <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">Localisation</label>
-              <CommuneSearch
-                value={searchParams.commune}
-                onChange={(value, codePostal) => {
-                  setSearchParams({
-                    ...searchParams,
-                    commune: value,
-                    codePostal: codePostal || "",
-                  });
-                }}
-                placeholder="Paris, Lyon, 75001..."
-                onKeyPress={(e) => e.key === "Enter" && handleSearch()}
-              />
-            </div>
-
-            {/* Contract type */}
-            <div className="md:col-span-2 space-y-1.5">
-              <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">Contrat</label>
-              <Select
-                value={searchParams.typeContrat}
-                onValueChange={(value) => setSearchParams({ ...searchParams, typeContrat: value })}
+            <div className="mt-3 flex items-center justify-between gap-3 flex-wrap">
+              <button
+                onClick={() => { setShowFavorites(v => !v); setCurrentPage(1); }}
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium border transition-all ${
+                  showFavorites
+                    ? "bg-amber-500/10 border-amber-500/30 text-amber-600"
+                    : "bg-muted/50 border-border text-muted-foreground hover:text-amber-600 hover:border-amber-500/30"
+                }`}
               >
-                <SelectTrigger className="bg-[#121215]/60 border-white/10 rounded-xl h-[46px] text-sm text-white focus:border-indigo-500 focus:ring-indigo-500/20">
-                  <SelectValue placeholder="Tous" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Tous</SelectItem>
-                  <SelectItem value="CDI">CDI</SelectItem>
-                  <SelectItem value="CDD">CDD</SelectItem>
-                  <SelectItem value="MIS">Intérim</SelectItem>
-                  <SelectItem value="SAI">Saisonnier</SelectItem>
-                  <SelectItem value="LIB">Libéral</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+                {showFavorites ? <BookmarkCheck className="h-4 w-4" /> : <Bookmark className="h-4 w-4" />}
+                Favoris {favorites.length > 0 && <span className="bg-amber-500/20 text-amber-600 text-xs rounded-full px-1.5">{favorites.length}</span>}
+              </button>
 
-            {/* Distance */}
-            <div className="md:col-span-2 space-y-1.5">
-              <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">Distance</label>
-              <Select
-                value={searchParams.distance}
-                onValueChange={(value) => setSearchParams({ ...searchParams, distance: value })}
+              <button
+                onClick={handleSearch}
+                disabled={loading}
+                className="flex items-center gap-2 px-6 py-2.5 bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-semibold rounded-xl shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <SelectTrigger className="bg-[#121215]/60 border-white/10 rounded-xl h-[46px] text-sm text-white focus:border-indigo-500 focus:ring-indigo-500/20">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="10">10 km</SelectItem>
-                  <SelectItem value="20">20 km</SelectItem>
-                  <SelectItem value="30">30 km</SelectItem>
-                  <SelectItem value="50">50 km</SelectItem>
-                  <SelectItem value="100">100 km</SelectItem>
-                </SelectContent>
-              </Select>
+                {loading ? (
+                  <><div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />Recherche...</>
+                ) : (
+                  <><Search className="h-4 w-4" />Rechercher</>
+                )}
+              </button>
             </div>
-          </div>
-
-          {/* Search button */}
-          <div className="mt-4 flex justify-end">
-            <button
-              onClick={handleSearch}
-              disabled={loading}
-              className="px-6 py-3 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white text-sm font-semibold rounded-xl shadow-[0_0_20px_rgba(99,102,241,0.3)] hover:shadow-[0_0_30px_rgba(99,102,241,0.4)] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-            >
-              {loading ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  Recherche...
-                </>
-              ) : (
-                <>
-                  <Search className="h-4 w-4" />
-                  Rechercher
-                </>
-              )}
-            </button>
           </div>
         </div>
       </div>
 
-      {/* Loading state */}
-      {loading && (
-        <div className="flex flex-col items-center justify-center py-16 gap-4">
-          <div className="w-12 h-12 border-4 border-white/10 border-t-indigo-500 rounded-full animate-spin" />
-          <p className="text-gray-400 animate-pulse text-sm">Recherche des meilleures offres en cours...</p>
-        </div>
-      )}
+      {/* Content Area */}
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6">
 
-      {/* Empty state favorites */}
-      {showFavorites && favorites.length === 0 && (
-        <div className="flex flex-col items-center justify-center py-20 gap-4">
-          <div className="w-20 h-20 rounded-full bg-[#18181b]/60 backdrop-blur-xl border border-white/[0.08] flex items-center justify-center">
-            <Bookmark className="h-8 w-8 text-gray-500" />
+        {/* Loading */}
+        {loading && (
+          <div className="flex flex-col items-center justify-center py-20 gap-4">
+            <div className="w-12 h-12 border-4 border-muted border-t-primary rounded-full animate-spin" />
+            <p className="text-muted-foreground text-sm animate-pulse">Chargement des dernières offres...</p>
           </div>
-          <h3 className="text-lg font-semibold text-white">Aucun favori</h3>
-          <p className="text-sm text-gray-400 text-center max-w-sm">
-            Cliquez sur l'icône <Bookmark className="inline h-3.5 w-3.5" /> d'une offre pour l'ajouter à vos favoris
-          </p>
-        </div>
-      )}
+        )}
 
-      {/* Empty state */}
-      {!showFavorites && !loading && offers.length === 0 && (
-        <div className="flex flex-col items-center justify-center py-20 gap-4">
-          <div className="w-20 h-20 rounded-full bg-[#18181b]/60 backdrop-blur-xl border border-white/[0.08] flex items-center justify-center">
-            <Search className="h-8 w-8 text-gray-500" />
+        {/* Empty favorites */}
+        {!loading && showFavorites && favorites.length === 0 && (
+          <div className="flex flex-col items-center justify-center py-20 gap-3">
+            <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center">
+              <Bookmark className="h-7 w-7 text-muted-foreground" />
+            </div>
+            <h3 className="text-lg font-semibold text-foreground">Aucun favori</h3>
+            <p className="text-sm text-muted-foreground text-center max-w-xs">
+              Cliquez sur l'icône <Bookmark className="inline h-3.5 w-3.5" /> d'une offre pour l'ajouter
+            </p>
           </div>
-          <h3 className="text-lg font-semibold text-white">Lancez une recherche</h3>
-          <p className="text-sm text-gray-400 text-center max-w-sm">
-            Utilisez les filtres ci-dessus pour trouver des offres d'emploi correspondant à votre profil
-          </p>
-        </div>
-      )}
+        )}
 
-      {/* Results list */}
-      {!loading && displayedOffers.length > 0 && (
-        <div className="space-y-3">
-          {paginatedOffers.map((offer) => (
-            <div
-              key={offer.id}
-              onClick={() => handleOfferClick(offer)}
-              className="group relative bg-[#18181b]/60 backdrop-blur-xl border border-white/[0.08] rounded-xl p-5 cursor-pointer border-l-4 border-l-transparent hover:border-l-indigo-500 hover:bg-indigo-500/5 transition-all duration-200"
-            >
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex-1 min-w-0 space-y-2">
-                  {/* Title + contract badge */}
-                  <div className="flex items-start gap-3 flex-wrap">
-                    <h3 className="text-lg font-semibold text-white group-hover:text-indigo-300 transition-colors">
-                      {offer.intitule}
-                    </h3>
-                    {offer.typeContratLibelle && (
-                      <span className={`text-xs font-medium px-2.5 py-0.5 rounded-full ${getContractBadgeClasses(offer.typeContrat)}`}>
-                        {offer.typeContratLibelle}
-                      </span>
-                    )}
-                  </div>
+        {/* Empty state */}
+        {!loading && !showFavorites && offers.length === 0 && (
+          <div className="flex flex-col items-center justify-center py-20 gap-3">
+            <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center">
+              <TrendingUp className="h-7 w-7 text-muted-foreground" />
+            </div>
+            <h3 className="text-lg font-semibold text-foreground">Aucune offre trouvée</h3>
+            <p className="text-sm text-muted-foreground text-center max-w-xs">
+              Modifiez vos critères ou lancez une recherche sans filtre
+            </p>
+          </div>
+        )}
 
-                  {/* Company name */}
-                  {offer.entreprise?.nom && (
-                    <p className="text-indigo-400 font-medium text-sm">{offer.entreprise.nom}</p>
-                  )}
+        {/* Results */}
+        {!loading && displayedOffers.length > 0 && (
+          <div className="space-y-3">
+            {/* Results header */}
+            <div className="flex items-center justify-between pb-1">
+              <p className="text-sm text-muted-foreground">
+                <span className="font-semibold text-foreground">{displayedOffers.length}</span> offre{displayedOffers.length > 1 ? "s" : ""} {showFavorites ? "en favori" : "trouvées"}
+              </p>
+              <span className="text-xs text-muted-foreground">Page {currentPage}/{totalPages}</span>
+            </div>
 
-                  {/* Metadata */}
-                  <div className="flex flex-wrap items-center gap-4">
-                    {offer.lieuTravail?.libelle && (
-                      <span className="flex items-center gap-1 text-xs text-gray-400">
-                        <MapPin className="h-3.5 w-3.5" />
-                        {offer.lieuTravail.libelle}
-                      </span>
-                    )}
-                    {offer.dureeTravailLibelle && (
-                      <span className="flex items-center gap-1 text-xs text-gray-400">
-                        <Clock className="h-3.5 w-3.5" />
-                        {offer.dureeTravailLibelle}
-                      </span>
-                    )}
-                    {offer.salaire?.libelle && (
-                      <span className="flex items-center gap-1 text-xs text-gray-400">
-                        <Euro className="h-3.5 w-3.5" />
-                        {offer.salaire.libelle}
-                      </span>
-                    )}
-                    {offer.dateCreation && (
-                      <span className="flex items-center gap-1 text-xs text-gray-400">
-                        <Clock className="h-3.5 w-3.5" />
-                        Publié {formatDistanceToNow(new Date(offer.dateCreation), { addSuffix: true, locale: fr })}
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Description */}
-                  {offer.description && (
-                    <p className="text-sm text-gray-300/80 line-clamp-2">{offer.description}</p>
-                  )}
-
-                  {/* Competences */}
-                  {offer.competences && offer.competences.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5 pt-1">
-                      {offer.competences.slice(0, 5).map((comp, idx) => (
-                        <span key={idx} className="bg-[#27272a]/80 text-gray-300 text-xs border border-white/5 rounded-full px-2.5 py-0.5">
-                          {comp.libelle}
-                        </span>
-                      ))}
-                      {offer.competences.length > 5 && (
-                        <span className="text-xs text-gray-500">+{offer.competences.length - 5}</span>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Hover CTA */}
-                  <span className="text-xs text-indigo-400 opacity-0 group-hover:opacity-100 transition-opacity">
-                    Voir les détails →
-                  </span>
-                </div>
-
-                {/* Bookmark button */}
-                <button
-                  onClick={(e) => toggleFavorite(offer, e)}
-                  className={`flex items-center justify-center w-9 h-9 rounded-full border transition-all shrink-0 ${
-                    isFavorite(offer.id)
-                      ? "bg-amber-500/20 border-amber-500/40 text-amber-400"
-                      : "bg-[#18181b] border-white/10 text-gray-400 hover:text-amber-400 hover:border-amber-500/30"
-                  }`}
+            {paginatedOffers.map((offer) => {
+              const badge = getContractBadge(offer.typeContrat);
+              return (
+                <div
+                  key={offer.id}
+                  onClick={() => loadOfferDetails(offer)}
+                  className="group bg-card border border-border rounded-2xl p-5 cursor-pointer hover:border-primary/40 hover:shadow-md transition-all duration-200"
                 >
-                  {isFavorite(offer.id) ? <BookmarkCheck className="h-4 w-4" /> : <Bookmark className="h-4 w-4" />}
+                  <div className="flex items-start gap-4">
+                    <CompanyInitial name={offer.entreprise?.nom} />
+
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap mb-1">
+                            <h3 className="text-base font-semibold text-foreground group-hover:text-primary transition-colors truncate">
+                              {offer.intitule}
+                            </h3>
+                            <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full flex-shrink-0 ${badge.bg}`}>
+                              {badge.label}
+                            </span>
+                          </div>
+
+                          {offer.entreprise?.nom && (
+                            <p className="text-sm font-medium text-primary mb-2">{offer.entreprise.nom}</p>
+                          )}
+
+                          <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+                            {offer.lieuTravail?.libelle && (
+                              <span className="flex items-center gap-1">
+                                <MapPin className="h-3.5 w-3.5" />
+                                {offer.lieuTravail.libelle}
+                              </span>
+                            )}
+                            {offer.dureeTravailLibelle && (
+                              <span className="flex items-center gap-1">
+                                <Clock className="h-3.5 w-3.5" />
+                                {offer.dureeTravailLibelle}
+                              </span>
+                            )}
+                            {offer.salaire?.libelle && (
+                              <span className="flex items-center gap-1 text-green-600 font-medium">
+                                <Euro className="h-3.5 w-3.5" />
+                                {offer.salaire.libelle}
+                              </span>
+                            )}
+                            {offer.dateCreation && (
+                              <span className="flex items-center gap-1">
+                                <Clock className="h-3.5 w-3.5" />
+                                {formatDistanceToNow(new Date(offer.dateCreation), { addSuffix: true, locale: fr })}
+                              </span>
+                            )}
+                          </div>
+
+                          {offer.description && (
+                            <p className="text-sm text-muted-foreground line-clamp-2 mt-2">{offer.description}</p>
+                          )}
+
+                          {offer.competences && offer.competences.length > 0 && (
+                            <div className="flex flex-wrap gap-1.5 mt-2">
+                              {offer.competences.slice(0, 4).map((comp, idx) => (
+                                <span key={idx} className="bg-accent text-accent-foreground text-xs rounded-full px-2.5 py-0.5 border border-border">
+                                  {comp.libelle}
+                                </span>
+                              ))}
+                              {offer.competences.length > 4 && (
+                                <span className="text-xs text-muted-foreground self-center">+{offer.competences.length - 4}</span>
+                              )}
+                            </div>
+                          )}
+
+                          <span className="text-xs text-primary opacity-0 group-hover:opacity-100 transition-opacity mt-2 inline-block">
+                            Voir les détails →
+                          </span>
+                        </div>
+
+                        {/* Bookmark */}
+                        <button
+                          onClick={(e) => toggleFavorite(offer, e)}
+                          className={`flex items-center justify-center w-9 h-9 rounded-xl border transition-all flex-shrink-0 ${
+                            isFavorite(offer.id)
+                              ? "bg-amber-500/10 border-amber-500/30 text-amber-500"
+                              : "bg-muted border-border text-muted-foreground hover:text-amber-500 hover:border-amber-500/30"
+                          }`}
+                        >
+                          {isFavorite(offer.id) ? <BookmarkCheck className="h-4 w-4" /> : <Bookmark className="h-4 w-4" />}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-center gap-2 pt-4">
+                <button
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="flex items-center justify-center w-9 h-9 rounded-xl bg-card border border-border text-muted-foreground hover:text-foreground hover:border-primary/40 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </button>
+                {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => i + 1).map(page => (
+                  <button
+                    key={page}
+                    onClick={() => setCurrentPage(page)}
+                    className={`w-9 h-9 rounded-xl text-sm font-medium transition-colors ${
+                      page === currentPage
+                        ? "bg-primary text-primary-foreground shadow-sm"
+                        : "bg-card border border-border text-muted-foreground hover:text-foreground hover:border-primary/40"
+                    }`}
+                  >
+                    {page}
+                  </button>
+                ))}
+                <button
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                  className="flex items-center justify-center w-9 h-9 rounded-xl bg-card border border-border text-muted-foreground hover:text-foreground hover:border-primary/40 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                >
+                  <ChevronRight className="h-4 w-4" />
                 </button>
               </div>
-            </div>
-          ))}
-
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="flex items-center justify-center gap-2 pt-2">
-              <button
-                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                disabled={currentPage === 1}
-                className="flex items-center justify-center w-8 h-8 rounded-full bg-[#18181b] border border-white/10 text-gray-400 hover:text-white hover:border-white/20 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </button>
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-                <button
-                  key={page}
-                  onClick={() => setCurrentPage(page)}
-                  className={`w-8 h-8 rounded-full text-sm font-medium transition-colors ${
-                    page === currentPage
-                      ? "bg-indigo-600 text-white border border-indigo-500"
-                      : "bg-[#18181b] border border-white/10 text-gray-400 hover:text-white hover:border-white/20"
-                  }`}
-                >
-                  {page}
-                </button>
-              ))}
-              <button
-                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                disabled={currentPage === totalPages}
-                className="flex items-center justify-center w-8 h-8 rounded-full bg-[#18181b] border border-white/10 text-gray-400 hover:text-white hover:border-white/20 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-              >
-                <ChevronRight className="h-4 w-4" />
-              </button>
-            </div>
-          )}
-          <p className="text-center text-xs text-gray-500 pb-1">
-            {offers.length} offre{offers.length > 1 ? "s" : ""} · page {currentPage}/{totalPages}
-          </p>
-        </div>
-      )}
+            )}
+          </div>
+        )}
+      </div>
 
       {/* Detail Modal */}
       {selectedOffer && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setSelectedOffer(null)}>
-          {/* Overlay */}
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
-
-          {/* Content */}
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
           <div
             onClick={(e) => e.stopPropagation()}
-            className="relative bg-[#121215]/95 backdrop-blur-2xl border border-white/[0.08] rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto"
+            className="relative bg-card border border-border rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto"
           >
-            {/* Sticky Header */}
-            <div className="sticky top-0 z-10 bg-[#121215]/95 backdrop-blur-2xl border-b border-white/[0.08] px-6 py-4 flex items-start justify-between gap-4">
-              <div>
-                <h2 className="text-2xl font-bold text-white">{selectedOffer.intitule}</h2>
-                {selectedOffer.entreprise?.nom && (
-                  <div className="flex items-center gap-2 mt-1">
-                    <Building2 className="h-4 w-4 text-indigo-400" />
-                    <span className="text-indigo-400 font-medium text-sm">{selectedOffer.entreprise.nom}</span>
-                  </div>
-                )}
+            {/* Modal Header */}
+            <div className="sticky top-0 z-10 bg-card border-b border-border px-6 py-5 flex items-start justify-between gap-4">
+              <div className="flex items-start gap-4">
+                <CompanyInitial name={selectedOffer.entreprise?.nom} />
+                <div>
+                  <h2 className="text-xl font-bold text-foreground">{selectedOffer.intitule}</h2>
+                  {selectedOffer.entreprise?.nom && (
+                    <div className="flex items-center gap-1.5 mt-1">
+                      <Building2 className="h-3.5 w-3.5 text-primary" />
+                      <span className="text-primary font-medium text-sm">{selectedOffer.entreprise.nom}</span>
+                    </div>
+                  )}
+                </div>
               </div>
               <button
                 onClick={() => setSelectedOffer(null)}
-                className="flex items-center justify-center w-8 h-8 rounded-full bg-[#18181b] border border-white/10 text-gray-400 hover:text-white transition-colors shrink-0"
+                className="flex items-center justify-center w-8 h-8 rounded-xl bg-muted border border-border text-muted-foreground hover:text-foreground transition-colors flex-shrink-0"
               >
                 <X className="h-4 w-4" />
               </button>
             </div>
 
             <div className="p-6 space-y-6">
-              {/* Metadata badges */}
-              <div className="flex flex-wrap gap-3">
-                {selectedOffer.lieuTravail?.libelle && (
-                  <div className="flex items-center gap-2 bg-[#18181b]/60 border border-white/10 rounded-lg px-3 py-2">
-                    <MapPin className="h-4 w-4 text-indigo-400" />
-                    <span className="text-sm text-gray-300">{selectedOffer.lieuTravail.libelle}</span>
-                  </div>
-                )}
+              {/* Info badges */}
+              <div className="flex flex-wrap gap-2">
                 {selectedOffer.typeContratLibelle && (
-                  <div className="flex items-center gap-2 bg-[#18181b]/60 border border-white/10 rounded-lg px-3 py-2">
-                    <Briefcase className="h-4 w-4 text-indigo-400" />
-                    <span className="text-sm text-gray-300">{selectedOffer.typeContratLibelle}</span>
-                  </div>
+                  <span className={`flex items-center gap-1.5 text-sm font-semibold px-3 py-1.5 rounded-full ${getContractBadge(selectedOffer.typeContrat).bg}`}>
+                    <Briefcase className="h-3.5 w-3.5" />
+                    {selectedOffer.typeContratLibelle}
+                  </span>
+                )}
+                {selectedOffer.lieuTravail?.libelle && (
+                  <span className="flex items-center gap-1.5 bg-muted text-muted-foreground text-sm px-3 py-1.5 rounded-full border border-border">
+                    <MapPin className="h-3.5 w-3.5" />
+                    {selectedOffer.lieuTravail.libelle}
+                  </span>
                 )}
                 {selectedOffer.dureeTravailLibelle && (
-                  <div className="flex items-center gap-2 bg-[#18181b]/60 border border-white/10 rounded-lg px-3 py-2">
-                    <Clock className="h-4 w-4 text-indigo-400" />
-                    <span className="text-sm text-gray-300">{selectedOffer.dureeTravailLibelle}</span>
-                  </div>
+                  <span className="flex items-center gap-1.5 bg-muted text-muted-foreground text-sm px-3 py-1.5 rounded-full border border-border">
+                    <Clock className="h-3.5 w-3.5" />
+                    {selectedOffer.dureeTravailLibelle}
+                  </span>
                 )}
                 {selectedOffer.salaire?.libelle && (
-                  <div className="flex items-center gap-2 bg-green-500/10 border border-green-500/20 rounded-lg px-3 py-2">
-                    <Euro className="h-4 w-4 text-green-400" />
-                    <span className="text-sm text-green-400 font-medium">{selectedOffer.salaire.libelle}</span>
-                  </div>
+                  <span className="flex items-center gap-1.5 bg-green-500/10 text-green-600 text-sm font-semibold px-3 py-1.5 rounded-full border border-green-500/20">
+                    <Euro className="h-3.5 w-3.5" />
+                    {selectedOffer.salaire.libelle}
+                  </span>
                 )}
               </div>
 
               {/* Description */}
               {selectedOffer.description && (
-                <div>
-                  <h3 className="font-semibold text-white mb-3 border-l-2 border-indigo-500 pl-3">Description du poste</h3>
-                  <p className="text-sm text-gray-300 whitespace-pre-line leading-relaxed">{selectedOffer.description}</p>
+                <div className="bg-muted/50 rounded-xl p-4 border border-border">
+                  <h3 className="font-semibold text-foreground mb-3 flex items-center gap-2">
+                    <div className="w-1 h-4 bg-primary rounded-full" />
+                    Description du poste
+                  </h3>
+                  <p className="text-sm text-muted-foreground whitespace-pre-line leading-relaxed">{selectedOffer.description}</p>
                 </div>
               )}
 
               {/* Competences */}
               {selectedOffer.competences && selectedOffer.competences.length > 0 && (
                 <div>
-                  <h3 className="font-semibold text-white mb-3 border-l-2 border-indigo-500 pl-3">Compétences recherchées</h3>
+                  <h3 className="font-semibold text-foreground mb-3 flex items-center gap-2">
+                    <div className="w-1 h-4 bg-primary rounded-full" />
+                    Compétences recherchées
+                  </h3>
                   <div className="flex flex-wrap gap-2">
                     {selectedOffer.competences.map((comp, idx) => (
-                      <span key={idx} className="bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 rounded-full px-3 py-1 text-sm">
+                      <span key={idx} className="bg-primary/10 text-primary border border-primary/20 rounded-full px-3 py-1 text-sm">
                         {comp.libelle}
                       </span>
                     ))}
@@ -603,14 +561,17 @@ export const JobOffers = () => {
                 </div>
               )}
 
-              {/* Formations */}
+              {/* Formation */}
               {selectedOffer.formations && selectedOffer.formations.length > 0 && (
                 <div>
-                  <h3 className="font-semibold text-white mb-3 border-l-2 border-indigo-500 pl-3">Formation souhaitée</h3>
+                  <h3 className="font-semibold text-foreground mb-3 flex items-center gap-2">
+                    <div className="w-1 h-4 bg-primary rounded-full" />
+                    Formation souhaitée
+                  </h3>
                   <ul className="space-y-2">
                     {selectedOffer.formations.map((form, idx) => (
-                      <li key={idx} className="flex items-center gap-2 text-sm text-gray-300">
-                        <GraduationCap className="h-4 w-4 text-indigo-400 shrink-0" />
+                      <li key={idx} className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <GraduationCap className="h-4 w-4 text-primary flex-shrink-0" />
                         {form.niveauLibelle}
                       </li>
                     ))}
@@ -620,29 +581,44 @@ export const JobOffers = () => {
 
               {/* Company description */}
               {selectedOffer.entreprise?.description && (
-                <div>
-                  <h3 className="font-semibold text-white mb-3 border-l-2 border-indigo-500 pl-3">À propos de l'entreprise</h3>
-                  <div className="bg-[#18181b]/40 border border-white/10 rounded-xl p-4">
-                    <p className="text-sm text-gray-300 whitespace-pre-line">{selectedOffer.entreprise.description}</p>
-                  </div>
+                <div className="bg-muted/50 rounded-xl p-4 border border-border">
+                  <h3 className="font-semibold text-foreground mb-3 flex items-center gap-2">
+                    <div className="w-1 h-4 bg-primary rounded-full" />
+                    À propos de l'entreprise
+                  </h3>
+                  <p className="text-sm text-muted-foreground whitespace-pre-line">{selectedOffer.entreprise.description}</p>
                 </div>
               )}
 
               {/* CTA */}
-              {selectedOffer.origineOffre?.urlOrigine && (
-                <div className="pt-2 border-t border-white/[0.08] space-y-2">
+              <div className="pt-2 border-t border-border space-y-3">
+                <div className="flex gap-3">
                   <button
-                    onClick={() => window.open(selectedOffer.origineOffre?.urlOrigine, "_blank")}
-                    className="w-full flex items-center justify-center gap-2 py-3.5 bg-white text-black font-semibold rounded-xl shadow-[0_0_20px_rgba(255,255,255,0.15)] hover:bg-gray-100 transition-colors"
+                    onClick={() => toggleFavorite(selectedOffer, { stopPropagation: () => {} } as React.MouseEvent)}
+                    className={`flex items-center gap-2 px-4 py-3 rounded-xl border text-sm font-medium transition-all ${
+                      isFavorite(selectedOffer.id)
+                        ? "bg-amber-500/10 border-amber-500/30 text-amber-600"
+                        : "bg-muted border-border text-muted-foreground hover:text-amber-600"
+                    }`}
                   >
-                    <ExternalLink className="h-4 w-4" />
-                    Postuler sur le site
+                    {isFavorite(selectedOffer.id) ? <BookmarkCheck className="h-4 w-4" /> : <Bookmark className="h-4 w-4" />}
+                    {isFavorite(selectedOffer.id) ? "Sauvegardé" : "Sauvegarder"}
                   </button>
-                  <p className="text-xs text-gray-500 text-center">
-                    Vous serez redirigé vers le site du recruteur pour finaliser votre candidature
-                  </p>
+
+                  {selectedOffer.origineOffre?.urlOrigine && (
+                    <button
+                      onClick={() => window.open(selectedOffer.origineOffre?.urlOrigine, "_blank")}
+                      className="flex-1 flex items-center justify-center gap-2 py-3 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-xl shadow-sm transition-colors"
+                    >
+                      <ExternalLink className="h-4 w-4" />
+                      Postuler maintenant
+                    </button>
+                  )}
                 </div>
-              )}
+                <p className="text-xs text-muted-foreground text-center">
+                  Vous serez redirigé vers le site du recruteur pour finaliser votre candidature
+                </p>
+              </div>
             </div>
           </div>
         </div>
