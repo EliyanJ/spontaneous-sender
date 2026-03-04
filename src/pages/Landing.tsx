@@ -29,7 +29,7 @@ import logoTransparent from "@/assets/logo-transparent.png";
 const Landing = () => {
   const [isDark, setIsDark] = useState(() => {
     const saved = localStorage.getItem('theme');
-    return saved ? saved === 'dark' : true;
+    return saved === 'dark';
   });
   const navigate = useNavigate();
   const { user } = useAuth();
