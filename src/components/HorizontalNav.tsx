@@ -1,6 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, Building2, Briefcase, Send, Shield, Lock, ChevronDown, FileBarChart, FileText } from "lucide-react";
+import { Search, Building2, Briefcase, Send, Shield, Lock, ChevronDown, FileBarChart, FileText, LayoutDashboard } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAdminCheck } from "@/hooks/useAdminCheck";
 import { usePlanFeatures } from "@/hooks/usePlanFeatures";
