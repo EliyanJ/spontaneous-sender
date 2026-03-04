@@ -396,39 +396,6 @@ export const JobOffersPublic = () => {
           </div>
         </div>
 
-        {/* ===== FEATURED COMPANIES ===== */}
-        <section className="bg-muted/20 border-b border-border py-14">
-          <div className="max-w-5xl mx-auto px-4 sm:px-6">
-            <div className="text-center mb-10">
-              <p className="text-xs font-semibold text-primary uppercase tracking-widest mb-2">Partenaires</p>
-              <h2 className="text-2xl font-bold text-foreground">Des dizaines d'entreprises</h2>
-              <p className="text-muted-foreground mt-1">qui proposent des offres partout en France</p>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-              {FEATURED_COMPANIES.map((company, i) => {
-                const colors = ["bg-primary/10 text-primary", "bg-violet-500/10 text-violet-600", "bg-teal-500/10 text-teal-600"];
-                return (
-                  <div key={i} className="bg-card border border-border rounded-2xl p-5 flex gap-4 hover:border-primary/30 hover:shadow-md transition-all cursor-pointer">
-                    <div className={`w-14 h-14 rounded-xl flex items-center justify-center text-lg font-bold flex-shrink-0 ${colors[i % colors.length]}`}>
-                      {company.initials}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className={`inline-flex items-center text-xs font-bold px-2 py-0.5 rounded mb-1 ${colors[i % colors.length]}`}>
-                        {company.initials}
-                      </div>
-                      <p className="font-semibold text-foreground text-sm">{company.name}</p>
-                      <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{company.desc}</p>
-                      <div className="flex items-center justify-between mt-2">
-                        <span className="text-xs text-primary font-medium">{company.offers} offres</span>
-                        <ArrowRight className="h-4 w-4 text-muted-foreground" />
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </section>
 
         {/* ===== LATEST OFFERS ===== */}
         <div className="max-w-5xl mx-auto px-4 sm:px-6 py-14">
