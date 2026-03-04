@@ -236,6 +236,8 @@ export const JobOffersPublic = () => {
   const displayedOffers = showFavorites ? favorites : offers;
   const totalPages = Math.ceil(displayedOffers.length / PAGE_SIZE);
   const paginatedOffers = displayedOffers.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+  // Latest 3 offers for the hero section
+  const latestOffers = offers.slice(0, 3);
 
   return (
     <div className="min-h-screen bg-background">
