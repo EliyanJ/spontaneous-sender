@@ -179,39 +179,51 @@ export const JobOffersPublic = () => {
   return (
     <div className="min-h-screen bg-background">
       {/* Fixed Header */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border/50">
+      <header className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-md border-b border-border/50 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate('/')}>
-              <img src={logoTransparent} alt="Cronos" className="h-8 w-auto" />
-              <span className="text-xl font-bold tracking-tight text-foreground">Cronos</span>
+          <div className="flex justify-between items-center h-20">
+            {/* Logo */}
+            <div className="flex items-center gap-8">
+              <div className="flex items-center gap-2 cursor-pointer flex-shrink-0" onClick={() => navigate('/')}>
+                <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center text-primary">
+                  <Briefcase className="h-5 w-5" />
+                </div>
+                <span className="font-bold text-xl tracking-tight text-foreground">Get<span className="text-primary">Cronos</span></span>
+              </div>
+
+              {/* Nav links */}
+              <nav className="hidden lg:flex items-center gap-8">
+                {user && (
+                  <button onClick={() => navigate('/dashboard')} className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
+                    Tableau de bord
+                  </button>
+                )}
+                <span className="text-sm font-semibold text-primary border-b-2 border-primary pb-0.5">Offres d'emploi</span>
+                <button onClick={() => navigate('/score-cv')} className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
+                  Score CV
+                </button>
+                <button onClick={() => navigate('/cv-builder')} className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
+                  Créer son CV
+                </button>
+              </nav>
             </div>
 
-            <nav className="hidden md:flex items-center gap-6">
-              <button onClick={() => navigate('/score-cv')} className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
-                Score CV
-              </button>
-              <button onClick={() => navigate('/cv-builder')} className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
-                Créer mon CV
-              </button>
-              <span className="text-sm font-semibold text-primary">Offres d'emploi</span>
-            </nav>
-
+            {/* Right actions */}
             <div className="flex items-center gap-3">
               <Button variant="ghost" size="icon" onClick={() => setIsDark(!isDark)} className="rounded-full">
                 {isDark ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
               </Button>
               {user ? (
-                <Button size="sm" onClick={() => navigate('/dashboard')} className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-full px-5">
-                  Dashboard
+                <Button size="sm" onClick={() => navigate('/dashboard')} className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-full px-5 shadow-md shadow-primary/20">
+                  Mon tableau de bord
                 </Button>
               ) : (
                 <>
-                  <Button variant="ghost" size="sm" onClick={() => navigate('/login')} className="text-muted-foreground">
+                  <Button variant="ghost" size="sm" onClick={() => navigate('/login')} className="text-muted-foreground hover:text-foreground hidden sm:flex">
                     Se connecter
                   </Button>
-                  <Button size="sm" onClick={() => navigate('/register')} className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-full px-5">
-                    Commencer
+                  <Button size="sm" onClick={() => navigate('/register')} className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-full px-5 shadow-md shadow-primary/20">
+                    Commencer gratuitement
                   </Button>
                 </>
               )}
