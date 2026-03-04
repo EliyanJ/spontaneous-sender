@@ -47,7 +47,7 @@ import Onboarding from "./pages/Onboarding";
 import CVBuilder from "./pages/CVBuilder";
 import { CookieBanner } from "./components/CookieBanner";
 import { CVScorePage } from "./pages/CVScorePage";
-import JobOffersPublic from "./pages/JobOffersPublic";
+import Blog from "./pages/Blog";
 
 const queryClient = new QueryClient();
 

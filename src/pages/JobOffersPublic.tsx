@@ -913,6 +913,83 @@ export const JobOffersPublic = () => {
           </div>
         </div>
       )}
+
+      {/* ===== MINI CHAT WIDGET ===== */}
+      <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3">
+        {/* Chat panel */}
+        {chatOpen && (
+          <div className="w-80 bg-card border border-border rounded-2xl shadow-2xl shadow-primary/10 overflow-hidden animate-in slide-in-from-bottom-4 duration-300">
+            {/* Header */}
+            <div className="flex items-center justify-between px-4 py-3 bg-primary text-primary-foreground">
+              <div className="flex items-center gap-2">
+                <Bot className="h-4 w-4" />
+                <span className="text-sm font-semibold">Assistant Cronos</span>
+              </div>
+              <button onClick={() => setChatOpen(false)} className="text-primary-foreground/70 hover:text-primary-foreground transition-colors text-lg leading-none">×</button>
+            </div>
+            {/* Messages */}
+            <div className="h-64 overflow-y-auto p-4 space-y-3 bg-background">
+              {chatMessages.map((msg, i) => (
+                <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
+                  {msg.role === "assistant" && (
+                    <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mr-2 mt-0.5">
+                      <Bot className="h-3.5 w-3.5 text-primary" />
+                    </div>
+                  )}
+                  <div className={`max-w-[80%] px-3 py-2 rounded-xl text-xs leading-relaxed ${
+                    msg.role === "user"
+                      ? "bg-primary text-primary-foreground rounded-br-sm"
+                      : "bg-muted text-foreground rounded-bl-sm"
+                  }`}>
+                    {msg.content}
+                  </div>
+                </div>
+              ))}
+              {chatLoading && (
+                <div className="flex justify-start">
+                  <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mr-2">
+                    <Bot className="h-3.5 w-3.5 text-primary" />
+                  </div>
+                  <div className="bg-muted rounded-xl rounded-bl-sm px-3 py-2">
+                    <Loader2 className="h-3.5 w-3.5 text-muted-foreground animate-spin" />
+                  </div>
+                </div>
+              )}
+              <div ref={chatEndRef} />
+            </div>
+            {/* Input */}
+            <div className="p-3 border-t border-border bg-card flex gap-2">
+              <input
+                type="text"
+                value={chatInput}
+                onChange={(e) => setChatInput(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && sendChatMessage()}
+                placeholder="Posez votre question..."
+                className="flex-1 bg-background border border-border rounded-xl px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
+              />
+              <button
+                onClick={sendChatMessage}
+                disabled={chatLoading || !chatInput.trim()}
+                className="w-8 h-8 flex items-center justify-center bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl transition-all disabled:opacity-40 disabled:cursor-not-allowed flex-shrink-0"
+              >
+                <Send className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Loupe button */}
+        <button
+          onClick={() => { setChatOpen(v => !v); setChatPulse(false); }}
+          className={`relative w-14 h-14 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground shadow-xl shadow-primary/30 flex items-center justify-center transition-all hover:scale-110 active:scale-95 ${chatPulse && !chatOpen ? "animate-bounce" : ""}`}
+          aria-label="Ouvrir l'assistant IA"
+        >
+          <Search className="h-6 w-6" />
+          {!chatOpen && chatPulse && (
+            <span className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-card animate-pulse" />
+          )}
+        </button>
+      </div>
     </div>
   );
 };
