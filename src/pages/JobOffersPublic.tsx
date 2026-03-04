@@ -83,6 +83,8 @@ const FAQItem = ({ question, answer }: { question: string; answer: string }) => 
 };
 
 
+type ChatMsg = { role: "user" | "assistant"; content: string };
+
 export const JobOffersPublic = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -96,6 +98,53 @@ export const JobOffersPublic = () => {
     try { return JSON.parse(localStorage.getItem(FAVORITES_KEY) || "[]"); } catch { return []; }
   });
   const initialLoadDone = useRef(false);
+
+  // Mini-chat widget
+  const [chatOpen, setChatOpen] = useState(false);
+  const [chatPulse, setChatPulse] = useState(false);
+  const [chatMessages, setChatMessages] = useState<ChatMsg[]>([
+    { role: "assistant", content: "👋 Bonjour ! Je suis l'assistant Cronos. Posez-moi vos questions sur les offres d'emploi ou votre CV !" }
+  ]);
+  const [chatInput, setChatInput] = useState("");
+  const [chatLoading, setChatLoading] = useState(false);
+  const chatEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    // Pulse animation after 3s to attract attention
+    const t = setTimeout(() => setChatPulse(true), 3000);
+    return () => clearTimeout(t);
+  }, []);
+
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [chatMessages, chatOpen]);
+
+  const sendChatMessage = async () => {
+    if (!chatInput.trim() || chatLoading) return;
+    const userMsg = chatInput.trim();
+    setChatInput("");
+    setChatMessages(prev => [...prev, { role: "user", content: userMsg }]);
+    setChatLoading(true);
+    try {
+      const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+      const history = chatMessages.map(m => ({ role: m.role, content: m.content }));
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chatbot-assistant`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "apikey": anonKey, "Authorization": `Bearer ${anonKey}` },
+        body: JSON.stringify({ message: userMsg, history }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setChatMessages(prev => [...prev, { role: "assistant", content: data.response || data.message || "Je suis là pour vous aider !" }]);
+      } else {
+        setChatMessages(prev => [...prev, { role: "assistant", content: "Désolé, une erreur est survenue. Réessayez dans un instant." }]);
+      }
+    } catch {
+      setChatMessages(prev => [...prev, { role: "assistant", content: "Désolé, une erreur est survenue." }]);
+    } finally {
+      setChatLoading(false);
+    }
+  };
 
   const [searchParams, setSearchParams] = useState({
     motsCles: "",
