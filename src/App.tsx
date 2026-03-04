@@ -47,6 +47,7 @@ import Onboarding from "./pages/Onboarding";
 import CVBuilder from "./pages/CVBuilder";
 import { CookieBanner } from "./components/CookieBanner";
 import { CVScorePage } from "./pages/CVScorePage";
+import JobOffersPublic from "./pages/JobOffersPublic";
 
 const queryClient = new QueryClient();
 
@@ -74,6 +75,7 @@ const App = () => (
           <Route path="/legal-notice" element={<LegalNoticeEn />} />
           <Route path="/pricing" element={<Pricing />} />
           <Route path="/score-cv" element={<CVScorePage />} />
+          <Route path="/offres-emploi" element={<JobOffersPublic />} />
           <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
           <Route path="/cv-builder" element={<ProtectedRoute><CVBuilder /></ProtectedRoute>} />
           <Route path="/dashboard" element={<ProtectedRoute><Index /></ProtectedRoute>} />
