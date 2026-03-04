@@ -3,9 +3,9 @@ import { useNavigate } from "react-router-dom";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Search, MapPin, Briefcase, Clock, ExternalLink, Euro, Bookmark, BookmarkCheck,
-  Building2, X, GraduationCap, ChevronLeft, ChevronRight, Sparkles, TrendingUp,
-  ArrowRight, LogIn, ChevronDown, Mail, BookOpen, Users, FileText, BarChart2,
-  MessageCircle, DollarSign, Target, HelpCircle
+  Building2, X, GraduationCap, ChevronLeft, ChevronRight, TrendingUp,
+  ArrowRight, LogIn, ChevronDown, Mail, BookOpen, Users, FileText,
+  DollarSign, Target, HelpCircle, Bot, Send, Loader2
 } from "lucide-react";
 import { CommuneSearch } from "@/components/ui/commune-search";
 import { formatDistanceToNow } from "date-fns";
@@ -83,6 +83,8 @@ const FAQItem = ({ question, answer }: { question: string; answer: string }) => 
 };
 
 
+type ChatMsg = { role: "user" | "assistant"; content: string };
+
 export const JobOffersPublic = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -96,6 +98,53 @@ export const JobOffersPublic = () => {
     try { return JSON.parse(localStorage.getItem(FAVORITES_KEY) || "[]"); } catch { return []; }
   });
   const initialLoadDone = useRef(false);
+
+  // Mini-chat widget
+  const [chatOpen, setChatOpen] = useState(false);
+  const [chatPulse, setChatPulse] = useState(false);
+  const [chatMessages, setChatMessages] = useState<ChatMsg[]>([
+    { role: "assistant", content: "👋 Bonjour ! Je suis l'assistant Cronos. Posez-moi vos questions sur les offres d'emploi ou votre CV !" }
+  ]);
+  const [chatInput, setChatInput] = useState("");
+  const [chatLoading, setChatLoading] = useState(false);
+  const chatEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    // Pulse animation after 3s to attract attention
+    const t = setTimeout(() => setChatPulse(true), 3000);
+    return () => clearTimeout(t);
+  }, []);
+
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [chatMessages, chatOpen]);
+
+  const sendChatMessage = async () => {
+    if (!chatInput.trim() || chatLoading) return;
+    const userMsg = chatInput.trim();
+    setChatInput("");
+    setChatMessages(prev => [...prev, { role: "user", content: userMsg }]);
+    setChatLoading(true);
+    try {
+      const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+      const history = chatMessages.map(m => ({ role: m.role, content: m.content }));
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chatbot-assistant`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "apikey": anonKey, "Authorization": `Bearer ${anonKey}` },
+        body: JSON.stringify({ message: userMsg, history }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setChatMessages(prev => [...prev, { role: "assistant", content: data.response || data.message || "Je suis là pour vous aider !" }]);
+      } else {
+        setChatMessages(prev => [...prev, { role: "assistant", content: "Désolé, une erreur est survenue. Réessayez dans un instant." }]);
+      }
+    } catch {
+      setChatMessages(prev => [...prev, { role: "assistant", content: "Désolé, une erreur est survenue." }]);
+    } finally {
+      setChatLoading(false);
+    }
+  };
 
   const [searchParams, setSearchParams] = useState({
     motsCles: "",
@@ -187,6 +236,8 @@ export const JobOffersPublic = () => {
   const displayedOffers = showFavorites ? favorites : offers;
   const totalPages = Math.ceil(displayedOffers.length / PAGE_SIZE);
   const paginatedOffers = displayedOffers.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+  // Latest 3 offers for the hero section
+  const latestOffers = offers.slice(0, 3);
 
   return (
     <div className="min-h-screen bg-background">
@@ -204,7 +255,7 @@ export const JobOffersPublic = () => {
               {/* Desktop Nav */}
               <nav className="hidden lg:flex items-center gap-7">
                 <button
-                  onClick={() => navigate('/dashboard?tab=cv-comparator')}
+                  onClick={() => navigate('/score-cv')}
                   className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
                 >
                   Comparatif de CV
@@ -216,7 +267,7 @@ export const JobOffersPublic = () => {
                   Création de CV
                 </button>
                 <button
-                  onClick={() => navigate('/dashboard?tab=cv-advice')}
+                  onClick={() => navigate('/blog')}
                   className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
                 >
                   Conseil personnalisé
@@ -230,16 +281,8 @@ export const JobOffersPublic = () => {
               </nav>
             </div>
 
-            {/* Right actions */}
+              {/* Right actions */}
             <div className="flex items-center gap-3">
-              {/* Chatbot hint */}
-              <button
-                className="hidden md:flex items-center gap-2 text-xs text-muted-foreground hover:text-primary transition-colors bg-muted/50 border border-border rounded-full px-3 py-1.5"
-                onClick={() => navigate('/register')}
-              >
-                <MessageCircle className="h-3.5 w-3.5 text-primary" />
-                Besoin d'aide ? Discutez avec notre IA
-              </button>
 
               {user ? (
                 <Button size="sm" onClick={() => navigate('/dashboard')} className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-full px-5 shadow-md shadow-primary/20">
@@ -448,17 +491,10 @@ export const JobOffersPublic = () => {
             </div>
           )}
 
-          {/* Results */}
-          {!loading && displayedOffers.length > 0 && (
+          {/* Results — limited to 3 latest */}
+          {!loading && latestOffers.length > 0 && (
             <div className="space-y-3">
-              <div className="flex items-center justify-between pb-2">
-                <p className="text-sm text-muted-foreground">
-                  <span className="font-semibold text-foreground">{displayedOffers.length}</span> offre{displayedOffers.length > 1 ? "s" : ""} {showFavorites ? "en favori" : "disponibles"}
-                </p>
-                <span className="text-xs text-muted-foreground">Page {currentPage}/{totalPages}</span>
-              </div>
-
-              {paginatedOffers.map((offer) => {
+              {latestOffers.map((offer) => {
                 const badge = getContractBadge(offer.typeContrat);
                 return (
                   <div
@@ -486,11 +522,8 @@ export const JobOffersPublic = () => {
                               {offer.lieuTravail?.libelle && (
                                 <span className="flex items-center gap-1"><MapPin className="h-3.5 w-3.5" />{offer.lieuTravail.libelle}</span>
                               )}
-                              {offer.dureeTravailLibelle && (
-                                <span className="flex items-center gap-1"><Clock className="h-3.5 w-3.5" />{offer.dureeTravailLibelle}</span>
-                              )}
                               {offer.salaire?.libelle && (
-                                <span className="flex items-center gap-1 text-green-600 font-medium"><Euro className="h-3.5 w-3.5" />{offer.salaire.libelle}</span>
+                                <span className="flex items-center gap-1 font-medium text-green-600"><Euro className="h-3.5 w-3.5" />{offer.salaire.libelle}</span>
                               )}
                               {offer.dateCreation && (
                                 <span className="flex items-center gap-1">
@@ -499,38 +532,17 @@ export const JobOffersPublic = () => {
                                 </span>
                               )}
                             </div>
-                            {offer.description && (
-                              <p className="text-sm text-muted-foreground line-clamp-2 mt-2">{offer.description}</p>
-                            )}
-                            {offer.competences && offer.competences.length > 0 && (
-                              <div className="flex flex-wrap gap-1.5 mt-2">
-                                {offer.competences.slice(0, 4).map((comp, idx) => (
-                                  <span key={idx} className="bg-accent text-accent-foreground text-xs rounded-full px-2.5 py-0.5 border border-border">
-                                    {comp.libelle}
-                                  </span>
-                                ))}
-                                {offer.competences.length > 4 && (
-                                  <span className="text-xs text-muted-foreground self-center">+{offer.competences.length - 4}</span>
-                                )}
-                              </div>
-                            )}
                           </div>
-
-                          <div className="flex items-center gap-2 flex-shrink-0">
-                            <button
-                              onClick={(e) => toggleFavorite(offer, e)}
-                              className={`p-2 rounded-lg transition-all ${
-                                isFavorite(offer.id)
-                                  ? "text-amber-500 bg-amber-500/10"
-                                  : "text-muted-foreground hover:text-amber-500 hover:bg-amber-500/10"
-                              }`}
-                            >
-                              {isFavorite(offer.id) ? <BookmarkCheck className="h-4 w-4" /> : <Bookmark className="h-4 w-4" />}
-                            </button>
-                            <button className="hidden sm:flex items-center gap-1.5 text-xs font-semibold text-primary-foreground bg-primary hover:bg-primary/90 px-3 py-2 rounded-lg transition-colors">
-                              Postuler
-                            </button>
-                          </div>
+                          <button
+                            onClick={(e) => toggleFavorite(offer, e)}
+                            className={`p-2 rounded-lg transition-all flex-shrink-0 ${
+                              isFavorite(offer.id)
+                                ? "text-amber-500 bg-amber-500/10"
+                                : "text-muted-foreground hover:text-amber-500 hover:bg-amber-500/10"
+                            }`}
+                          >
+                            {isFavorite(offer.id) ? <BookmarkCheck className="h-4 w-4" /> : <Bookmark className="h-4 w-4" />}
+                          </button>
                         </div>
                       </div>
                     </div>
@@ -538,32 +550,12 @@ export const JobOffersPublic = () => {
                 );
               })}
 
-              {/* Pagination */}
-              {totalPages > 1 && (
-                <div className="flex items-center justify-center gap-2 pt-4">
-                  <button
-                    onClick={() => { setCurrentPage(p => Math.max(1, p - 1)); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-                    disabled={currentPage === 1}
-                    className="flex items-center gap-1 px-4 py-2 rounded-xl text-sm font-medium bg-card border border-border text-foreground hover:border-primary/40 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-                  >
-                    <ChevronLeft className="h-4 w-4" />Précédent
-                  </button>
-                  <span className="text-sm text-muted-foreground px-3">
-                    {currentPage} / {totalPages}
-                  </span>
-                  <button
-                    onClick={() => { setCurrentPage(p => Math.min(totalPages, p + 1)); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-                    disabled={currentPage === totalPages}
-                    className="flex items-center gap-1 px-4 py-2 rounded-xl text-sm font-medium bg-card border border-border text-foreground hover:border-primary/40 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-                  >
-                    Suivant<ChevronRight className="h-4 w-4" />
-                  </button>
-                </div>
-              )}
-
-              {/* Bottom CTA */}
+              {/* See all CTA */}
               <div className="flex justify-center pt-4">
-                <button className="flex items-center gap-2 text-sm font-medium text-primary border border-primary/30 hover:bg-primary/5 rounded-xl px-6 py-2.5 transition-colors">
+                <button
+                  onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                  className="flex items-center gap-2 text-sm font-medium text-primary border border-primary/30 hover:bg-primary/5 rounded-xl px-6 py-2.5 transition-colors"
+                >
                   Voir toutes les offres <ArrowRight className="h-4 w-4" />
                 </button>
               </div>
@@ -921,6 +913,83 @@ export const JobOffersPublic = () => {
           </div>
         </div>
       )}
+
+      {/* ===== MINI CHAT WIDGET ===== */}
+      <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3">
+        {/* Chat panel */}
+        {chatOpen && (
+          <div className="w-80 bg-card border border-border rounded-2xl shadow-2xl shadow-primary/10 overflow-hidden animate-in slide-in-from-bottom-4 duration-300">
+            {/* Header */}
+            <div className="flex items-center justify-between px-4 py-3 bg-primary text-primary-foreground">
+              <div className="flex items-center gap-2">
+                <Bot className="h-4 w-4" />
+                <span className="text-sm font-semibold">Assistant Cronos</span>
+              </div>
+              <button onClick={() => setChatOpen(false)} className="text-primary-foreground/70 hover:text-primary-foreground transition-colors text-lg leading-none">×</button>
+            </div>
+            {/* Messages */}
+            <div className="h-64 overflow-y-auto p-4 space-y-3 bg-background">
+              {chatMessages.map((msg, i) => (
+                <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
+                  {msg.role === "assistant" && (
+                    <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mr-2 mt-0.5">
+                      <Bot className="h-3.5 w-3.5 text-primary" />
+                    </div>
+                  )}
+                  <div className={`max-w-[80%] px-3 py-2 rounded-xl text-xs leading-relaxed ${
+                    msg.role === "user"
+                      ? "bg-primary text-primary-foreground rounded-br-sm"
+                      : "bg-muted text-foreground rounded-bl-sm"
+                  }`}>
+                    {msg.content}
+                  </div>
+                </div>
+              ))}
+              {chatLoading && (
+                <div className="flex justify-start">
+                  <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mr-2">
+                    <Bot className="h-3.5 w-3.5 text-primary" />
+                  </div>
+                  <div className="bg-muted rounded-xl rounded-bl-sm px-3 py-2">
+                    <Loader2 className="h-3.5 w-3.5 text-muted-foreground animate-spin" />
+                  </div>
+                </div>
+              )}
+              <div ref={chatEndRef} />
+            </div>
+            {/* Input */}
+            <div className="p-3 border-t border-border bg-card flex gap-2">
+              <input
+                type="text"
+                value={chatInput}
+                onChange={(e) => setChatInput(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && sendChatMessage()}
+                placeholder="Posez votre question..."
+                className="flex-1 bg-background border border-border rounded-xl px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
+              />
+              <button
+                onClick={sendChatMessage}
+                disabled={chatLoading || !chatInput.trim()}
+                className="w-8 h-8 flex items-center justify-center bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl transition-all disabled:opacity-40 disabled:cursor-not-allowed flex-shrink-0"
+              >
+                <Send className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Loupe button */}
+        <button
+          onClick={() => { setChatOpen(v => !v); setChatPulse(false); }}
+          className={`relative w-14 h-14 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground shadow-xl shadow-primary/30 flex items-center justify-center transition-all hover:scale-110 active:scale-95 ${chatPulse && !chatOpen ? "animate-bounce" : ""}`}
+          aria-label="Ouvrir l'assistant IA"
+        >
+          <Search className="h-6 w-6" />
+          {!chatOpen && chatPulse && (
+            <span className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-card animate-pulse" />
+          )}
+        </button>
+      </div>
     </div>
   );
 };
