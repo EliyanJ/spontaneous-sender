@@ -204,7 +204,7 @@ export const JobOffersPublic = () => {
               {/* Desktop Nav */}
               <nav className="hidden lg:flex items-center gap-7">
                 <button
-                  onClick={() => navigate('/dashboard?tab=cv-comparator')}
+                  onClick={() => navigate('/score-cv')}
                   className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
                 >
                   Comparatif de CV
@@ -216,7 +216,7 @@ export const JobOffersPublic = () => {
                   Création de CV
                 </button>
                 <button
-                  onClick={() => navigate('/dashboard?tab=cv-advice')}
+                  onClick={() => navigate('/blog')}
                   className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
                 >
                   Conseil personnalisé
@@ -230,16 +230,8 @@ export const JobOffersPublic = () => {
               </nav>
             </div>
 
-            {/* Right actions */}
+              {/* Right actions */}
             <div className="flex items-center gap-3">
-              {/* Chatbot hint */}
-              <button
-                className="hidden md:flex items-center gap-2 text-xs text-muted-foreground hover:text-primary transition-colors bg-muted/50 border border-border rounded-full px-3 py-1.5"
-                onClick={() => navigate('/register')}
-              >
-                <MessageCircle className="h-3.5 w-3.5 text-primary" />
-                Besoin d'aide ? Discutez avec notre IA
-              </button>
 
               {user ? (
                 <Button size="sm" onClick={() => navigate('/dashboard')} className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-full px-5 shadow-md shadow-primary/20">
