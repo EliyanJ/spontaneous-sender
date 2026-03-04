@@ -82,11 +82,6 @@ const FAQItem = ({ question, answer }: { question: string; answer: string }) => 
   );
 };
 
-const FEATURED_COMPANIES = [
-  { initials: "SUP", name: "SUP INTERIM LURE", desc: "Spécialiste du travail temporaire et du recrutement CDD/CDI.", offers: 12 },
-  { initials: "DM", name: "THE DOOR MAN", desc: "Réseau immobilier national innovant et collaboratif.", offers: 5 },
-  { initials: "GR", name: "GR EDUCATION", desc: "Organisme de formation spécialisé dans les métiers de demain.", offers: 8 },
-];
 
 export const JobOffersPublic = () => {
   const navigate = useNavigate();
