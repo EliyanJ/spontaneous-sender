@@ -113,8 +113,10 @@ export const JobOffersPublic = () => {
       }
       if (searchParams.typeContrat !== 'all') params.typeContrat = searchParams.typeContrat;
 
+      const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
       const headers: Record<string, string> = {
-        'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+        'apikey': anonKey,
+        'Authorization': `Bearer ${anonKey}`,
       };
 
       const response = await fetch(
@@ -140,8 +142,10 @@ export const JobOffersPublic = () => {
   const loadOfferDetails = async (offer: JobOffer) => {
     setSelectedOffer(offer);
     try {
+      const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
       const headers: Record<string, string> = {
-        'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+        'apikey': anonKey,
+        'Authorization': `Bearer ${anonKey}`,
       };
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/france-travail?action=details&id=${offer.id}`,
