@@ -491,17 +491,10 @@ export const JobOffersPublic = () => {
             </div>
           )}
 
-          {/* Results */}
-          {!loading && displayedOffers.length > 0 && (
+          {/* Results — limited to 3 latest */}
+          {!loading && latestOffers.length > 0 && (
             <div className="space-y-3">
-              <div className="flex items-center justify-between pb-2">
-                <p className="text-sm text-muted-foreground">
-                  <span className="font-semibold text-foreground">{displayedOffers.length}</span> offre{displayedOffers.length > 1 ? "s" : ""} {showFavorites ? "en favori" : "disponibles"}
-                </p>
-                <span className="text-xs text-muted-foreground">Page {currentPage}/{totalPages}</span>
-              </div>
-
-              {paginatedOffers.map((offer) => {
+              {latestOffers.map((offer) => {
                 const badge = getContractBadge(offer.typeContrat);
                 return (
                   <div
@@ -529,11 +522,8 @@ export const JobOffersPublic = () => {
                               {offer.lieuTravail?.libelle && (
                                 <span className="flex items-center gap-1"><MapPin className="h-3.5 w-3.5" />{offer.lieuTravail.libelle}</span>
                               )}
-                              {offer.dureeTravailLibelle && (
-                                <span className="flex items-center gap-1"><Clock className="h-3.5 w-3.5" />{offer.dureeTravailLibelle}</span>
-                              )}
                               {offer.salaire?.libelle && (
-                                <span className="flex items-center gap-1 text-green-600 font-medium"><Euro className="h-3.5 w-3.5" />{offer.salaire.libelle}</span>
+                                <span className="flex items-center gap-1 font-medium text-green-600"><Euro className="h-3.5 w-3.5" />{offer.salaire.libelle}</span>
                               )}
                               {offer.dateCreation && (
                                 <span className="flex items-center gap-1">
@@ -542,38 +532,17 @@ export const JobOffersPublic = () => {
                                 </span>
                               )}
                             </div>
-                            {offer.description && (
-                              <p className="text-sm text-muted-foreground line-clamp-2 mt-2">{offer.description}</p>
-                            )}
-                            {offer.competences && offer.competences.length > 0 && (
-                              <div className="flex flex-wrap gap-1.5 mt-2">
-                                {offer.competences.slice(0, 4).map((comp, idx) => (
-                                  <span key={idx} className="bg-accent text-accent-foreground text-xs rounded-full px-2.5 py-0.5 border border-border">
-                                    {comp.libelle}
-                                  </span>
-                                ))}
-                                {offer.competences.length > 4 && (
-                                  <span className="text-xs text-muted-foreground self-center">+{offer.competences.length - 4}</span>
-                                )}
-                              </div>
-                            )}
                           </div>
-
-                          <div className="flex items-center gap-2 flex-shrink-0">
-                            <button
-                              onClick={(e) => toggleFavorite(offer, e)}
-                              className={`p-2 rounded-lg transition-all ${
-                                isFavorite(offer.id)
-                                  ? "text-amber-500 bg-amber-500/10"
-                                  : "text-muted-foreground hover:text-amber-500 hover:bg-amber-500/10"
-                              }`}
-                            >
-                              {isFavorite(offer.id) ? <BookmarkCheck className="h-4 w-4" /> : <Bookmark className="h-4 w-4" />}
-                            </button>
-                            <button className="hidden sm:flex items-center gap-1.5 text-xs font-semibold text-primary-foreground bg-primary hover:bg-primary/90 px-3 py-2 rounded-lg transition-colors">
-                              Postuler
-                            </button>
-                          </div>
+                          <button
+                            onClick={(e) => toggleFavorite(offer, e)}
+                            className={`p-2 rounded-lg transition-all flex-shrink-0 ${
+                              isFavorite(offer.id)
+                                ? "text-amber-500 bg-amber-500/10"
+                                : "text-muted-foreground hover:text-amber-500 hover:bg-amber-500/10"
+                            }`}
+                          >
+                            {isFavorite(offer.id) ? <BookmarkCheck className="h-4 w-4" /> : <Bookmark className="h-4 w-4" />}
+                          </button>
                         </div>
                       </div>
                     </div>
@@ -581,32 +550,12 @@ export const JobOffersPublic = () => {
                 );
               })}
 
-              {/* Pagination */}
-              {totalPages > 1 && (
-                <div className="flex items-center justify-center gap-2 pt-4">
-                  <button
-                    onClick={() => { setCurrentPage(p => Math.max(1, p - 1)); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-                    disabled={currentPage === 1}
-                    className="flex items-center gap-1 px-4 py-2 rounded-xl text-sm font-medium bg-card border border-border text-foreground hover:border-primary/40 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-                  >
-                    <ChevronLeft className="h-4 w-4" />Précédent
-                  </button>
-                  <span className="text-sm text-muted-foreground px-3">
-                    {currentPage} / {totalPages}
-                  </span>
-                  <button
-                    onClick={() => { setCurrentPage(p => Math.min(totalPages, p + 1)); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-                    disabled={currentPage === totalPages}
-                    className="flex items-center gap-1 px-4 py-2 rounded-xl text-sm font-medium bg-card border border-border text-foreground hover:border-primary/40 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-                  >
-                    Suivant<ChevronRight className="h-4 w-4" />
-                  </button>
-                </div>
-              )}
-
-              {/* Bottom CTA */}
+              {/* See all CTA */}
               <div className="flex justify-center pt-4">
-                <button className="flex items-center gap-2 text-sm font-medium text-primary border border-primary/30 hover:bg-primary/5 rounded-xl px-6 py-2.5 transition-colors">
+                <button
+                  onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                  className="flex items-center gap-2 text-sm font-medium text-primary border border-primary/30 hover:bg-primary/5 rounded-xl px-6 py-2.5 transition-colors"
+                >
                   Voir toutes les offres <ArrowRight className="h-4 w-4" />
                 </button>
               </div>
