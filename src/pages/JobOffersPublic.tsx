@@ -3,9 +3,9 @@ import { useNavigate } from "react-router-dom";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Search, MapPin, Briefcase, Clock, ExternalLink, Euro, Bookmark, BookmarkCheck,
-  Building2, X, GraduationCap, ChevronLeft, ChevronRight, Sparkles, TrendingUp,
-  ArrowRight, LogIn, ChevronDown, Mail, BookOpen, Users, FileText, BarChart2,
-  MessageCircle, DollarSign, Target, HelpCircle
+  Building2, X, GraduationCap, ChevronLeft, ChevronRight, TrendingUp,
+  ArrowRight, LogIn, ChevronDown, Mail, BookOpen, Users, FileText,
+  DollarSign, Target, HelpCircle, Bot, Send, Loader2
 } from "lucide-react";
 import { CommuneSearch } from "@/components/ui/commune-search";
 import { formatDistanceToNow } from "date-fns";
