@@ -37,6 +37,20 @@ export const HorizontalNav = ({ activeTab, onTabChange }: HorizontalNavProps) =>
 
   return (
     <nav className="flex items-center gap-1 px-2 py-1 bg-card/50 backdrop-blur-xl border border-border/50 rounded-2xl">
+      {/* Dashboard Overview */}
+      <button
+        onClick={() => handleTabClick('overview')}
+        className={cn(
+          "flex items-center gap-2 px-3 md:px-4 py-2 md:py-2.5 rounded-xl font-medium text-sm transition-all duration-300 shrink-0",
+          activeTab === 'overview'
+            ? "bg-primary text-primary-foreground shadow-lg"
+            : "text-muted-foreground hover:text-foreground hover:bg-accent"
+        )}
+        style={activeTab === 'overview' ? { boxShadow: '0 0 20px hsl(var(--primary) / 0.3)' } : {}}
+      >
+        <LayoutDashboard className="h-4 w-4" />
+        <span className="hidden lg:inline">Dashboard</span>
+      </button>
       {/* Recherche d'entreprise Dropdown */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
