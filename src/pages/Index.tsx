@@ -94,6 +94,8 @@ const Index = () => {
 
   const renderContent = () => {
     switch (activeTab) {
+      case "overview":
+        return <DashboardOverview onNavigateToTab={handleTabChange} />;
       case "search":
         return <SearchCompanies onNavigateToTab={handleTabChange} />;
       case "entreprises":
@@ -101,11 +103,9 @@ const Index = () => {
       case "jobs":
         return <JobOffers />;
       case "emails":
-        // Use React state for emailsSection instead of reading sessionStorage directly
         if (emailsSection === 'search') {
           return <ContactSearch onNavigateToTab={handleTabChange} />;
         }
-        // Default to send/campaign view
         return <UnifiedEmailSender />;
       case "campaigns":
         return <CampaignsHub />;
@@ -114,7 +114,7 @@ const Index = () => {
       case "settings":
         return <Settings />;
       default:
-        return <SearchCompanies onNavigateToTab={handleTabChange} />;
+        return <DashboardOverview onNavigateToTab={handleTabChange} />;
     }
   };
 
