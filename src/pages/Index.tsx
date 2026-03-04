@@ -11,6 +11,7 @@ import { UnifiedEmailSender } from "@/components/dashboard/UnifiedEmailSender";
 import { CampaignsHub } from "@/components/dashboard/CampaignsHub";
 import { Settings } from "@/components/dashboard/Settings";
 import { CVComparator } from "@/components/dashboard/CVComparator";
+import { DashboardOverview } from "@/components/dashboard/DashboardOverview";
 
 import { HorizontalNav } from "@/components/HorizontalNav";
 import { MobileNav } from "@/components/MobileNav";
@@ -23,14 +24,14 @@ import logoTransparent from "@/assets/logo-transparent.png";
 
 const Index = () => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const [activeTab, setActiveTab] = useState("search");
+  const [activeTab, setActiveTab] = useState("overview");
   const [emailsSection, setEmailsSection] = useState<string | null>(null);
   const [isDark, setIsDark] = useState(true);
   const [slideDirection, setSlideDirection] = useState<"left" | "right">("right");
   const prevTabRef = useRef(activeTab);
   const isMobile = useIsMobile();
 
-  const tabOrder = ["search", "entreprises", "emails", "campaigns", "jobs", "cv-score", "settings"];
+  const tabOrder = ["overview", "search", "entreprises", "emails", "campaigns", "jobs", "cv-score", "settings"];
 
   useEffect(() => {
     const tabFromUrl = searchParams.get("tab");
@@ -93,6 +94,8 @@ const Index = () => {
 
   const renderContent = () => {
     switch (activeTab) {
+      case "overview":
+        return <DashboardOverview onNavigateToTab={handleTabChange} />;
       case "search":
         return <SearchCompanies onNavigateToTab={handleTabChange} />;
       case "entreprises":
@@ -100,11 +103,9 @@ const Index = () => {
       case "jobs":
         return <JobOffers />;
       case "emails":
-        // Use React state for emailsSection instead of reading sessionStorage directly
         if (emailsSection === 'search') {
           return <ContactSearch onNavigateToTab={handleTabChange} />;
         }
-        // Default to send/campaign view
         return <UnifiedEmailSender />;
       case "campaigns":
         return <CampaignsHub />;
@@ -113,7 +114,7 @@ const Index = () => {
       case "settings":
         return <Settings />;
       default:
-        return <SearchCompanies onNavigateToTab={handleTabChange} />;
+        return <DashboardOverview onNavigateToTab={handleTabChange} />;
     }
   };
 
