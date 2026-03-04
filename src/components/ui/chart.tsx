@@ -91,14 +91,20 @@ const ChartTooltip = RechartsPrimitive.Tooltip;
 
 const ChartTooltipContent = React.forwardRef<
   HTMLDivElement,
-  React.ComponentProps<typeof RechartsPrimitive.Tooltip> &
-    React.ComponentProps<"div"> & {
-      hideLabel?: boolean;
-      hideIndicator?: boolean;
-      indicator?: "line" | "dot" | "dashed";
-      nameKey?: string;
-      labelKey?: string;
-    }
+  React.ComponentProps<"div"> & {
+    active?: boolean;
+    payload?: Array<{ dataKey?: string; name?: string; value?: number; color?: string; fill?: string; payload?: Record<string, unknown> }>;
+    label?: string;
+    labelFormatter?: (label: string, payload: unknown[]) => React.ReactNode;
+    formatter?: (value: unknown, name: string, item: unknown, index: number, payload: unknown) => React.ReactNode;
+    hideLabel?: boolean;
+    hideIndicator?: boolean;
+    indicator?: "line" | "dot" | "dashed";
+    nameKey?: string;
+    labelKey?: string;
+    color?: string;
+    labelClassName?: string;
+  }
 >(
   (
     {
@@ -134,7 +140,7 @@ const ChartTooltipContent = React.forwardRef<
           : itemConfig?.label;
 
       if (labelFormatter) {
-        return <div className={cn("font-medium", labelClassName)}>{labelFormatter(value, payload)}</div>;
+        return <div className={cn("font-medium", labelClassName)}>{labelFormatter(String(value ?? ""), payload)}</div>;
       }
 
       if (!value) {
@@ -229,11 +235,12 @@ const ChartLegend = RechartsPrimitive.Legend;
 
 const ChartLegendContent = React.forwardRef<
   HTMLDivElement,
-  React.ComponentProps<"div"> &
-    Pick<RechartsPrimitive.LegendProps, "payload" | "verticalAlign"> & {
-      hideIcon?: boolean;
-      nameKey?: string;
-    }
+  React.ComponentProps<"div"> & {
+    payload?: Array<{ dataKey?: string; value?: string; type?: string; color?: string }>;
+    verticalAlign?: "top" | "bottom" | "middle";
+    hideIcon?: boolean;
+    nameKey?: string;
+  }
 >(({ className, hideIcon = false, payload, verticalAlign = "bottom", nameKey }, ref) => {
   const { config } = useChart();
 
