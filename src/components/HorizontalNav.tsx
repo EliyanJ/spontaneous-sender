@@ -146,14 +146,8 @@ export const HorizontalNav = ({ activeTab, onTabChange }: HorizontalNavProps) =>
         </Tooltip>
       ) : (
         <button
-          onClick={() => handleTabClick('jobs')}
-          className={cn(
-            "flex items-center gap-2 px-3 md:px-4 py-2 md:py-2.5 rounded-xl font-medium text-sm transition-all duration-300 shrink-0",
-            activeTab === 'jobs' 
-              ? "bg-primary text-primary-foreground shadow-lg" 
-              : "text-muted-foreground hover:text-foreground hover:bg-accent"
-          )}
-          style={activeTab === 'jobs' ? { boxShadow: '0 0 20px hsl(var(--primary) / 0.3)' } : {}}
+          onClick={() => navigate('/offres-emploi')}
+          className="flex items-center gap-2 px-3 md:px-4 py-2 md:py-2.5 rounded-xl font-medium text-sm transition-all duration-300 shrink-0 text-muted-foreground hover:text-foreground hover:bg-accent"
         >
           <Briefcase className="h-4 w-4" />
           <span className="hidden lg:inline">Offres</span>
