@@ -16,7 +16,7 @@ import {
 import { cn } from "@/lib/utils";
 import logoTransparent from "@/assets/logo-transparent.png";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { useState, useEffect } from "react";
+
 
 const adminNavItems = [
   { title: "Dashboard", icon: LayoutDashboard, path: "/admin" },
@@ -33,15 +33,6 @@ const adminNavItems = [
 
 export const AdminLayout = () => {
   const navigate = useNavigate();
-  const [isDark, setIsDark] = useState(true);
-
-  useEffect(() => {
-    if (isDark) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-  }, [isDark]);
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -87,7 +78,7 @@ export const AdminLayout = () => {
           </nav>
 
           {/* Theme Toggle */}
-          <ThemeToggle isDark={isDark} onToggle={() => setIsDark(!isDark)} />
+          <ThemeToggle />
         </div>
       </header>
 

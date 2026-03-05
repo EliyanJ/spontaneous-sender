@@ -2,8 +2,9 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import { 
   Search, Building2, Briefcase, Send, Shield, 
-  Menu, Moon, Sun, FileBarChart, FileText, FilePlus, MessageSquare
+  Menu, FileBarChart, FileText
 } from "lucide-react";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { cn } from "@/lib/utils";
 import { useAdminCheck } from "@/hooks/useAdminCheck";
 import { usePlanFeatures } from "@/hooks/usePlanFeatures";
@@ -55,11 +56,9 @@ const menuGroups = [
 interface MobileNavProps {
   activeTab: string;
   onTabChange: (value: string, section?: string) => void;
-  isDark: boolean;
-  onToggleTheme: () => void;
 }
 
-export const MobileNav = ({ activeTab, onTabChange, isDark, onToggleTheme }: MobileNavProps) => {
+export const MobileNav = ({ activeTab, onTabChange }: MobileNavProps) => {
   const navigate = useNavigate();
   const { isAdmin } = useAdminCheck();
   const { features } = usePlanFeatures();
@@ -194,22 +193,9 @@ export const MobileNav = ({ activeTab, onTabChange, isDark, onToggleTheme }: Mob
 
         {/* Theme toggle at bottom */}
         <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-border/50">
-          <button
-            onClick={onToggleTheme}
-            className="flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm transition-all duration-200 w-full text-left text-muted-foreground hover:text-foreground hover:bg-accent"
-          >
-            {isDark ? (
-              <>
-                <Sun className="h-5 w-5 shrink-0" />
-                <span>Mode clair</span>
-              </>
-            ) : (
-              <>
-                <Moon className="h-5 w-5 shrink-0" />
-                <span>Mode sombre</span>
-              </>
-            )}
-          </button>
+          <div className="flex items-center gap-3 px-4 py-3">
+            <ThemeToggle />
+          </div>
         </div>
       </SheetContent>
     </Sheet>

@@ -1,18 +1,17 @@
 import React from "react";
 import { Moon, Sun } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useTheme } from "next-themes";
 
-interface ThemeToggleProps {
-  isDark: boolean;
-  onToggle: () => void;
-}
+export const ThemeToggle = () => {
+  const { theme, setTheme } = useTheme();
+  const isDark = theme === "dark";
 
-export const ThemeToggle = ({ isDark, onToggle }: ThemeToggleProps) => {
   return (
     <Button
       variant="ghost"
       size="icon"
-      onClick={onToggle}
+      onClick={() => setTheme(isDark ? "light" : "dark")}
       className="relative overflow-hidden rounded-full w-10 h-10 transition-all duration-300 hover:bg-accent"
     >
       <Sun 

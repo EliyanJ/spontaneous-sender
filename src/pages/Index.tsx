@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+// isDark/setIsDark removed — theme is fully managed by next-themes via ThemeToggle
 import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -26,7 +27,6 @@ const Index = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState("overview");
   const [emailsSection, setEmailsSection] = useState<string | null>(null);
-  const [isDark, setIsDark] = useState(true);
   const [slideDirection, setSlideDirection] = useState<"left" | "right">("right");
   const prevTabRef = useRef(activeTab);
   const isMobile = useIsMobile();
@@ -67,14 +67,6 @@ const Index = () => {
   // We intentionally do not store any Gmail/provider tokens on regular app login to keep the flows separated.
 
 
-  // Theme toggle
-  useEffect(() => {
-    if (isDark) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-  }, [isDark]);
 
   const handleTabChange = (newTab: string, section?: string) => {
     const currentIndex = tabOrder.indexOf(activeTab);
@@ -128,8 +120,6 @@ const Index = () => {
             <MobileNav 
               activeTab={activeTab} 
               onTabChange={handleTabChange} 
-              isDark={isDark}
-              onToggleTheme={() => setIsDark(!isDark)}
             />
           )}
 
@@ -169,7 +159,7 @@ const Index = () => {
               >
                 <SettingsIcon className="h-4 w-4" />
               </button>
-              <ThemeToggle isDark={isDark} onToggle={() => setIsDark(!isDark)} />
+              <ThemeToggle />
             </div>
           )}
         </div>
