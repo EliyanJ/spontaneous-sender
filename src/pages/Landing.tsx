@@ -2,8 +2,6 @@ import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { 
   ArrowRight, 
-  Moon, 
-  Sun, 
   GraduationCap, 
   Briefcase, 
   Award, 
@@ -15,11 +13,7 @@ import {
   Check,
   X,
   Zap,
-  Clock,
   Play,
-  Gift,
-  Rocket,
-  Crown,
   Flag
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -56,160 +50,202 @@ const Landing = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background relative overflow-hidden">
-      {/* Background Gradients */}
-      <div className="fixed inset-0 z-0 pointer-events-none">
-        <div className="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] bg-primary/10 rounded-full blur-[120px] animate-float" />
-        <div className="absolute -bottom-[10%] -right-[10%] w-[40%] h-[40%] bg-[hsl(260_60%_45%/0.15)] rounded-full blur-[120px] animate-float" style={{ animationDelay: '2s' }} />
-        <div className="absolute top-[40%] left-[50%] -translate-x-1/2 -translate-y-1/2 w-[30%] h-[30%] bg-success/5 rounded-full blur-[100px]" />
+    <div className="min-h-screen bg-white relative overflow-hidden">
+      {/* Subtle background */}
+      <div className="fixed inset-0 z-0 pointer-events-none bg-gradient-to-br from-gray-50 via-white to-purple-50">
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-[100px]" />
+        <div className="absolute bottom-0 right-0 w-[500px] h-[500px] bg-indigo-200/20 rounded-full blur-[120px]" />
+        {/* Grid pattern */}
+        <div className="absolute inset-0 opacity-40" style={{
+          backgroundSize: '40px 40px',
+          backgroundImage: 'linear-gradient(to right, hsl(263 75% 58% / 0.05) 1px, transparent 1px), linear-gradient(to bottom, hsl(263 75% 58% / 0.05) 1px, transparent 1px)'
+        }} />
       </div>
 
       <div className="relative z-10">
-        {/* Header - fixed */}
-        <header className="fixed top-0 left-0 right-0 z-50 glass border-b border-border/30">
+        {/* Header */}
+        <header className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-b border-gray-200 transition-all duration-300">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between items-center h-20">
-              <div className="flex items-center gap-3">
-                <img src={logoTransparent} alt="Cronos" className="h-10 w-auto" />
-                <span className="text-2xl font-bold tracking-tight text-foreground font-display">Cronos</span>
+              {/* Logo */}
+              <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate('/')}>
+                <img src={logoTransparent} alt="Cronos" className="h-9 w-auto" />
+                <span className="text-2xl font-bold tracking-tight text-gray-900 font-display">Cronos</span>
               </div>
 
+              {/* Nav */}
               <nav className="hidden md:flex items-center gap-8">
-                <button onClick={() => navigate('/dashboard?tab=cv-score')} className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Comparatif de CV</button>
-                <button onClick={() => navigate('/cv-builder')} className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Création de CV</button>
-                <button onClick={() => navigate('/dashboard?tab=cv-advice')} className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Conseil personnalisé</button>
-                <button onClick={() => navigate('/offres-emploi')} className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Offres d'emploi</button>
+                <button onClick={() => scrollToSection('how-it-works')} className="text-sm font-medium text-gray-600 hover:text-gray-900 hover:text-primary transition-colors">Comment ça marche</button>
+                <button onClick={() => scrollToSection('features')} className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors">Fonctionnalités</button>
+                <button onClick={() => scrollToSection('pricing')} className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors">Tarifs</button>
+                <button onClick={() => navigate('/offres-emploi')} className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors">Offres d'emploi</button>
               </nav>
 
+              {/* Actions */}
               <div className="hidden md:flex items-center gap-4">
-                <Button variant="ghost" size="icon" onClick={() => setIsDark(!isDark)} className="rounded-full">
-                  {isDark ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
+                <Button variant="ghost" size="sm" onClick={() => navigate("/login")} className="text-sm font-medium text-gray-600 hover:text-gray-900">
+                  Se connecter
                 </Button>
-                <Button variant="ghost" size="sm" onClick={() => navigate("/login")} className="text-muted-foreground hover:text-foreground">Se connecter</Button>
-                <Button size="sm" onClick={() => navigate("/login")} className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-full px-5 shadow-lg shadow-primary/20">Commencer</Button>
+                <Button size="sm" onClick={() => navigate("/login")} className="bg-primary hover:bg-primary/90 text-primary-foreground px-5 py-2.5 rounded-lg shadow-lg shadow-primary/20 font-medium text-sm">
+                  Commencer gratuitement
+                </Button>
               </div>
 
+              {/* Mobile */}
               <div className="md:hidden flex items-center gap-2">
-                <Button variant="ghost" size="icon" onClick={() => setIsDark(!isDark)} className="rounded-full">
-                  {isDark ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
+                <Button size="sm" onClick={() => navigate("/login")} className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg px-4 text-xs">
+                  Commencer
                 </Button>
-                <Button size="sm" onClick={() => navigate("/login")} className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-full px-4 text-xs">Commencer</Button>
               </div>
             </div>
           </div>
         </header>
 
         <main className="pt-20">
-          {/* Hero Section */}
-          <section className="relative pt-20 pb-32 overflow-hidden">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-card/60 border border-border/50 mb-8 animate-fade-in">
-                <span className="flex h-2 w-2 rounded-full bg-success" />
-                <span className="text-sm font-medium text-success">Nouveau : IA générative v2.0 disponible</span>
-              </div>
+          {/* Hero Section - 2 colonnes */}
+          <section className="relative pt-16 pb-24 lg:pt-24 lg:pb-32 overflow-hidden min-h-[800px] flex items-center">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full relative z-10">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
 
-              <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight text-foreground mb-6 leading-tight font-display animate-fade-in" style={{ animationDelay: '0.1s' }}>
-                Trouve ton stage, ton alternance <br className="hidden md:block" />
-                ou ton premier job — <span className="gradient-text">plus vite.</span>
-              </h1>
-              
-              <p className="mt-6 max-w-2xl mx-auto text-xl text-muted-foreground mb-10 animate-fade-in" style={{ animationDelay: '0.2s' }}>
-                Cronos automatise les candidatures spontanées : trouve les bonnes entreprises, récupère les contacts RH et envoie des emails personnalisés générés par IA.
-              </p>
-              
-              <p className="text-lg font-medium text-primary mb-8 animate-fade-in" style={{ animationDelay: '0.25s' }}>
-                Moins de stress. Plus d'opportunités.
-              </p>
-
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12 animate-fade-in" style={{ animationDelay: '0.3s' }}>
-                <Button 
-                  size="lg" 
-                  onClick={() => navigate("/login")}
-                  className="w-full sm:w-auto px-8 h-14 bg-gradient-to-r from-primary to-[hsl(260_60%_55%)] hover:from-primary/90 hover:to-[hsl(260_60%_50%)] text-primary-foreground text-lg font-bold rounded-full shadow-[0_0_20px_hsl(var(--primary)/0.5)] hover:shadow-[0_0_30px_hsl(var(--primary)/0.7)] transition-all hover:scale-[1.02] active:scale-95"
-                >
-                  Commencer gratuitement
-                </Button>
-                <Button 
-                  size="lg" 
-                  variant="outline"
-                  onClick={() => navigate('/login')}
-                  className="w-full sm:w-auto px-8 h-14 bg-card/30 border-border/50 text-foreground text-lg font-semibold rounded-full backdrop-blur-sm hover:bg-card/50"
-                >
-                  <Play className="mr-2 h-4 w-4 text-primary" />
-                  Voir la démo
-                </Button>
-              </div>
-
-              <div className="flex flex-wrap justify-center items-center gap-6 sm:gap-12 text-muted-foreground text-sm font-medium animate-fade-in" style={{ animationDelay: '0.4s' }}>
-                <div className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-success" /> Gratuit pour démarrer
-                </div>
-                <div className="flex items-center gap-2">
-                  <Flag className="h-4 w-4 text-primary" /> 100% français
-                </div>
-                <div className="flex items-center gap-2">
-                  <Zap className="h-4 w-4 text-warning" /> Gain de temps immédiat
-                </div>
-              </div>
-            </div>
-
-            {/* Hero Dashboard Mockup */}
-            <div className="relative mt-16 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 animate-fade-in" style={{ animationDelay: '0.5s' }}>
-              <div className="relative rounded-xl bg-background border border-border/50 shadow-2xl overflow-hidden aspect-[16/9] md:aspect-[21/9]">
-                <div className="absolute inset-0 bg-gradient-to-b from-primary/5 to-transparent pointer-events-none" />
-                {/* Browser bar */}
-                <div className="h-10 bg-card border-b border-border/50 flex items-center px-4 gap-2">
-                  <div className="w-3 h-3 rounded-full bg-destructive" />
-                  <div className="w-3 h-3 rounded-full bg-warning" />
-                  <div className="w-3 h-3 rounded-full bg-success" />
-                  <div className="ml-4 w-64 h-5 bg-muted/50 rounded-md" />
-                </div>
-                {/* Mockup Content */}
-                <div className="p-6 grid grid-cols-12 gap-6 h-full bg-background/90">
-                  {/* Sidebar */}
-                  <div className="col-span-2 hidden md:flex flex-col gap-4 border-r border-border/30 pr-4">
-                    <div className="h-8 w-full bg-card rounded-md" />
-                    <div className="h-8 w-full bg-primary/20 border border-primary/30 rounded-md" />
-                    <div className="h-8 w-full bg-card/50 rounded-md" />
-                    <div className="h-8 w-full bg-card/50 rounded-md" />
+                {/* Colonne gauche - texte */}
+                <div className="text-left">
+                  <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-semibold mb-6 uppercase tracking-wider animate-fade-in">
+                    <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                    Nouvelle IA Générative 2.0
                   </div>
-                  {/* Main */}
-                  <div className="col-span-12 md:col-span-10 flex flex-col gap-6">
-                    <div className="flex justify-between items-center">
-                      <div className="h-8 w-48 bg-card rounded-md" />
-                      <div className="h-8 w-32 bg-primary rounded-md" />
-                    </div>
-                    <div className="grid grid-cols-3 gap-4">
-                      {[
-                        { color: 'bg-success/20' },
-                        { color: 'bg-primary/20' },
-                        { color: 'bg-[hsl(260_60%_55%/0.2)]' },
-                      ].map((item, i) => (
-                        <div key={i} className="h-32 bg-card/50 border border-border/30 rounded-lg p-4">
-                          <div className={`w-8 h-8 rounded-full ${item.color} mb-3`} />
-                          <div className="h-4 w-24 bg-muted rounded mb-2" />
-                          <div className="h-8 w-16 bg-muted/60 rounded" />
+
+                  <h1 className="text-5xl lg:text-7xl font-bold text-gray-900 mb-6 leading-tight font-display animate-fade-in" style={{ animationDelay: '0.1s' }}>
+                    Trouve ton contrat<br />
+                    <span className="bg-gradient-to-r from-primary to-[hsl(260_60%_45%)] bg-clip-text text-transparent">Plus vite</span>
+                  </h1>
+
+                  <p className="text-lg text-gray-600 mb-10 leading-relaxed max-w-xl animate-fade-in" style={{ animationDelay: '0.2s' }}>
+                    Accélérez votre recherche d'emploi avec Cronos. Générez des lettres de motivation personnalisées par IA, automatisez vos candidatures spontanées et suivez vos relances depuis un dashboard unique.
+                  </p>
+
+                  <div className="flex flex-col sm:flex-row gap-4 animate-fade-in" style={{ animationDelay: '0.3s' }}>
+                    <Button
+                      size="lg"
+                      onClick={() => navigate("/login")}
+                      className="px-8 py-4 h-auto bg-primary hover:bg-primary/90 text-primary-foreground text-lg font-semibold rounded-xl shadow-lg shadow-primary/30 flex items-center gap-2"
+                    >
+                      Créer un compte gratuit <ArrowRight className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      size="lg"
+                      variant="outline"
+                      onClick={() => navigate('/login')}
+                      className="px-8 py-4 h-auto bg-white border-gray-200 text-gray-900 text-lg font-medium rounded-xl hover:bg-gray-50 flex items-center gap-2"
+                    >
+                      <Play className="h-4 w-4 text-primary" /> Voir la démo
+                    </Button>
+                  </div>
+
+                  <div className="mt-10 flex items-center gap-4 text-sm text-gray-600 animate-fade-in" style={{ animationDelay: '0.4s' }}>
+                    <div className="flex -space-x-2">
+                      {['bg-blue-400', 'bg-purple-400', 'bg-green-400'].map((c, i) => (
+                        <div key={i} className={`w-8 h-8 rounded-full ${c} border-2 border-white flex items-center justify-center text-white text-xs font-bold`}>
+                          {['A', 'B', 'C'][i]}
                         </div>
                       ))}
                     </div>
-                    <div className="flex-1 bg-card/30 border border-border/30 rounded-lg p-4">
-                      <div className="space-y-3">
-                        <div className="h-12 w-full bg-card rounded flex items-center px-4 justify-between border-l-4 border-success">
-                          <div className="w-1/3 h-3 bg-muted rounded" />
-                          <div className="px-3 py-1 bg-success/20 text-success text-xs rounded-full">Envoyé</div>
+                    <p><span className="text-gray-900 font-semibold">+10 000</span> entreprises prêtes à être candidatées</p>
+                  </div>
+                </div>
+
+                {/* Colonne droite - Dashboard mockup */}
+                <div className="relative group animate-fade-in" style={{ animationDelay: '0.5s' }}>
+                  <div className="absolute -inset-4 bg-gradient-to-r from-primary/20 to-indigo-400/20 rounded-2xl blur-2xl opacity-60 group-hover:opacity-80 transition-opacity duration-500" />
+
+                  <div className="relative bg-white rounded-2xl p-2 border border-gray-200 shadow-2xl">
+                    {/* Browser bar */}
+                    <div className="h-8 bg-gray-100 rounded-t-xl flex items-center px-4 gap-2 border-b border-gray-200">
+                      <div className="w-3 h-3 rounded-full bg-red-400" />
+                      <div className="w-3 h-3 rounded-full bg-yellow-400" />
+                      <div className="w-3 h-3 rounded-full bg-green-400" />
+                      <div className="ml-4 bg-gray-200 px-3 py-0.5 rounded text-[10px] text-gray-600 font-mono">cronos.app/dashboard</div>
+                    </div>
+
+                    {/* Dashboard content */}
+                    <div className="bg-gray-50 p-5 rounded-b-xl">
+                      {/* Header dashboard */}
+                      <div className="flex justify-between items-center mb-5">
+                        <div>
+                          <h3 className="text-xl font-bold text-gray-900">Bonjour 👋</h3>
+                          <p className="text-gray-500 text-xs">Votre recherche est en bonne voie.</p>
                         </div>
-                        <div className="h-12 w-full bg-card rounded flex items-center px-4 justify-between border-l-4 border-primary">
-                          <div className="w-1/3 h-3 bg-muted rounded" />
-                          <div className="px-3 py-1 bg-primary/20 text-primary text-xs rounded-full">Réponse</div>
+                        <button className="bg-primary text-white px-3 py-1.5 rounded-lg text-xs font-medium shadow-lg shadow-primary/20 flex items-center gap-1.5">
+                          <Send className="h-3 w-3" /> Nouvelle campagne
+                        </button>
+                      </div>
+
+                      {/* KPI Cards */}
+                      <div className="grid grid-cols-4 gap-3 mb-4">
+                        {[
+                          { label: 'Emails trouvés', value: '28', badge: '+8.2%', badgeColor: 'text-green-600 bg-green-50', barColor: 'bg-blue-500', barW: '45%', iconBg: 'bg-blue-50', iconColor: 'text-blue-600' },
+                          { label: 'CV générés', value: '14', badge: '+12.5%', badgeColor: 'text-green-600 bg-green-50', barColor: 'bg-purple-500', barW: '30%', iconBg: 'bg-purple-50', iconColor: 'text-purple-600' },
+                          { label: 'Candidatures', value: '28', badge: '0.0%', badgeColor: 'text-gray-600 bg-gray-100', barColor: 'bg-orange-500', barW: '45%', iconBg: 'bg-orange-50', iconColor: 'text-orange-600' },
+                          { label: 'Crédits restants', value: '5', badge: '-2.1%', badgeColor: 'text-red-600 bg-red-50', barColor: 'bg-red-500', barW: '15%', iconBg: 'bg-red-50', iconColor: 'text-red-600' },
+                        ].map((kpi, i) => (
+                          <div key={i} className="bg-white p-3 rounded-xl border border-gray-200 shadow-sm">
+                            <div className="flex justify-between items-start mb-2">
+                              <div className={`w-7 h-7 rounded-lg ${kpi.iconBg} flex items-center justify-center ${kpi.iconColor}`}>
+                                <BarChart3 className="h-3.5 w-3.5" />
+                              </div>
+                              <span className={`text-[10px] ${kpi.badgeColor} px-1.5 py-0.5 rounded font-medium`}>{kpi.badge}</span>
+                            </div>
+                            <p className="text-gray-500 text-[10px] mb-0.5">{kpi.label}</p>
+                            <p className="text-xl font-bold text-gray-900">{kpi.value}</p>
+                            <div className="w-full bg-gray-200 h-1 mt-2 rounded-full overflow-hidden">
+                              <div className={`${kpi.barColor} h-full rounded-full`} style={{ width: kpi.barW }} />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Bottom charts */}
+                      <div className="grid grid-cols-3 gap-3">
+                        {/* Performance chart */}
+                        <div className="col-span-2 bg-white rounded-xl border border-gray-200 p-3">
+                          <div className="flex justify-between items-center mb-2">
+                            <h4 className="text-xs font-semibold text-gray-900">Performance de recherche</h4>
+                            <span className="text-[10px] px-2 py-0.5 bg-gray-100 rounded text-gray-600 border border-gray-300">Semaine</span>
+                          </div>
+                          <svg className="w-full h-16" viewBox="0 0 300 60" fill="none">
+                            <path d="M0 52 C 40 45, 80 30, 120 34 C 160 38, 200 22, 240 15 L 300 8" stroke="hsl(263 75% 58%)" strokeWidth="2" fill="none"/>
+                            <path d="M0 56 C 50 52, 100 49, 150 45 C 200 41, 250 34, 300 30" stroke="#10b981" strokeWidth="2" fill="none"/>
+                            <path d="M0 52 C 40 45, 80 30, 120 34 C 160 38, 200 22, 240 15 L 300 8 V 60 H 0 Z" fill="url(#heroGrad)" fillOpacity="0.15"/>
+                            <defs>
+                              <linearGradient id="heroGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                                <stop offset="0%" stopColor="hsl(263 75% 58%)" stopOpacity="1" />
+                                <stop offset="100%" stopColor="hsl(263 75% 58%)" stopOpacity="0" />
+                              </linearGradient>
+                            </defs>
+                          </svg>
+                          <div className="flex justify-between text-[9px] text-gray-400 mt-1">
+                            <span>Lun</span><span>Mer</span><span>Ven</span><span>Dim</span>
+                          </div>
                         </div>
-                        <div className="h-12 w-full bg-card rounded flex items-center px-4 justify-between border-l-4 border-muted-foreground/30">
-                          <div className="w-1/3 h-3 bg-muted rounded" />
-                          <div className="px-3 py-1 bg-muted text-muted-foreground text-xs rounded-full">En attente</div>
+
+                        {/* Score CV */}
+                        <div className="col-span-1 bg-white rounded-xl border border-gray-200 p-3 flex flex-col items-center justify-center relative">
+                          <h4 className="text-[10px] font-semibold text-gray-900 absolute top-3 left-3">Score CV</h4>
+                          <div className="relative w-16 h-16 flex items-center justify-center">
+                            <svg className="w-full h-full -rotate-90" viewBox="0 0 80 80">
+                              <circle cx="40" cy="40" r="30" stroke="#e5e7eb" strokeWidth="6" fill="transparent" />
+                              <circle cx="40" cy="40" r="30" stroke="#fbbf24" strokeWidth="6" fill="transparent" strokeDasharray="188" strokeDashoffset="47" strokeLinecap="round" />
+                            </svg>
+                            <div className="absolute text-center">
+                              <span className="text-lg font-bold text-gray-900 block leading-none">72</span>
+                              <span className="text-[8px] text-gray-500 uppercase">Bien</span>
+                            </div>
+                          </div>
                         </div>
                       </div>
                     </div>
                   </div>
                 </div>
+
               </div>
             </div>
           </section>
