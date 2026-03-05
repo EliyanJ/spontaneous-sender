@@ -233,11 +233,21 @@ export const JobOffersPublic = () => {
 
   const isFavorite = (id: string) => favorites.some(f => f.id === id);
 
+  const [showAllOffers, setShowAllOffers] = useState(false);
+  const allOffersRef = useRef<HTMLDivElement>(null);
+
   const displayedOffers = showFavorites ? favorites : offers;
   const totalPages = Math.ceil(displayedOffers.length / PAGE_SIZE);
   const paginatedOffers = displayedOffers.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
   // Latest 3 offers for the hero section
   const latestOffers = offers.slice(0, 3);
+
+  const handleShowAllOffers = () => {
+    setShowAllOffers(true);
+    setTimeout(() => {
+      allOffersRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
+  };
 
   return (
     <div className="min-h-screen bg-background">
