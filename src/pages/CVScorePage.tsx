@@ -90,8 +90,7 @@ export const CVScorePage = () => {
       <nav className="sticky top-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-xl">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-between h-14">
           <Link to="/" className="flex items-center gap-2">
-            <img src={logoTransparent} alt="Cronos" className="h-7 w-auto" />
-            <span className="font-bold text-foreground">Cronos</span>
+            <img src={logoBlack} alt="Cronos" className="h-7 w-auto" />
           </Link>
           <div className="flex items-center gap-3">
             <Link to="/pricing" className="text-sm text-muted-foreground hover:text-foreground transition-colors hidden sm:block">Tarifs</Link>
@@ -227,7 +226,7 @@ export const CVScorePage = () => {
       <footer className="border-t border-border/30 bg-card/30 py-8 px-4">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
-            <img src={logoTransparent} alt="Cronos" className="h-6 w-auto opacity-70" />
+            <img src={logoBlack} alt="Cronos" className="h-6 w-auto opacity-70" />
             <span className="text-sm text-muted-foreground">© 2026 Cronos</span>
           </div>
           <div className="flex gap-5 text-sm text-muted-foreground">
