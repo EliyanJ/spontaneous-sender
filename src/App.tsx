@@ -54,6 +54,7 @@ import Blog from "./pages/Blog";
 const queryClient = new QueryClient();
 
 const App = () => (
+  <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
   <QueryClientProvider client={queryClient}>
     <BrowserRouter>
       <TooltipProvider>
