@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { ArrowRight, BookOpen, Clock, Tag } from "lucide-react";
-import logoTransparent from "@/assets/logo-transparent.png";
+import logoBlack from "@/assets/logo-black.png";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 
@@ -67,10 +67,7 @@ export default function Blog() {
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center gap-8">
               <div className="flex items-center gap-2 cursor-pointer flex-shrink-0" onClick={() => navigate('/')}>
-                <img src={logoTransparent} alt="GetCronos" className="h-8 w-auto" />
-                <span className="font-bold text-lg tracking-tight text-foreground hidden sm:inline">
-                  Get<span className="text-primary">Cronos</span>
-                </span>
+                <img src={logoBlack} alt="Cronos" className="h-8 w-auto" />
               </div>
               <nav className="hidden lg:flex items-center gap-7">
                 <button onClick={() => navigate('/score-cv')} className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">Comparatif de CV</button>
@@ -176,8 +173,7 @@ export default function Blog() {
         <footer className="bg-card border-t border-border py-8">
           <div className="max-w-5xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-3">
             <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate('/')}>
-              <img src={logoTransparent} alt="GetCronos" className="h-6 w-auto" />
-              <span className="font-bold text-sm text-foreground">Get<span className="text-primary">Cronos</span></span>
+              <img src={logoBlack} alt="Cronos" className="h-6 w-auto" />
             </div>
             <p className="text-xs text-muted-foreground">© 2025 GetCronos. Tous droits réservés.</p>
           </div>
