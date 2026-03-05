@@ -120,8 +120,6 @@ const Index = () => {
             <MobileNav 
               activeTab={activeTab} 
               onTabChange={handleTabChange} 
-              isDark={isDark}
-              onToggleTheme={() => setIsDark(!isDark)}
             />
           )}
 
@@ -161,7 +159,7 @@ const Index = () => {
               >
                 <SettingsIcon className="h-4 w-4" />
               </button>
-              <ThemeToggle isDark={isDark} onToggle={() => setIsDark(!isDark)} />
+              <ThemeToggle />
             </div>
           )}
         </div>
