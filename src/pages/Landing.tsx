@@ -76,7 +76,7 @@ const Landing = () => {
               {/* Nav */}
               <nav className="hidden md:flex items-center gap-8">
                 <button onClick={() => scrollToSection('how-it-works')} className="text-sm font-medium text-gray-600 hover:text-gray-900 hover:text-primary transition-colors">Comment ça marche</button>
-                <button onClick={() => scrollToSection('features')} className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors">Fonctionnalités</button>
+                <button onClick={() => navigate('/blog')} className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors">Conseil personnalisé</button>
                 <button onClick={() => scrollToSection('pricing')} className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors">Tarifs</button>
                 <button onClick={() => navigate('/offres-emploi')} className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors">Offres d'emploi</button>
               </nav>
