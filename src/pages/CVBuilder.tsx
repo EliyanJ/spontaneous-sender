@@ -12,7 +12,7 @@ import { CVBuilderForm } from "@/components/cv-builder/CVBuilderForm";
 import { CVPreview } from "@/components/cv-builder/CVPreview";
 import { emptyCVData, CV_TEMPLATES, type CVData, type CVDesignOptions, type TemplateId } from "@/lib/cv-templates";
 import { useAuth } from "@/hooks/useAuth";
-import logoTransparent from "@/assets/logo-transparent.png";
+import logoBlack from "@/assets/logo-black.png";
 
 const SECTORS = [
   { value: "finance", label: "Finance & Corporate" },
