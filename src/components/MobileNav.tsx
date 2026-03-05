@@ -193,22 +193,9 @@ export const MobileNav = ({ activeTab, onTabChange }: MobileNavProps) => {
 
         {/* Theme toggle at bottom */}
         <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-border/50">
-          <button
-            onClick={onToggleTheme}
-            className="flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm transition-all duration-200 w-full text-left text-muted-foreground hover:text-foreground hover:bg-accent"
-          >
-            {isDark ? (
-              <>
-                <Sun className="h-5 w-5 shrink-0" />
-                <span>Mode clair</span>
-              </>
-            ) : (
-              <>
-                <Moon className="h-5 w-5 shrink-0" />
-                <span>Mode sombre</span>
-              </>
-            )}
-          </button>
+          <div className="flex items-center gap-3 px-4 py-3">
+            <ThemeToggle />
+          </div>
         </div>
       </SheetContent>
     </Sheet>

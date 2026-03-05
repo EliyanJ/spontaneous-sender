@@ -78,7 +78,7 @@ export const AdminLayout = () => {
           </nav>
 
           {/* Theme Toggle */}
-          <ThemeToggle isDark={isDark} onToggle={() => setIsDark(!isDark)} />
+          <ThemeToggle />
         </div>
       </header>
 
