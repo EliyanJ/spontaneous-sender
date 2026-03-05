@@ -282,7 +282,7 @@ const CVBuilder = () => {
         <header className="sticky top-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-xl">
           <div className="container mx-auto px-4 h-14 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <Button variant="ghost" size="sm" onClick={() => navigate("/dashboard")} className="gap-1.5">
+              <Button variant="ghost" size="sm" onClick={() => user ? navigate("/dashboard") : navigate("/")} className="gap-1.5">
                 <ArrowLeft className="h-4 w-4" />
                 Retour
               </Button>
