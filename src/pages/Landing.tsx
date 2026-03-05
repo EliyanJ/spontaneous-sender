@@ -84,7 +84,7 @@ const Landing = () => {
               {/* Actions */}
               <div className="hidden md:flex items-center gap-4">
                 <Button size="sm" onClick={() => navigate("/login")} className="bg-primary hover:bg-primary/90 text-primary-foreground px-5 py-2.5 rounded-lg shadow-lg shadow-primary/20 font-medium text-sm">
-                  Commencer gratuitement
+                  Commencer
                 </Button>
               </div>
 
