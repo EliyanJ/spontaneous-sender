@@ -21,7 +21,7 @@ import { CreditsDisplay } from "@/components/CreditsDisplay";
 import { ProfileDropdown } from "@/components/ProfileDropdown";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
-import logoTransparent from "@/assets/logo-transparent.png";
+import logoBlack from "@/assets/logo-black.png";
 
 const Index = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -125,7 +125,7 @@ const Index = () => {
 
           {/* Logo - hidden on mobile to make room for navigation */}
           <div className="hidden sm:flex items-center gap-2 shrink-0">
-            <img src={logoTransparent} alt="Cronos" className="h-7 w-auto sm:h-8" />
+            <img src={logoBlack} alt="Cronos" className="h-7 w-auto sm:h-8" />
             <span className="font-semibold text-foreground hidden sm:inline">Cronos</span>
           </div>
           
@@ -133,7 +133,7 @@ const Index = () => {
           {isMobile && (
             <div className="flex items-center gap-2">
               <CreditsDisplay />
-              <img src={logoTransparent} alt="Cronos" className="h-7 w-auto" />
+              <img src={logoBlack} alt="Cronos" className="h-7 w-auto" />
             </div>
           )}
 
@@ -180,7 +180,7 @@ const Index = () => {
         <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4">
           <div className="flex flex-col items-center gap-2 sm:gap-4">
             <div className="flex items-center gap-2">
-              <img src={logoTransparent} alt="Cronos" className="h-4 w-auto sm:h-5" />
+              <img src={logoBlack} alt="Cronos" className="h-4 w-auto sm:h-5" />
               <span className="font-display font-semibold text-foreground text-sm sm:text-base hidden sm:inline">Cronos</span>
             </div>
             <div className="flex flex-wrap justify-center gap-2 sm:gap-4 md:gap-6 text-[10px] sm:text-sm text-muted-foreground">
