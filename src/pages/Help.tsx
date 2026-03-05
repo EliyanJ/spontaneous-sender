@@ -11,7 +11,7 @@ const Help = () => {
       <header className="border-b border-border/50">
         <div className="container mx-auto px-6 py-4 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-3">
-            <img src={logoTransparent} alt="Cronos" className="h-8 w-auto" />
+            <img src={logoBlack} alt="Cronos" className="h-8 w-auto" />
             <span className="font-display text-lg font-bold text-foreground">Cronos</span>
           </Link>
           <Button variant="ghost" size="sm" asChild>

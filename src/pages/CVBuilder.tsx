@@ -287,7 +287,7 @@ const CVBuilder = () => {
                 Retour
               </Button>
               <div className="flex items-center gap-2">
-                <img src={logoTransparent} alt="Cronos" className="h-7 w-auto" />
+                <img src={logoBlack} alt="Cronos" className="h-7 w-auto" />
                 <span className="font-semibold text-foreground hidden sm:inline">CV Builder</span>
               </div>
             </div>
@@ -379,7 +379,7 @@ const CVBuilder = () => {
               Modèles
             </Button>
             <div className="flex items-center gap-2">
-              <img src={logoTransparent} alt="Cronos" className="h-7 w-auto" />
+              <img src={logoBlack} alt="Cronos" className="h-7 w-auto" />
               <span className="font-semibold text-foreground hidden sm:inline">CV Builder</span>
             </div>
           </div>
