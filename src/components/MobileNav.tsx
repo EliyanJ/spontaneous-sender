@@ -56,11 +56,9 @@ const menuGroups = [
 interface MobileNavProps {
   activeTab: string;
   onTabChange: (value: string, section?: string) => void;
-  isDark: boolean;
-  onToggleTheme: () => void;
 }
 
-export const MobileNav = ({ activeTab, onTabChange, isDark, onToggleTheme }: MobileNavProps) => {
+export const MobileNav = ({ activeTab, onTabChange }: MobileNavProps) => {
   const navigate = useNavigate();
   const { isAdmin } = useAdminCheck();
   const { features } = usePlanFeatures();
