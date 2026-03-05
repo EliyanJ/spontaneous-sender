@@ -16,7 +16,7 @@ import {
 import { cn } from "@/lib/utils";
 import logoTransparent from "@/assets/logo-transparent.png";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { useState, useEffect } from "react";
+
 
 const adminNavItems = [
   { title: "Dashboard", icon: LayoutDashboard, path: "/admin" },
