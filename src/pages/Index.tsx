@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+// isDark/setIsDark removed — theme is fully managed by next-themes via ThemeToggle
 import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -66,14 +67,6 @@ const Index = () => {
   // We intentionally do not store any Gmail/provider tokens on regular app login to keep the flows separated.
 
 
-  // Theme toggle
-  useEffect(() => {
-    if (isDark) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-  }, [isDark]);
 
   const handleTabChange = (newTab: string, section?: string) => {
     const currentIndex = tabOrder.indexOf(activeTab);
