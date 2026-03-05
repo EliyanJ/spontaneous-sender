@@ -26,7 +26,6 @@ const Index = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState("overview");
   const [emailsSection, setEmailsSection] = useState<string | null>(null);
-  const [isDark, setIsDark] = useState(true);
   const [slideDirection, setSlideDirection] = useState<"left" | "right">("right");
   const prevTabRef = useRef(activeTab);
   const isMobile = useIsMobile();
