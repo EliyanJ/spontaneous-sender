@@ -457,13 +457,8 @@ export const JobOffersPublic = () => {
               <h2 className="text-2xl font-bold text-foreground">Dernières offres publiées</h2>
               <p className="text-muted-foreground mt-1">Découvrez les opportunités les plus récentes</p>
             </div>
-            {offers.length > 0 && (
-              <button
-                onClick={() => window.scrollTo({ top: 600, behavior: 'smooth' })}
-                className="hidden sm:flex items-center gap-1 text-sm font-medium text-primary hover:underline"
-              >
-                Voir toutes les offres <ArrowRight className="h-4 w-4" />
-              </button>
+          {offers.length > 0 && !showAllOffers && (
+              <span className="text-sm text-muted-foreground">{offers.length} offres trouvées</span>
             )}
           </div>
 
@@ -472,19 +467,6 @@ export const JobOffersPublic = () => {
             <div className="flex flex-col items-center justify-center py-24 gap-4">
               <div className="w-14 h-14 border-4 border-muted border-t-primary rounded-full animate-spin" />
               <p className="text-muted-foreground text-sm animate-pulse">Chargement des offres en cours...</p>
-            </div>
-          )}
-
-          {/* Empty favorites */}
-          {!loading && showFavorites && favorites.length === 0 && (
-            <div className="flex flex-col items-center justify-center py-24 gap-3 text-center">
-              <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center">
-                <Bookmark className="h-7 w-7 text-muted-foreground" />
-              </div>
-              <h3 className="text-lg font-semibold text-foreground">Aucun favori sauvegardé</h3>
-              <p className="text-sm text-muted-foreground max-w-xs">
-                Cliquez sur l'icône <Bookmark className="inline h-3.5 w-3.5" /> d'une offre pour la retrouver ici
-              </p>
             </div>
           )}
 
@@ -501,10 +483,11 @@ export const JobOffersPublic = () => {
             </div>
           )}
 
-          {/* Results — limited to 3 latest */}
+          {/* Results — preview (3 latest) or all paginated */}
           {!loading && latestOffers.length > 0 && (
             <div className="space-y-3">
-              {latestOffers.map((offer) => {
+              {/* Preview: 3 offers */}
+              {!showAllOffers && latestOffers.map((offer) => {
                 const badge = getContractBadge(offer.typeContrat);
                 return (
                   <div
@@ -518,39 +501,17 @@ export const JobOffersPublic = () => {
                         <div className="flex items-start justify-between gap-3">
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 flex-wrap mb-1">
-                              <h3 className="text-base font-semibold text-foreground group-hover:text-primary transition-colors">
-                                {offer.intitule}
-                              </h3>
-                              <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full flex-shrink-0 ${badge.bg}`}>
-                                {badge.label}
-                              </span>
+                              <h3 className="text-base font-semibold text-foreground group-hover:text-primary transition-colors">{offer.intitule}</h3>
+                              <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full flex-shrink-0 ${badge.bg}`}>{badge.label}</span>
                             </div>
-                            {offer.entreprise?.nom && (
-                              <p className="text-sm font-medium text-primary mb-2">{offer.entreprise.nom}</p>
-                            )}
+                            {offer.entreprise?.nom && <p className="text-sm font-medium text-primary mb-2">{offer.entreprise.nom}</p>}
                             <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-                              {offer.lieuTravail?.libelle && (
-                                <span className="flex items-center gap-1"><MapPin className="h-3.5 w-3.5" />{offer.lieuTravail.libelle}</span>
-                              )}
-                              {offer.salaire?.libelle && (
-                                <span className="flex items-center gap-1 font-medium text-green-600"><Euro className="h-3.5 w-3.5" />{offer.salaire.libelle}</span>
-                              )}
-                              {offer.dateCreation && (
-                                <span className="flex items-center gap-1">
-                                  <Clock className="h-3.5 w-3.5" />
-                                  {formatDistanceToNow(new Date(offer.dateCreation), { addSuffix: true, locale: fr })}
-                                </span>
-                              )}
+                              {offer.lieuTravail?.libelle && <span className="flex items-center gap-1"><MapPin className="h-3.5 w-3.5" />{offer.lieuTravail.libelle}</span>}
+                              {offer.salaire?.libelle && <span className="flex items-center gap-1 font-medium text-green-600"><Euro className="h-3.5 w-3.5" />{offer.salaire.libelle}</span>}
+                              {offer.dateCreation && <span className="flex items-center gap-1"><Clock className="h-3.5 w-3.5" />{formatDistanceToNow(new Date(offer.dateCreation), { addSuffix: true, locale: fr })}</span>}
                             </div>
                           </div>
-                          <button
-                            onClick={(e) => toggleFavorite(offer, e)}
-                            className={`p-2 rounded-lg transition-all flex-shrink-0 ${
-                              isFavorite(offer.id)
-                                ? "text-amber-500 bg-amber-500/10"
-                                : "text-muted-foreground hover:text-amber-500 hover:bg-amber-500/10"
-                            }`}
-                          >
+                          <button onClick={(e) => toggleFavorite(offer, e)} className={`p-2 rounded-lg transition-all flex-shrink-0 ${isFavorite(offer.id) ? "text-amber-500 bg-amber-500/10" : "text-muted-foreground hover:text-amber-500 hover:bg-amber-500/10"}`}>
                             {isFavorite(offer.id) ? <BookmarkCheck className="h-4 w-4" /> : <Bookmark className="h-4 w-4" />}
                           </button>
                         </div>
@@ -560,15 +521,95 @@ export const JobOffersPublic = () => {
                 );
               })}
 
-              {/* See all CTA */}
-              <div className="flex justify-center pt-4">
-                <button
-                  onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-                  className="flex items-center gap-2 text-sm font-medium text-primary border border-primary/30 hover:bg-primary/5 rounded-xl px-6 py-2.5 transition-colors"
-                >
-                  Voir toutes les offres <ArrowRight className="h-4 w-4" />
-                </button>
-              </div>
+              {/* CTA to expand all */}
+              {!showAllOffers && (
+                <div className="flex justify-center pt-4">
+                  <button
+                    onClick={handleShowAllOffers}
+                    className="flex items-center gap-2 text-sm font-medium text-primary border border-primary/30 hover:bg-primary/5 rounded-xl px-6 py-2.5 transition-colors"
+                  >
+                    Voir toutes les offres ({offers.length}) <ChevronDown className="h-4 w-4" />
+                  </button>
+                </div>
+              )}
+
+              {/* All offers with pagination */}
+              {showAllOffers && (
+                <div ref={allOffersRef} className="space-y-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-sm text-muted-foreground font-medium">{displayedOffers.length} offres · Page {currentPage}/{totalPages}</p>
+                    <button onClick={() => { setShowFavorites(v => !v); setCurrentPage(1); }} className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium border transition-all ${showFavorites ? "bg-amber-500/10 border-amber-500/30 text-amber-600" : "bg-muted/50 border-border text-muted-foreground hover:text-amber-600 hover:border-amber-500/30"}`}>
+                      {showFavorites ? <BookmarkCheck className="h-4 w-4" /> : <Bookmark className="h-4 w-4" />}
+                      Favoris {favorites.length > 0 && <span className="bg-amber-500/20 text-amber-600 text-xs rounded-full px-1.5">{favorites.length}</span>}
+                    </button>
+                  </div>
+
+                  {paginatedOffers.map((offer) => {
+                    const badge = getContractBadge(offer.typeContrat);
+                    return (
+                      <div key={offer.id} onClick={() => loadOfferDetails(offer)} className="group bg-card border border-border rounded-2xl p-5 cursor-pointer hover:border-primary/40 hover:shadow-lg transition-all duration-200">
+                        <div className="flex items-start gap-4">
+                          <CompanyInitial name={offer.entreprise?.nom} />
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 flex-wrap mb-1">
+                                  <h3 className="text-base font-semibold text-foreground group-hover:text-primary transition-colors">{offer.intitule}</h3>
+                                  <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full flex-shrink-0 ${badge.bg}`}>{badge.label}</span>
+                                </div>
+                                {offer.entreprise?.nom && <p className="text-sm font-medium text-primary mb-2">{offer.entreprise.nom}</p>}
+                                <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+                                  {offer.lieuTravail?.libelle && <span className="flex items-center gap-1"><MapPin className="h-3.5 w-3.5" />{offer.lieuTravail.libelle}</span>}
+                                  {offer.salaire?.libelle && <span className="flex items-center gap-1 font-medium text-green-600"><Euro className="h-3.5 w-3.5" />{offer.salaire.libelle}</span>}
+                                  {offer.dateCreation && <span className="flex items-center gap-1"><Clock className="h-3.5 w-3.5" />{formatDistanceToNow(new Date(offer.dateCreation), { addSuffix: true, locale: fr })}</span>}
+                                </div>
+                              </div>
+                              <button onClick={(e) => toggleFavorite(offer, e)} className={`p-2 rounded-lg transition-all flex-shrink-0 ${isFavorite(offer.id) ? "text-amber-500 bg-amber-500/10" : "text-muted-foreground hover:text-amber-500 hover:bg-amber-500/10"}`}>
+                                {isFavorite(offer.id) ? <BookmarkCheck className="h-4 w-4" /> : <Bookmark className="h-4 w-4" />}
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+
+                  {/* Pagination */}
+                  {totalPages > 1 && (
+                    <div className="flex items-center justify-center gap-2 pt-6">
+                      <button
+                        onClick={() => { setCurrentPage(p => Math.max(1, p - 1)); allOffersRef.current?.scrollIntoView({ behavior: 'smooth' }); }}
+                        disabled={currentPage === 1}
+                        className="flex items-center gap-1 px-4 py-2 text-sm font-medium border border-border rounded-xl disabled:opacity-40 hover:bg-muted/50 transition-colors"
+                      >
+                        <ChevronLeft className="h-4 w-4" /> Précédent
+                      </button>
+                      <div className="flex items-center gap-1">
+                        {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
+                          const page = i + 1;
+                          return (
+                            <button
+                              key={page}
+                              onClick={() => { setCurrentPage(page); allOffersRef.current?.scrollIntoView({ behavior: 'smooth' }); }}
+                              className={`w-9 h-9 text-sm font-medium rounded-xl transition-all ${currentPage === page ? "bg-primary text-primary-foreground shadow-md" : "border border-border hover:bg-muted/50"}`}
+                            >
+                              {page}
+                            </button>
+                          );
+                        })}
+                        {totalPages > 7 && <span className="text-muted-foreground px-1">...</span>}
+                      </div>
+                      <button
+                        onClick={() => { setCurrentPage(p => Math.min(totalPages, p + 1)); allOffersRef.current?.scrollIntoView({ behavior: 'smooth' }); }}
+                        disabled={currentPage === totalPages}
+                        className="flex items-center gap-1 px-4 py-2 text-sm font-medium border border-border rounded-xl disabled:opacity-40 hover:bg-muted/50 transition-colors"
+                      >
+                        Suivant <ChevronRight className="h-4 w-4" />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
         </div>
