@@ -456,44 +456,6 @@ export const DashboardOverview = ({ onNavigateToTab }: DashboardOverviewProps) =
             </Button>
           </div>
 
-          {/* Quick Finder */}
-          <div
-            className="rounded-xl p-6 relative overflow-hidden cursor-pointer"
-            style={{ background: "linear-gradient(135deg, hsl(263 75% 58%), hsl(263 75% 42%))" }}
-            onClick={() => onNavigateToTab("emails", "search")}
-          >
-            <div
-              className="absolute inset-0 opacity-10 pointer-events-none"
-              style={{ backgroundImage: "radial-gradient(#fff 1px, transparent 1px)", backgroundSize: "20px 20px" }}
-            />
-            <div className="relative z-10">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center backdrop-blur-sm">
-                  <Zap className="h-5 w-5 text-white" />
-                </div>
-                <h3 className="font-bold text-lg text-white">Quick Finder</h3>
-              </div>
-              <p className="text-white/80 text-sm mb-4">Trouvez instantanément des emails vérifiés pour n'importe quel domaine.</p>
-              <div className="space-y-2">
-                <div className="relative">
-                  <Globe className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <input
-                    type="text"
-                    placeholder="entreprise.fr"
-                    className="w-full pl-9 pr-4 py-2.5 rounded-lg text-foreground text-sm border-0 bg-white focus:ring-2 focus:ring-white/50 focus:outline-none"
-                    onClick={(e) => e.stopPropagation()}
-                  />
-                </div>
-                <button
-                  className="w-full py-2.5 bg-green-500 hover:bg-green-600 text-white font-bold text-sm rounded-lg shadow-lg transition-all flex items-center justify-center gap-2"
-                  onClick={() => onNavigateToTab("emails", "search")}
-                >
-                  Trouver des emails <ArrowRight className="h-4 w-4" />
-                </button>
-              </div>
-            </div>
-          </div>
-
           {/* Quick Navigation */}
           <div className="bg-card border border-border rounded-xl p-5">
             <h3 className="text-base font-bold text-foreground mb-4">Accès rapide</h3>
@@ -512,35 +474,6 @@ export const DashboardOverview = ({ onNavigateToTab }: DashboardOverviewProps) =
                 </button>
               ))}
             </div>
-          </div>
-
-          {/* Recent Activity */}
-          <div className="bg-card border border-border rounded-xl p-5">
-            <h3 className="text-base font-bold text-foreground mb-4">Activité récente</h3>
-            {activity.length === 0 ? (
-              <p className="text-muted-foreground text-sm text-center py-4">Aucune activité enregistrée</p>
-            ) : (
-              <div className="space-y-4">
-                {activity.map((item, idx) => {
-                  const cfg = activityIcons[item.action_type] ?? activityIcons.tab_change;
-                  const label = activityLabels[item.action_type] ?? item.action_type;
-                  return (
-                    <div key={item.id} className="flex gap-3">
-                      <div className="flex flex-col items-center">
-                        <div className={cn("w-6 h-6 rounded-full flex items-center justify-center shrink-0", cfg.color)}>
-                          {cfg.icon}
-                        </div>
-                        {idx < activity.length - 1 && <div className="w-px flex-1 bg-border my-1" />}
-                      </div>
-                      <div className="pb-1 min-w-0">
-                        <p className="text-sm font-medium text-foreground truncate">{label}</p>
-                        <p className="text-xs text-muted-foreground mt-0.5">{formatRelativeTime(item.created_at)}</p>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
           </div>
         </div>
       </div>
