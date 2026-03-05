@@ -1,9 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { 
   ArrowRight, 
-  Moon, 
-  Sun, 
   GraduationCap, 
   Briefcase, 
   Award, 
@@ -15,11 +13,7 @@ import {
   Check,
   X,
   Zap,
-  Clock,
   Play,
-  Gift,
-  Rocket,
-  Crown,
   Flag
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
