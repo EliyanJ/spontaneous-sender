@@ -33,15 +33,6 @@ const adminNavItems = [
 
 export const AdminLayout = () => {
   const navigate = useNavigate();
-  const [isDark, setIsDark] = useState(true);
-
-  useEffect(() => {
-    if (isDark) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-  }, [isDark]);
 
   return (
     <div className="min-h-screen bg-background flex flex-col">

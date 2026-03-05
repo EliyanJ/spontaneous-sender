@@ -2,8 +2,9 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import { 
   Search, Building2, Briefcase, Send, Shield, 
-  Menu, Moon, Sun, FileBarChart, FileText, FilePlus, MessageSquare
+  Menu, FileBarChart, FileText
 } from "lucide-react";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { cn } from "@/lib/utils";
 import { useAdminCheck } from "@/hooks/useAdminCheck";
 import { usePlanFeatures } from "@/hooks/usePlanFeatures";
