@@ -109,16 +109,24 @@ serve(async (req) => {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
+    // Use service role for DB queries (needed to read ats_professions etc.)
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
+    // Allow both authenticated users AND anonymous access (anon key)
+    // The function is public-facing (score-cv page accessible without login)
     const token = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-    if (authError || !user) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    const anonKey = Deno.env.get('SUPABASE_ANON_KEY') ?? '';
+    let userId: string | null = null;
+
+    if (token !== anonKey) {
+      // Try to validate as a real user JWT
+      const { data: { user } } = await supabase.auth.getUser(token);
+      userId = user?.id ?? null;
     }
+    // If token === anonKey, proceed as unauthenticated (public access)
 
     const { cvText, jobDescription, jobTitle } = await req.json();
 
