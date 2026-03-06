@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { STRIPE_PRODUCTS, FREE_PLAN, PriceType } from "@/lib/stripe-config";
+import { Header } from "@/components/Header";
 
 // Features comparison for highlighting differences
 const FEATURE_COMPARISON = {

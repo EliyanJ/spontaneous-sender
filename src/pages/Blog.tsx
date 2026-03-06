@@ -1,8 +1,8 @@
 import { useNavigate } from "react-router-dom";
 import { ArrowRight, BookOpen, Clock, Tag } from "lucide-react";
-import logoBlack from "@/assets/logo-black.png";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
+import { Header } from "@/components/Header";
 
 const ARTICLES = [
   {

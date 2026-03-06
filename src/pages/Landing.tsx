@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import logoBlack from "@/assets/logo-black.png";
+import { Header } from "@/components/Header";
 
 const Landing = () => {
   const [isDark, setIsDark] = useState(() => {

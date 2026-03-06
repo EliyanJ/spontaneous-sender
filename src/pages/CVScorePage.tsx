@@ -7,8 +7,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Zap, Target, TrendingUp, Shield, CheckCircle2, Star } from "lucide-react";
-import logoBlack from "@/assets/logo-black.png";
-import { PublicNav } from "@/components/PublicNav";
+import { Header } from "@/components/Header";
 
 const FAQ_ITEMS = [
   {

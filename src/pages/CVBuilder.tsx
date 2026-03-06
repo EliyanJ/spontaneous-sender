@@ -9,7 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { CVBuilderEditor } from "@/components/cv-builder/CVBuilderEditor";
 import { emptyCVData, CV_TEMPLATES, type CVData, type CVDesignOptions, type TemplateId } from "@/lib/cv-templates";
 import { useAuth } from "@/hooks/useAuth";
-import logoBlack from "@/assets/logo-black.png";
+import { Header } from "@/components/Header";
 
 const SECTORS = [
   { value: "finance", label: "Finance & Corporate" },
