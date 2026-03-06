@@ -182,16 +182,11 @@ export const Header = () => {
               to={user ? "/dashboard" : "/register"}
               className="bg-[#7835e7] hover:bg-[#6829cc] text-white px-5 py-2.5 rounded-full text-sm font-semibold transition-all shadow-md shadow-purple-500/20 flex items-center gap-2 group"
             >
-              <span>{user ? "Dashboard" : "Commencer"}</span>
-              <svg
-                className="h-3.5 w-3.5 group-hover:translate-x-0.5 transition-transform duration-200"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={2.5}
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+              {/* Windows logo */}
+              <svg className="h-3.5 w-3.5 opacity-90" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M0 3.449L9.75 2.1v9.451H0m10.949-9.602L24 0v11.4H10.949M0 12.6h9.75v9.451L0 20.699M10.949 12.749H24V24l-12.9-1.801" />
               </svg>
+              <span>{user ? "Dashboard" : "Commencer"}</span>
             </Link>
 
             {/* Mobile burger */}
