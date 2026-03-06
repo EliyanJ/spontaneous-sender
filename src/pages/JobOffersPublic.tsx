@@ -254,7 +254,7 @@ export const JobOffersPublic = () => {
     <div className="min-h-screen bg-background">
       <Header />
 
-      <div className="pt-[104px]">
+      <div className="pt-[72px]">
         {/* ===== HERO SECTION ===== */}
         <div className="relative overflow-hidden bg-gradient-to-br from-primary/8 via-background to-violet-500/5 border-b border-border/50">
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,hsl(var(--primary)/0.1)_0%,transparent_60%)]" />

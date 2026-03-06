@@ -52,7 +52,7 @@ const Landing = () => {
       <div className="relative z-10">
         <Header />
 
-        <main className="pt-[104px]">
+        <main className="pt-[72px]">
           {/* Hero Section - 2 colonnes */}
           <section className="relative pt-16 pb-24 lg:pt-24 lg:pb-32 overflow-hidden min-h-[800px] flex items-center">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full relative z-10">

@@ -331,7 +331,7 @@ const CVBuilder = () => {
         <Header />
 
         {/* ── Hero banner violet ── */}
-        <div className="mt-[104px] bg-gradient-to-br from-primary to-primary/80 text-primary-foreground py-10 px-4">
+        <div className="mt-[72px] bg-gradient-to-br from-primary to-primary/80 text-primary-foreground py-10 px-4">
           <div className="max-w-7xl mx-auto">
             <h1 className="text-3xl md:text-4xl font-bold mb-2">Créez votre CV parfait</h1>
             <p className="text-base text-white/80 mb-8">Personnalisez l'aperçu en temps réel avant de choisir votre modèle</p>

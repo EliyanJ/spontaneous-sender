@@ -122,7 +122,7 @@ export default function Pricing() {
     <div className="min-h-screen bg-background">
       <Header />
 
-      <main className="container mx-auto px-4 py-16 pt-[104px]">
+      <main className="container mx-auto px-4 py-16 pt-[72px]">
         {/* Hero Section */}
         <div className="text-center mb-16">
           <Badge variant="secondary" className="mb-4">

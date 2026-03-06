@@ -64,7 +64,7 @@ export default function Blog() {
     <div className="min-h-screen bg-background font-sans">
       <Header />
 
-      <div className="pt-[104px]">
+      <div className="pt-[72px]">
         {/* Hero */}
         <div className="relative bg-gradient-to-br from-primary/8 via-background to-violet-500/5 border-b border-border/50 py-16">
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,hsl(var(--primary)/0.08)_0%,transparent_60%)]" />
