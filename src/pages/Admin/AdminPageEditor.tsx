@@ -17,7 +17,7 @@ import {
   Heading1, Heading2, Heading3, AlignLeft, AlignCenter, AlignRight, Anchor, Image, Film,
   Search, PanelRightClose, PanelRight, Eye, Blocks
 } from "lucide-react";
-import logoTransparent from "@/assets/logo-transparent.png";
+import { Logo } from "@/components/Logo";
 import { MediaLibrary } from "@/components/cms/MediaLibrary";
 import { ColorPickerPopover } from "@/components/cms/ColorPickerPopover";
 import { BlockInserter } from "@/components/cms/BlockInserter";

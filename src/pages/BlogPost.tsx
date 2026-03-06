@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { ArrowLeft, Moon, Sun, Clock, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import logoTransparent from "@/assets/logo-transparent.png";
+import { Logo } from "@/components/Logo";
 
 const BlogPost = () => {
   const { slug } = useParams();
