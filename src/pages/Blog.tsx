@@ -169,13 +169,18 @@ export default function Blog() {
           </div>
         </div>
 
-        {/* Footer */}
         <footer className="bg-card border-t border-border py-8">
           <div className="max-w-5xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-3">
             <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate('/')}>
               <img src={logoBlack} alt="Cronos" className="h-6 w-auto" />
+              <span className="text-sm text-muted-foreground font-medium">Cronos</span>
             </div>
-            <p className="text-xs text-muted-foreground">© 2025 GetCronos. Tous droits réservés.</p>
+            <p className="text-xs text-muted-foreground">© 2026 Cronos. Tous droits réservés.</p>
+            <div className="flex gap-4 text-xs text-muted-foreground">
+              <button onClick={() => navigate('/mentions-legales')} className="hover:text-foreground transition-colors">Mentions légales</button>
+              <button onClick={() => navigate('/politique-confidentialite')} className="hover:text-foreground transition-colors">Confidentialité</button>
+              <button onClick={() => navigate('/conditions-utilisation')} className="hover:text-foreground transition-colors">CGU</button>
+            </div>
           </div>
         </footer>
       </div>
