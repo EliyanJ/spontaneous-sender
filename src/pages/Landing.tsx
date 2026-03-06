@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { Header } from "@/components/Header";
 import logoBlack from "@/assets/logo-black.png";
 
 const Landing = () => {
@@ -63,42 +64,9 @@ const Landing = () => {
       </div>
 
       <div className="relative z-10">
-        {/* Header */}
-        <header className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-b border-gray-200 transition-all duration-300">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center h-20">
-              {/* Logo */}
-              <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate('/')}>
-                <img src={logoBlack} alt="Cronos" className="h-9 w-auto" />
-                <span className="text-2xl font-bold tracking-tight text-gray-900 font-display">Cronos</span>
-              </div>
+        <Header />
 
-              {/* Nav */}
-              <nav className="hidden md:flex items-center gap-8">
-                <button onClick={() => scrollToSection('how-it-works')} className="text-sm font-medium text-gray-600 hover:text-gray-900 hover:text-primary transition-colors">Comment ça marche</button>
-                <button onClick={() => navigate('/blog')} className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors">Conseil personnalisé</button>
-                <button onClick={() => scrollToSection('pricing')} className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors">Tarifs</button>
-                <button onClick={() => navigate('/offres-emploi')} className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors">Offres d'emploi</button>
-              </nav>
-
-              {/* Actions */}
-              <div className="hidden md:flex items-center gap-4">
-                <Button size="sm" onClick={() => navigate("/login")} className="bg-primary hover:bg-primary/90 text-primary-foreground px-5 py-2.5 rounded-lg shadow-lg shadow-primary/20 font-medium text-sm">
-                  Commencer
-                </Button>
-              </div>
-
-              {/* Mobile */}
-              <div className="md:hidden flex items-center gap-2">
-                <Button size="sm" onClick={() => navigate("/login")} className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg px-4 text-xs">
-                  Commencer
-                </Button>
-              </div>
-            </div>
-          </div>
-        </header>
-
-        <main className="pt-20">
+        <main className="pt-[68px]">
           {/* Hero Section - 2 colonnes */}
           <section className="relative pt-16 pb-24 lg:pt-24 lg:pb-32 overflow-hidden min-h-[800px] flex items-center">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full relative z-10">

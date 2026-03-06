@@ -7,8 +7,8 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Zap, Target, TrendingUp, Shield, CheckCircle2, Star } from "lucide-react";
+import { Header } from "@/components/Header";
 import logoBlack from "@/assets/logo-black.png";
-import { PublicNav } from "@/components/PublicNav";
 
 const FAQ_ITEMS = [
   {
@@ -87,7 +87,7 @@ export const CVScorePage = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <PublicNav />
+      <Header />
 
       {/* Hero */}
       <section className="relative overflow-hidden pt-16 pb-10 px-4">

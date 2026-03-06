@@ -1,8 +1,9 @@
 import { useNavigate } from "react-router-dom";
 import { ArrowRight, BookOpen, Clock, Tag } from "lucide-react";
-import logoBlack from "@/assets/logo-black.png";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
+import { Header } from "@/components/Header";
+import logoBlack from "@/assets/logo-black.png";
 
 const ARTICLES = [
   {
@@ -61,42 +62,9 @@ export default function Blog() {
 
   return (
     <div className="min-h-screen bg-background font-sans">
-      {/* Header */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-md border-b border-border/50 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center gap-8">
-              <div className="flex items-center gap-2 cursor-pointer flex-shrink-0" onClick={() => navigate('/')}>
-                <img src={logoBlack} alt="Cronos" className="h-8 w-auto" />
-              </div>
-              <nav className="hidden lg:flex items-center gap-7">
-                <button onClick={() => navigate('/score-cv')} className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">Comparatif de CV</button>
-                <button onClick={() => navigate('/cv-builder')} className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">Création de CV</button>
-                <button onClick={() => navigate('/blog')} className="text-sm font-medium text-primary transition-colors">Conseil personnalisé</button>
-                <button onClick={() => navigate('/pricing')} className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">Tarification</button>
-              </nav>
-            </div>
-            <div className="flex items-center gap-3">
-              {user ? (
-                <Button size="sm" onClick={() => navigate('/dashboard')} className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-full px-5 shadow-md shadow-primary/20">
-                  Mon tableau de bord
-                </Button>
-              ) : (
-                <>
-                  <Button variant="ghost" size="sm" onClick={() => navigate('/login')} className="text-muted-foreground hover:text-foreground hidden sm:flex">
-                    Connexion
-                  </Button>
-                  <Button size="sm" onClick={() => navigate('/register')} className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-full px-5 font-semibold shadow-md shadow-primary/20 uppercase text-xs tracking-wide">
-                    CRÉER MON CV
-                  </Button>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-      </header>
+      <Header />
 
-      <div className="pt-16">
+      <div className="pt-[68px]">
         {/* Hero */}
         <div className="relative bg-gradient-to-br from-primary/8 via-background to-violet-500/5 border-b border-border/50 py-16">
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,hsl(var(--primary)/0.08)_0%,transparent_60%)]" />

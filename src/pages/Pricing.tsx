@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { STRIPE_PRODUCTS, FREE_PLAN, PriceType } from "@/lib/stripe-config";
+import { Header } from "@/components/Header";
 
 // Features comparison for highlighting differences
 const FEATURE_COMPARISON = {
@@ -119,34 +120,9 @@ export default function Pricing() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <Button
-            variant="ghost"
-            onClick={() => navigate(-1)}
-            className="gap-2"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Retour
-          </Button>
-          
-          {currentPlan !== "free" && (
-            <Button
-              variant="outline"
-              onClick={handleManageSubscription}
-              disabled={loading === "manage"}
-            >
-              {loading === "manage" ? (
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />
-              ) : null}
-              Gérer mon abonnement
-            </Button>
-          )}
-        </div>
-      </header>
+      <Header />
 
-      <main className="container mx-auto px-4 py-16">
+      <main className="container mx-auto px-4 py-16 pt-[84px]">
         {/* Hero Section */}
         <div className="text-center mb-16">
           <Badge variant="secondary" className="mb-4">
