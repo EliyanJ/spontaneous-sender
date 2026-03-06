@@ -365,7 +365,7 @@ export const AdminPageEditor = () => {
               {/* Simulated header */}
               <div className="bg-card/80 backdrop-blur-sm border-b border-border/30 px-6 py-3.5 flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
-                  <img src={logoTransparent} alt="Cronos" className="h-7 w-auto" />
+                  <Logo height={28} />
                   <span className="font-display text-sm font-bold text-foreground">Cronos</span>
                 </div>
                 <div className="flex gap-5 text-xs text-muted-foreground/60">
@@ -416,7 +416,7 @@ export const AdminPageEditor = () => {
               <div className="border-t border-border/30 bg-card/30 px-6 py-5">
                 <div className="flex items-center justify-between text-xs text-muted-foreground/50">
                   <div className="flex items-center gap-2">
-                    <img src={logoTransparent} alt="Cronos" className="h-4 w-auto opacity-50" />
+                    <Logo height={16} className="opacity-50" />
                     <span className="font-semibold">Cronos</span>
                   </div>
                   <span>© 2026 Cronos</span>

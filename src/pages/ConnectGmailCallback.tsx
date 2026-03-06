@@ -175,7 +175,7 @@ const ConnectGmailCallback = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">
       <div className="flex flex-col items-center space-y-6">
-        <img src={logoTransparent} alt="Cronos" className="h-20 w-auto" />
+        <Logo height={80} />
         <span className="text-2xl font-bold text-foreground">Cronos</span>
         
         {status === "processing" && (
