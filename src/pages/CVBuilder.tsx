@@ -682,4 +682,110 @@ const CVBuilder = () => {
   );
 };
 
+// ─── SEO Section + FAQ Accordion ──────────────────────────────────────────────
+const FAQ_ITEMS = [
+  {
+    q: "Comment créer un CV professionnel gratuitement ?",
+    a: "Avec Cronos, vous pouvez créer un CV professionnel en quelques minutes sans aucune compétence technique. Choisissez parmi nos modèles validés par des recruteurs, personnalisez les couleurs et le contenu, puis téléchargez votre CV en PDF. La création de base est entièrement gratuite.",
+  },
+  {
+    q: "Qu'est-ce qu'un CV optimisé ATS ?",
+    a: "Un ATS (Applicant Tracking System) est un logiciel utilisé par les recruteurs pour filtrer automatiquement les candidatures. Un CV optimisé ATS utilise des mots-clés adaptés au poste, une mise en page structurée lisible par les machines, et évite les éléments graphiques complexes. Tous nos templates sont conçus pour passer les filtres ATS.",
+  },
+  {
+    q: "Comment adapter mon CV à une offre d'emploi ?",
+    a: "Dans l'éditeur CV Builder de Cronos, activez le mode « Adapter à une offre » et collez la fiche de poste. Notre IA analyse les mots-clés du recruteur et reformule automatiquement vos expériences pour maximiser votre correspondance avec le poste visé.",
+  },
+  {
+    q: "Quelle est la longueur idéale pour un CV ?",
+    a: "Un CV tient idéalement sur une page (profils juniors) ou deux pages maximum (profils expérimentés avec plus de 10 ans d'expérience). L'essentiel est de prioriser les informations pertinentes pour le poste ciblé et d'éviter les répétitions. Nos modèles sont optimisés pour respecter ces standards.",
+  },
+  {
+    q: "Faut-il mettre une photo sur son CV ?",
+    a: "En France, la photo est facultative mais souvent appréciée dans les secteurs du commerce, de la communication ou des relations clients. Elle est déconseillée aux États-Unis et au Royaume-Uni. Cronos vous permet de choisir des templates avec ou sans photo pour s'adapter à vos préférences et au marché ciblé.",
+  },
+  {
+    q: "Comment sauvegarder et télécharger mon CV ?",
+    a: "Une fois votre CV créé, vous pouvez le sauvegarder dans votre espace Cronos en créant un compte gratuit. Vous pourrez ensuite le télécharger en PDF haute qualité, le modifier à tout moment et créer plusieurs versions de CV adaptées à différents postes.",
+  },
+  {
+    q: "Puis-je importer mon CV existant ?",
+    a: "Oui, Cronos accepte l'import de fichiers PDF, DOCX et TXT. Notre IA analyse automatiquement le contenu et remplit les champs de l'éditeur, ce qui vous fait gagner un temps précieux. Vous n'avez plus qu'à ajuster et mettre à jour.",
+  },
+];
+
+const CVBuilderSEOSection = () => {
+  const [openFaq, setOpenFaq] = useState<number | null>(null);
+
+  return (
+    <section className="bg-muted/30 border-t border-border/50 py-16 px-4">
+      <div className="max-w-4xl mx-auto">
+
+        {/* Texte SEO */}
+        <div className="mb-14 text-center">
+          <h2 className="text-3xl font-bold text-foreground mb-5">
+            Créez un CV professionnel en ligne — rapide, gratuit, optimisé
+          </h2>
+          <p className="text-muted-foreground text-base leading-relaxed mb-4 max-w-3xl mx-auto">
+            Le CV Builder Cronos vous permet de concevoir un curriculum vitae percutant en quelques minutes.
+            Choisissez parmi plusieurs modèles professionnels validés par des recruteurs, personnalisez les couleurs
+            et la mise en page, puis laissez notre intelligence artificielle reformuler vos expériences pour
+            maximiser vos chances d'être sélectionné.
+          </p>
+          <p className="text-muted-foreground text-base leading-relaxed max-w-3xl mx-auto">
+            Que vous soyez étudiant, cadre en reconversion ou professionnel expérimenté, nos templates s'adaptent
+            à tous les secteurs — finance, tech, marketing, RH, commerce et bien d'autres. Importez votre CV existant
+            (PDF, DOCX) ou repartez de zéro : notre éditeur intuitif vous guide à chaque étape.
+          </p>
+        </div>
+
+        {/* Avantages en grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-14">
+          {[
+            { emoji: "🎯", title: "Optimisé ATS", desc: "Tous nos modèles passent les filtres des logiciels de recrutement" },
+            { emoji: "🤖", title: "IA intégrée", desc: "Adaptez votre CV à n'importe quelle offre d'emploi en un clic" },
+            { emoji: "⚡", title: "Rapide & gratuit", desc: "Créez votre premier CV professionnel en moins de 5 minutes" },
+          ].map(({ emoji, title, desc }) => (
+            <div key={title} className="bg-card rounded-2xl p-6 border border-border text-center">
+              <div className="text-3xl mb-3">{emoji}</div>
+              <h3 className="font-semibold text-foreground mb-2">{title}</h3>
+              <p className="text-sm text-muted-foreground">{desc}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* FAQ Accordion */}
+        <div>
+          <h2 className="text-2xl font-bold text-foreground mb-8 text-center">
+            Questions fréquentes sur la création de CV
+          </h2>
+          <div className="space-y-3">
+            {FAQ_ITEMS.map((item, i) => (
+              <div key={i} className="bg-card border border-border rounded-xl overflow-hidden">
+                <button
+                  onClick={() => setOpenFaq(openFaq === i ? null : i)}
+                  className="w-full flex items-center justify-between px-6 py-4 text-left hover:bg-muted/30 transition-colors"
+                >
+                  <span className="font-medium text-foreground pr-4">{item.q}</span>
+                  <span className={`shrink-0 w-6 h-6 rounded-full border border-border flex items-center justify-center text-muted-foreground font-bold text-base transition-transform duration-200 ${openFaq === i ? "rotate-45" : ""}`}>
+                    +
+                  </span>
+                </button>
+                {openFaq === i && (
+                  <div className="px-6 pb-5">
+                    <p className="text-muted-foreground text-sm leading-relaxed border-t border-border pt-4">
+                      {item.a}
+                    </p>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+
+      </div>
+    </section>
+  );
+};
+
 export default CVBuilder;
