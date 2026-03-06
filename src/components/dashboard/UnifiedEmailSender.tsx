@@ -818,14 +818,14 @@ export const UnifiedEmailSender = () => {
         <div className="lg:col-span-4 space-y-6">
 
           {/* Gmail Status Card */}
-          <div className="bg-card border border-border rounded-2xl p-5 relative overflow-hidden group">
-            <div className="absolute top-0 right-0 p-3 opacity-5 group-hover:opacity-10 transition-opacity">
-              <Mail className="h-16 w-16 text-foreground" />
+          <div className="bg-[#121215]/60 backdrop-blur-xl border border-white/[0.08] rounded-2xl p-5 relative overflow-hidden group">
+            <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
+              <Mail className="h-16 w-16 text-white" />
             </div>
             <div className="flex items-center justify-between relative z-10">
               {checkingGmail ? (
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center border border-border">
+                  <div className="w-10 h-10 rounded-full bg-muted/30 flex items-center justify-center border border-white/10">
                     <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
                   </div>
                   <span className="text-sm text-muted-foreground">Vérification...</span>
@@ -833,28 +833,28 @@ export const UnifiedEmailSender = () => {
               ) : gmailConnected ? (
                 <>
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-green-500/15 flex items-center justify-center border border-green-500/30">
-                      <Mail className="h-5 w-5 text-green-600" />
+                    <div className="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center border border-green-500/30">
+                      <Mail className="h-5 w-5 text-green-400" />
                     </div>
                     <div>
-                      <h3 className="text-sm font-medium text-foreground">Compte Gmail</h3>
+                      <h3 className="text-sm font-medium text-gray-200">Compte Gmail</h3>
                       <div className="flex items-center gap-1.5 mt-0.5">
                         <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                        <span className="text-xs text-green-600 font-medium">Connecté</span>
+                        <span className="text-xs text-green-400 font-medium">Connecté</span>
                       </div>
                     </div>
                   </div>
-                  <Button variant="ghost" size="icon" onClick={checkGmailConnection} className="text-muted-foreground hover:text-foreground">
+                  <Button variant="ghost" size="icon" onClick={checkGmailConnection} className="text-muted-foreground hover:text-white">
                     <RefreshCw className="h-4 w-4" />
                   </Button>
                 </>
               ) : (
                 <div className="flex items-center gap-3 w-full">
-                  <div className="w-10 h-10 rounded-full bg-destructive/15 flex items-center justify-center border border-destructive/30">
+                  <div className="w-10 h-10 rounded-full bg-destructive/20 flex items-center justify-center border border-destructive/30">
                     <AlertCircle className="h-5 w-5 text-destructive" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="text-sm font-medium text-foreground">Gmail non connecté</h3>
+                    <h3 className="text-sm font-medium text-gray-200">Gmail non connecté</h3>
                     <Button
                       variant="default"
                       size="sm"
@@ -871,14 +871,14 @@ export const UnifiedEmailSender = () => {
           </div>
 
           {/* Recipients Card */}
-          <div className="bg-card border border-border rounded-2xl p-5 flex flex-col">
+          <div className="bg-[#121215]/60 backdrop-blur-xl border border-white/[0.08] rounded-2xl p-5 flex flex-col">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="font-semibold text-foreground flex items-center gap-2">
+              <h3 className="font-semibold text-gray-100 flex items-center gap-2">
                 <Building2 className="h-4 w-4 text-indigo-400" />
                 Destinataires
               </h3>
-              <div className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded border border-border">
-                <span className="text-primary font-bold">{selectedCount}</span>/{companies.length} sélectionnée(s)
+              <div className="text-xs text-muted-foreground bg-white/5 px-2 py-1 rounded border border-white/5">
+                <span className="text-indigo-400 font-bold">{selectedCount}</span>/{companies.length} sélectionnée(s)
                 {manualCount > 0 && <span className="ml-1">+ {manualCount} manuel(s)</span>}
               </div>
             </div>
@@ -891,12 +891,12 @@ export const UnifiedEmailSender = () => {
                 onChange={(e) => setManualEmail(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleAddManualRecipient(); } }}
                 placeholder="Ajouter un email manuellement..."
-                className="bg-background border-border pr-10 text-sm"
+                className="bg-[#27272a]/40 border-white/10 pr-10 text-sm"
               />
               <Button
                 variant="ghost"
                 size="icon"
-                className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 text-muted-foreground hover:text-primary"
+                className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 text-muted-foreground hover:text-indigo-400"
                 onClick={handleAddManualRecipient}
               >
                 <Plus className="h-4 w-4" />
@@ -906,8 +906,8 @@ export const UnifiedEmailSender = () => {
             {/* Manual recipients badges */}
             {manualRecipients.length > 0 && (
               <div className="flex flex-wrap gap-1.5 mb-3">
-                  {manualRecipients.map((email) => (
-                  <Badge key={email} variant="secondary" className="gap-1 text-xs bg-primary/10 border-primary/20 text-primary">
+                {manualRecipients.map((email) => (
+                  <Badge key={email} variant="secondary" className="gap-1 text-xs bg-indigo-500/10 border-indigo-500/20 text-indigo-300">
                     <span className="max-w-[160px] truncate">{email}</span>
                     <Button variant="ghost" size="icon" className="h-4 w-4 p-0" onClick={() => handleRemoveManualRecipient(email)}>
                       <X className="h-3 w-3" />
@@ -930,11 +930,11 @@ export const UnifiedEmailSender = () => {
                     return (
                       <div
                         key={company.id}
-                      className={cn(
+                        className={cn(
                           "p-3 rounded-xl flex items-start gap-3 cursor-pointer transition-all border",
                           isSelected
-                            ? "border-primary/30 bg-primary/5 hover:bg-primary/10"
-                            : "border-border bg-card/50 opacity-70 hover:opacity-100 hover:bg-muted/50"
+                            ? "border-indigo-500/30 bg-indigo-500/10 hover:bg-indigo-500/15"
+                            : "border-white/[0.08] bg-[#121215]/30 opacity-70 hover:opacity-100 hover:bg-[#121215]/50"
                         )}
                         onClick={() => handleSelectCompany(company.id)}
                       >
@@ -943,23 +943,23 @@ export const UnifiedEmailSender = () => {
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between">
-                           <span className="font-medium text-sm text-foreground truncate">{company.nom}</span>
+                            <span className="font-medium text-sm text-gray-200 truncate">{company.nom}</span>
                             {company.libelle_ape && (
-                              <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded border border-primary/20 shrink-0 ml-2">
+                              <span className="text-[10px] bg-indigo-500/20 text-indigo-300 px-1.5 py-0.5 rounded border border-indigo-500/20 shrink-0 ml-2">
                                 {company.libelle_ape.substring(0, 20)}
                               </span>
                             )}
                           </div>
-                          <div className="text-xs text-muted-foreground truncate mt-0.5">{company.selected_email}</div>
+                          <div className="text-xs text-gray-500 truncate mt-0.5">{company.selected_email}</div>
                           <div className="flex items-center gap-2 mt-1">
                             {company.website_url && (
-                              <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                              <span className="text-[10px] text-gray-400 flex items-center gap-1">
                                 <Globe className="h-[9px] w-[9px]" />
                                 {new URL(company.website_url).hostname}
                               </span>
                             )}
                             {company.ville && (
-                              <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                              <span className="text-[10px] text-gray-400 flex items-center gap-1">
                                 📍 {company.ville}
                               </span>
                             )}
@@ -973,11 +973,11 @@ export const UnifiedEmailSender = () => {
             </ScrollArea>
 
             {/* Footer actions */}
-            <div className="mt-4 pt-3 border-t border-border flex justify-between items-center">
-              <button className="text-xs text-primary hover:text-primary/80 font-semibold" onClick={handleSelectAll}>
+            <div className="mt-4 pt-3 border-t border-white/10 flex justify-between items-center">
+              <button className="text-xs text-indigo-400 hover:text-indigo-300 font-semibold" onClick={handleSelectAll}>
                 {selectedCompanies.size === companies.length ? "Désélectionner tout" : "Tout sélectionner"}
               </button>
-              <button className="text-xs text-muted-foreground hover:text-foreground" onClick={() => { setSelectedCompanies(new Set()); setManualRecipients([]); }}>
+              <button className="text-xs text-muted-foreground hover:text-gray-200" onClick={() => { setSelectedCompanies(new Set()); setManualRecipients([]); }}>
                 Vider la liste
               </button>
             </div>
@@ -985,13 +985,13 @@ export const UnifiedEmailSender = () => {
 
           {/* AI Options Card (Premium) */}
           {isPremium ? (
-            <div className="bg-card border border-border rounded-2xl p-5 relative overflow-hidden">
+            <div className="bg-[#121215]/60 backdrop-blur-xl border border-white/[0.08] rounded-2xl p-5 relative overflow-hidden">
               {/* Decorative blur */}
-              <div className="absolute -top-10 -right-10 w-32 h-32 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
+              <div className="absolute -top-10 -right-10 w-32 h-32 bg-indigo-600/20 rounded-full blur-3xl pointer-events-none" />
 
               <div className="flex justify-between items-center mb-5 relative z-10">
-                <h3 className="font-semibold text-foreground flex items-center gap-2">
-                  <Sparkles className="h-4 w-4 text-primary" />
+                <h3 className="font-semibold text-gray-100 flex items-center gap-2">
+                  <Sparkles className="h-4 w-4 text-purple-400" />
                   Options IA
                 </h3>
                 <span className="text-[10px] font-bold bg-gradient-to-r from-amber-200 to-yellow-400 text-black px-2 py-0.5 rounded-full uppercase tracking-wider">
@@ -1003,11 +1003,11 @@ export const UnifiedEmailSender = () => {
                 {/* Toggle: AI Emails */}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+                    <div className="w-8 h-8 rounded-lg bg-indigo-500/20 flex items-center justify-center text-indigo-400">
                       <Mail className="h-4 w-4" />
                     </div>
                     <div>
-                      <div className="text-sm font-semibold text-foreground">Emails personnalisés</div>
+                      <div className="text-sm font-semibold text-gray-100">Emails personnalisés</div>
                       <div className="text-xs text-muted-foreground">Génération unique par entreprise</div>
                     </div>
                   </div>
@@ -1017,26 +1017,26 @@ export const UnifiedEmailSender = () => {
                 {/* Toggle: Cover Letters */}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+                    <div className="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center text-purple-400">
                       <FileText className="h-4 w-4" />
                     </div>
                     <div>
-                      <div className="text-sm font-semibold text-foreground">Lettres de motivation</div>
+                      <div className="text-sm font-semibold text-gray-100">Lettres de motivation</div>
                       <div className="text-xs text-muted-foreground">PDF généré et attaché</div>
                     </div>
                   </div>
                   <Switch checked={enableCoverLetter} onCheckedChange={setEnableCoverLetter} />
                 </div>
 
-                <div className="h-px bg-border my-2" />
+                <div className="h-px bg-white/10 my-2" />
 
                 {/* Dropdowns: Approach + Tone */}
                 {enableAIEmails && (
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-tight mb-1.5 block">Approche</Label>
+                      <Label className="text-xs font-semibold text-gray-300 uppercase tracking-tight mb-1.5 block">Approche</Label>
                       <Select value={selectedSubjectType} onValueChange={setSelectedSubjectType}>
-                        <SelectTrigger className="bg-background border-border text-xs">
+                        <SelectTrigger className="bg-[#27272a]/40 border-white/10 text-xs">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -1049,9 +1049,9 @@ export const UnifiedEmailSender = () => {
                       </Select>
                     </div>
                     <div>
-                      <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-tight mb-1.5 block">Ton</Label>
+                      <Label className="text-xs font-semibold text-gray-300 uppercase tracking-tight mb-1.5 block">Ton</Label>
                       <Select value={selectedTone} onValueChange={setSelectedTone}>
-                        <SelectTrigger className="bg-background border-border text-xs">
+                        <SelectTrigger className="bg-[#27272a]/40 border-white/10 text-xs">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -1108,14 +1108,14 @@ export const UnifiedEmailSender = () => {
         <div className="lg:col-span-8 flex flex-col gap-6">
 
           {/* Tabs Navigation */}
-          <div className="bg-card border border-border rounded-xl p-1 inline-flex self-start">
+          <div className="bg-[#121215]/60 backdrop-blur-xl border border-white/[0.08] rounded-xl p-1 inline-flex self-start">
             <button
               onClick={() => setActiveTab("config")}
               className={cn(
                 "px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-all",
                 activeTab === "config"
-                  ? "bg-primary/10 text-primary shadow-sm border border-primary/20"
-                  : "text-muted-foreground hover:text-foreground"
+                  ? "bg-indigo-500/20 text-indigo-300 shadow-sm border border-indigo-500/20"
+                  : "text-muted-foreground hover:text-white"
               )}
             >
               <Edit3 className="h-4 w-4" />
@@ -1126,14 +1126,14 @@ export const UnifiedEmailSender = () => {
               className={cn(
                 "px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-all",
                 activeTab === "preview"
-                  ? "bg-primary/10 text-primary shadow-sm border border-primary/20"
-                  : "text-muted-foreground hover:text-foreground"
+                  ? "bg-indigo-500/20 text-indigo-300 shadow-sm border border-indigo-500/20"
+                  : "text-muted-foreground hover:text-white"
               )}
             >
               <Eye className="h-4 w-4" />
               Prévisualisation
               {successfulEmails.length > 0 && (
-                <span className="bg-primary text-primary-foreground text-[10px] px-1.5 rounded-full ml-1">
+                <span className="bg-indigo-500 text-white text-[10px] px-1.5 rounded-full ml-1">
                   {successfulEmails.length}
                 </span>
               )}
@@ -1145,8 +1145,8 @@ export const UnifiedEmailSender = () => {
             <div className="space-y-6">
               {/* AI Config: CV & Template */}
               {(enableAIEmails || enableCoverLetter) && (
-                <div className="bg-card border border-border rounded-2xl p-6 space-y-5">
-                  <h3 className="font-semibold text-foreground">Configuration IA</h3>
+                <div className="bg-[#121215]/60 backdrop-blur-xl border border-white/[0.08] rounded-2xl p-6 space-y-5">
+                  <h3 className="font-semibold text-gray-100">Configuration IA</h3>
 
                   {/* CV Section */}
                   <div className="space-y-2">
@@ -1154,7 +1154,7 @@ export const UnifiedEmailSender = () => {
                       <Label className="text-sm">Votre CV / Profil</Label>
                       {savedCvProfiles.length > 0 && (
                         <Select value={selectedCvProfileId} onValueChange={handleLoadCvProfile}>
-                          <SelectTrigger className="w-[180px] bg-background border-border text-xs">
+                          <SelectTrigger className="w-[180px] bg-[#27272a]/40 border-white/10 text-xs">
                             <FolderOpen className="h-4 w-4 mr-2" />
                             <SelectValue placeholder="Charger..." />
                           </SelectTrigger>
@@ -1166,15 +1166,15 @@ export const UnifiedEmailSender = () => {
                     </div>
                     <div className="flex gap-2">
                       <Input type="file" accept=".pdf,.docx,.txt" onChange={handleCvUpload} className="hidden" id="cv-upload-unified" disabled={isParsingCv} />
-                      <Button variant="outline" onClick={() => document.getElementById("cv-upload-unified")?.click()} disabled={isParsingCv} className="gap-2">
+                      <Button variant="outline" onClick={() => document.getElementById("cv-upload-unified")?.click()} disabled={isParsingCv} className="gap-2 border-white/10">
                         {isParsingCv ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
                         Importer CV
                       </Button>
-                      <Button variant="outline" size="icon" onClick={() => setShowSaveProfileDialog(true)} disabled={!cvContent.trim()}>
+                      <Button variant="outline" size="icon" onClick={() => setShowSaveProfileDialog(true)} disabled={!cvContent.trim()} className="border-white/10">
                         <Save className="h-4 w-4" />
                       </Button>
                     </div>
-                    <Textarea value={cvContent} onChange={(e) => setCvContent(e.target.value)} placeholder="Collez vos compétences et expériences..." rows={4} className="bg-background border-border" />
+                    <Textarea value={cvContent} onChange={(e) => setCvContent(e.target.value)} placeholder="Collez vos compétences et expériences..." rows={4} className="bg-[#27272a]/40 border-white/10" />
                   </div>
 
                   {/* Template Section */}
@@ -1184,7 +1184,7 @@ export const UnifiedEmailSender = () => {
                         <Label className="text-sm">Style d'email souhaité</Label>
                         {savedTemplates.length > 0 && (
                           <Select value={selectedTemplateId} onValueChange={handleLoadTemplate}>
-                            <SelectTrigger className="w-[180px] bg-background border-border text-xs">
+                            <SelectTrigger className="w-[180px] bg-[#27272a]/40 border-white/10 text-xs">
                               <FolderOpen className="h-4 w-4 mr-2" />
                               <SelectValue placeholder="Charger..." />
                             </SelectTrigger>
@@ -1195,8 +1195,8 @@ export const UnifiedEmailSender = () => {
                         )}
                       </div>
                       <div className="flex gap-2">
-                        <Textarea value={template} onChange={(e) => setTemplate(e.target.value)} placeholder="Décrivez le style d'email souhaité..." rows={3} className="bg-background border-border flex-1" />
-                        <Button variant="outline" size="icon" onClick={() => setShowSaveTemplateDialog(true)} disabled={!template.trim()}>
+                        <Textarea value={template} onChange={(e) => setTemplate(e.target.value)} placeholder="Décrivez le style d'email souhaité..." rows={3} className="bg-[#27272a]/40 border-white/10 flex-1" />
+                        <Button variant="outline" size="icon" onClick={() => setShowSaveTemplateDialog(true)} disabled={!template.trim()} className="border-white/10">
                           <Save className="h-4 w-4" />
                         </Button>
                       </div>
@@ -1207,9 +1207,9 @@ export const UnifiedEmailSender = () => {
 
               {/* Manual Email Content */}
               {!enableAIEmails && (
-                <div className="bg-card border border-border rounded-2xl p-6 space-y-5">
+                <div className="bg-[#121215]/60 backdrop-blur-xl border border-white/[0.08] rounded-2xl p-6 space-y-5">
                   <div className="flex items-center justify-between">
-                    <h3 className="font-semibold text-foreground">Contenu de l'email</h3>
+                    <h3 className="font-semibold text-gray-100">Contenu de l'email</h3>
                     <div className="flex gap-2">
                       {savedTemplates.length > 0 && (
                         <Select 
@@ -1229,7 +1229,7 @@ export const UnifiedEmailSender = () => {
                             }
                           }}
                         >
-                          <SelectTrigger className="w-[180px] bg-background border-border text-xs">
+                          <SelectTrigger className="w-[180px] bg-[#27272a]/40 border-white/10 text-xs">
                             <FolderOpen className="h-4 w-4 mr-2" />
                             <SelectValue placeholder="Charger un template" />
                           </SelectTrigger>
@@ -1243,14 +1243,14 @@ export const UnifiedEmailSender = () => {
 
                   <div>
                     <Label className="text-sm text-muted-foreground">Objet</Label>
-                    <Input value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="Candidature spontanée - [Votre profil]" className="mt-1.5 bg-background border-border" />
+                    <Input value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="Candidature spontanée - [Votre profil]" className="mt-1.5 bg-[#27272a]/40 border-white/10" />
                   </div>
                   <div>
                     <Label className="text-sm text-muted-foreground">Message</Label>
-                    <Textarea value={body} onChange={(e) => setBody(e.target.value)} placeholder="Écrivez votre email..." rows={8} className="mt-1.5 bg-background border-border" />
+                    <Textarea value={body} onChange={(e) => setBody(e.target.value)} placeholder="Écrivez votre email..." rows={8} className="mt-1.5 bg-[#27272a]/40 border-white/10" />
                     <div className="flex flex-wrap gap-2 mt-2">
                       {['{entreprise}', '{ville}', '{secteur}'].map(v => (
-                        <Badge key={v} variant="outline" className="text-xs bg-primary/5 text-primary border-primary/20 cursor-pointer hover:bg-primary/10"
+                        <Badge key={v} variant="outline" className="text-xs bg-indigo-500/10 text-indigo-300 border-indigo-500/20 cursor-pointer hover:bg-indigo-500/20"
                           onClick={() => setBody(prev => prev + ' ' + v)}>
                           {v}
                         </Badge>
@@ -1260,7 +1260,7 @@ export const UnifiedEmailSender = () => {
                   <div>
                     <Label className="text-sm text-muted-foreground">Pièces jointes</Label>
                     <Input type="file" multiple onChange={handleFileChange} className="hidden" id="attachments-unified" />
-                    <Button variant="outline" onClick={() => document.getElementById("attachments-unified")?.click()} className="w-full mt-1.5 border-dashed">
+                    <Button variant="outline" onClick={() => document.getElementById("attachments-unified")?.click()} className="w-full mt-1.5 border-dashed border-white/10">
                       <Upload className="mr-2 h-4 w-4" />
                       Ajouter des fichiers
                     </Button>
@@ -1287,7 +1287,7 @@ export const UnifiedEmailSender = () => {
                       setShowSaveTemplateDialog(true);
                     }}
                     disabled={!subject.trim() && !body.trim()}
-                    className="w-full gap-2"
+                    className="w-full gap-2 border-white/10"
                   >
                     <Save className="h-4 w-4" />
                     Sauvegarder comme template
@@ -1303,7 +1303,7 @@ export const UnifiedEmailSender = () => {
               {/* Regenerate button */}
               {generatedEmails.length > 0 && (
                 <div className="flex justify-end">
-                  <Button variant="outline" size="sm" onClick={handleForceRegenerate} className="gap-2">
+                  <Button variant="outline" size="sm" onClick={handleForceRegenerate} className="gap-2 border-white/10">
                     <RefreshCw className="h-4 w-4" />
                     Regénérer tout
                   </Button>
@@ -1315,9 +1315,9 @@ export const UnifiedEmailSender = () => {
                 <div
                   key={email.company_id}
                   className={cn(
-                    "bg-card rounded-2xl overflow-hidden border",
+                    "bg-[#121215]/60 backdrop-blur-xl rounded-2xl overflow-hidden border",
                     email.success
-                      ? "border-border"
+                      ? "border-white/[0.08]"
                       : "border-red-500/20"
                   )}
                 >
@@ -1325,24 +1325,24 @@ export const UnifiedEmailSender = () => {
                   <div className={cn(
                     "px-6 py-4 border-b flex justify-between items-center",
                     email.success
-                      ? "bg-muted/30 border-border"
-                      : "bg-destructive/5 border-destructive/10"
+                      ? "bg-[#121215]/30 border-white/5"
+                      : "bg-red-500/5 border-red-500/10"
                   )}>
                     <div className="flex items-center gap-3">
                       <div className={cn(
                         "w-8 h-8 rounded-full flex items-center justify-center border",
                         email.success
-                          ? "bg-green-500/15 border-green-500/30 text-green-600"
-                          : "bg-destructive/15 border-destructive/30 text-destructive"
+                          ? "bg-green-500/20 border-green-500/30 text-green-400"
+                          : "bg-red-500/20 border-red-500/30 text-red-400"
                       )}>
                         {email.success ? <CheckCircle className="h-4 w-4" /> : <XCircle className="h-4 w-4" />}
                       </div>
                       <div>
-                        <h4 className="font-semibold text-foreground text-sm">{email.company_name}</h4>
+                        <h4 className="font-semibold text-gray-200 text-sm">{email.company_name}</h4>
                         {email.success ? (
-                          <p className="text-xs text-muted-foreground">{email.company_email}</p>
+                          <p className="text-xs text-gray-500">{email.company_email}</p>
                         ) : (
-                          <p className="text-xs text-destructive flex items-center gap-1">
+                          <p className="text-xs text-red-400 flex items-center gap-1">
                             <AlertCircle className="h-3 w-3" />
                             {email.error || "Erreur de génération"}
                           </p>
@@ -1351,21 +1351,21 @@ export const UnifiedEmailSender = () => {
                     </div>
                     <div className="flex items-center gap-2">
                       {email.coverLetter && (
-                        <Badge variant="outline" className="text-[10px] bg-primary/10 text-primary border-primary/20 gap-1">
+                        <Badge variant="outline" className="text-[10px] bg-purple-500/10 text-purple-300 border-purple-500/20 gap-1">
                           <FileText className="h-3 w-3" />
                           Lettre jointe
                         </Badge>
                       )}
                       {email.success ? (
                         <>
-                          <div className="h-4 w-px bg-border mx-1" />
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => setPreviewEmail(email)}>
+                          <div className="h-4 w-px bg-white/10 mx-1" />
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-white" onClick={() => setPreviewEmail(email)}>
                             <Eye className="h-4 w-4" />
                           </Button>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" onClick={() => handleEditEmail(email)}>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-indigo-400" onClick={() => handleEditEmail(email)}>
                             <Edit3 className="h-4 w-4" />
                           </Button>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => handleRemoveGeneratedEmail(email.company_id)}>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-red-400" onClick={() => handleRemoveGeneratedEmail(email.company_id)}>
                             <X className="h-4 w-4" />
                           </Button>
                         </>
@@ -1373,7 +1373,7 @@ export const UnifiedEmailSender = () => {
                         <Button
                           variant="outline"
                           size="sm"
-                          className="text-xs border-destructive/30 text-destructive hover:bg-destructive/10"
+                          className="text-xs border-red-500/30 text-red-300 hover:bg-red-500/10"
                           onClick={() => handleEditEmail({ ...email, success: true, subject: subject || "Candidature spontanée", body: body || "" })}
                         >
                           Corriger manuellement
@@ -1384,10 +1384,10 @@ export const UnifiedEmailSender = () => {
 
                   {/* Card body */}
                   {email.success && (
-                    <div className="p-6 bg-card/50">
+                    <div className="p-6 bg-[#121215]/20">
                       <div className="mb-3">
-                        <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mr-2">Objet:</span>
-                        <span className="text-sm text-foreground font-medium">{email.subject}</span>
+                        <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide mr-2">Objet:</span>
+                        <span className="text-sm text-gray-200 font-medium">{email.subject}</span>
                       </div>
                       <div className="text-sm text-muted-foreground leading-relaxed line-clamp-2">
                         {email.body?.substring(0, 200)}...
@@ -1398,7 +1398,7 @@ export const UnifiedEmailSender = () => {
               ))}
 
               {generatedEmails.length === 0 && (
-                <div className="bg-card border border-border rounded-2xl p-12 text-center">
+                <div className="bg-[#121215]/60 backdrop-blur-xl border border-white/[0.08] rounded-2xl p-12 text-center">
                   <Mail className="h-12 w-12 text-muted-foreground/30 mx-auto mb-4" />
                   <p className="text-muted-foreground">Aucun email généré. Sélectionnez des destinataires et cliquez sur "Générer".</p>
                 </div>
@@ -1406,37 +1406,37 @@ export const UnifiedEmailSender = () => {
 
               {/* Send Options Card */}
               {successfulEmails.length > 0 && (
-                <div className="bg-card border border-border rounded-2xl p-6">
+                <div className="bg-[#121215]/60 backdrop-blur-xl border border-white/[0.08] rounded-2xl p-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <div>
-                      <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
-                        <Send className="h-4 w-4 text-primary" />
+                      <h3 className="font-semibold text-gray-200 mb-4 flex items-center gap-2">
+                        <Send className="h-4 w-4 text-indigo-400" />
                         Paramètres d'envoi
                       </h3>
                       <RadioGroup value={sendMode} onValueChange={(v: 'now' | 'scheduled') => setSendMode(v)} className="space-y-3">
-                        <label className="flex items-center p-3 border border-border rounded-xl cursor-pointer hover:bg-muted/50 transition-colors group">
+                        <label className="flex items-center p-3 border border-white/[0.08] rounded-xl cursor-pointer hover:bg-white/5 transition-colors group">
                           <RadioGroupItem value="now" id="now-radio" />
                           <div className="ml-3">
-                            <span className="block text-sm font-medium text-foreground">Envoyer maintenant</span>
-                            <span className="block text-xs text-muted-foreground">Les emails partiront immédiatement</span>
+                            <span className="block text-sm font-medium text-gray-200 group-hover:text-white">Envoyer maintenant</span>
+                            <span className="block text-xs text-gray-500">Les emails partiront immédiatement</span>
                           </div>
                         </label>
-                        <label className="flex items-center p-3 border border-border rounded-xl cursor-pointer hover:bg-muted/50 transition-colors group">
+                        <label className="flex items-center p-3 border border-white/[0.08] rounded-xl cursor-pointer hover:bg-white/5 transition-colors group">
                           <RadioGroupItem value="scheduled" id="scheduled-radio" />
                           <div className="ml-3">
-                            <span className="block text-sm font-medium text-foreground">Programmer l'envoi</span>
-                            <span className="block text-xs text-muted-foreground">Choisissez la date et l'heure</span>
+                            <span className="block text-sm font-medium text-gray-200 group-hover:text-white">Programmer l'envoi</span>
+                            <span className="block text-xs text-gray-500">Choisissez la date et l'heure</span>
                           </div>
                         </label>
                       </RadioGroup>
 
                       {sendMode === 'scheduled' && (
-                        <div className="mt-4 pl-4 border-l-2 border-primary/20 space-y-4">
+                        <div className="mt-4 pl-4 border-l-2 border-indigo-500/20 space-y-4">
                           <div className="space-y-2">
                             <Label className="text-sm">Date</Label>
                             <Popover>
                               <PopoverTrigger asChild>
-                                <Button variant="outline" className={cn("w-full justify-start", !scheduledDate && "text-muted-foreground")}>
+                                <Button variant="outline" className={cn("w-full justify-start border-white/10", !scheduledDate && "text-muted-foreground")}>
                                   <CalendarIcon className="mr-2 h-4 w-4" />
                                   {scheduledDate ? format(scheduledDate, "PPP", { locale: fr }) : "Choisir une date"}
                                 </Button>
@@ -1449,9 +1449,9 @@ export const UnifiedEmailSender = () => {
                           <div className="space-y-2">
                             <Label className="text-sm">Heure</Label>
                             <div className="flex items-center gap-2">
-                              <Input type="number" min="0" max="23" value={scheduledHour} onChange={(e) => setScheduledHour(Math.min(23, Math.max(0, parseInt(e.target.value) || 0)).toString().padStart(2, '0'))} className="w-[70px] text-center" />
+                              <Input type="number" min="0" max="23" value={scheduledHour} onChange={(e) => setScheduledHour(Math.min(23, Math.max(0, parseInt(e.target.value) || 0)).toString().padStart(2, '0'))} className="w-[70px] text-center bg-[#27272a]/40 border-white/10" />
                               <span className="text-lg font-medium text-muted-foreground">:</span>
-                              <Input type="number" min="0" max="59" value={scheduledMinute} onChange={(e) => setScheduledMinute(Math.min(59, Math.max(0, parseInt(e.target.value) || 0)).toString().padStart(2, '0'))} className="w-[70px] text-center" />
+                              <Input type="number" min="0" max="59" value={scheduledMinute} onChange={(e) => setScheduledMinute(Math.min(59, Math.max(0, parseInt(e.target.value) || 0)).toString().padStart(2, '0'))} className="w-[70px] text-center bg-[#27272a]/40 border-white/10" />
                             </div>
                           </div>
                           <div className="flex items-center space-x-2">
@@ -1464,10 +1464,10 @@ export const UnifiedEmailSender = () => {
 
                     <div className="flex flex-col justify-between">
                       {/* Pro tip */}
-                      <div className="flex items-start gap-2 p-4 rounded-xl bg-primary/5 border border-primary/20 mb-4">
-                        <Lightbulb className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                      <div className="flex items-start gap-2 p-4 rounded-xl bg-indigo-500/10 border border-indigo-500/20 mb-4">
+                        <Lightbulb className="h-4 w-4 text-indigo-400 mt-0.5 shrink-0" />
                         <p className="text-xs text-muted-foreground">
-                          <span className="font-medium text-primary">Conseil pro :</span> Les emails envoyés entre 10h et 11h30 obtiennent un taux d'ouverture 23% supérieur.
+                          <span className="font-medium text-indigo-300">Conseil pro :</span> Les emails envoyés entre 10h et 11h30 obtiennent un taux d'ouverture 23% supérieur.
                         </p>
                       </div>
 
@@ -1475,7 +1475,7 @@ export const UnifiedEmailSender = () => {
                       <Button
                         onClick={handleSendAll}
                         disabled={isSending || successfulEmails.length === 0 || !gmailConnected}
-                        className="w-full font-bold py-4 px-6 rounded-xl transition-all gap-2 h-auto"
+                        className="w-full bg-white text-black hover:bg-gray-200 font-bold py-4 px-6 rounded-xl shadow-[0_0_20px_rgba(255,255,255,0.1)] transition-all gap-2 h-auto"
                         size="lg"
                       >
                         {isSending ? (
