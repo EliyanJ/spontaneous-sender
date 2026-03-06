@@ -521,20 +521,22 @@ serve(async (req) => {
     };
 
     // ===== SAVE ANALYSIS TO cv_analyses for admin review =====
-    try {
-      await supabase.from('cv_analyses').insert({
-        user_id: user.id,
-        job_title: jobTitle,
-        job_description: jobDescription.substring(0, 10000),
-        cv_text: cvText.substring(0, 10000),
-        profession_id: profession?.id || null,
-        profession_name: profession?.name || 'Non identifié',
-        total_score: totalScore,
-        analysis_result: result,
-        admin_reviewed: false,
-      });
-    } catch (saveErr) {
-      console.error('Failed to save cv_analysis (non-blocking):', saveErr);
+    if (userId) {
+      try {
+        await supabase.from('cv_analyses').insert({
+          user_id: userId,
+          job_title: jobTitle,
+          job_description: jobDescription.substring(0, 10000),
+          cv_text: cvText.substring(0, 10000),
+          profession_id: profession?.id || null,
+          profession_name: profession?.name || 'Non identifié',
+          total_score: totalScore,
+          analysis_result: result,
+          admin_reviewed: false,
+        });
+      } catch (saveErr) {
+        console.error('Failed to save cv_analysis (non-blocking):', saveErr);
+      }
     }
 
     return new Response(JSON.stringify(result), {
