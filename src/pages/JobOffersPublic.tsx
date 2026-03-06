@@ -695,9 +695,8 @@ export const JobOffersPublic = () => {
           <div className="max-w-6xl mx-auto px-4 sm:px-6">
             <div className="grid grid-cols-1 sm:grid-cols-4 gap-8 mb-10">
               {/* Brand */}
-              <div className="sm:col-span-1">
                 <div className="flex items-center gap-2 mb-3 cursor-pointer" onClick={() => navigate('/')}>
-                  <img src={logoBlack} alt="Cronos" className="h-7 w-auto" />
+                  <Logo height={28} />
                 </div>
                 <p className="text-xs text-muted-foreground leading-relaxed">
                   La plateforme de référence pour trouver votre prochain emploi en France. Plus de 2200 offres mises à jour quotidiennement.

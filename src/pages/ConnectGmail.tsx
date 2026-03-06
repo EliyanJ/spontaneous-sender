@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { Loader2, Mail, Shield, Check, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import logoBlack from "@/assets/logo-black.png";
+import { Logo } from "@/components/Logo";
 
 type Language = 'fr' | 'en';
 
