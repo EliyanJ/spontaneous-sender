@@ -7,8 +7,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { signInWithGoogle } from "@/lib/auth-utils";
 import { toast } from "sonner";
 import { Loader2, Eye, EyeOff } from "lucide-react";
-import logoTransparent from "@/assets/logo-transparent.png";
-import logoBlue from "@/assets/logo-blue.png";
+import { Logo } from "@/components/Logo";
+// logoTransparent replaced by Logo component
 
 const Login = () => {
   const navigate = useNavigate();

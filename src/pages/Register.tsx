@@ -8,7 +8,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { Loader2, User, Mail, Lock, GraduationCap, Eye, EyeOff, ArrowLeft, ArrowRight, ChevronLeft, Check, X } from "lucide-react";
-import logoTransparent from "@/assets/logo-transparent.png";
+import { Logo } from "@/components/Logo";
 
 const EDUCATION_LEVELS = [
   { value: "college", label: "Collège" },

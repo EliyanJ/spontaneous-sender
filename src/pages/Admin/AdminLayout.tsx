@@ -14,7 +14,7 @@ import {
   Bot
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import logoTransparent from "@/assets/logo-transparent.png";
+import { Logo } from "@/components/Logo";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
 
