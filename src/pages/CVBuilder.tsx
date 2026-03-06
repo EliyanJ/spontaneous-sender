@@ -4,7 +4,6 @@ import {
   ArrowLeft, Loader2, Sparkles, Save, Eye, ChevronDown, ChevronUp,
   Check, ArrowRight, Camera, CameraOff,
 } from "lucide-react";
-import { PublicNav } from "@/components/PublicNav";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
