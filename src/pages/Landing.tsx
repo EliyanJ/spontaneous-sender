@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { 
   ArrowRight, 
@@ -22,26 +22,12 @@ import { Header } from "@/components/Header";
 import logoBlack from "@/assets/logo-black.png";
 
 const Landing = () => {
-  const [isDark, setIsDark] = useState(() => {
-    const saved = localStorage.getItem('theme');
-    return saved === 'dark';
-  });
   const navigate = useNavigate();
   const { user } = useAuth();
 
   useEffect(() => {
     if (user) navigate("/dashboard");
   }, [user, navigate]);
-
-  useEffect(() => {
-    if (isDark) {
-      document.documentElement.classList.add('dark');
-      localStorage.setItem('theme', 'dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-      localStorage.setItem('theme', 'light');
-    }
-  }, [isDark]);
 
   const scrollToSection = (id: string) => {
     const element = document.getElementById(id);
