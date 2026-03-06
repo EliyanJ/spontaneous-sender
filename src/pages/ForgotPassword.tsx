@@ -7,7 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { Loader2, ArrowLeft, Mail, CheckCircle } from "lucide-react";
-import logoTransparent from "@/assets/logo-transparent.png";
+import logoBlack from "@/assets/logo-black.png";
+import { Link } from "react-router-dom";
 
 export const ForgotPassword = () => {
   const navigate = useNavigate();
