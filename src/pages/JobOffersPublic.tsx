@@ -13,7 +13,7 @@ import { fr } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { Header } from "@/components/Header";
-import logoBlack from "@/assets/logo-black.png";
+import { Logo } from "@/components/Logo";
 
 const PAGE_SIZE = 12;
 const FAVORITES_KEY = "job_favorites_public";
@@ -697,7 +697,7 @@ export const JobOffersPublic = () => {
               {/* Brand */}
               <div className="sm:col-span-1">
                 <div className="flex items-center gap-2 mb-3 cursor-pointer" onClick={() => navigate('/')}>
-                  <img src={logoBlack} alt="Cronos" className="h-7 w-auto" />
+                  <Logo height={28} />
                 </div>
                 <p className="text-xs text-muted-foreground leading-relaxed">
                   La plateforme de référence pour trouver votre prochain emploi en France. Plus de 2200 offres mises à jour quotidiennement.

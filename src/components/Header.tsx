@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { ChevronDown, Menu, X, PenLine, BarChart2, Briefcase, Newspaper } from "lucide-react";
 import { cn } from "@/lib/utils";
-import logoBlack from "@/assets/logo-black-new.png";
+import { Logo } from "@/components/Logo";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -83,12 +83,7 @@ export const Header = () => {
           {/* Left: Logo + ThemeToggle */}
           <div className="flex items-center gap-3 flex-shrink-0">
             <Link to="/" className="flex items-center flex-shrink-0">
-              <img
-                src={logoBlack}
-                alt="Cronos"
-                className="dark:invert"
-                style={{ height: "28px", width: "auto", objectFit: "contain", display: "block" }}
-              />
+              <Logo height={28} />
             </Link>
             {/* Theme toggle — discret, right after logo */}
             <ThemeToggle />

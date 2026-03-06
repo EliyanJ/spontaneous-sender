@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Zap, Target, TrendingUp, Shield, CheckCircle2, Star } from "lucide-react";
 import { Header } from "@/components/Header";
-import logoBlack from "@/assets/logo-black.png";
+import { Logo } from "@/components/Logo";
 
 const FAQ_ITEMS = [
   {
@@ -211,7 +211,7 @@ export const CVScorePage = () => {
       <footer className="border-t border-border/30 bg-card/30 py-8 px-4">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
-            <img src={logoBlack} alt="Cronos" className="h-6 w-auto opacity-70" />
+            <Logo height={24} className="opacity-70" />
             <span className="text-sm text-muted-foreground">© 2026 Cronos</span>
           </div>
           <div className="flex gap-5 text-sm text-muted-foreground">

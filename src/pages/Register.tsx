@@ -8,7 +8,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { Loader2, User, Mail, Lock, GraduationCap, Eye, EyeOff, ArrowLeft, ArrowRight, ChevronLeft, Check, X } from "lucide-react";
-import logoTransparent from "@/assets/logo-transparent.png";
+import { Logo } from "@/components/Logo";
 
 const EDUCATION_LEVELS = [
   { value: "college", label: "Collège" },
@@ -154,7 +154,7 @@ const Register = () => {
 
         {/* Logo */}
         <div className="relative z-10 flex items-center gap-3">
-          <img src={logoTransparent} alt="Cronos" className="h-8 w-8 object-contain" />
+          <Logo height={32} />
           <span className="text-2xl font-bold tracking-tight">Cronos</span>
         </div>
 

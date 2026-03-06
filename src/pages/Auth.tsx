@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { signInWithGoogle } from "@/lib/auth-utils";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
-import logoTransparent from "@/assets/logo-transparent.png";
+import { Logo } from "@/components/Logo";
 
 let authAttempted = false;
 
@@ -95,7 +95,7 @@ const Auth = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">
       <div className="flex flex-col items-center space-y-6">
-        <img src={logoTransparent} alt="Cronos" className="h-20 w-auto" />
+        <Logo height={80} />
         <span className="text-2xl font-bold text-foreground">Cronos</span>
         <Loader2 className="h-10 w-10 animate-spin text-primary" />
         <p className="text-lg font-medium text-foreground">

@@ -2,7 +2,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { Menu, X } from "lucide-react";
-import logoBlack from "@/assets/logo-black.png";
+import { Logo } from "@/components/Logo";
 
 /**
  * Barre de navigation unifiée pour les pages publiques SEO
@@ -28,7 +28,7 @@ export const PublicNav = () => {
 
           {/* Logo */}
           <Link to="/" className="flex items-center gap-3">
-            <img src={logoBlack} alt="Cronos" className="h-9 w-auto" />
+            <Logo height={36} />
             <span className="text-2xl font-bold tracking-tight text-gray-900">Cronos</span>
           </Link>
 

@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { Loader2, ArrowLeft, Mail, CheckCircle } from "lucide-react";
-import logoBlack from "@/assets/logo-black.png";
+import { Logo } from "@/components/Logo";
 
 export const ForgotPassword = () => {
   const navigate = useNavigate();
@@ -48,7 +48,7 @@ export const ForgotPassword = () => {
       {/* Header simple */}
       <header className="border-b border-border/40 px-6 h-14 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2">
-          <img src={logoBlack} alt="Cronos" className="h-7 w-auto" />
+          <Logo height={28} />
           <span className="font-bold text-foreground">Cronos</span>
         </Link>
       </header>

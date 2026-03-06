@@ -10,7 +10,7 @@ import { CVBuilderEditor } from "@/components/cv-builder/CVBuilderEditor";
 import { emptyCVData, CV_TEMPLATES, type CVData, type CVDesignOptions, type TemplateId } from "@/lib/cv-templates";
 import { useAuth } from "@/hooks/useAuth";
 import { Header } from "@/components/Header";
-import logoBlack from "@/assets/logo-black.png";
+import { Logo } from "@/components/Logo";
 
 const SECTORS = [
   { value: "finance", label: "Finance & Corporate" },
@@ -504,7 +504,7 @@ const CVBuilder = () => {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex flex-col md:flex-row justify-between items-center mb-8">
               <div className="flex items-center gap-3 mb-6 md:mb-0">
-                <img src={logoBlack} alt="Cronos" className="h-8 w-auto" />
+                <Logo height={32} />
                 <span className="text-xl font-bold text-foreground">Cronos</span>
               </div>
               <div className="flex gap-8">

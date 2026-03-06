@@ -15,7 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { CVPreview } from "./CVPreview";
 import type { CVData, CVDesignOptions, TemplateId } from "@/lib/cv-templates";
-import logoBlack from "@/assets/logo-black.png";
+import { Logo } from "@/components/Logo";
 import { Link } from "react-router-dom";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -666,8 +666,8 @@ export const CVBuilderEditor = ({
         {/* Logo */}
         <div className="flex items-center gap-3 mb-10">
           <Link to="/" className="flex items-center gap-2.5">
-            <img src={logoBlack} alt="Cronos" className="h-8 w-auto" />
-            <span className="font-bold text-lg text-slate-900 tracking-tight">Cronos</span>
+                <Logo height={32} />
+                <span className="font-bold text-lg text-slate-900 tracking-tight">Cronos</span>
           </Link>
           <span className="ml-2 text-xs font-semibold text-slate-400 bg-white border border-slate-200 px-2 py-1 rounded-full">CV Builder</span>
         </div>

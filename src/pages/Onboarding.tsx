@@ -10,7 +10,7 @@ import { StepObjectives } from "@/components/onboarding/StepObjectives";
 import { StepSectors } from "@/components/onboarding/StepSectors";
 import { StepInterests } from "@/components/onboarding/StepInterests";
 import { StepCV } from "@/components/onboarding/StepCV";
-import logoBlack from "@/assets/logo-black.png";
+import { Logo } from "@/components/Logo";
 
 const STEPS = ["Objectifs", "Secteurs", "Intérêts", "CV"];
 
@@ -81,7 +81,7 @@ const Onboarding = () => {
       <div className="border-b border-border bg-card/80 backdrop-blur-sm">
         <div className="max-w-2xl mx-auto px-4 py-5">
           <div className="flex items-center justify-center gap-3 mb-4">
-            <img src={logoBlack} alt="Cronos" className="h-10 w-auto" />
+            <Logo height={40} />
             <div className="text-center">
               <h1 className="text-lg font-display font-bold text-foreground">Bienvenue sur Cronos</h1>
               <p className="text-xs text-muted-foreground">Configurons votre profil en quelques étapes</p>

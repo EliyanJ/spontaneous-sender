@@ -7,8 +7,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { signInWithGoogle } from "@/lib/auth-utils";
 import { toast } from "sonner";
 import { Loader2, Eye, EyeOff } from "lucide-react";
-import logoTransparent from "@/assets/logo-transparent.png";
-import logoBlue from "@/assets/logo-blue.png";
+import { Logo } from "@/components/Logo";
+// logoTransparent replaced by Logo component
 
 const Login = () => {
   const navigate = useNavigate();
@@ -62,9 +62,10 @@ const Login = () => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="flex flex-col items-center space-y-6">
-          <img src={logoTransparent} alt="Cronos" className="h-20 w-auto" />
-          <Loader2 className="h-10 w-10 animate-spin text-primary" />
-          <p className="text-lg font-medium text-foreground">Redirection vers Google...</p>
+        <Logo height={80} />
+        <span className="text-2xl font-bold text-foreground">Cronos</span>
+        <Loader2 className="h-10 w-10 animate-spin text-primary" />
+        <p className="text-lg font-medium text-foreground">Redirection vers Google...</p>
         </div>
       </div>
     );
@@ -80,10 +81,9 @@ const Login = () => {
           <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] border border-white/20 rounded-full" />
           <div className="absolute top-[30%] left-[20%] w-[200px] h-[200px] border border-white/20 rounded-full" />
         </div>
-
         {/* Logo */}
         <div className="relative z-10 flex items-center gap-3">
-          <img src={logoTransparent} alt="Cronos" className="h-10 w-auto" />
+          <Logo height={40} />
           <span className="text-2xl font-bold tracking-tight">Cronos</span>
         </div>
 
@@ -118,7 +118,7 @@ const Login = () => {
       <div className="w-full lg:w-1/2 flex flex-col justify-center items-center p-6 sm:p-12 bg-secondary/30 relative">
         {/* Mobile logo */}
         <div className="lg:hidden absolute top-6 left-6 flex items-center gap-2">
-          <img src={logoBlue} alt="Cronos" className="h-8 w-auto" />
+          <Logo height={32} />
           <span className="text-lg font-bold">Cronos</span>
         </div>
 
