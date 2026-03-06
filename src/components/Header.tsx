@@ -106,7 +106,7 @@ export const Header = () => {
               onMouseLeave={() => setToolsOpen(false)}
               onMouseEnter={() => setToolsOpen(true)}
             >
-              <button className="flex items-center gap-1 text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 font-medium transition-colors text-sm focus:outline-none">
+              <button className="relative flex items-center gap-1 text-slate-600 dark:text-slate-300 font-medium text-sm pb-0.5 after:absolute after:bottom-0 after:left-0 after:h-[2px] after:w-full after:bg-[#7C3AED] after:scale-x-0 after:origin-right hover:after:scale-x-100 hover:after:origin-left after:transition-transform after:duration-300 focus:outline-none">
                 Outils
                 <ChevronDown
                   className={cn(
