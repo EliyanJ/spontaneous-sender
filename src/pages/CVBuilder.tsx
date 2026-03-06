@@ -201,13 +201,8 @@ const CVBuilder = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [step, setStep] = useState<"select" | "editor">("select");
-  const [mode, setMode] = useState<"create" | "adapt">("create");
-  const [sector, setSector] = useState("finance");
-  const [jobDescription, setJobDescription] = useState("");
   const [cvData, setCvData] = useState<CVData>(emptyCVData);
   const [isLoading, setIsLoading] = useState(false);
-  const [isOptimizing, setIsOptimizing] = useState(false);
-  const [showMobilePreview, setShowMobilePreview] = useState(false);
   const [importedFileName, setImportedFileName] = useState<string | null>(null);
   const [templateId, setTemplateId] = useState<TemplateId>("modern");
   const [selectedPalette, setSelectedPalette] = useState(COLOR_PALETTES[0]);
