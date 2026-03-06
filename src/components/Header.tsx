@@ -78,12 +78,13 @@ export const Header = () => {
       <div className="max-w-7xl mx-auto">
 
         {/* ── Main nav pill — fixed 64px total height ── */}
-        <nav className="h-12 bg-white/70 dark:bg-slate-900/70 backdrop-blur-[10px] rounded-2xl px-4 flex items-center justify-between shadow-sm border border-white/50 dark:border-white/10">
+        <nav className="h-12 bg-background/80 dark:bg-background/90 backdrop-blur-[10px] rounded-2xl px-4 flex items-center justify-between shadow-sm border border-border/50">
 
-          {/* Left: Logo + ThemeToggle */}
+          {/* Left: Logo + "Cronos" text + ThemeToggle */}
           <div className="flex items-center gap-3 flex-shrink-0">
-            <Link to="/" className="flex items-center flex-shrink-0">
-              <Logo height={28} />
+            <Link to="/" className="flex items-center gap-2 flex-shrink-0">
+              <Logo height={48} />
+              <span className="text-[1.1rem] font-bold text-foreground tracking-tight">Cronos</span>
             </Link>
             {/* Theme toggle — discret, right after logo */}
             <ThemeToggle />
@@ -93,13 +94,13 @@ export const Header = () => {
           <div className="hidden md:flex items-center gap-8">
             <button
               onClick={handleHowItWorks}
-              className="relative text-slate-600 dark:text-slate-300 font-medium text-sm pb-0.5 after:absolute after:bottom-0 after:left-0 after:h-[2px] after:w-full after:bg-[#7C3AED] after:scale-x-0 after:origin-right hover:after:scale-x-100 hover:after:origin-left after:transition-transform after:duration-300"
+              className="relative text-muted-foreground hover:text-foreground font-medium text-sm pb-0.5 after:absolute after:bottom-0 after:left-0 after:h-[2px] after:w-full after:bg-primary after:scale-x-0 after:origin-right hover:after:scale-x-100 hover:after:origin-left after:transition-transform after:duration-300 transition-colors"
             >
               Comment ça marche
             </button>
             <Link
               to="/pricing"
-              className="relative text-slate-600 dark:text-slate-300 font-medium text-sm pb-0.5 after:absolute after:bottom-0 after:left-0 after:h-[2px] after:w-full after:bg-[#7C3AED] after:scale-x-0 after:origin-right hover:after:scale-x-100 hover:after:origin-left after:transition-transform after:duration-300"
+              className="relative text-muted-foreground hover:text-foreground font-medium text-sm pb-0.5 after:absolute after:bottom-0 after:left-0 after:h-[2px] after:w-full after:bg-primary after:scale-x-0 after:origin-right hover:after:scale-x-100 hover:after:origin-left after:transition-transform after:duration-300 transition-colors"
             >
               Tarif
             </Link>
@@ -110,7 +111,7 @@ export const Header = () => {
               onMouseLeave={() => setToolsOpen(false)}
               onMouseEnter={() => setToolsOpen(true)}
             >
-              <button className="relative flex items-center gap-1 text-slate-600 dark:text-slate-300 font-medium text-sm pb-0.5 after:absolute after:bottom-0 after:left-0 after:h-[2px] after:w-full after:bg-[#7C3AED] after:scale-x-0 after:origin-right hover:after:scale-x-100 hover:after:origin-left after:transition-transform after:duration-300 focus:outline-none">
+              <button className="relative flex items-center gap-1 text-muted-foreground hover:text-foreground font-medium text-sm pb-0.5 after:absolute after:bottom-0 after:left-0 after:h-[2px] after:w-full after:bg-primary after:scale-x-0 after:origin-right hover:after:scale-x-100 hover:after:origin-left after:transition-transform after:duration-300 transition-colors focus:outline-none">
                 Outils
                 <ChevronDown
                   className={cn(
@@ -126,13 +127,13 @@ export const Header = () => {
                   toolsOpen ? "opacity-100 visible translate-y-0" : "opacity-0 invisible translate-y-2.5"
                 )}
               >
-                <div className="bg-white/80 dark:bg-slate-800/90 backdrop-blur-[10px] rounded-xl shadow-lg border border-white/40 dark:border-white/10 p-2 overflow-hidden">
+                <div className="bg-popover/95 backdrop-blur-[10px] rounded-xl shadow-lg border border-border p-2 overflow-hidden">
                   {TOOLS.map(tool => (
                     <Link
                       key={tool.href}
                       to={tool.href}
                       onClick={() => setToolsOpen(false)}
-                      className="block px-4 py-3 rounded-lg hover:bg-white/60 dark:hover:bg-white/10 transition-colors group/item"
+                      className="block px-4 py-3 rounded-lg hover:bg-accent transition-colors group/item"
                     >
                       <div className="flex items-start gap-3">
                         <div
@@ -147,8 +148,8 @@ export const Header = () => {
                           <tool.Icon className="w-3.5 h-3.5" />
                         </div>
                         <div>
-                          <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">{tool.label}</p>
-                          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{tool.desc}</p>
+                          <p className="text-sm font-semibold text-foreground">{tool.label}</p>
+                          <p className="text-xs text-muted-foreground mt-0.5">{tool.desc}</p>
                         </div>
                       </div>
                     </Link>
@@ -163,14 +164,14 @@ export const Header = () => {
             {!user ? (
               <Link
                 to="/login"
-                className="hidden lg:block text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white text-sm font-medium transition-colors"
+                className="hidden lg:block text-muted-foreground hover:text-foreground text-sm font-medium transition-colors"
               >
                 Connexion
               </Link>
             ) : (
               <Link
                 to="/dashboard"
-                className="hidden lg:block text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white text-sm font-medium transition-colors"
+                className="hidden lg:block text-muted-foreground hover:text-foreground text-sm font-medium transition-colors"
               >
                 Mon Dashboard
               </Link>
@@ -179,7 +180,7 @@ export const Header = () => {
             {/* CTA Commencer */}
             <Link
               to={user ? "/dashboard" : "/register"}
-              className="bg-[#7835e7] hover:bg-[#6829cc] text-white px-4 py-2 rounded-full text-sm font-semibold transition-all shadow-md shadow-purple-500/20 flex items-center gap-2"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground px-4 py-2 rounded-full text-sm font-semibold transition-all shadow-md shadow-primary/20 flex items-center gap-2"
             >
               <svg className="h-3.5 w-3.5 opacity-90 shrink-0" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M0 3.449L9.75 2.1v9.451H0m10.949-9.602L24 0v11.4H10.949M0 12.6h9.75v9.451L0 20.699M10.949 12.749H24V24l-12.9-1.801" />
@@ -190,7 +191,7 @@ export const Header = () => {
             {/* Mobile burger */}
             <button
               onClick={() => setMobileOpen(v => !v)}
-              className="md:hidden text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 focus:outline-none"
+              className="md:hidden text-foreground/70 hover:text-foreground focus:outline-none"
               aria-label="Menu"
             >
               {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -200,48 +201,48 @@ export const Header = () => {
 
         {/* ── Mobile menu ── */}
         {mobileOpen && (
-          <div className="md:hidden mt-2 bg-white/80 dark:bg-slate-900/90 backdrop-blur-[10px] rounded-2xl p-4 border border-white/50 dark:border-white/10 shadow-lg">
+          <div className="md:hidden mt-2 bg-background/95 backdrop-blur-[10px] rounded-2xl p-4 border border-border shadow-lg">
             <div className="flex flex-col gap-4">
               <button
                 onClick={handleHowItWorks}
-                className="text-left text-slate-700 dark:text-slate-200 font-medium px-2 py-1 hover:bg-white/50 dark:hover:bg-white/10 rounded-lg transition-colors text-sm"
+                className="text-left text-foreground font-medium px-2 py-1 hover:bg-accent rounded-lg transition-colors text-sm"
               >
                 Comment ça marche
               </button>
               <Link
                 to="/pricing"
-                className="text-slate-700 dark:text-slate-200 font-medium px-2 py-1 hover:bg-white/50 dark:hover:bg-white/10 rounded-lg transition-colors text-sm"
+                className="text-foreground font-medium px-2 py-1 hover:bg-accent rounded-lg transition-colors text-sm"
               >
                 Tarif
               </Link>
 
-              <div className="border-t border-slate-200 dark:border-slate-700 pt-2">
-                <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 px-2">Outils</p>
+              <div className="border-t border-border pt-2">
+                <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2 px-2">Outils</p>
                 {TOOLS.map(tool => (
                   <Link
                     key={tool.href}
                     to={tool.href}
                     className={cn(
-                      "flex items-center gap-3 px-2 py-2 hover:bg-white/50 dark:hover:bg-white/10 rounded-lg transition-colors",
+                      "flex items-center gap-3 px-2 py-2 hover:bg-accent rounded-lg transition-colors",
                       tool.iconColor
                     )}
                   >
                     <tool.Icon className="w-4 h-4" />
-                    <span className="text-slate-700 dark:text-slate-200 text-sm">{tool.label}</span>
+                    <span className="text-foreground text-sm">{tool.label}</span>
                   </Link>
                 ))}
               </div>
 
-              <div className="border-t border-slate-200 dark:border-slate-700 pt-3 flex flex-col gap-3">
+              <div className="border-t border-border pt-3 flex flex-col gap-3">
                 <Link
                   to={user ? "/dashboard" : "/login"}
-                  className="text-center text-slate-600 dark:text-slate-300 font-medium text-sm"
+                  className="text-center text-muted-foreground font-medium text-sm"
                 >
                   {user ? "Mon Dashboard" : "Connexion"}
                 </Link>
                 <Link
                   to={user ? "/dashboard" : "/register"}
-                  className="flex items-center justify-center gap-2 w-full px-5 py-3 rounded-full text-sm font-semibold text-white bg-[#7835e7] hover:bg-[#6829cc] transition-colors shadow-md shadow-purple-500/20"
+                  className="flex items-center justify-center gap-2 w-full px-5 py-3 rounded-full text-sm font-semibold text-primary-foreground bg-primary hover:bg-primary/90 transition-colors shadow-md shadow-primary/20"
                 >
                   {user ? "Dashboard" : "Commencer"} →
                 </Link>
