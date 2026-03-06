@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { ChevronDown, Menu, X, FileText, Target, Briefcase, BookOpen } from "lucide-react";
 import { cn } from "@/lib/utils";
 import logoBlack from "@/assets/logo-black.png";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 const TOOLS = [
   { label: "Créateur de CV", href: "/cv-builder", icon: FileText, desc: "Générez un CV professionnel" },
