@@ -4,7 +4,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Index from "./pages/Index";
 import Landing from "./pages/Landing";
 import NotFound from "./pages/NotFound";
@@ -76,12 +76,16 @@ const App = () => (
           <Route path="/terms-of-service-en" element={<TermsOfServiceEn />} />
           <Route path="/mentions-legales" element={<LegalNotice />} />
           <Route path="/legal-notice" element={<LegalNoticeEn />} />
-          <Route path="/pricing" element={<Pricing />} />
+          {/* French URLs (canonical) */}
+          <Route path="/prix" element={<Pricing />} />
+          <Route path="/createur-de-cv" element={<CVBuilder />} />
+          {/* Redirects from old English URLs */}
+          <Route path="/pricing" element={<Navigate to="/prix" replace />} />
+          <Route path="/cv-builder" element={<Navigate to="/createur-de-cv" replace />} />
           <Route path="/score-cv" element={<CVScorePage />} />
           <Route path="/offres-emploi" element={<JobOffersPublic />} />
           <Route path="/blog" element={<Blog />} />
           <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
-          <Route path="/cv-builder" element={<CVBuilder />} />
           <Route path="/dashboard" element={<ProtectedRoute><Index /></ProtectedRoute>} />
           
           {/* Admin Routes */}

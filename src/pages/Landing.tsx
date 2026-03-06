@@ -37,11 +37,11 @@ const Landing = () => {
   };
 
   return (
-    <div className="min-h-screen bg-white relative overflow-hidden">
+    <div className="min-h-screen bg-background relative overflow-hidden">
       {/* Subtle background */}
-      <div className="fixed inset-0 z-0 pointer-events-none bg-gradient-to-br from-gray-50 via-white to-purple-50">
+      <div className="fixed inset-0 z-0 pointer-events-none bg-gradient-to-br from-gray-50 via-white to-purple-50 dark:from-black dark:via-black dark:to-black">
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-[100px]" />
-        <div className="absolute bottom-0 right-0 w-[500px] h-[500px] bg-indigo-200/20 rounded-full blur-[120px]" />
+        <div className="absolute bottom-0 right-0 w-[500px] h-[500px] bg-indigo-200/20 dark:bg-indigo-900/10 rounded-full blur-[120px]" />
         {/* Grid pattern */}
         <div className="absolute inset-0 opacity-40" style={{
           backgroundSize: '40px 40px',
@@ -65,12 +65,12 @@ const Landing = () => {
                     Nouvelle IA Générative 2.0
                   </div>
 
-                  <h1 className="text-5xl lg:text-7xl font-bold text-gray-900 mb-6 leading-tight font-display animate-fade-in" style={{ animationDelay: '0.1s' }}>
+                  <h1 className="text-5xl lg:text-7xl font-bold text-foreground mb-6 leading-tight font-display animate-fade-in" style={{ animationDelay: '0.1s' }}>
                     Trouve ton contrat<br />
                     <span className="bg-gradient-to-r from-primary to-[hsl(260_60%_45%)] bg-clip-text text-transparent">Plus vite</span>
                   </h1>
 
-                  <p className="text-lg text-gray-600 mb-10 leading-relaxed max-w-xl animate-fade-in" style={{ animationDelay: '0.2s' }}>
+                  <p className="text-lg text-muted-foreground mb-10 leading-relaxed max-w-xl animate-fade-in" style={{ animationDelay: '0.2s' }}>
                     Accélérez votre recherche d'emploi avec Cronos. Générez des lettres de motivation personnalisées par IA, automatisez vos candidatures spontanées et suivez vos relances depuis un dashboard unique.
                   </p>
 
@@ -86,21 +86,21 @@ const Landing = () => {
                       size="lg"
                       variant="outline"
                       onClick={() => navigate('/login')}
-                      className="px-8 py-4 h-auto bg-white border-gray-200 text-gray-900 text-lg font-medium rounded-xl hover:bg-gray-50 flex items-center gap-2"
+                      className="px-8 py-4 h-auto bg-background border-border text-foreground text-lg font-medium rounded-xl hover:bg-accent flex items-center gap-2"
                     >
                       <Play className="h-4 w-4 text-primary" /> Voir la démo
                     </Button>
                   </div>
 
-                  <div className="mt-10 flex items-center gap-4 text-sm text-gray-600 animate-fade-in" style={{ animationDelay: '0.4s' }}>
+                  <div className="mt-10 flex items-center gap-4 text-sm text-muted-foreground animate-fade-in" style={{ animationDelay: '0.4s' }}>
                     <div className="flex -space-x-2">
                       {['bg-blue-400', 'bg-purple-400', 'bg-green-400'].map((c, i) => (
-                        <div key={i} className={`w-8 h-8 rounded-full ${c} border-2 border-white flex items-center justify-center text-white text-xs font-bold`}>
+                        <div key={i} className={`w-8 h-8 rounded-full ${c} border-2 border-background flex items-center justify-center text-white text-xs font-bold`}>
                           {['A', 'B', 'C'][i]}
                         </div>
                       ))}
                     </div>
-                    <p><span className="text-gray-900 font-semibold">+10 000</span> entreprises prêtes à être candidatées</p>
+                    <p><span className="text-foreground font-semibold">+10 000</span> entreprises prêtes à être candidatées</p>
                   </div>
                 </div>
 
@@ -108,22 +108,22 @@ const Landing = () => {
                 <div className="relative group animate-fade-in" style={{ animationDelay: '0.5s' }}>
                   <div className="absolute -inset-4 bg-gradient-to-r from-primary/20 to-indigo-400/20 rounded-2xl blur-2xl opacity-60 group-hover:opacity-80 transition-opacity duration-500" />
 
-                  <div className="relative bg-white rounded-2xl p-2 border border-gray-200 shadow-2xl">
+                  <div className="relative bg-background rounded-2xl p-2 border border-border shadow-2xl">
                     {/* Browser bar */}
-                    <div className="h-8 bg-gray-100 rounded-t-xl flex items-center px-4 gap-2 border-b border-gray-200">
+                    <div className="h-8 bg-muted rounded-t-xl flex items-center px-4 gap-2 border-b border-border">
                       <div className="w-3 h-3 rounded-full bg-red-400" />
                       <div className="w-3 h-3 rounded-full bg-yellow-400" />
                       <div className="w-3 h-3 rounded-full bg-green-400" />
-                      <div className="ml-4 bg-gray-200 px-3 py-0.5 rounded text-[10px] text-gray-600 font-mono">cronos.app/dashboard</div>
+                      <div className="ml-4 bg-muted-foreground/20 px-3 py-0.5 rounded text-[10px] text-muted-foreground font-mono">cronos.app/dashboard</div>
                     </div>
 
                     {/* Dashboard content */}
-                    <div className="bg-gray-50 p-5 rounded-b-xl">
+                    <div className="bg-secondary p-5 rounded-b-xl">
                       {/* Header dashboard */}
                       <div className="flex justify-between items-center mb-5">
                         <div>
-                          <h3 className="text-xl font-bold text-gray-900">Bonjour 👋</h3>
-                          <p className="text-gray-500 text-xs">Votre recherche est en bonne voie.</p>
+                          <h3 className="text-xl font-bold text-foreground">Bonjour 👋</h3>
+                          <p className="text-muted-foreground text-xs">Votre recherche est en bonne voie.</p>
                         </div>
                         <button className="bg-primary text-white px-3 py-1.5 rounded-lg text-xs font-medium shadow-lg shadow-primary/20 flex items-center gap-1.5">
                           <Send className="h-3 w-3" /> Nouvelle campagne
@@ -133,21 +133,21 @@ const Landing = () => {
                       {/* KPI Cards */}
                       <div className="grid grid-cols-4 gap-3 mb-4">
                         {[
-                          { label: 'Emails trouvés', value: '28', badge: '+8.2%', badgeColor: 'text-green-600 bg-green-50', barColor: 'bg-blue-500', barW: '45%', iconBg: 'bg-blue-50', iconColor: 'text-blue-600' },
-                          { label: 'CV générés', value: '14', badge: '+12.5%', badgeColor: 'text-green-600 bg-green-50', barColor: 'bg-purple-500', barW: '30%', iconBg: 'bg-purple-50', iconColor: 'text-purple-600' },
-                          { label: 'Candidatures', value: '28', badge: '0.0%', badgeColor: 'text-gray-600 bg-gray-100', barColor: 'bg-orange-500', barW: '45%', iconBg: 'bg-orange-50', iconColor: 'text-orange-600' },
-                          { label: 'Crédits restants', value: '5', badge: '-2.1%', badgeColor: 'text-red-600 bg-red-50', barColor: 'bg-red-500', barW: '15%', iconBg: 'bg-red-50', iconColor: 'text-red-600' },
+                          { label: 'Emails trouvés', value: '28', badge: '+8.2%', badgeColor: 'text-green-600 bg-green-100 dark:bg-green-900/30 dark:text-green-400', barColor: 'bg-blue-500', barW: '45%', iconBg: 'bg-blue-100 dark:bg-blue-900/30', iconColor: 'text-blue-600 dark:text-blue-400' },
+                          { label: 'CV générés', value: '14', badge: '+12.5%', badgeColor: 'text-green-600 bg-green-100 dark:bg-green-900/30 dark:text-green-400', barColor: 'bg-purple-500', barW: '30%', iconBg: 'bg-purple-100 dark:bg-purple-900/30', iconColor: 'text-purple-600 dark:text-purple-400' },
+                          { label: 'Candidatures', value: '28', badge: '0.0%', badgeColor: 'text-muted-foreground bg-muted', barColor: 'bg-orange-500', barW: '45%', iconBg: 'bg-orange-100 dark:bg-orange-900/30', iconColor: 'text-orange-600 dark:text-orange-400' },
+                          { label: 'Crédits restants', value: '5', badge: '-2.1%', badgeColor: 'text-red-600 bg-red-100 dark:bg-red-900/30 dark:text-red-400', barColor: 'bg-red-500', barW: '15%', iconBg: 'bg-red-100 dark:bg-red-900/30', iconColor: 'text-red-600 dark:text-red-400' },
                         ].map((kpi, i) => (
-                          <div key={i} className="bg-white p-3 rounded-xl border border-gray-200 shadow-sm">
+                          <div key={i} className="bg-background p-3 rounded-xl border border-border shadow-sm">
                             <div className="flex justify-between items-start mb-2">
                               <div className={`w-7 h-7 rounded-lg ${kpi.iconBg} flex items-center justify-center ${kpi.iconColor}`}>
                                 <BarChart3 className="h-3.5 w-3.5" />
                               </div>
                               <span className={`text-[10px] ${kpi.badgeColor} px-1.5 py-0.5 rounded font-medium`}>{kpi.badge}</span>
                             </div>
-                            <p className="text-gray-500 text-[10px] mb-0.5">{kpi.label}</p>
-                            <p className="text-xl font-bold text-gray-900">{kpi.value}</p>
-                            <div className="w-full bg-gray-200 h-1 mt-2 rounded-full overflow-hidden">
+                            <p className="text-muted-foreground text-[10px] mb-0.5">{kpi.label}</p>
+                            <p className="text-xl font-bold text-foreground">{kpi.value}</p>
+                            <div className="w-full bg-muted h-1 mt-2 rounded-full overflow-hidden">
                               <div className={`${kpi.barColor} h-full rounded-full`} style={{ width: kpi.barW }} />
                             </div>
                           </div>
@@ -157,10 +157,10 @@ const Landing = () => {
                       {/* Bottom charts */}
                       <div className="grid grid-cols-3 gap-3">
                         {/* Performance chart */}
-                        <div className="col-span-2 bg-white rounded-xl border border-gray-200 p-3">
+                        <div className="col-span-2 bg-background rounded-xl border border-border p-3">
                           <div className="flex justify-between items-center mb-2">
-                            <h4 className="text-xs font-semibold text-gray-900">Performance de recherche</h4>
-                            <span className="text-[10px] px-2 py-0.5 bg-gray-100 rounded text-gray-600 border border-gray-300">Semaine</span>
+                            <h4 className="text-xs font-semibold text-foreground">Performance de recherche</h4>
+                            <span className="text-[10px] px-2 py-0.5 bg-muted rounded text-muted-foreground border border-border">Semaine</span>
                           </div>
                           <svg className="w-full h-16" viewBox="0 0 300 60" fill="none">
                             <path d="M0 52 C 40 45, 80 30, 120 34 C 160 38, 200 22, 240 15 L 300 8" stroke="hsl(263 75% 58%)" strokeWidth="2" fill="none"/>
@@ -173,22 +173,22 @@ const Landing = () => {
                               </linearGradient>
                             </defs>
                           </svg>
-                          <div className="flex justify-between text-[9px] text-gray-400 mt-1">
+                          <div className="flex justify-between text-[9px] text-muted-foreground mt-1">
                             <span>Lun</span><span>Mer</span><span>Ven</span><span>Dim</span>
                           </div>
                         </div>
 
                         {/* Score CV */}
-                        <div className="col-span-1 bg-white rounded-xl border border-gray-200 p-3 flex flex-col items-center justify-center relative">
-                          <h4 className="text-[10px] font-semibold text-gray-900 absolute top-3 left-3">Score CV</h4>
+                        <div className="col-span-1 bg-background rounded-xl border border-border p-3 flex flex-col items-center justify-center relative">
+                          <h4 className="text-[10px] font-semibold text-foreground absolute top-3 left-3">Score CV</h4>
                           <div className="relative w-16 h-16 flex items-center justify-center">
                             <svg className="w-full h-full -rotate-90" viewBox="0 0 80 80">
-                              <circle cx="40" cy="40" r="30" stroke="#e5e7eb" strokeWidth="6" fill="transparent" />
+                              <circle cx="40" cy="40" r="30" stroke="hsl(var(--border))" strokeWidth="6" fill="transparent" />
                               <circle cx="40" cy="40" r="30" stroke="#fbbf24" strokeWidth="6" fill="transparent" strokeDasharray="188" strokeDashoffset="47" strokeLinecap="round" />
                             </svg>
                             <div className="absolute text-center">
-                              <span className="text-lg font-bold text-gray-900 block leading-none">72</span>
-                              <span className="text-[8px] text-gray-500 uppercase">Bien</span>
+                              <span className="text-lg font-bold text-foreground block leading-none">72</span>
+                              <span className="text-[8px] text-muted-foreground uppercase">Bien</span>
                             </div>
                           </div>
                         </div>
@@ -230,7 +230,7 @@ const Landing = () => {
           </section>
 
           {/* How It Works - Timeline zigzag */}
-          <section id="how-it-works" className="py-24 relative overflow-hidden">
+          <section id="comment-ca-marche" className="py-24 relative overflow-hidden">
             {/* Decorative vertical line */}
             <div className="absolute left-1/2 top-0 bottom-0 w-px bg-gradient-to-b from-transparent via-primary/30 to-transparent hidden md:block" />
             

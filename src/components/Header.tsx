@@ -9,7 +9,7 @@ import { useAuth } from "@/hooks/useAuth";
 const TOOLS = [
   {
     label: "Créateur de CV",
-    href: "/cv-builder",
+    href: "/createur-de-cv",
     Icon: PenLine,
     desc: "Créez un CV parfait",
     iconBg: "bg-blue-100 dark:bg-blue-900/40",
@@ -65,10 +65,10 @@ export const Header = () => {
 
   const handleHowItWorks = () => {
     if (location.pathname === "/") {
-      const el = document.getElementById("how-it-works");
+      const el = document.getElementById("comment-ca-marche");
       if (el) el.scrollIntoView({ behavior: "smooth" });
     } else {
-      navigate("/#how-it-works");
+      navigate("/#comment-ca-marche");
     }
     setMobileOpen(false);
   };
@@ -98,7 +98,7 @@ export const Header = () => {
               Comment ça marche
             </button>
             <Link
-              to="/pricing"
+              to="/prix"
               className="relative text-foreground/70 font-medium text-sm pb-0.5 after:absolute after:bottom-0 after:left-0 after:h-[2px] after:w-full after:bg-[#7C3AED] after:scale-x-0 after:origin-right hover:after:scale-x-100 hover:after:origin-left after:transition-transform after:duration-300"
             >
               Tarif
@@ -209,7 +209,7 @@ export const Header = () => {
                 Comment ça marche
               </button>
               <Link
-                to="/pricing"
+                to="/prix"
                 className="text-foreground font-medium px-2 py-1 hover:bg-accent rounded-lg transition-colors text-sm"
               >
                 Tarif
