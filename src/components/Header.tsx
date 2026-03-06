@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { ChevronDown, Menu, X, FileText, Target, Briefcase, BookOpen, Zap } from "lucide-react";
+import { ChevronDown, Menu, X, FileText, Target, Briefcase, BookOpen } from "lucide-react";
 import { cn } from "@/lib/utils";
-import logoBlack from "@/assets/logo-black.png";
 
 const TOOLS = [
   { label: "Créateur de CV", href: "/cv-builder", icon: FileText, desc: "Générez un CV professionnel" },
@@ -71,47 +70,34 @@ export const Header = () => {
         style={{ WebkitBackdropFilter: "blur(12px)" }}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-[68px]">
+          <div className="flex items-center h-[68px] gap-8">
 
-            {/* ── Logo pill ── */}
+            {/* ── Logo texte noir ── */}
             <Link
               to="/"
-              className="group flex items-center gap-2.5 px-3 py-1.5 rounded-2xl transition-all duration-200"
-              style={{
-                background: "linear-gradient(135deg, #1a0a2e 0%, #2d1060 100%)",
-                border: "1px solid rgba(255,255,255,0.15)",
-              }}
-              onMouseEnter={e => {
-                (e.currentTarget as HTMLElement).style.boxShadow = "0 0 12px rgba(139,92,246,0.4)";
-              }}
-              onMouseLeave={e => {
-                (e.currentTarget as HTMLElement).style.boxShadow = "none";
-              }}
+              className="flex items-center gap-2 flex-shrink-0 group"
             >
-              <div className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ background: "rgba(139,92,246,0.3)" }}>
-                <Zap className="h-3.5 w-3.5 text-violet-300" strokeWidth={2.5} />
-              </div>
-              <span className="text-[15px] font-semibold text-white tracking-tight">Cronos</span>
+              <span className="text-[18px] font-bold text-gray-900 tracking-tight group-hover:text-[#7c3aed] transition-colors duration-200">Cronos</span>
             </Link>
 
-            {/* ── Desktop nav ── */}
-            <nav className="hidden md:flex items-center gap-1">
+            {/* ── Desktop nav (collé au logo) ── */}
+            <nav className="hidden md:flex items-center gap-0.5">
               {/* Comment ça marche */}
               <button
                 onClick={handleHowItWorks}
-                className="relative px-4 py-2 text-sm font-medium text-[#374151] hover:text-[#7c3aed] transition-colors duration-200 group"
+                className="relative px-3 py-2 text-sm font-bold text-[#374151] hover:text-[#7c3aed] transition-colors duration-200 group"
               >
                 Comment ça marche
-                <span className="absolute bottom-1 left-4 right-4 h-[2px] bg-[#7c3aed] scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left rounded-full" />
+                <span className="absolute bottom-1 left-3 right-3 h-[2px] bg-[#7c3aed] scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left rounded-full" />
               </button>
 
               {/* Tarifs */}
               <Link
                 to="/pricing"
-                className="relative px-4 py-2 text-sm font-medium text-[#374151] hover:text-[#7c3aed] transition-colors duration-200 group"
+                className="relative px-3 py-2 text-sm font-bold text-[#374151] hover:text-[#7c3aed] transition-colors duration-200 group"
               >
                 Tarifs
-                <span className="absolute bottom-1 left-4 right-4 h-[2px] bg-[#7c3aed] scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left rounded-full" />
+                <span className="absolute bottom-1 left-3 right-3 h-[2px] bg-[#7c3aed] scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left rounded-full" />
               </Link>
 
               {/* Outils dropdown */}
@@ -119,7 +105,7 @@ export const Header = () => {
                 <button
                   onClick={() => setToolsOpen(v => !v)}
                   className={cn(
-                    "relative flex items-center gap-1.5 px-4 py-2 text-sm font-medium transition-colors duration-200 group",
+                    "relative flex items-center gap-1.5 px-3 py-2 text-sm font-bold transition-colors duration-200 group",
                     toolsOpen ? "text-[#7c3aed]" : "text-[#374151] hover:text-[#7c3aed]"
                   )}
                 >
@@ -130,7 +116,7 @@ export const Header = () => {
                       toolsOpen && "rotate-180"
                     )}
                   />
-                  <span className="absolute bottom-1 left-4 right-4 h-[2px] bg-[#7c3aed] scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left rounded-full" />
+                  <span className="absolute bottom-1 left-3 right-3 h-[2px] bg-[#7c3aed] scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left rounded-full" />
                 </button>
 
                 {/* Dropdown panel */}
@@ -165,6 +151,9 @@ export const Header = () => {
                 )}
               </div>
             </nav>
+
+            {/* Spacer */}
+            <div className="flex-1" />
 
             {/* ── CTA ── */}
             <div className="hidden md:flex items-center">
