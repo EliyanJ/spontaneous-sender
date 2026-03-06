@@ -231,7 +231,6 @@ const CVBuilder = () => {
 
   // Filter templates based on photo toggle — strict match
   const visibleTemplates = GALLERY_TEMPLATES.filter(t => t.hasPhoto === withPhoto);
-
   const recommendedTemplates = visibleTemplates.slice(0, 3);
   const extraTemplates = visibleTemplates.slice(3);
 
@@ -268,13 +267,13 @@ const CVBuilder = () => {
       return;
     }
     toast.error("Format non supporté. Utilisez un fichier .txt, .pdf ou .docx");
-  }, [sector]);
+  }, []);
 
   const generateFromText = async (cvText: string) => {
     setIsLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke("generate-cv-content", {
-        body: { cvText, sector, mode: "structure" },
+        body: { cvText, mode: "structure" },
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
@@ -295,32 +294,13 @@ const CVBuilder = () => {
     await generateFromText(profileContent);
   };
 
-  const handleOptimize = async () => {
-    if (!jobDescription.trim()) { toast.error("Veuillez coller la fiche de poste"); return; }
-    const hasContent = cvData.personalInfo.firstName || cvData.experiences.some(e => e.role);
-    if (!hasContent) { toast.error("Veuillez d'abord remplir votre CV"); return; }
-    setIsOptimizing(true);
-    try {
-      const cvText = JSON.stringify(cvData);
-      const { data, error } = await supabase.functions.invoke("generate-cv-content", {
-        body: { cvText, sector, jobDescription, mode: "optimize" },
-      });
-      if (error) throw error;
-      if (data?.error) throw new Error(data.error);
-      if (data?.cvData) { setCvData(data.cvData); toast.success("CV optimisé pour le poste !"); }
-    } catch (err: any) {
-      toast.error("Erreur: " + (err.message || "Erreur inconnue"));
-    } finally { setIsOptimizing(false); }
-  };
-
   const handleSaveCV = async () => {
     if (!user) { toast.error("Vous devez être connecté"); return; }
     try {
       const { error } = await supabase.from("user_generated_cvs").insert({
         user_id: user.id,
-        name: `CV ${SECTORS.find(s => s.value === sector)?.label || sector} - ${cvData.personalInfo.firstName} ${cvData.personalInfo.lastName}`.trim(),
+        name: `CV - ${cvData.personalInfo.firstName} ${cvData.personalInfo.lastName}`.trim() || "Mon CV",
         cv_data: cvData as any,
-        job_description: mode === "adapt" ? jobDescription : null,
       });
       if (error) throw error;
       toast.success("CV sauvegardé !");
