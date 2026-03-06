@@ -81,7 +81,8 @@ const Login = () => {
           <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] border border-white/20 rounded-full" />
           <div className="absolute top-[30%] left-[20%] w-[200px] h-[200px] border border-white/20 rounded-full" />
         </div>
-
+        {/* Logo */}
+        <div className="relative z-10 flex items-center gap-3">
           <Logo height={40} />
           <span className="text-2xl font-bold tracking-tight">Cronos</span>
         </div>
