@@ -140,15 +140,13 @@ const TemplateCard = ({
           style={{ background: primaryColor }}
         />
 
-        {/* Live name preview badge */}
-        {(firstName || lastName) && (
-          <div
-            className="absolute bottom-3 left-3 right-3 text-center text-white text-sm font-bold truncate px-2 py-1 rounded-lg"
-            style={{ background: primaryColor + "CC", backdropFilter: "blur(4px)" }}
-          >
-            {displayName}
-          </div>
-        )}
+        {/* Live name preview — always visible */}
+        <div
+          className="absolute bottom-0 left-0 right-0 px-3 pt-6 pb-2 text-center text-white text-sm font-bold truncate"
+          style={{ background: `linear-gradient(to top, ${primaryColor}F0 0%, transparent 100%)` }}
+        >
+          {displayName}
+        </div>
 
         {/* Hover overlay with CTA */}
         <div
@@ -243,10 +241,8 @@ const CVBuilder = () => {
     setTemplateId(id);
   };
 
-  // Filter templates based on photo toggle
-  const visibleTemplates = withPhoto
-    ? GALLERY_TEMPLATES
-    : GALLERY_TEMPLATES.filter(t => !t.hasPhoto);
+  // Filter templates based on photo toggle — strict match
+  const visibleTemplates = GALLERY_TEMPLATES.filter(t => t.hasPhoto === withPhoto);
 
   const recommendedTemplates = visibleTemplates.slice(0, 3);
   const extraTemplates = visibleTemplates.slice(3);
@@ -435,26 +431,31 @@ const CVBuilder = () => {
                   </div>
                 </div>
 
-                {/* Toggle photo */}
+                {/* Boutons photo / sans photo */}
                 <div>
-                  <label className="block text-sm font-medium mb-2">CV avec photo</label>
-                  <button
-                    onClick={() => setWithPhoto(v => !v)}
-                    className={`flex items-center gap-3 px-4 py-3 rounded-xl border transition-all text-sm font-medium w-full ${
-                      withPhoto
-                        ? "bg-white/25 border-white/40 text-white"
-                        : "bg-white/10 border-white/20 text-white/70"
-                    }`}
-                  >
-                    <div className={`relative w-10 h-5 rounded-full transition-colors ${withPhoto ? "bg-white/50" : "bg-white/20"}`}>
-                      <span className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${withPhoto ? "translate-x-5" : "translate-x-0.5"}`} />
-                    </div>
-                    {withPhoto ? (
-                      <span className="flex items-center gap-1.5"><Camera className="h-4 w-4" /> Avec photo</span>
-                    ) : (
-                      <span className="flex items-center gap-1.5"><CameraOff className="h-4 w-4" /> Sans photo</span>
-                    )}
-                  </button>
+                  <label className="block text-sm font-medium mb-2">Photo sur le CV</label>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setWithPhoto(true)}
+                      className={`flex items-center justify-center gap-1.5 px-3 py-3 rounded-xl border transition-all text-sm font-medium flex-1 ${
+                        withPhoto
+                          ? "bg-white/30 border-white/70 text-white shadow-lg"
+                          : "bg-white/10 border-white/20 text-white/60 hover:bg-white/15"
+                      }`}
+                    >
+                      <Camera className="h-4 w-4" /> Avec photo
+                    </button>
+                    <button
+                      onClick={() => setWithPhoto(false)}
+                      className={`flex items-center justify-center gap-1.5 px-3 py-3 rounded-xl border transition-all text-sm font-medium flex-1 ${
+                        !withPhoto
+                          ? "bg-white/30 border-white/70 text-white shadow-lg"
+                          : "bg-white/10 border-white/20 text-white/60 hover:bg-white/15"
+                      }`}
+                    >
+                      <CameraOff className="h-4 w-4" /> Sans photo
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
