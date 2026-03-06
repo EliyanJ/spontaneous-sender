@@ -930,11 +930,11 @@ export const UnifiedEmailSender = () => {
                     return (
                       <div
                         key={company.id}
-                        className={cn(
+                      className={cn(
                           "p-3 rounded-xl flex items-start gap-3 cursor-pointer transition-all border",
                           isSelected
-                            ? "border-indigo-500/30 bg-indigo-500/10 hover:bg-indigo-500/15"
-                            : "border-white/[0.08] bg-[#121215]/30 opacity-70 hover:opacity-100 hover:bg-[#121215]/50"
+                            ? "border-primary/30 bg-primary/5 hover:bg-primary/10"
+                            : "border-border bg-card/50 opacity-70 hover:opacity-100 hover:bg-muted/50"
                         )}
                         onClick={() => handleSelectCompany(company.id)}
                       >
@@ -943,23 +943,23 @@ export const UnifiedEmailSender = () => {
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between">
-                            <span className="font-medium text-sm text-gray-200 truncate">{company.nom}</span>
+                           <span className="font-medium text-sm text-foreground truncate">{company.nom}</span>
                             {company.libelle_ape && (
-                              <span className="text-[10px] bg-indigo-500/20 text-indigo-300 px-1.5 py-0.5 rounded border border-indigo-500/20 shrink-0 ml-2">
+                              <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded border border-primary/20 shrink-0 ml-2">
                                 {company.libelle_ape.substring(0, 20)}
                               </span>
                             )}
                           </div>
-                          <div className="text-xs text-gray-500 truncate mt-0.5">{company.selected_email}</div>
+                          <div className="text-xs text-muted-foreground truncate mt-0.5">{company.selected_email}</div>
                           <div className="flex items-center gap-2 mt-1">
                             {company.website_url && (
-                              <span className="text-[10px] text-gray-400 flex items-center gap-1">
+                              <span className="text-[10px] text-muted-foreground flex items-center gap-1">
                                 <Globe className="h-[9px] w-[9px]" />
                                 {new URL(company.website_url).hostname}
                               </span>
                             )}
                             {company.ville && (
-                              <span className="text-[10px] text-gray-400 flex items-center gap-1">
+                              <span className="text-[10px] text-muted-foreground flex items-center gap-1">
                                 📍 {company.ville}
                               </span>
                             )}
