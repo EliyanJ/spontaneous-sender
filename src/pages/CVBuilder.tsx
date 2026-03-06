@@ -287,22 +287,22 @@ const CVBuilder = () => {
   // ── STEP 1: Template selection ─────────────────────────────────────────────
   if (step === "select") {
     return (
-      <div className="min-h-screen bg-white flex flex-col">
+      <div className="min-h-screen bg-background flex flex-col">
         {/* Header unifié */}
         {!user ? (
           <PublicNav />
         ) : (
-          <header className="sticky top-0 z-50 bg-white border-b border-gray-200">
+          <header className="sticky top-0 z-50 bg-background border-b border-border">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <Button variant="ghost" size="sm" onClick={() => navigate("/dashboard")} className="gap-1.5">
                   <ArrowLeft className="h-4 w-4" />
                   Tableau de bord
                 </Button>
-                <div className="h-5 w-px bg-gray-200" />
+                <div className="h-5 w-px bg-border" />
                 <div className="flex items-center gap-2">
                   <img src={logoBlack} alt="Cronos" className="h-6 w-auto" />
-                  <span className="font-semibold text-gray-900 text-sm">CV Builder</span>
+                  <span className="font-semibold text-foreground text-sm">CV Builder</span>
                 </div>
               </div>
             </div>
