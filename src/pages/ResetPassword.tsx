@@ -87,7 +87,7 @@ export const ResetPassword = () => {
       <div className="w-full max-w-md space-y-6">
         {/* Logo */}
         <div className="flex flex-col items-center gap-4">
-          <img src={logoTransparent} alt="Cronos" className="h-16 w-auto" />
+          <Logo height={64} />
           <h1 className="text-2xl font-bold text-foreground">Cronos</h1>
         </div>
 

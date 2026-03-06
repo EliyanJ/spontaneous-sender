@@ -154,7 +154,7 @@ const Register = () => {
 
         {/* Logo */}
         <div className="relative z-10 flex items-center gap-3">
-          <img src={logoTransparent} alt="Cronos" className="h-8 w-8 object-contain" />
+          <Logo height={32} />
           <span className="text-2xl font-bold tracking-tight">Cronos</span>
         </div>
 
