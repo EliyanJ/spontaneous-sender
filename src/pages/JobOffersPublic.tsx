@@ -702,11 +702,11 @@ export const JobOffersPublic = () => {
             <div className="space-y-3">
               <FAQItem
                 question="Comment optimiser ma recherche ?"
-                answer="Pour optimiser votre recherche d'emploi sur GetCronos, utilisez les filtres avancés (localisation, type de contrat, distance) et les mots-clés précis. Créez des alertes personnalisées pour recevoir les nouvelles offres correspondant à votre profil. Notre IA vous aide également à affiner votre CV pour maximiser vos chances auprès des recruteurs."
+                answer="Pour optimiser votre recherche d'emploi sur Cronos, utilisez les filtres avancés (localisation, type de contrat, distance) et les mots-clés précis. Créez des alertes personnalisées pour recevoir les nouvelles offres correspondant à votre profil. Notre IA vous aide également à affiner votre CV pour maximiser vos chances auprès des recruteurs."
               />
               <FAQItem
-                question="Quels sont les avantages de GetCronos ?"
-                answer="GetCronos vous offre un accès à plus de 2200 offres d'emploi actualisées quotidiennement, des outils d'optimisation de CV basés sur l'IA, des conseils personnalisés pour votre carrière, et un accompagnement stratégique pour maximiser vos chances de décrocher le poste idéal. Notre plateforme est conçue pour vous donner un avantage compétitif dans votre recherche."
+                question="Quels sont les avantages de Cronos ?"
+                answer="Cronos vous offre un accès à plus de 2200 offres d'emploi actualisées quotidiennement, des outils d'optimisation de CV basés sur l'IA, des conseils personnalisés pour votre carrière, et un accompagnement stratégique pour maximiser vos chances de décrocher le poste idéal. Notre plateforme est conçue pour vous donner un avantage compétitif dans votre recherche."
               />
               <FAQItem
                 question="Comment fonctionne l'analyse de CV ?"
@@ -714,7 +714,7 @@ export const JobOffersPublic = () => {
               />
               <FAQItem
                 question="Les services sont-ils gratuits ?"
-                answer="GetCronos propose une version gratuite avec accès aux offres d'emploi et fonctionnalités de base. Pour bénéficier de l'analyse approfondie de CV, des conseils personnalisés et des alertes avancées, consultez notre page Tarification pour découvrir nos formules premium adaptées à vos besoins."
+                answer="Cronos propose une version gratuite avec accès aux offres d'emploi et fonctionnalités de base. Pour bénéficier de l'analyse approfondie de CV, des conseils personnalisés et des alertes avancées, consultez notre page Tarification pour découvrir nos formules premium adaptées à vos besoins."
               />
             </div>
           </div>

@@ -84,7 +84,7 @@ const Login = () => {
         {/* Logo */}
         <div className="relative z-10 flex items-center gap-3">
           <img src={logoTransparent} alt="Cronos" className="h-10 w-auto" />
-          <span className="text-2xl font-bold tracking-tight">GetCronos</span>
+          <span className="text-2xl font-bold tracking-tight">Cronos</span>
         </div>
 
         {/* Quote */}
@@ -119,7 +119,7 @@ const Login = () => {
         {/* Mobile logo */}
         <div className="lg:hidden absolute top-6 left-6 flex items-center gap-2">
           <img src={logoBlue} alt="Cronos" className="h-8 w-auto" />
-          <span className="text-lg font-bold">GetCronos</span>
+          <span className="text-lg font-bold">Cronos</span>
         </div>
 
         {/* Back to home */}
