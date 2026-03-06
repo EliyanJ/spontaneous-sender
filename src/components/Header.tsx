@@ -73,12 +73,9 @@ export const Header = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center h-[68px] gap-8">
 
-            {/* ── Logo texte noir ── */}
-            <Link
-              to="/"
-              className="flex items-center gap-2 flex-shrink-0 group"
-            >
-              <span className="text-[18px] font-bold text-gray-900 tracking-tight group-hover:text-[#7c3aed] transition-colors duration-200">Cronos</span>
+            {/* ── Logo image noir ── */}
+            <Link to="/" className="flex items-center flex-shrink-0 opacity-90 hover:opacity-100 transition-opacity duration-200">
+              <img src={logoBlack} alt="Cronos" className="h-7 w-auto" />
             </Link>
 
             {/* ── Desktop nav (collé au logo) ── */}
@@ -86,7 +83,7 @@ export const Header = () => {
               {/* Comment ça marche */}
               <button
                 onClick={handleHowItWorks}
-                className="relative px-3 py-2 text-sm font-bold text-[#374151] hover:text-[#7c3aed] transition-colors duration-200 group"
+                className="relative px-3 py-2 text-sm font-normal text-[#374151] hover:text-[#7c3aed] transition-colors duration-200 group"
               >
                 Comment ça marche
                 <span className="absolute bottom-1 left-3 right-3 h-[2px] bg-[#7c3aed] scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left rounded-full" />
@@ -95,7 +92,7 @@ export const Header = () => {
               {/* Tarifs */}
               <Link
                 to="/pricing"
-                className="relative px-3 py-2 text-sm font-bold text-[#374151] hover:text-[#7c3aed] transition-colors duration-200 group"
+                className="relative px-3 py-2 text-sm font-normal text-[#374151] hover:text-[#7c3aed] transition-colors duration-200 group"
               >
                 Tarifs
                 <span className="absolute bottom-1 left-3 right-3 h-[2px] bg-[#7c3aed] scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left rounded-full" />
@@ -106,7 +103,7 @@ export const Header = () => {
                 <button
                   onClick={() => setToolsOpen(v => !v)}
                   className={cn(
-                    "relative flex items-center gap-1.5 px-3 py-2 text-sm font-bold transition-colors duration-200 group",
+                    "relative flex items-center gap-1.5 px-3 py-2 text-sm font-normal transition-colors duration-200 group",
                     toolsOpen ? "text-[#7c3aed]" : "text-[#374151] hover:text-[#7c3aed]"
                   )}
                 >
