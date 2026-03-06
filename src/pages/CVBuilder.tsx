@@ -670,13 +670,13 @@ const TemplateCard = ({
 }) => (
   <div
     onClick={onSelect}
-    className={`bg-white rounded-2xl border-2 cursor-pointer group transition-all ${
+    className={`bg-card rounded-2xl border-2 cursor-pointer group transition-all relative ${
       selected
-        ? "border-purple-600 shadow-xl shadow-purple-600/10"
-        : "border-gray-200 hover:border-purple-600 hover:shadow-xl"
+        ? "border-primary shadow-xl shadow-primary/10"
+        : "border-border hover:border-primary hover:shadow-xl"
     }`}
   >
-    <div className={`overflow-hidden rounded-t-2xl bg-gray-50 p-3 ${size === "large" ? "h-56" : "h-40"}`}>
+    <div className={`overflow-hidden rounded-t-2xl bg-muted/30 p-3 ${size === "large" ? "h-56" : "h-40"}`}>
       <img
         src={tpl.image}
         alt={tpl.name}
@@ -684,24 +684,24 @@ const TemplateCard = ({
         onError={e => { (e.target as HTMLImageElement).src = "/placeholder.svg"; }}
       />
       {selected && (
-        <div className="absolute top-3 right-3 w-7 h-7 bg-purple-600 rounded-full flex items-center justify-center shadow-lg">
-          <Check className="h-4 w-4 text-white" />
+        <div className="absolute top-3 right-3 w-7 h-7 bg-primary rounded-full flex items-center justify-center shadow-lg">
+          <Check className="h-4 w-4 text-primary-foreground" />
         </div>
       )}
     </div>
     <div className={size === "large" ? "p-5" : "p-3"}>
       <div className="flex items-center justify-between mb-1">
-        <h3 className={`font-semibold text-gray-900 ${size === "small" ? "text-sm" : ""}`}>{tpl.name}</h3>
+        <h3 className={`font-semibold text-foreground ${size === "small" ? "text-sm" : ""}`}>{tpl.name}</h3>
         <span className="px-2 py-0.5 bg-green-500/10 text-green-600 text-xs font-semibold rounded-lg">{tpl.atsScore}%</span>
       </div>
-      {size === "large" && <p className="text-sm text-gray-500 mb-3">{tpl.description}</p>}
+      {size === "large" && <p className="text-sm text-muted-foreground mb-3">{tpl.description}</p>}
       <div className="flex items-center justify-between">
         <div className="flex space-x-1.5">
           {tpl.colors.map(c => (
             <span key={c} className="w-3 h-3 rounded-full" style={{ background: c }} />
           ))}
         </div>
-        <button className="text-purple-600 hover:text-purple-800 font-medium text-sm flex items-center gap-1 group-hover:underline">
+        <button className="text-primary hover:text-primary/80 font-medium text-sm flex items-center gap-1 group-hover:underline">
           Utiliser <ArrowRight className="h-3 w-3" />
         </button>
       </div>
@@ -711,22 +711,22 @@ const TemplateCard = ({
 
 // ─── Extra Template Card (coming soon / locked) ────────────────────────────────
 const ExtraTemplateCard = ({ tpl }: { tpl: { name: string; image: string; colors: string[]; score: number } }) => (
-  <div className="bg-white rounded-2xl border-2 border-gray-200 opacity-70 cursor-not-allowed group relative">
-    <div className="h-40 overflow-hidden rounded-t-2xl bg-gray-50 p-3">
+  <div className="bg-card rounded-2xl border-2 border-border opacity-70 cursor-not-allowed group relative">
+    <div className="h-40 overflow-hidden rounded-t-2xl bg-muted/30 p-3">
       <img
         src={tpl.image}
         alt={tpl.name}
         className="w-full h-full object-cover rounded-xl grayscale-[30%]"
         onError={e => { (e.target as HTMLImageElement).src = "/placeholder.svg"; }}
       />
-      <div className="absolute top-3 right-3 bg-gray-100 text-gray-500 text-[10px] font-semibold px-2 py-0.5 rounded-full">
+      <div className="absolute top-3 right-3 bg-muted text-muted-foreground text-[10px] font-semibold px-2 py-0.5 rounded-full">
         Bientôt
       </div>
     </div>
     <div className="p-3">
       <div className="flex items-center justify-between mb-1">
-        <h3 className="font-semibold text-gray-900 text-sm">{tpl.name}</h3>
-        <span className="px-2 py-0.5 bg-gray-100 text-gray-500 text-xs font-semibold rounded-lg">{tpl.score}%</span>
+        <h3 className="font-semibold text-foreground text-sm">{tpl.name}</h3>
+        <span className="px-2 py-0.5 bg-muted text-muted-foreground text-xs font-semibold rounded-lg">{tpl.score}%</span>
       </div>
       <div className="flex space-x-1">
         {tpl.colors.map(c => (
