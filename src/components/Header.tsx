@@ -83,12 +83,7 @@ export const Header = () => {
           {/* Left: Logo + ThemeToggle */}
           <div className="flex items-center gap-3 flex-shrink-0">
             <Link to="/" className="flex items-center flex-shrink-0">
-              <img
-                src={logoBlack}
-                alt="Cronos"
-                className="dark:invert"
-                style={{ height: "28px", width: "auto", objectFit: "contain", display: "block" }}
-              />
+              <Logo height={28} />
             </Link>
             {/* Theme toggle — discret, right after logo */}
             <ThemeToggle />

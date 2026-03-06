@@ -125,7 +125,7 @@ const Index = () => {
 
           {/* Logo - hidden on mobile to make room for navigation */}
           <div className="hidden sm:flex items-center gap-2 shrink-0">
-            <img src={logoBlack} alt="Cronos" className="h-7 w-auto sm:h-8" />
+            <Logo height={30} />
             <span className="font-semibold text-foreground hidden sm:inline">Cronos</span>
           </div>
           
@@ -133,7 +133,7 @@ const Index = () => {
           {isMobile && (
             <div className="flex items-center gap-2">
               <CreditsDisplay />
-              <img src={logoBlack} alt="Cronos" className="h-7 w-auto" />
+              <Logo height={28} />
             </div>
           )}
 
@@ -180,7 +180,7 @@ const Index = () => {
         <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4">
           <div className="flex flex-col items-center gap-2 sm:gap-4">
             <div className="flex items-center gap-2">
-              <img src={logoBlack} alt="Cronos" className="h-4 w-auto sm:h-5" />
+              <Logo height={18} />
               <span className="font-display font-semibold text-foreground text-sm sm:text-base hidden sm:inline">Cronos</span>
             </div>
             <div className="flex flex-wrap justify-center gap-2 sm:gap-4 md:gap-6 text-[10px] sm:text-sm text-muted-foreground">

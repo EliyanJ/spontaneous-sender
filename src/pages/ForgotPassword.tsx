@@ -48,7 +48,7 @@ export const ForgotPassword = () => {
       {/* Header simple */}
       <header className="border-b border-border/40 px-6 h-14 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2">
-          <img src={logoBlack} alt="Cronos" className="h-7 w-auto" />
+          <Logo height={28} />
           <span className="font-bold text-foreground">Cronos</span>
         </Link>
       </header>
