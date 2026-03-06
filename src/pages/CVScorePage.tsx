@@ -87,7 +87,7 @@ export const CVScorePage = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <PublicNav />
+      <Header />
 
       {/* Hero */}
       <section className="relative overflow-hidden pt-16 pb-10 px-4">
