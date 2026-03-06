@@ -1108,14 +1108,14 @@ export const UnifiedEmailSender = () => {
         <div className="lg:col-span-8 flex flex-col gap-6">
 
           {/* Tabs Navigation */}
-          <div className="bg-[#121215]/60 backdrop-blur-xl border border-white/[0.08] rounded-xl p-1 inline-flex self-start">
+          <div className="bg-card border border-border rounded-xl p-1 inline-flex self-start">
             <button
               onClick={() => setActiveTab("config")}
               className={cn(
                 "px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-all",
                 activeTab === "config"
-                  ? "bg-indigo-500/20 text-indigo-300 shadow-sm border border-indigo-500/20"
-                  : "text-muted-foreground hover:text-white"
+                  ? "bg-primary/10 text-primary shadow-sm border border-primary/20"
+                  : "text-muted-foreground hover:text-foreground"
               )}
             >
               <Edit3 className="h-4 w-4" />
@@ -1126,14 +1126,14 @@ export const UnifiedEmailSender = () => {
               className={cn(
                 "px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-all",
                 activeTab === "preview"
-                  ? "bg-indigo-500/20 text-indigo-300 shadow-sm border border-indigo-500/20"
-                  : "text-muted-foreground hover:text-white"
+                  ? "bg-primary/10 text-primary shadow-sm border border-primary/20"
+                  : "text-muted-foreground hover:text-foreground"
               )}
             >
               <Eye className="h-4 w-4" />
               Prévisualisation
               {successfulEmails.length > 0 && (
-                <span className="bg-indigo-500 text-white text-[10px] px-1.5 rounded-full ml-1">
+                <span className="bg-primary text-primary-foreground text-[10px] px-1.5 rounded-full ml-1">
                   {successfulEmails.length}
                 </span>
               )}
@@ -1145,8 +1145,8 @@ export const UnifiedEmailSender = () => {
             <div className="space-y-6">
               {/* AI Config: CV & Template */}
               {(enableAIEmails || enableCoverLetter) && (
-                <div className="bg-[#121215]/60 backdrop-blur-xl border border-white/[0.08] rounded-2xl p-6 space-y-5">
-                  <h3 className="font-semibold text-gray-100">Configuration IA</h3>
+                <div className="bg-card border border-border rounded-2xl p-6 space-y-5">
+                  <h3 className="font-semibold text-foreground">Configuration IA</h3>
 
                   {/* CV Section */}
                   <div className="space-y-2">
@@ -1154,7 +1154,7 @@ export const UnifiedEmailSender = () => {
                       <Label className="text-sm">Votre CV / Profil</Label>
                       {savedCvProfiles.length > 0 && (
                         <Select value={selectedCvProfileId} onValueChange={handleLoadCvProfile}>
-                          <SelectTrigger className="w-[180px] bg-[#27272a]/40 border-white/10 text-xs">
+                          <SelectTrigger className="w-[180px] bg-background border-border text-xs">
                             <FolderOpen className="h-4 w-4 mr-2" />
                             <SelectValue placeholder="Charger..." />
                           </SelectTrigger>
@@ -1166,15 +1166,15 @@ export const UnifiedEmailSender = () => {
                     </div>
                     <div className="flex gap-2">
                       <Input type="file" accept=".pdf,.docx,.txt" onChange={handleCvUpload} className="hidden" id="cv-upload-unified" disabled={isParsingCv} />
-                      <Button variant="outline" onClick={() => document.getElementById("cv-upload-unified")?.click()} disabled={isParsingCv} className="gap-2 border-white/10">
+                      <Button variant="outline" onClick={() => document.getElementById("cv-upload-unified")?.click()} disabled={isParsingCv} className="gap-2">
                         {isParsingCv ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
                         Importer CV
                       </Button>
-                      <Button variant="outline" size="icon" onClick={() => setShowSaveProfileDialog(true)} disabled={!cvContent.trim()} className="border-white/10">
+                      <Button variant="outline" size="icon" onClick={() => setShowSaveProfileDialog(true)} disabled={!cvContent.trim()}>
                         <Save className="h-4 w-4" />
                       </Button>
                     </div>
-                    <Textarea value={cvContent} onChange={(e) => setCvContent(e.target.value)} placeholder="Collez vos compétences et expériences..." rows={4} className="bg-[#27272a]/40 border-white/10" />
+                    <Textarea value={cvContent} onChange={(e) => setCvContent(e.target.value)} placeholder="Collez vos compétences et expériences..." rows={4} className="bg-background border-border" />
                   </div>
 
                   {/* Template Section */}
@@ -1184,7 +1184,7 @@ export const UnifiedEmailSender = () => {
                         <Label className="text-sm">Style d'email souhaité</Label>
                         {savedTemplates.length > 0 && (
                           <Select value={selectedTemplateId} onValueChange={handleLoadTemplate}>
-                            <SelectTrigger className="w-[180px] bg-[#27272a]/40 border-white/10 text-xs">
+                            <SelectTrigger className="w-[180px] bg-background border-border text-xs">
                               <FolderOpen className="h-4 w-4 mr-2" />
                               <SelectValue placeholder="Charger..." />
                             </SelectTrigger>
@@ -1195,8 +1195,8 @@ export const UnifiedEmailSender = () => {
                         )}
                       </div>
                       <div className="flex gap-2">
-                        <Textarea value={template} onChange={(e) => setTemplate(e.target.value)} placeholder="Décrivez le style d'email souhaité..." rows={3} className="bg-[#27272a]/40 border-white/10 flex-1" />
-                        <Button variant="outline" size="icon" onClick={() => setShowSaveTemplateDialog(true)} disabled={!template.trim()} className="border-white/10">
+                        <Textarea value={template} onChange={(e) => setTemplate(e.target.value)} placeholder="Décrivez le style d'email souhaité..." rows={3} className="bg-background border-border flex-1" />
+                        <Button variant="outline" size="icon" onClick={() => setShowSaveTemplateDialog(true)} disabled={!template.trim()}>
                           <Save className="h-4 w-4" />
                         </Button>
                       </div>
