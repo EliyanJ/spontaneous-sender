@@ -10,7 +10,7 @@ import { StepObjectives } from "@/components/onboarding/StepObjectives";
 import { StepSectors } from "@/components/onboarding/StepSectors";
 import { StepInterests } from "@/components/onboarding/StepInterests";
 import { StepCV } from "@/components/onboarding/StepCV";
-import logoBlack from "@/assets/logo-black.png";
+import { Logo } from "@/components/Logo";
 
 const STEPS = ["Objectifs", "Secteurs", "Intérêts", "CV"];
 

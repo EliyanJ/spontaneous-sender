@@ -21,7 +21,7 @@ import { CreditsDisplay } from "@/components/CreditsDisplay";
 import { ProfileDropdown } from "@/components/ProfileDropdown";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
-import logoBlack from "@/assets/logo-black.png";
+import { Logo } from "@/components/Logo";
 
 const Index = () => {
   const [searchParams, setSearchParams] = useSearchParams();

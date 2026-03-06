@@ -15,7 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { CVPreview } from "./CVPreview";
 import type { CVData, CVDesignOptions, TemplateId } from "@/lib/cv-templates";
-import logoBlack from "@/assets/logo-black.png";
+import { Logo } from "@/components/Logo";
 import { Link } from "react-router-dom";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
