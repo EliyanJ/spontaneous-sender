@@ -543,6 +543,9 @@ const CVBuilder = () => {
           </div>
         </main>
 
+        {/* ── SEO Content + FAQ ── */}
+        <CVBuilderSEOSection />
+
         {/* Footer standard */}
         <footer className="bg-card/50 border-t border-border/30 pt-12 pb-8">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
