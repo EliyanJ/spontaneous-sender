@@ -13,6 +13,7 @@ import { fr } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { Header } from "@/components/Header";
+import logoBlack from "@/assets/logo-black.png";
 
 const PAGE_SIZE = 12;
 const FAVORITES_KEY = "job_favorites_public";

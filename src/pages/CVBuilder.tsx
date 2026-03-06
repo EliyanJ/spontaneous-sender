@@ -10,6 +10,7 @@ import { CVBuilderEditor } from "@/components/cv-builder/CVBuilderEditor";
 import { emptyCVData, CV_TEMPLATES, type CVData, type CVDesignOptions, type TemplateId } from "@/lib/cv-templates";
 import { useAuth } from "@/hooks/useAuth";
 import { Header } from "@/components/Header";
+import logoBlack from "@/assets/logo-black.png";
 
 const SECTORS = [
   { value: "finance", label: "Finance & Corporate" },
