@@ -1,47 +1,26 @@
+import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
 import logoDark from "@/assets/logo-dark.png";
 import logoLight from "@/assets/logo-light.png";
 
 interface LogoProps {
   className?: string;
+  /** Override height (default: 32px) */
   height?: number | string;
 }
 
 /**
- * Adaptive logo — reads the `dark` class on <html> directly.
- * Light mode (no .dark) → logo-light.png (logo blanc)
- * Dark mode (.dark)     → logo-dark.png  (logo noir)
- *
- * NOTE: The logic is "what looks good on the background":
- *   - Light bg  → show the DARK logo (logo-dark = black text, visible on white)
- *   - Dark bg   → show the LIGHT logo (logo-light = white text, visible on black)
- *
- * But per user spec:
- *   light mode → Logo_blanc.png  (stored as logo-light.png)
- *   dark mode  → Logo_noir.png   (stored as logo-dark.png)
+ * Adaptive logo: shows the dark logo in light mode, white logo in dark mode.
+ * Uses a single source of truth — import this everywhere instead of raw <img> tags.
  */
 export const Logo = ({ className = "", height = 32 }: LogoProps) => {
-  const [isDark, setIsDark] = useState(false);
+  const { resolvedTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
 
-  useEffect(() => {
-    // Read initial state
-    setIsDark(document.documentElement.classList.contains("dark"));
+  // Avoid hydration mismatch — render only after client mount
+  useEffect(() => setMounted(true), []);
 
-    // Watch for class changes on <html>
-    const observer = new MutationObserver(() => {
-      setIsDark(document.documentElement.classList.contains("dark"));
-    });
-
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ["class"],
-    });
-
-    return () => observer.disconnect();
-  }, []);
-
-  // light mode → logo_blanc (logo-light), dark mode → logo_noir (logo-dark)
-  const src = isDark ? logoDark : logoLight;
+  const src = !mounted || resolvedTheme === "dark" ? logoLight : logoDark;
 
   return (
     <img
