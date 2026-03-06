@@ -1,96 +1,68 @@
 
-# Plan SEO — 4 chantiers majeurs
+## Analyse de l'état actuel
 
-## Vue d'ensemble
-Le message couvre 4 sujets distincts. Je vais les traiter dans l'ordre de priorité SEO/business :
+**Header actuel (Landing.tsx)** :
+- Logo + "Cronos"
+- Nav : "Comment ça marche" (scroll), "Conseil personnalisé" (/blog), "Tarifs" (scroll), "Offres d'emploi" (/offres-emploi)
+- Bouton : "Commencer" (violet)
 
----
+**Header actuel (PublicNav.tsx)** — utilisé sur CVBuilder pour visiteurs non connectés :
+- Logo + "Cronos" ✅
+- Nav : "Comparatif de CV", "Création de CV", "Conseil personnalisé", "Offres d'emploi", "Tarifs" ✅
+- Boutons : "Se connecter" + "Commencer" ← **la Landing n'a que "Commencer", pas "Se connecter"**
 
-## 1. Page publique `/score-cv` — Landing SEO + Comparateur CV gratuit
+**Constat** : Le `PublicNav` est déjà correct pour les pages SEO (il a plus de liens que la Landing). L'image uploadée montre le header connecté (dashboard). Le vrai problème signalé est que le header CVBuilder avec user connecté manque de liens. → En réalité le user voit la capture d'écran du header dashboard (`← Tableau de bord | CV Builder`) sur `/cv-builder` quand connecté, pas le PublicNav.
 
-**Objectif** : Page publique (sans auth), accessible aux moteurs, avec le comparateur ATS intégré + tunnel d'inscription post-essai.
-
-### Structure de la page
+**Filtrage photo — bug actuel** :
 ```
-/score-cv  (route publique, pas de ProtectedRoute)
-├── Hero section  →  H1 + CTA "Tester gratuitement"
-├── Outil comparateur (CVComparator réutilisé tel quel)
-├── Popup post-analyse  →  "Créez votre compte gratuit pour comparer à l'infini"
-│     └── Formulaire email/password → création de compte Supabase
-└── Section SEO bas de page
-      ├── Texte riche avec mots-clés (H2, paragraphes, gras)
-      └── Accordéons FAQ (ex: "Comment fonctionne l'ATS ?", "Pourquoi optimiser son CV ?")
+const visibleTemplates = withPhoto
+  ? GALLERY_TEMPLATES           // ← quand withPhoto=true, montre TOUS les templates
+  : GALLERY_TEMPLATES.filter(t => !t.hasPhoto);  // ← quand false, filtre sans photo
 ```
+Le comportement attendu : 
+- "Avec photo" → afficher seulement les templates `hasPhoto: true`
+- "Sans photo" → afficher seulement les templates `hasPhoto: false`
+Actuellement quand `withPhoto=true` il montre tous les templates (y compris ceux sans photo).
 
-### Logique d'accès
-- L'outil fonctionne **1 fois sans compte**
-- Après analyse → popup `AuthDialog` personnalisée avec message de valeur
-- Compte créé → redirect `/dashboard?tab=cv`
+**Nom/Prénom temps réel — problème** :
+Le badge nom s'affiche en overlay sur l'image du template, mais les images sont des PNG statiques (screenshots de CV). On ne peut pas modifier le texte dans un PNG. La solution attendue par le user est que le nom apparaisse en overlay sur la carte (ce qui est déjà fait via le badge coloré en bas de l'image). Il faut vérifier que `firstName`/`lastName` se propagent bien et que le badge est lisible et prominent sur TOUTES les cartes.
 
-### SEO technique sur cette page
-- `useSEO("/score-cv")` → meta title/desc configurable depuis le BO
-- Balise H1 unique, H2 dans les sections FAQ
-- Texte ~800 mots minimum en bas de page (géré via CMS ou hardcodé)
-- Canonical URL configurée
-- Ajout de `/score-cv` dans `SITE_PAGES` de `AdminSEO.tsx`
+## Ce qu'on change
 
----
+### 1. `PublicNav.tsx` — Aligner avec la Landing
+La Landing a "Comment ça marche" (scroll → n'existe pas sur d'autres pages) et "Offres d'emploi". Les pages SEO ont besoin de liens cliquables vers d'autres pages. Le PublicNav actuel est déjà bien adapté aux pages SEO. 
 
-## 2. Amélioration du CMS — Sélecteur de balise HTML + effets de texte
+**Problème réel** : L'image uploadée montre que quand l'user est **connecté**, le header CVBuilder affiche `← Tableau de bord | CV Builder` sans les liens de nav normaux. → On garde ce header compact pour les users connectés (c'est un outil, pas une page SEO pour eux).
 
-**Problème actuel** : `AdminPageEditor.tsx` a H1/H2/H3 dans la barre d'outils mais pas de sélecteur explicite de balise pour les blocs de texte. Pas d'effet "texte souligné coloré" type mise en avant.
+**Action** : Le PublicNav est OK. On va s'assurer qu'il s'affiche correctement sur `/cv-builder` pour les visiteurs non connectés avec tous ses liens visibles.
 
-### Ce qu'on ajoute
-- **Sélecteur de balise** dans la toolbar : dropdown `<p>` / `<h1>` / `<h2>` / `<h3>` avec règle visuelle "1 seul H1 par page" (warning si H1 déjà présent)
-- **Effet texte surligné** : bouton "Highlight" dans la toolbar → `<mark>` stylé avec couleur configurable (rose/jaune comme l'image fournie)
-- Les couleurs de highlight configurables via `ColorPickerPopover` déjà existant
+### 2. Fix filtrage photo `CVBuilder.tsx`
+```typescript
+// AVANT (bugué)
+const visibleTemplates = withPhoto
+  ? GALLERY_TEMPLATES
+  : GALLERY_TEMPLATES.filter(t => !t.hasPhoto);
 
----
+// APRÈS (correct)
+const visibleTemplates = GALLERY_TEMPLATES.filter(t => t.hasPhoto === withPhoto);
+```
+Ainsi :
+- Toggle ON (avec photo) → uniquement les templates `hasPhoto: true` (Moderne Pro, Créatif Plus, Étudiant = 3 templates)
+- Toggle OFF (sans photo) → uniquement les templates `hasPhoto: false` (Classique Elite, Executive, Minimaliste = 3 templates)
 
-## 3. CV Builder — Nouveaux modèles + personnalisation design
+### 3. Améliorer l'aperçu nom/prénom temps réel
+Actuellement le badge s'affiche seulement quand `firstName || lastName` est non vide. Il faut :
+- **Toujours afficher** un emplacement nom (avec placeholder "Votre Nom" visible même vide)
+- Positionner le nom de manière plus prominente sur l'image (au centre/haut plutôt qu'en bas)
+- Appliquer `font-bold` et bonne taille pour être lisible
 
-**Actuel** : 4 templates (`classic`, `dark`, `light`, `geo`) avec couleurs configurables. Photo déjà supportée (`photoUrl` dans `CVDesignOptions`).
+### 4. Bouton photo en deux états clairs (UX)
+Remplacer le toggle switch par **deux boutons radio** clairs :
+```
+[ 📷 Avec photo ]  [ 🚫 Sans photo ]
+```
+Cela rend l'interaction plus évidente et correspond au comportement attendu (cliquer change la liste).
 
-### Ajouts
-- **2-3 nouveaux templates** inspirés des screenshots fournis :
-  - `modern-two-col` : deux colonnes (sidebar colorée + contenu), avec photo ronde en haut
-  - `minimal-line` : séparateurs de ligne épurés, typographie aérée
-- **Sélecteur de template visuel** : grille de miniatures cliquables (comme le site concurrent montré)
-- **Panneau design** : couleur de fond de section, couleur du texte, couleur d'accent — déjà partiellement présent, à enrichir
-- **Upload photo** : interface d'upload vers Supabase Storage + affichage dans le template
-
----
-
-## 4. SEO global — Optimisations techniques
-
-- Ajout `/score-cv` dans `AdminSEO.tsx` SITE_PAGES
-- `robots.txt` : vérifier que `/score-cv` est indexable (actuellement public/robots.txt)
-- Sitemap XML statique : créer `public/sitemap.xml` avec les URLs principales
-- Structure JSON-LD Schema.org sur `/score-cv` (SoftwareApplication)
-- `useSEO` déjà en place sur Landing — à ajouter sur `/score-cv` et Pricing
-
----
-
-## Fichiers à créer/modifier
-
-| Fichier | Action |
-|---|---|
-| `src/pages/CVScorePage.tsx` | CRÉER — page publique SEO |
-| `src/components/dashboard/CVComparator.tsx` | MODIFIER — prop `isPublic` pour désactiver auth check |
-| `src/components/CVScoreAuthPopup.tsx` | CRÉER — popup post-analyse |
-| `src/pages/Admin/AdminSEO.tsx` | MODIFIER — ajouter `/score-cv` |
-| `src/pages/Admin/AdminPageEditor.tsx` | MODIFIER — sélecteur balise + highlight |
-| `src/lib/cv-templates.ts` | MODIFIER — 2 nouveaux templates |
-| `src/components/cv-builder/CVPreview.tsx` | MODIFIER — render nouveaux templates |
-| `src/components/cv-builder/CVBuilderForm.tsx` | MODIFIER — sélecteur visuel templates |
-| `src/App.tsx` | MODIFIER — route `/score-cv` publique |
-| `public/sitemap.xml` | CRÉER |
-
----
-
-## Ordre d'implémentation recommandé
-
-1. Page `/score-cv` + popup auth (impact SEO + business immédiat)
-2. SEO technique global (sitemap, schema.org)
-3. CMS éditeur amélioré (balises H + highlight)
-4. CV Builder nouveaux templates + sélecteur visuel
+## Fichiers modifiés
+- `src/pages/CVBuilder.tsx` : fix filtrage photo + amélioration overlay nom/prénom + UX boutons photo
+- `src/components/PublicNav.tsx` : vérification/ajout du lien "Tarifs" pointant vers `/pricing` (déjà présent ✅) + s'assurer que "Se connecter" et "Commencer" sont bien visibles
