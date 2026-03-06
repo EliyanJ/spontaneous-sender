@@ -603,115 +603,20 @@ const CVBuilder = () => {
 
   // ── STEP 2: Editor ─────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      <header className="sticky top-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-xl">
-        <div className="container mx-auto px-4 h-14 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" size="sm" onClick={() => setStep("select")} className="gap-1.5">
-              <ArrowLeft className="h-4 w-4" />
-              Modèles
-            </Button>
-            <div className="flex items-center gap-2">
-              <img src={logoBlack} alt="Cronos" className="h-7 w-auto" />
-              <span className="font-semibold text-foreground hidden sm:inline">CV Builder</span>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={() => setShowMobilePreview(true)} className="lg:hidden gap-1.5">
-              <Eye className="h-4 w-4" />
-              Aperçu
-            </Button>
-            <Button size="sm" onClick={handleSaveCV} className="gap-1.5">
-              <Save className="h-4 w-4" />
-              Sauvegarder
-            </Button>
-          </div>
-        </div>
-      </header>
-
-      <main className="flex-1 container mx-auto px-4 py-4">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-[calc(100vh-120px)]">
-          {/* LEFT PANEL */}
-          <div className="lg:col-span-4 flex flex-col gap-4 overflow-hidden">
-            <Tabs value={mode} onValueChange={(v) => setMode(v as "create" | "adapt")} className="w-full">
-              <TabsList className="w-full grid grid-cols-2">
-                <TabsTrigger value="create">Créer un CV</TabsTrigger>
-                <TabsTrigger value="adapt">Adapter à une offre</TabsTrigger>
-              </TabsList>
-            </Tabs>
-
-            <div>
-              <Label className="text-xs mb-1 block text-muted-foreground">Secteur cible</Label>
-              <Select value={sector} onValueChange={setSector}>
-                <SelectTrigger className="h-9">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {SECTORS.map(s => (
-                    <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {mode === "adapt" && (
-              <div className="glass rounded-xl p-3 space-y-2">
-                <Label className="text-xs font-semibold text-foreground">Fiche de poste</Label>
-                <Textarea
-                  value={jobDescription}
-                  onChange={(e) => setJobDescription(e.target.value)}
-                  placeholder="Collez la fiche de poste ici..."
-                  className="min-h-[100px] text-sm"
-                />
-                <Button size="sm" onClick={handleOptimize} disabled={isOptimizing || !jobDescription.trim()} className="w-full gap-1.5">
-                  {isOptimizing ? <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Optimisation...</> : <><Sparkles className="h-3.5 w-3.5" /> Optimiser avec IA</>}
-                </Button>
-              </div>
-            )}
-
-            <div className="flex-1 overflow-y-auto pr-1 min-h-0">
-              <CVBuilderForm
-                cvData={cvData}
-                onChange={setCvData}
-                onFileParsed={handleFileParsed}
-                onLoadFromDB={handleLoadFromDB}
-                isLoading={isLoading}
-                importedFileName={importedFileName}
-                onClearImport={() => setImportedFileName(null)}
-                designOptions={designOptions}
-                onDesignChange={setDesignOptions}
-              />
-            </div>
-          </div>
-
-          {/* RIGHT PANEL */}
-          <div className="lg:col-span-8 hidden lg:block overflow-hidden">
-            <CVPreview cvData={cvData} templateId={templateId} designOptions={designOptions} />
-          </div>
-        </div>
-
-        {showMobilePreview && (
-          <div className="fixed inset-0 z-50 bg-background flex flex-col lg:hidden">
-            <div className="flex items-center justify-between p-4 border-b border-border">
-              <h3 className="font-semibold">Aperçu du CV</h3>
-              <Button variant="ghost" size="sm" onClick={() => setShowMobilePreview(false)}>Fermer</Button>
-            </div>
-            <div className="flex-1 overflow-auto p-4">
-              <CVPreview cvData={cvData} templateId={templateId} designOptions={designOptions} />
-            </div>
-          </div>
-        )}
-      </main>
-
-      {isLoading && (
-        <div className="fixed inset-0 z-40 bg-background/60 backdrop-blur-sm flex items-center justify-center">
-          <div className="glass rounded-2xl p-8 flex flex-col items-center gap-4">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            <p className="text-sm text-muted-foreground">Analyse et structuration du CV...</p>
-          </div>
-        </div>
-      )}
-    </div>
+    <CVBuilderEditor
+      cvData={cvData}
+      onChange={setCvData}
+      onFileParsed={handleFileParsed}
+      onLoadFromDB={handleLoadFromDB}
+      isLoading={isLoading}
+      importedFileName={importedFileName}
+      onClearImport={() => setImportedFileName(null)}
+      designOptions={designOptions}
+      onDesignChange={setDesignOptions}
+      templateId={templateId}
+      onSave={handleSaveCV}
+      onBack={() => setStep("select")}
+    />
   );
 };
 
