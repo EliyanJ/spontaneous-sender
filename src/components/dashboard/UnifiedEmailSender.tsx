@@ -1207,9 +1207,9 @@ export const UnifiedEmailSender = () => {
 
               {/* Manual Email Content */}
               {!enableAIEmails && (
-                <div className="bg-[#121215]/60 backdrop-blur-xl border border-white/[0.08] rounded-2xl p-6 space-y-5">
+                <div className="bg-card border border-border rounded-2xl p-6 space-y-5">
                   <div className="flex items-center justify-between">
-                    <h3 className="font-semibold text-gray-100">Contenu de l'email</h3>
+                    <h3 className="font-semibold text-foreground">Contenu de l'email</h3>
                     <div className="flex gap-2">
                       {savedTemplates.length > 0 && (
                         <Select 
@@ -1229,7 +1229,7 @@ export const UnifiedEmailSender = () => {
                             }
                           }}
                         >
-                          <SelectTrigger className="w-[180px] bg-[#27272a]/40 border-white/10 text-xs">
+                          <SelectTrigger className="w-[180px] bg-background border-border text-xs">
                             <FolderOpen className="h-4 w-4 mr-2" />
                             <SelectValue placeholder="Charger un template" />
                           </SelectTrigger>
@@ -1243,14 +1243,14 @@ export const UnifiedEmailSender = () => {
 
                   <div>
                     <Label className="text-sm text-muted-foreground">Objet</Label>
-                    <Input value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="Candidature spontanée - [Votre profil]" className="mt-1.5 bg-[#27272a]/40 border-white/10" />
+                    <Input value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="Candidature spontanée - [Votre profil]" className="mt-1.5 bg-background border-border" />
                   </div>
                   <div>
                     <Label className="text-sm text-muted-foreground">Message</Label>
-                    <Textarea value={body} onChange={(e) => setBody(e.target.value)} placeholder="Écrivez votre email..." rows={8} className="mt-1.5 bg-[#27272a]/40 border-white/10" />
+                    <Textarea value={body} onChange={(e) => setBody(e.target.value)} placeholder="Écrivez votre email..." rows={8} className="mt-1.5 bg-background border-border" />
                     <div className="flex flex-wrap gap-2 mt-2">
                       {['{entreprise}', '{ville}', '{secteur}'].map(v => (
-                        <Badge key={v} variant="outline" className="text-xs bg-indigo-500/10 text-indigo-300 border-indigo-500/20 cursor-pointer hover:bg-indigo-500/20"
+                        <Badge key={v} variant="outline" className="text-xs bg-primary/5 text-primary border-primary/20 cursor-pointer hover:bg-primary/10"
                           onClick={() => setBody(prev => prev + ' ' + v)}>
                           {v}
                         </Badge>
@@ -1260,7 +1260,7 @@ export const UnifiedEmailSender = () => {
                   <div>
                     <Label className="text-sm text-muted-foreground">Pièces jointes</Label>
                     <Input type="file" multiple onChange={handleFileChange} className="hidden" id="attachments-unified" />
-                    <Button variant="outline" onClick={() => document.getElementById("attachments-unified")?.click()} className="w-full mt-1.5 border-dashed border-white/10">
+                    <Button variant="outline" onClick={() => document.getElementById("attachments-unified")?.click()} className="w-full mt-1.5 border-dashed">
                       <Upload className="mr-2 h-4 w-4" />
                       Ajouter des fichiers
                     </Button>
@@ -1287,7 +1287,7 @@ export const UnifiedEmailSender = () => {
                       setShowSaveTemplateDialog(true);
                     }}
                     disabled={!subject.trim() && !body.trim()}
-                    className="w-full gap-2 border-white/10"
+                    className="w-full gap-2"
                   >
                     <Save className="h-4 w-4" />
                     Sauvegarder comme template
@@ -1303,7 +1303,7 @@ export const UnifiedEmailSender = () => {
               {/* Regenerate button */}
               {generatedEmails.length > 0 && (
                 <div className="flex justify-end">
-                  <Button variant="outline" size="sm" onClick={handleForceRegenerate} className="gap-2 border-white/10">
+                  <Button variant="outline" size="sm" onClick={handleForceRegenerate} className="gap-2">
                     <RefreshCw className="h-4 w-4" />
                     Regénérer tout
                   </Button>
@@ -1315,9 +1315,9 @@ export const UnifiedEmailSender = () => {
                 <div
                   key={email.company_id}
                   className={cn(
-                    "bg-[#121215]/60 backdrop-blur-xl rounded-2xl overflow-hidden border",
+                    "bg-card rounded-2xl overflow-hidden border",
                     email.success
-                      ? "border-white/[0.08]"
+                      ? "border-border"
                       : "border-red-500/20"
                   )}
                 >
