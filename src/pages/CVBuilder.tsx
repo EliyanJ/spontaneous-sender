@@ -386,18 +386,17 @@ const CVBuilder = () => {
           <div className="flex flex-col lg:flex-row gap-8">
 
             {/* Sidebar filtres */}
-            <aside className="w-full lg:w-72 bg-gray-50 rounded-2xl p-6 h-fit border border-gray-200 shrink-0">
+            <aside className="w-full lg:w-72 bg-muted/50 rounded-2xl p-6 h-fit border border-border shrink-0">
               <div className="flex items-center justify-between mb-6">
-                <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
                   <SlidersHorizontal className="h-4 w-4 text-primary" />
                   Filtres
                 </h3>
               </div>
 
               <div className="space-y-6">
-                {/* Photo */}
                 <div>
-                  <h4 className="font-medium text-gray-900 mb-3">Photo</h4>
+                  <h4 className="font-medium text-foreground mb-3">Photo</h4>
                   <div className="space-y-2">
                     {([["all", "Tous"], ["oui", "Oui"], ["non", "Non"]] as const).map(([val, label]) => (
                       <label key={val} className="flex items-center cursor-pointer group">
@@ -408,14 +407,14 @@ const CVBuilder = () => {
                           onChange={() => setFilterPhoto(val)}
                           className="mr-3 accent-purple-600"
                         />
-                        <span className="text-gray-600 group-hover:text-gray-900 text-sm">{label}</span>
+                        <span className="text-muted-foreground group-hover:text-foreground text-sm">{label}</span>
                       </label>
                     ))}
                   </div>
                 </div>
 
-                <div className="border-t border-gray-200 pt-6">
-                  <h4 className="font-medium text-gray-900 mb-3">Design</h4>
+                <div className="border-t border-border pt-6">
+                  <h4 className="font-medium text-foreground mb-3">Design</h4>
                   <div className="space-y-2">
                     {([["modern", "Moderne"], ["classic", "Classique"]] as const).map(([val, label]) => (
                       <label key={val} className="flex items-center cursor-pointer group">
@@ -425,14 +424,14 @@ const CVBuilder = () => {
                           onChange={() => toggleDesignFilter(val)}
                           className="mr-3 accent-purple-600"
                         />
-                        <span className="text-gray-600 group-hover:text-gray-900 text-sm">{label}</span>
+                        <span className="text-muted-foreground group-hover:text-foreground text-sm">{label}</span>
                       </label>
                     ))}
                   </div>
                 </div>
 
-                <div className="border-t border-gray-200 pt-6">
-                  <h4 className="font-medium text-gray-900 mb-3">Colonnes</h4>
+                <div className="border-t border-border pt-6">
+                  <h4 className="font-medium text-foreground mb-3">Colonnes</h4>
                   <div className="space-y-2">
                     {[1, 2, 3].map(n => (
                       <label key={n} className="flex items-center cursor-pointer group">
@@ -443,7 +442,7 @@ const CVBuilder = () => {
                           onChange={() => toggleColumnsFilter(n)}
                           className="mr-3 accent-purple-600"
                         />
-                        <span className="text-gray-600 group-hover:text-gray-900 text-sm">{n} colonne{n > 1 ? "s" : ""}</span>
+                        <span className="text-muted-foreground group-hover:text-foreground text-sm">{n} colonne{n > 1 ? "s" : ""}</span>
                       </label>
                     ))}
                   </div>
@@ -460,8 +459,8 @@ const CVBuilder = () => {
                     <Check className="h-5 w-5 text-white" />
                   </div>
                   <div>
-                    <p className="font-semibold text-gray-900">Templates optimisés pour maximiser vos chances</p>
-                    <p className="text-sm text-gray-600">Gagnez du temps avec nos modèles validés par des recruteurs</p>
+                    <p className="font-semibold text-foreground">Templates optimisés pour maximiser vos chances</p>
+                    <p className="text-sm text-muted-foreground">Gagnez du temps avec nos modèles validés par des recruteurs</p>
                   </div>
                 </div>
               </div>
@@ -469,7 +468,7 @@ const CVBuilder = () => {
               {/* Recommandés */}
               {recommendedTemplates.length > 0 && (
                 <section className="mb-12">
-                  <h2 className="text-2xl font-bold text-gray-900 mb-6">Recommandés pour vous</h2>
+                  <h2 className="text-2xl font-bold text-foreground mb-6">Recommandés pour vous</h2>
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                     {recommendedTemplates.map(tpl => (
                       <TemplateCard
@@ -486,7 +485,7 @@ const CVBuilder = () => {
 
               {/* Tous nos modèles */}
               <section>
-                <h2 className="text-2xl font-bold text-gray-900 mb-6">Tous nos modèles</h2>
+                <h2 className="text-2xl font-bold text-foreground mb-6">Tous nos modèles</h2>
                 <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
                   {filteredTemplates.map(tpl => (
                     <TemplateCard
