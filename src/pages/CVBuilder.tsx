@@ -1,18 +1,12 @@
 import React, { useState, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
-  ArrowLeft, Loader2, Sparkles, Save, Eye, ChevronDown, ChevronUp,
-  Check, ArrowRight, Camera, CameraOff,
+  Loader2, Check, ArrowRight, Camera, CameraOff, ChevronDown, ChevronUp,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { CVBuilderForm } from "@/components/cv-builder/CVBuilderForm";
-import { CVPreview } from "@/components/cv-builder/CVPreview";
+import { CVBuilderEditor } from "@/components/cv-builder/CVBuilderEditor";
 import { emptyCVData, CV_TEMPLATES, type CVData, type CVDesignOptions, type TemplateId } from "@/lib/cv-templates";
 import { useAuth } from "@/hooks/useAuth";
 import logoBlack from "@/assets/logo-black.png";
