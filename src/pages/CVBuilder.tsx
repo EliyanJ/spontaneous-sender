@@ -1,6 +1,7 @@
 import React, { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Loader2, Sparkles, Save, Eye, ChevronRight, Check, Palette } from "lucide-react";
+import { PublicNav } from "@/components/PublicNav";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -279,17 +280,23 @@ const CVBuilder = () => {
   if (step === "select") {
     return (
       <div className="min-h-screen bg-background flex flex-col">
-        <header className="sticky top-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-xl">
-          <div className="container mx-auto px-4 h-14 flex items-center justify-between">
+        {/* Nav publique unifiée */}
+        {!user && <PublicNav />}
+
+        {/* Header interne (étapes) */}
+        <header className="sticky top-0 z-40 border-b border-border/50 bg-background/80 backdrop-blur-xl">
+          <div className="container mx-auto px-4 h-12 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <Button variant="ghost" size="sm" onClick={() => user ? navigate("/dashboard") : navigate("/")} className="gap-1.5">
                 <ArrowLeft className="h-4 w-4" />
                 Retour
               </Button>
-              <div className="flex items-center gap-2">
-                <img src={logoBlack} alt="Cronos" className="h-7 w-auto" />
-                <span className="font-semibold text-foreground hidden sm:inline">CV Builder</span>
-              </div>
+              {user && (
+                <div className="flex items-center gap-2">
+                  <img src={logoBlack} alt="Cronos" className="h-6 w-auto" />
+                  <span className="font-semibold text-foreground hidden sm:inline text-sm">CV Builder</span>
+                </div>
+              )}
             </div>
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
               <span className="font-semibold text-primary">1</span>

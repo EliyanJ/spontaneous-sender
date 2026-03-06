@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Zap, Target, TrendingUp, Shield, CheckCircle2, Star } from "lucide-react";
 import logoBlack from "@/assets/logo-black.png";
+import { PublicNav } from "@/components/PublicNav";
 
 const FAQ_ITEMS = [
   {
@@ -86,23 +87,7 @@ export const CVScorePage = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Navbar */}
-      <nav className="sticky top-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-xl">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-between h-14">
-          <Link to="/" className="flex items-center gap-2">
-            <img src={logoBlack} alt="Cronos" className="h-7 w-auto" />
-          </Link>
-          <div className="flex items-center gap-3">
-            <Link to="/pricing" className="text-sm text-muted-foreground hover:text-foreground transition-colors hidden sm:block">Tarifs</Link>
-            <Link to="/login">
-              <Button variant="outline" size="sm">Connexion</Button>
-            </Link>
-            <Link to="/register">
-              <Button size="sm" className="hidden sm:flex">Commencer gratuitement</Button>
-            </Link>
-          </div>
-        </div>
-      </nav>
+      <PublicNav />
 
       {/* Hero */}
       <section className="relative overflow-hidden pt-16 pb-10 px-4">

@@ -1,13 +1,12 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { Loader2, ArrowLeft, Mail, CheckCircle } from "lucide-react";
-import logoTransparent from "@/assets/logo-transparent.png";
+import logoBlack from "@/assets/logo-black.png";
 
 export const ForgotPassword = () => {
   const navigate = useNavigate();
@@ -45,90 +44,103 @@ export const ForgotPassword = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <div className="w-full max-w-md space-y-6">
-        {/* Logo */}
-        <div className="flex flex-col items-center gap-4">
-          <img src={logoTransparent} alt="Cronos" className="h-16 w-auto" />
-          <h1 className="text-2xl font-bold text-foreground">Cronos</h1>
+    <div className="min-h-screen bg-background flex flex-col">
+      {/* Header simple */}
+      <header className="border-b border-border/40 px-6 h-14 flex items-center justify-between">
+        <Link to="/" className="flex items-center gap-2">
+          <img src={logoBlack} alt="Cronos" className="h-7 w-auto" />
+          <span className="font-bold text-foreground">Cronos</span>
+        </Link>
+      </header>
+
+      {/* Content */}
+      <div className="flex-1 flex items-center justify-center p-4">
+        <div className="w-full max-w-md space-y-6">
+          <Card className="border-border/50 bg-card/50 backdrop-blur-xl">
+            <CardHeader className="text-center">
+              <CardTitle className="text-xl">Mot de passe oublié</CardTitle>
+              <CardDescription>
+                {sent
+                  ? "Vérifiez votre boîte de réception"
+                  : "Entrez votre email pour recevoir un lien de réinitialisation"
+                }
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {sent ? (
+                <div className="text-center space-y-4">
+                  <div className="flex justify-center">
+                    <div className="w-16 h-16 rounded-full bg-green-500/10 flex items-center justify-center">
+                      <CheckCircle className="w-8 h-8 text-green-500" />
+                    </div>
+                  </div>
+                  <p className="text-muted-foreground text-sm">
+                    Un email contenant les instructions de réinitialisation a été envoyé à <strong>{email}</strong>.
+                  </p>
+                  <p className="text-muted-foreground text-xs">
+                    Si vous ne le voyez pas, vérifiez votre dossier spam.
+                  </p>
+                  <Button
+                    variant="outline"
+                    className="w-full mt-4"
+                    onClick={() => window.location.href = "https://getcronos.fr/login"}
+                  >
+                    <ArrowLeft className="mr-2 h-4 w-4" />
+                    Retour à la connexion
+                  </Button>
+                </div>
+              ) : (
+                <form onSubmit={handleResetPassword} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Adresse email</Label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="email"
+                        type="email"
+                        placeholder="votre@email.com"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        required
+                        disabled={loading}
+                        className="pl-10"
+                      />
+                    </div>
+                  </div>
+
+                  <Button type="submit" className="w-full" disabled={loading}>
+                    {loading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Envoi en cours...
+                      </>
+                    ) : (
+                      "Envoyer le lien de réinitialisation"
+                    )}
+                  </Button>
+
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    className="w-full"
+                    onClick={() => window.location.href = "https://getcronos.fr/login"}
+                  >
+                    <ArrowLeft className="mr-2 h-4 w-4" />
+                    Retour à la connexion
+                  </Button>
+                </form>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Footer légal */}
+          <div className="flex flex-wrap justify-center gap-4 text-xs text-muted-foreground">
+            <Link to="/mentions-legales" className="hover:text-foreground transition-colors">Mentions légales</Link>
+            <Link to="/politique-confidentialite" className="hover:text-foreground transition-colors">Confidentialité</Link>
+            <Link to="/conditions-utilisation" className="hover:text-foreground transition-colors">CGU</Link>
+            <Link to="/pricing" className="hover:text-foreground transition-colors">Tarifs</Link>
+          </div>
         </div>
-
-        <Card className="border-border/50 bg-card/50 backdrop-blur-xl">
-          <CardHeader className="text-center">
-            <CardTitle className="text-xl">Mot de passe oublié</CardTitle>
-            <CardDescription>
-              {sent 
-                ? "Vérifiez votre boîte de réception" 
-                : "Entrez votre email pour recevoir un lien de réinitialisation"
-              }
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {sent ? (
-              <div className="text-center space-y-4">
-                <div className="flex justify-center">
-                  <div className="w-16 h-16 rounded-full bg-green-500/10 flex items-center justify-center">
-                    <CheckCircle className="w-8 h-8 text-green-500" />
-                  </div>
-                </div>
-                <p className="text-muted-foreground text-sm">
-                  Un email contenant les instructions de réinitialisation a été envoyé à <strong>{email}</strong>.
-                </p>
-                <p className="text-muted-foreground text-xs">
-                  Si vous ne le voyez pas, vérifiez votre dossier spam.
-                </p>
-                <Button 
-                  variant="outline" 
-                  className="w-full mt-4"
-                  onClick={() => navigate("/")}
-                >
-                  <ArrowLeft className="mr-2 h-4 w-4" />
-                  Retour à la connexion
-                </Button>
-              </div>
-            ) : (
-              <form onSubmit={handleResetPassword} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="email">Adresse email</Label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="email"
-                      type="email"
-                      placeholder="votre@email.com"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required
-                      disabled={loading}
-                      className="pl-10"
-                    />
-                  </div>
-                </div>
-                
-                <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Envoi en cours...
-                    </>
-                  ) : (
-                    "Envoyer le lien de réinitialisation"
-                  )}
-                </Button>
-
-                <Button 
-                  type="button"
-                  variant="ghost" 
-                  className="w-full"
-                  onClick={() => navigate("/")}
-                >
-                  <ArrowLeft className="mr-2 h-4 w-4" />
-                  Retour à la connexion
-                </Button>
-              </form>
-            )}
-          </CardContent>
-        </Card>
       </div>
     </div>
   );
