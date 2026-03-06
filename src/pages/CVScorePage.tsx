@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Zap, Target, TrendingUp, Shield, CheckCircle2, Star } from "lucide-react";
 import { Header } from "@/components/Header";
+import logoBlack from "@/assets/logo-black.png";
 
 const FAQ_ITEMS = [
   {
