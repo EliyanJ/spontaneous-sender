@@ -78,7 +78,7 @@ export const Header = () => {
       <div className="max-w-7xl mx-auto">
 
         {/* ── Main nav pill — fixed 64px total height ── */}
-        <nav className="h-12 bg-white/70 dark:bg-slate-900/70 backdrop-blur-[10px] rounded-2xl px-4 flex items-center justify-between shadow-sm border border-white/50 dark:border-white/10">
+        <nav className="h-12 bg-background/70 backdrop-blur-[10px] rounded-2xl px-4 flex items-center justify-between shadow-sm border border-border/50">
 
           {/* Left: Logo + ThemeToggle */}
           <div className="flex items-center gap-3 flex-shrink-0">
@@ -93,13 +93,13 @@ export const Header = () => {
           <div className="hidden md:flex items-center gap-8">
             <button
               onClick={handleHowItWorks}
-              className="relative text-slate-600 dark:text-slate-300 font-medium text-sm pb-0.5 after:absolute after:bottom-0 after:left-0 after:h-[2px] after:w-full after:bg-[#7C3AED] after:scale-x-0 after:origin-right hover:after:scale-x-100 hover:after:origin-left after:transition-transform after:duration-300"
+              className="relative text-foreground/70 font-medium text-sm pb-0.5 after:absolute after:bottom-0 after:left-0 after:h-[2px] after:w-full after:bg-[#7C3AED] after:scale-x-0 after:origin-right hover:after:scale-x-100 hover:after:origin-left after:transition-transform after:duration-300"
             >
               Comment ça marche
             </button>
             <Link
               to="/pricing"
-              className="relative text-slate-600 dark:text-slate-300 font-medium text-sm pb-0.5 after:absolute after:bottom-0 after:left-0 after:h-[2px] after:w-full after:bg-[#7C3AED] after:scale-x-0 after:origin-right hover:after:scale-x-100 hover:after:origin-left after:transition-transform after:duration-300"
+              className="relative text-foreground/70 font-medium text-sm pb-0.5 after:absolute after:bottom-0 after:left-0 after:h-[2px] after:w-full after:bg-[#7C3AED] after:scale-x-0 after:origin-right hover:after:scale-x-100 hover:after:origin-left after:transition-transform after:duration-300"
             >
               Tarif
             </Link>
@@ -110,7 +110,7 @@ export const Header = () => {
               onMouseLeave={() => setToolsOpen(false)}
               onMouseEnter={() => setToolsOpen(true)}
             >
-              <button className="relative flex items-center gap-1 text-slate-600 dark:text-slate-300 font-medium text-sm pb-0.5 after:absolute after:bottom-0 after:left-0 after:h-[2px] after:w-full after:bg-[#7C3AED] after:scale-x-0 after:origin-right hover:after:scale-x-100 hover:after:origin-left after:transition-transform after:duration-300 focus:outline-none">
+              <button className="relative flex items-center gap-1 text-foreground/70 font-medium text-sm pb-0.5 after:absolute after:bottom-0 after:left-0 after:h-[2px] after:w-full after:bg-[#7C3AED] after:scale-x-0 after:origin-right hover:after:scale-x-100 hover:after:origin-left after:transition-transform after:duration-300 focus:outline-none">
                 Outils
                 <ChevronDown
                   className={cn(
@@ -126,13 +126,13 @@ export const Header = () => {
                   toolsOpen ? "opacity-100 visible translate-y-0" : "opacity-0 invisible translate-y-2.5"
                 )}
               >
-                <div className="bg-white/80 dark:bg-slate-800/90 backdrop-blur-[10px] rounded-xl shadow-lg border border-white/40 dark:border-white/10 p-2 overflow-hidden">
+                <div className="bg-background/80 backdrop-blur-[10px] rounded-xl shadow-lg border border-border p-2 overflow-hidden">
                   {TOOLS.map(tool => (
                     <Link
                       key={tool.href}
                       to={tool.href}
                       onClick={() => setToolsOpen(false)}
-                      className="block px-4 py-3 rounded-lg hover:bg-white/60 dark:hover:bg-white/10 transition-colors group/item"
+                      className="block px-4 py-3 rounded-lg hover:bg-accent transition-colors group/item"
                     >
                       <div className="flex items-start gap-3">
                         <div
@@ -147,8 +147,8 @@ export const Header = () => {
                           <tool.Icon className="w-3.5 h-3.5" />
                         </div>
                         <div>
-                          <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">{tool.label}</p>
-                          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{tool.desc}</p>
+                          <p className="text-sm font-semibold text-foreground">{tool.label}</p>
+                          <p className="text-xs text-muted-foreground mt-0.5">{tool.desc}</p>
                         </div>
                       </div>
                     </Link>
@@ -163,14 +163,14 @@ export const Header = () => {
             {!user ? (
               <Link
                 to="/login"
-                className="hidden lg:block text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white text-sm font-medium transition-colors"
+                className="hidden lg:block text-foreground/70 hover:text-foreground text-sm font-medium transition-colors"
               >
                 Connexion
               </Link>
             ) : (
               <Link
                 to="/dashboard"
-                className="hidden lg:block text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white text-sm font-medium transition-colors"
+                className="hidden lg:block text-foreground/70 hover:text-foreground text-sm font-medium transition-colors"
               >
                 Mon Dashboard
               </Link>
@@ -190,7 +190,7 @@ export const Header = () => {
             {/* Mobile burger */}
             <button
               onClick={() => setMobileOpen(v => !v)}
-              className="md:hidden text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 focus:outline-none"
+              className="md:hidden text-foreground/80 hover:text-foreground focus:outline-none"
               aria-label="Menu"
             >
               {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -200,42 +200,42 @@ export const Header = () => {
 
         {/* ── Mobile menu ── */}
         {mobileOpen && (
-          <div className="md:hidden mt-2 bg-white/80 dark:bg-slate-900/90 backdrop-blur-[10px] rounded-2xl p-4 border border-white/50 dark:border-white/10 shadow-lg">
+          <div className="md:hidden mt-2 bg-background/90 backdrop-blur-[10px] rounded-2xl p-4 border border-border/50 shadow-lg">
             <div className="flex flex-col gap-4">
               <button
                 onClick={handleHowItWorks}
-                className="text-left text-slate-700 dark:text-slate-200 font-medium px-2 py-1 hover:bg-white/50 dark:hover:bg-white/10 rounded-lg transition-colors text-sm"
+                className="text-left text-foreground font-medium px-2 py-1 hover:bg-accent rounded-lg transition-colors text-sm"
               >
                 Comment ça marche
               </button>
               <Link
                 to="/pricing"
-                className="text-slate-700 dark:text-slate-200 font-medium px-2 py-1 hover:bg-white/50 dark:hover:bg-white/10 rounded-lg transition-colors text-sm"
+                className="text-foreground font-medium px-2 py-1 hover:bg-accent rounded-lg transition-colors text-sm"
               >
                 Tarif
               </Link>
 
-              <div className="border-t border-slate-200 dark:border-slate-700 pt-2">
-                <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 px-2">Outils</p>
+              <div className="border-t border-border pt-2">
+                <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2 px-2">Outils</p>
                 {TOOLS.map(tool => (
                   <Link
                     key={tool.href}
                     to={tool.href}
                     className={cn(
-                      "flex items-center gap-3 px-2 py-2 hover:bg-white/50 dark:hover:bg-white/10 rounded-lg transition-colors",
+                      "flex items-center gap-3 px-2 py-2 hover:bg-accent rounded-lg transition-colors",
                       tool.iconColor
                     )}
                   >
                     <tool.Icon className="w-4 h-4" />
-                    <span className="text-slate-700 dark:text-slate-200 text-sm">{tool.label}</span>
+                    <span className="text-foreground text-sm">{tool.label}</span>
                   </Link>
                 ))}
               </div>
 
-              <div className="border-t border-slate-200 dark:border-slate-700 pt-3 flex flex-col gap-3">
+              <div className="border-t border-border pt-3 flex flex-col gap-3">
                 <Link
                   to={user ? "/dashboard" : "/login"}
-                  className="text-center text-slate-600 dark:text-slate-300 font-medium text-sm"
+                  className="text-center text-foreground/70 font-medium text-sm"
                 >
                   {user ? "Mon Dashboard" : "Connexion"}
                 </Link>

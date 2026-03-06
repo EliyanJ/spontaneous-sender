@@ -1,67 +1,96 @@
 
-## État actuel
+# Plan SEO — 4 chantiers majeurs
 
-- `PublicNav.tsx` : existe mais **n'est importé nulle part** — il peut être supprimé directement
-- Les 5 pages publiques (`CVScorePage`, `CVBuilder`, `JobOffersPublic`, `Blog`, `Pricing`) utilisent **déjà** `<Header />` de `Header.tsx`
-- `index.css` : le bloc `.dark` utilise des valeurs violettes teintées (ex: `263 20% 6%`) au lieu du noir pur `0 0% 0%` demandé
-- `Header.tsx` : utilise des classes hardcodées `slate-*` au lieu de tokens sémantiques (`bg-background`, `text-foreground`, `border-border`)
+## Vue d'ensemble
+Le message couvre 4 sujets distincts. Je vais les traiter dans l'ordre de priorité SEO/business :
 
 ---
 
-## Plan d'exécution
+## 1. Page publique `/score-cv` — Landing SEO + Comparateur CV gratuit
 
-### Étape 1 — Supprimer PublicNav.tsx
-Suppression pure du fichier `src/components/PublicNav.tsx` (déjà inutilisé).
+**Objectif** : Page publique (sans auth), accessible aux moteurs, avec le comparateur ATS intégré + tunnel d'inscription post-essai.
 
-### Étape 2 — Remplacer le bloc `.dark` dans `index.css`
-Lignes 58–95, remplacement exact par les valeurs noir pur demandées :
-
-```css
-.dark {
-  --background: 0 0% 0%;
-  --foreground: 0 0% 100%;
-  --card: 0 0% 6%;
-  --card-foreground: 0 0% 100%;
-  --popover: 0 0% 6%;
-  --popover-foreground: 0 0% 100%;
-  --primary: 263 75% 60%;
-  --primary-foreground: 0 0% 100%;
-  --secondary: 0 0% 10%;
-  --secondary-foreground: 0 0% 100%;
-  --muted: 0 0% 10%;
-  --muted-foreground: 0 0% 70%;
-  --accent: 0 0% 12%;
-  --accent-foreground: 263 75% 70%;
-  --destructive: 0 63% 45%;
-  --destructive-foreground: 0 0% 100%;
-  --border: 0 0% 15%;
-  --input: 0 0% 15%;
-  --ring: 263 75% 60%;
-  /* gradients/glows mis à jour */
-  --gradient-primary: linear-gradient(135deg, hsl(263 75% 60%), hsl(263 75% 48%));
-  --gradient-accent: linear-gradient(135deg, hsl(263 75% 50%), hsl(280 60% 45%));
-  --gradient-surface: linear-gradient(180deg, hsl(0 0% 6%), hsl(0 0% 0%));
-  --glow-primary: 0 0 40px hsl(263 75% 60% / 0.3);
-  --glow-accent: 0 0 60px hsl(263 75% 60% / 0.15);
-}
+### Structure de la page
+```
+/score-cv  (route publique, pas de ProtectedRoute)
+├── Hero section  →  H1 + CTA "Tester gratuitement"
+├── Outil comparateur (CVComparator réutilisé tel quel)
+├── Popup post-analyse  →  "Créez votre compte gratuit pour comparer à l'infini"
+│     └── Formulaire email/password → création de compte Supabase
+└── Section SEO bas de page
+      ├── Texte riche avec mots-clés (H2, paragraphes, gras)
+      └── Accordéons FAQ (ex: "Comment fonctionne l'ATS ?", "Pourquoi optimiser son CV ?")
 ```
 
-### Étape 3 — Nettoyer Header.tsx (remplacer classes hardcodées)
+### Logique d'accès
+- L'outil fonctionne **1 fois sans compte**
+- Après analyse → popup `AuthDialog` personnalisée avec message de valeur
+- Compte créé → redirect `/dashboard?tab=cv`
 
-| Avant | Après |
+### SEO technique sur cette page
+- `useSEO("/score-cv")` → meta title/desc configurable depuis le BO
+- Balise H1 unique, H2 dans les sections FAQ
+- Texte ~800 mots minimum en bas de page (géré via CMS ou hardcodé)
+- Canonical URL configurée
+- Ajout de `/score-cv` dans `SITE_PAGES` de `AdminSEO.tsx`
+
+---
+
+## 2. Amélioration du CMS — Sélecteur de balise HTML + effets de texte
+
+**Problème actuel** : `AdminPageEditor.tsx` a H1/H2/H3 dans la barre d'outils mais pas de sélecteur explicite de balise pour les blocs de texte. Pas d'effet "texte souligné coloré" type mise en avant.
+
+### Ce qu'on ajoute
+- **Sélecteur de balise** dans la toolbar : dropdown `<p>` / `<h1>` / `<h2>` / `<h3>` avec règle visuelle "1 seul H1 par page" (warning si H1 déjà présent)
+- **Effet texte surligné** : bouton "Highlight" dans la toolbar → `<mark>` stylé avec couleur configurable (rose/jaune comme l'image fournie)
+- Les couleurs de highlight configurables via `ColorPickerPopover` déjà existant
+
+---
+
+## 3. CV Builder — Nouveaux modèles + personnalisation design
+
+**Actuel** : 4 templates (`classic`, `dark`, `light`, `geo`) avec couleurs configurables. Photo déjà supportée (`photoUrl` dans `CVDesignOptions`).
+
+### Ajouts
+- **2-3 nouveaux templates** inspirés des screenshots fournis :
+  - `modern-two-col` : deux colonnes (sidebar colorée + contenu), avec photo ronde en haut
+  - `minimal-line` : séparateurs de ligne épurés, typographie aérée
+- **Sélecteur de template visuel** : grille de miniatures cliquables (comme le site concurrent montré)
+- **Panneau design** : couleur de fond de section, couleur du texte, couleur d'accent — déjà partiellement présent, à enrichir
+- **Upload photo** : interface d'upload vers Supabase Storage + affichage dans le template
+
+---
+
+## 4. SEO global — Optimisations techniques
+
+- Ajout `/score-cv` dans `AdminSEO.tsx` SITE_PAGES
+- `robots.txt` : vérifier que `/score-cv` est indexable (actuellement public/robots.txt)
+- Sitemap XML statique : créer `public/sitemap.xml` avec les URLs principales
+- Structure JSON-LD Schema.org sur `/score-cv` (SoftwareApplication)
+- `useSEO` déjà en place sur Landing — à ajouter sur `/score-cv` et Pricing
+
+---
+
+## Fichiers à créer/modifier
+
+| Fichier | Action |
 |---|---|
-| `bg-white/70 dark:bg-slate-900/70` | `bg-background/70` |
-| `border-white/50 dark:border-white/10` | `border-border/50` |
-| `text-slate-600 dark:text-slate-300` (nav links) | `text-foreground/70` |
-| `text-slate-700 dark:text-slate-300` (burger) | `text-foreground/80` |
-| Menu mobile `bg-white/80 dark:bg-slate-900/90` | `bg-background/90` |
-| Menu mobile `border-white/50 dark:border-white/10` | `border-border/50` |
-| `text-slate-700 dark:text-slate-200` (items mobile) | `text-foreground` |
-| `border-slate-200 dark:border-slate-700` | `border-border` |
-| `text-slate-400` (label "Outils") | `text-muted-foreground` |
-| Dropdown `bg-white/80 dark:bg-slate-800/90` | `bg-background/80` |
-| Dropdown items `text-slate-800 dark:text-slate-100` | `text-foreground` |
-| Dropdown items `text-slate-500 dark:text-slate-400` | `text-muted-foreground` |
-| `text-slate-600 dark:text-slate-300` (Connexion) | `text-foreground/70` |
+| `src/pages/CVScorePage.tsx` | CRÉER — page publique SEO |
+| `src/components/dashboard/CVComparator.tsx` | MODIFIER — prop `isPublic` pour désactiver auth check |
+| `src/components/CVScoreAuthPopup.tsx` | CRÉER — popup post-analyse |
+| `src/pages/Admin/AdminSEO.tsx` | MODIFIER — ajouter `/score-cv` |
+| `src/pages/Admin/AdminPageEditor.tsx` | MODIFIER — sélecteur balise + highlight |
+| `src/lib/cv-templates.ts` | MODIFIER — 2 nouveaux templates |
+| `src/components/cv-builder/CVPreview.tsx` | MODIFIER — render nouveaux templates |
+| `src/components/cv-builder/CVBuilderForm.tsx` | MODIFIER — sélecteur visuel templates |
+| `src/App.tsx` | MODIFIER — route `/score-cv` publique |
+| `public/sitemap.xml` | CRÉER |
 
-**Fichiers touchés :** `src/components/PublicNav.tsx` (suppression), `src/index.css`, `src/components/Header.tsx`
+---
+
+## Ordre d'implémentation recommandé
+
+1. Page `/score-cv` + popup auth (impact SEO + business immédiat)
+2. SEO technique global (sitemap, schema.org)
+3. CMS éditeur amélioré (balises H + highlight)
+4. CV Builder nouveaux templates + sélecteur visuel
