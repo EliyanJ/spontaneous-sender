@@ -1,96 +1,112 @@
 
-# Plan SEO — 4 chantiers majeurs
 
-## Vue d'ensemble
-Le message couvre 4 sujets distincts. Je vais les traiter dans l'ordre de priorité SEO/business :
+## Diagnostic — Pourquoi le dark mode ne marche pas sur la home
 
----
-
-## 1. Page publique `/score-cv` — Landing SEO + Comparateur CV gratuit
-
-**Objectif** : Page publique (sans auth), accessible aux moteurs, avec le comparateur ATS intégré + tunnel d'inscription post-essai.
-
-### Structure de la page
+**Problème principal — ligne 40 de `Landing.tsx` :**
+```tsx
+<div className="min-h-screen bg-white relative overflow-hidden">
 ```
-/score-cv  (route publique, pas de ProtectedRoute)
-├── Hero section  →  H1 + CTA "Tester gratuitement"
-├── Outil comparateur (CVComparator réutilisé tel quel)
-├── Popup post-analyse  →  "Créez votre compte gratuit pour comparer à l'infini"
-│     └── Formulaire email/password → création de compte Supabase
-└── Section SEO bas de page
-      ├── Texte riche avec mots-clés (H2, paragraphes, gras)
-      └── Accordéons FAQ (ex: "Comment fonctionne l'ATS ?", "Pourquoi optimiser son CV ?")
+La racine de la page a `bg-white` codé en dur — elle écrase complètement `bg-background`, peu importe le thème. La classe `.dark` est appliquée sur `<html>`, mais le fond blanc opaque de cette div masque tout.
+
+**Problème secondaire — ligne 42 :**
+```tsx
+<div className="fixed inset-0 z-0 pointer-events-none bg-gradient-to-br from-gray-50 via-white to-purple-50">
+```
+Le fond décoratif fixé (`fixed inset-0`) utilise aussi des couleurs light hardcodées : `gray-50`, `white`, `purple-50`.
+
+**Problème Hero — lignes 68, 73, 89, 95, 98, 103, etc. :**
+De nombreuses classes dans la Hero section sont statiques : `text-gray-900`, `text-gray-600`, `bg-white`, `border-gray-200`, `bg-gray-50`, `bg-gray-100`, `text-gray-500`, `text-gray-600`, `text-gray-400`… Ces classes ignorent la variable CSS `--foreground`.
+
+---
+
+## Plan d'exécution
+
+### 1 — Fix dark mode `Landing.tsx`
+
+**Wrapper racine (ligne 40) :**
+```
+bg-white → bg-background
 ```
 
-### Logique d'accès
-- L'outil fonctionne **1 fois sans compte**
-- Après analyse → popup `AuthDialog` personnalisée avec message de valeur
-- Compte créé → redirect `/dashboard?tab=cv`
+**Fond décoratif (ligne 42) :**
+```
+bg-gradient-to-br from-gray-50 via-white to-purple-50 → bg-background
+(+ ajouter dark:from-black dark:via-black dark:to-black/80 ou simplement supprimer le gradient en dark)
+```
 
-### SEO technique sur cette page
-- `useSEO("/score-cv")` → meta title/desc configurable depuis le BO
-- Balise H1 unique, H2 dans les sections FAQ
-- Texte ~800 mots minimum en bas de page (géré via CMS ou hardcodé)
-- Canonical URL configurée
-- Ajout de `/score-cv` dans `SITE_PAGES` de `AdminSEO.tsx`
+**Hero section — remplacements ciblés :**
 
----
-
-## 2. Amélioration du CMS — Sélecteur de balise HTML + effets de texte
-
-**Problème actuel** : `AdminPageEditor.tsx` a H1/H2/H3 dans la barre d'outils mais pas de sélecteur explicite de balise pour les blocs de texte. Pas d'effet "texte souligné coloré" type mise en avant.
-
-### Ce qu'on ajoute
-- **Sélecteur de balise** dans la toolbar : dropdown `<p>` / `<h1>` / `<h2>` / `<h3>` avec règle visuelle "1 seul H1 par page" (warning si H1 déjà présent)
-- **Effet texte surligné** : bouton "Highlight" dans la toolbar → `<mark>` stylé avec couleur configurable (rose/jaune comme l'image fournie)
-- Les couleurs de highlight configurables via `ColorPickerPopover` déjà existant
-
----
-
-## 3. CV Builder — Nouveaux modèles + personnalisation design
-
-**Actuel** : 4 templates (`classic`, `dark`, `light`, `geo`) avec couleurs configurables. Photo déjà supportée (`photoUrl` dans `CVDesignOptions`).
-
-### Ajouts
-- **2-3 nouveaux templates** inspirés des screenshots fournis :
-  - `modern-two-col` : deux colonnes (sidebar colorée + contenu), avec photo ronde en haut
-  - `minimal-line` : séparateurs de ligne épurés, typographie aérée
-- **Sélecteur de template visuel** : grille de miniatures cliquables (comme le site concurrent montré)
-- **Panneau design** : couleur de fond de section, couleur du texte, couleur d'accent — déjà partiellement présent, à enrichir
-- **Upload photo** : interface d'upload vers Supabase Storage + affichage dans le template
-
----
-
-## 4. SEO global — Optimisations techniques
-
-- Ajout `/score-cv` dans `AdminSEO.tsx` SITE_PAGES
-- `robots.txt` : vérifier que `/score-cv` est indexable (actuellement public/robots.txt)
-- Sitemap XML statique : créer `public/sitemap.xml` avec les URLs principales
-- Structure JSON-LD Schema.org sur `/score-cv` (SoftwareApplication)
-- `useSEO` déjà en place sur Landing — à ajouter sur `/score-cv` et Pricing
-
----
-
-## Fichiers à créer/modifier
-
-| Fichier | Action |
+| Avant | Après |
 |---|---|
-| `src/pages/CVScorePage.tsx` | CRÉER — page publique SEO |
-| `src/components/dashboard/CVComparator.tsx` | MODIFIER — prop `isPublic` pour désactiver auth check |
-| `src/components/CVScoreAuthPopup.tsx` | CRÉER — popup post-analyse |
-| `src/pages/Admin/AdminSEO.tsx` | MODIFIER — ajouter `/score-cv` |
-| `src/pages/Admin/AdminPageEditor.tsx` | MODIFIER — sélecteur balise + highlight |
-| `src/lib/cv-templates.ts` | MODIFIER — 2 nouveaux templates |
-| `src/components/cv-builder/CVPreview.tsx` | MODIFIER — render nouveaux templates |
-| `src/components/cv-builder/CVBuilderForm.tsx` | MODIFIER — sélecteur visuel templates |
-| `src/App.tsx` | MODIFIER — route `/score-cv` publique |
-| `public/sitemap.xml` | CRÉER |
+| `text-gray-900` | `text-foreground` |
+| `text-gray-600` | `text-muted-foreground` |
+| `text-gray-500` | `text-muted-foreground` |
+| `text-gray-400` | `text-muted-foreground` |
+| `bg-white` (mockup dashboard) | `bg-background` |
+| `bg-gray-50` (mockup) | `bg-secondary` |
+| `bg-gray-100` (browser bar) | `bg-muted` |
+| `border-gray-200` | `border-border` |
+| `border-2 border-white` (avatars) | `border-2 border-background` |
+| Bouton "Voir la démo" `bg-white border-gray-200 text-gray-900 hover:bg-gray-50` | `bg-background border-border text-foreground hover:bg-accent` |
+
+**Fond décoratif — solution propre :**
+```tsx
+<div className="fixed inset-0 z-0 pointer-events-none 
+  bg-gradient-to-br from-gray-50 via-white to-purple-50
+  dark:from-black dark:via-black dark:to-black">
+```
 
 ---
 
-## Ordre d'implémentation recommandé
+### 2 — Renommage des URLs (routes + liens)
 
-1. Page `/score-cv` + popup auth (impact SEO + business immédiat)
-2. SEO technique global (sitemap, schema.org)
-3. CMS éditeur amélioré (balises H + highlight)
-4. CV Builder nouveaux templates + sélecteur visuel
+#### Dans `App.tsx` — nouvelles routes :
+
+| Route actuelle | Nouvelle route |
+|---|---|
+| `/pricing` | `/prix` (+ garder `/pricing` en redirect) |
+| `/cv-builder` | `/créateur-de-cv` (+ garder `/cv-builder`) |
+| `/score-cv` | inchangé (déjà en fr) |
+| `/offres-emploi` | inchangé |
+| `/blog` | inchangé |
+
+Pour les routes avec accents (`/créateur-de-cv`), React Router les gère nativement via `encodeURIComponent`. Cependant les accents dans les URL sont risqués (SEO, encodage). **Proposition alternative plus robuste :**
+- `/prix` ✅ sans accent
+- `/createur-de-cv` ✅ sans accent (variante sans accent)
+
+Le `/#how-it-works` → `/#comment-ca-marche` (sans accent pour éviter l'encodage `%C3%A7`)
+
+#### Dans `Header.tsx` — liens Outils TOOLS array :
+```
+/cv-builder → /createur-de-cv
+/score-cv → inchangé
+/offres-emploi → inchangé
+/blog → inchangé
+```
+Lien "Tarif" : `/pricing` → `/prix`
+`handleHowItWorks` : `#how-it-works` → `#comment-ca-marche`
+
+#### Dans `Landing.tsx` — `id` de la section :
+```
+id="how-it-works" → id="comment-ca-marche"
+```
+
+#### Dans `App.tsx` — nouvelles routes :
+```
+/pricing → /prix
+/cv-builder → /createur-de-cv
+```
++ Ajouter des redirects pour les anciennes URLs (pour éviter les 404 sur les liens existants) :
+```tsx
+<Route path="/pricing" element={<Navigate to="/prix" replace />} />
+<Route path="/cv-builder" element={<Navigate to="/createur-de-cv" replace />} />
+```
+
+---
+
+## Fichiers modifiés
+
+1. **`src/pages/Landing.tsx`** — Fix dark mode (wrapper, fond décoratif, Hero section)
+2. **`src/components/Header.tsx`** — Mise à jour des hrefs TOOLS + lien "Tarif" + `handleHowItWorks`
+3. **`src/App.tsx`** — Nouvelles routes `/prix` et `/createur-de-cv` + redirects
+
