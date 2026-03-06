@@ -75,7 +75,7 @@ export const Header = () => {
 
             {/* ── Logo image noir ── */}
             <Link to="/" className="flex items-center flex-shrink-0 opacity-90 hover:opacity-100 transition-opacity duration-200">
-              <img src={logoBlack} alt="Cronos" className="h-7 w-auto" />
+              <img src={logoBlack} alt="Cronos" className="h-9 w-auto" />
             </Link>
 
             {/* ── Desktop nav (collé au logo) ── */}
