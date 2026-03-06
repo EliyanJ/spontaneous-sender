@@ -1325,24 +1325,24 @@ export const UnifiedEmailSender = () => {
                   <div className={cn(
                     "px-6 py-4 border-b flex justify-between items-center",
                     email.success
-                      ? "bg-[#121215]/30 border-white/5"
-                      : "bg-red-500/5 border-red-500/10"
+                      ? "bg-muted/30 border-border"
+                      : "bg-destructive/5 border-destructive/10"
                   )}>
                     <div className="flex items-center gap-3">
                       <div className={cn(
                         "w-8 h-8 rounded-full flex items-center justify-center border",
                         email.success
-                          ? "bg-green-500/20 border-green-500/30 text-green-400"
-                          : "bg-red-500/20 border-red-500/30 text-red-400"
+                          ? "bg-green-500/15 border-green-500/30 text-green-600"
+                          : "bg-destructive/15 border-destructive/30 text-destructive"
                       )}>
                         {email.success ? <CheckCircle className="h-4 w-4" /> : <XCircle className="h-4 w-4" />}
                       </div>
                       <div>
-                        <h4 className="font-semibold text-gray-200 text-sm">{email.company_name}</h4>
+                        <h4 className="font-semibold text-foreground text-sm">{email.company_name}</h4>
                         {email.success ? (
-                          <p className="text-xs text-gray-500">{email.company_email}</p>
+                          <p className="text-xs text-muted-foreground">{email.company_email}</p>
                         ) : (
-                          <p className="text-xs text-red-400 flex items-center gap-1">
+                          <p className="text-xs text-destructive flex items-center gap-1">
                             <AlertCircle className="h-3 w-3" />
                             {email.error || "Erreur de génération"}
                           </p>
@@ -1351,21 +1351,21 @@ export const UnifiedEmailSender = () => {
                     </div>
                     <div className="flex items-center gap-2">
                       {email.coverLetter && (
-                        <Badge variant="outline" className="text-[10px] bg-purple-500/10 text-purple-300 border-purple-500/20 gap-1">
+                        <Badge variant="outline" className="text-[10px] bg-primary/10 text-primary border-primary/20 gap-1">
                           <FileText className="h-3 w-3" />
                           Lettre jointe
                         </Badge>
                       )}
                       {email.success ? (
                         <>
-                          <div className="h-4 w-px bg-white/10 mx-1" />
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-white" onClick={() => setPreviewEmail(email)}>
+                          <div className="h-4 w-px bg-border mx-1" />
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => setPreviewEmail(email)}>
                             <Eye className="h-4 w-4" />
                           </Button>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-indigo-400" onClick={() => handleEditEmail(email)}>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" onClick={() => handleEditEmail(email)}>
                             <Edit3 className="h-4 w-4" />
                           </Button>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-red-400" onClick={() => handleRemoveGeneratedEmail(email.company_id)}>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => handleRemoveGeneratedEmail(email.company_id)}>
                             <X className="h-4 w-4" />
                           </Button>
                         </>
@@ -1373,7 +1373,7 @@ export const UnifiedEmailSender = () => {
                         <Button
                           variant="outline"
                           size="sm"
-                          className="text-xs border-red-500/30 text-red-300 hover:bg-red-500/10"
+                          className="text-xs border-destructive/30 text-destructive hover:bg-destructive/10"
                           onClick={() => handleEditEmail({ ...email, success: true, subject: subject || "Candidature spontanée", body: body || "" })}
                         >
                           Corriger manuellement
@@ -1384,10 +1384,10 @@ export const UnifiedEmailSender = () => {
 
                   {/* Card body */}
                   {email.success && (
-                    <div className="p-6 bg-[#121215]/20">
+                    <div className="p-6 bg-card/50">
                       <div className="mb-3">
-                        <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide mr-2">Objet:</span>
-                        <span className="text-sm text-gray-200 font-medium">{email.subject}</span>
+                        <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mr-2">Objet:</span>
+                        <span className="text-sm text-foreground font-medium">{email.subject}</span>
                       </div>
                       <div className="text-sm text-muted-foreground leading-relaxed line-clamp-2">
                         {email.body?.substring(0, 200)}...
@@ -1398,7 +1398,7 @@ export const UnifiedEmailSender = () => {
               ))}
 
               {generatedEmails.length === 0 && (
-                <div className="bg-[#121215]/60 backdrop-blur-xl border border-white/[0.08] rounded-2xl p-12 text-center">
+                <div className="bg-card border border-border rounded-2xl p-12 text-center">
                   <Mail className="h-12 w-12 text-muted-foreground/30 mx-auto mb-4" />
                   <p className="text-muted-foreground">Aucun email généré. Sélectionnez des destinataires et cliquez sur "Générer".</p>
                 </div>
@@ -1406,37 +1406,37 @@ export const UnifiedEmailSender = () => {
 
               {/* Send Options Card */}
               {successfulEmails.length > 0 && (
-                <div className="bg-[#121215]/60 backdrop-blur-xl border border-white/[0.08] rounded-2xl p-6">
+                <div className="bg-card border border-border rounded-2xl p-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <div>
-                      <h3 className="font-semibold text-gray-200 mb-4 flex items-center gap-2">
-                        <Send className="h-4 w-4 text-indigo-400" />
+                      <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
+                        <Send className="h-4 w-4 text-primary" />
                         Paramètres d'envoi
                       </h3>
                       <RadioGroup value={sendMode} onValueChange={(v: 'now' | 'scheduled') => setSendMode(v)} className="space-y-3">
-                        <label className="flex items-center p-3 border border-white/[0.08] rounded-xl cursor-pointer hover:bg-white/5 transition-colors group">
+                        <label className="flex items-center p-3 border border-border rounded-xl cursor-pointer hover:bg-muted/50 transition-colors group">
                           <RadioGroupItem value="now" id="now-radio" />
                           <div className="ml-3">
-                            <span className="block text-sm font-medium text-gray-200 group-hover:text-white">Envoyer maintenant</span>
-                            <span className="block text-xs text-gray-500">Les emails partiront immédiatement</span>
+                            <span className="block text-sm font-medium text-foreground">Envoyer maintenant</span>
+                            <span className="block text-xs text-muted-foreground">Les emails partiront immédiatement</span>
                           </div>
                         </label>
-                        <label className="flex items-center p-3 border border-white/[0.08] rounded-xl cursor-pointer hover:bg-white/5 transition-colors group">
+                        <label className="flex items-center p-3 border border-border rounded-xl cursor-pointer hover:bg-muted/50 transition-colors group">
                           <RadioGroupItem value="scheduled" id="scheduled-radio" />
                           <div className="ml-3">
-                            <span className="block text-sm font-medium text-gray-200 group-hover:text-white">Programmer l'envoi</span>
-                            <span className="block text-xs text-gray-500">Choisissez la date et l'heure</span>
+                            <span className="block text-sm font-medium text-foreground">Programmer l'envoi</span>
+                            <span className="block text-xs text-muted-foreground">Choisissez la date et l'heure</span>
                           </div>
                         </label>
                       </RadioGroup>
 
                       {sendMode === 'scheduled' && (
-                        <div className="mt-4 pl-4 border-l-2 border-indigo-500/20 space-y-4">
+                        <div className="mt-4 pl-4 border-l-2 border-primary/20 space-y-4">
                           <div className="space-y-2">
                             <Label className="text-sm">Date</Label>
                             <Popover>
                               <PopoverTrigger asChild>
-                                <Button variant="outline" className={cn("w-full justify-start border-white/10", !scheduledDate && "text-muted-foreground")}>
+                                <Button variant="outline" className={cn("w-full justify-start", !scheduledDate && "text-muted-foreground")}>
                                   <CalendarIcon className="mr-2 h-4 w-4" />
                                   {scheduledDate ? format(scheduledDate, "PPP", { locale: fr }) : "Choisir une date"}
                                 </Button>
@@ -1449,9 +1449,9 @@ export const UnifiedEmailSender = () => {
                           <div className="space-y-2">
                             <Label className="text-sm">Heure</Label>
                             <div className="flex items-center gap-2">
-                              <Input type="number" min="0" max="23" value={scheduledHour} onChange={(e) => setScheduledHour(Math.min(23, Math.max(0, parseInt(e.target.value) || 0)).toString().padStart(2, '0'))} className="w-[70px] text-center bg-[#27272a]/40 border-white/10" />
+                              <Input type="number" min="0" max="23" value={scheduledHour} onChange={(e) => setScheduledHour(Math.min(23, Math.max(0, parseInt(e.target.value) || 0)).toString().padStart(2, '0'))} className="w-[70px] text-center" />
                               <span className="text-lg font-medium text-muted-foreground">:</span>
-                              <Input type="number" min="0" max="59" value={scheduledMinute} onChange={(e) => setScheduledMinute(Math.min(59, Math.max(0, parseInt(e.target.value) || 0)).toString().padStart(2, '0'))} className="w-[70px] text-center bg-[#27272a]/40 border-white/10" />
+                              <Input type="number" min="0" max="59" value={scheduledMinute} onChange={(e) => setScheduledMinute(Math.min(59, Math.max(0, parseInt(e.target.value) || 0)).toString().padStart(2, '0'))} className="w-[70px] text-center" />
                             </div>
                           </div>
                           <div className="flex items-center space-x-2">
@@ -1464,10 +1464,10 @@ export const UnifiedEmailSender = () => {
 
                     <div className="flex flex-col justify-between">
                       {/* Pro tip */}
-                      <div className="flex items-start gap-2 p-4 rounded-xl bg-indigo-500/10 border border-indigo-500/20 mb-4">
-                        <Lightbulb className="h-4 w-4 text-indigo-400 mt-0.5 shrink-0" />
+                      <div className="flex items-start gap-2 p-4 rounded-xl bg-primary/5 border border-primary/20 mb-4">
+                        <Lightbulb className="h-4 w-4 text-primary mt-0.5 shrink-0" />
                         <p className="text-xs text-muted-foreground">
-                          <span className="font-medium text-indigo-300">Conseil pro :</span> Les emails envoyés entre 10h et 11h30 obtiennent un taux d'ouverture 23% supérieur.
+                          <span className="font-medium text-primary">Conseil pro :</span> Les emails envoyés entre 10h et 11h30 obtiennent un taux d'ouverture 23% supérieur.
                         </p>
                       </div>
 
@@ -1475,7 +1475,7 @@ export const UnifiedEmailSender = () => {
                       <Button
                         onClick={handleSendAll}
                         disabled={isSending || successfulEmails.length === 0 || !gmailConnected}
-                        className="w-full bg-white text-black hover:bg-gray-200 font-bold py-4 px-6 rounded-xl shadow-[0_0_20px_rgba(255,255,255,0.1)] transition-all gap-2 h-auto"
+                        className="w-full font-bold py-4 px-6 rounded-xl transition-all gap-2 h-auto"
                         size="lg"
                       >
                         {isSending ? (
