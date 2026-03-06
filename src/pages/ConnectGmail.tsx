@@ -155,7 +155,7 @@ const ConnectGmail = () => {
         <CardHeader className="text-center space-y-4 pt-12">
           <div className="flex justify-center">
             <div className="relative">
-              <img src={logoBlack} alt="Cronos" className="h-16 w-auto" />
+              <Logo height={64} />
               <div className="absolute -bottom-1 -right-1 bg-primary rounded-full p-1">
                 <Mail className="h-4 w-4 text-primary-foreground" />
               </div>

@@ -28,7 +28,7 @@ export const PublicNav = () => {
 
           {/* Logo */}
           <Link to="/" className="flex items-center gap-3">
-            <img src={logoBlack} alt="Cronos" className="h-9 w-auto" />
+            <Logo height={36} />
             <span className="text-2xl font-bold tracking-tight text-gray-900">Cronos</span>
           </Link>
 
