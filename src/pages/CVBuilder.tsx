@@ -1,6 +1,9 @@
 import React, { useState, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Loader2, Sparkles, Save, Eye, ChevronRight, Check, Palette } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import {
+  ArrowLeft, Loader2, Sparkles, Save, Eye, ChevronRight, Check,
+  SlidersHorizontal, ArrowRight,
+} from "lucide-react";
 import { PublicNav } from "@/components/PublicNav";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -25,144 +28,97 @@ const SECTORS = [
   { value: "general", label: "Généraliste" },
 ];
 
-// Large template card for the selection screen
-const TemplateCard = ({
-  id, name, defaultDesign, selected, onSelect,
-}: {
-  id: TemplateId; name: string; defaultDesign: CVDesignOptions; selected: boolean; onSelect: () => void;
-}) => {
-  const previews: Record<TemplateId, React.ReactNode> = {
-    classic: (
-      <div style={{ width: "100%", height: "100%", display: "flex", fontFamily: "sans-serif" }}>
-        <div style={{ width: "36%", background: defaultDesign.primaryColor, padding: "12px 10px", display: "flex", flexDirection: "column", gap: 6 }}>
-          <div style={{ width: 36, height: 36, borderRadius: "50%", background: defaultDesign.accentColor, opacity: 0.7, marginBottom: 4 }} />
-          <div style={{ height: 3, background: defaultDesign.accentColor, borderRadius: 2, width: "80%" }} />
-          <div style={{ height: 2, background: "rgba(255,255,255,0.2)", borderRadius: 2, width: "60%" }} />
-          <div style={{ height: 2, background: "rgba(255,255,255,0.15)", borderRadius: 2, width: "70%", marginTop: 6 }} />
-          {[1,2,3].map(i => <div key={i} style={{ height: 1.5, background: "rgba(255,255,255,0.1)", borderRadius: 2, width: "90%" }} />)}
-        </div>
-        <div style={{ flex: 1, padding: "12px 10px" }}>
-          <div style={{ height: 2, background: "#ddd", borderRadius: 2, width: "80%", marginBottom: 8 }} />
-          <div style={{ height: 1.5, background: "#eee", borderRadius: 2, width: "60%", marginBottom: 10 }} />
-          {[90,70,80,60,75].map((w, i) => <div key={i} style={{ height: 1.5, background: "#f0f0f0", borderRadius: 2, width: `${w}%`, marginBottom: 4 }} />)}
-        </div>
-      </div>
-    ),
-    dark: (
-      <div style={{ width: "100%", height: "100%", display: "flex", background: defaultDesign.primaryColor }}>
-        <div style={{ width: "38%", borderRight: `2px solid ${defaultDesign.accentColor}`, padding: "12px 10px" }}>
-          <div style={{ width: 32, height: 32, borderRadius: "50%", background: defaultDesign.accentColor, opacity: 0.5, marginBottom: 6 }} />
-          <div style={{ height: 2.5, background: defaultDesign.accentColor, borderRadius: 2, width: "75%", marginBottom: 4 }} />
-          {[1,2,3,4].map(i => <div key={i} style={{ height: 1.5, background: "rgba(255,255,255,0.1)", borderRadius: 2, width: "85%", marginBottom: 3 }} />)}
-        </div>
-        <div style={{ flex: 1, padding: "12px 10px" }}>
-          <div style={{ height: 2, background: defaultDesign.accentColor, borderRadius: 2, width: "70%", marginBottom: 8 }} />
-          {[80,65,75,55,70].map((w, i) => <div key={i} style={{ height: 1.5, background: "rgba(255,255,255,0.1)", borderRadius: 2, width: `${w}%`, marginBottom: 4 }} />)}
-        </div>
-      </div>
-    ),
-    light: (
-      <div style={{ width: "100%", height: "100%", background: "#fff" }}>
-        <div style={{ background: defaultDesign.primaryColor, padding: "10px 12px", marginBottom: 8 }}>
-          <div style={{ height: 3, background: "rgba(255,255,255,0.9)", borderRadius: 2, width: "55%", marginBottom: 4 }} />
-          <div style={{ height: 2, background: "rgba(255,255,255,0.6)", borderRadius: 2, width: "40%", marginBottom: 4 }} />
-          <div style={{ display: "flex", gap: 6 }}>
-            {[1,2,3].map(i => <div key={i} style={{ height: 1.5, background: "rgba(255,255,255,0.4)", borderRadius: 2, width: 30 }} />)}
-          </div>
-        </div>
-        <div style={{ padding: "0 12px" }}>
-          <div style={{ height: 2, background: `${defaultDesign.primaryColor}40`, borderRadius: 2, width: "40%", marginBottom: 6 }} />
-          {[85,65,75,55,70].map((w, i) => <div key={i} style={{ height: 1.5, background: "#f0f0f0", borderRadius: 2, width: `${w}%`, marginBottom: 3 }} />)}
-        </div>
-      </div>
-    ),
-    geo: (
-      <div style={{ width: "100%", height: "100%", background: "#fff" }}>
-        <div style={{ background: defaultDesign.primaryColor, padding: "10px 12px", position: "relative", overflow: "hidden", marginBottom: 0 }}>
-          <div style={{ position: "absolute", top: -10, right: 20, width: 30, height: 30, background: "rgba(255,255,255,0.1)", transform: "rotate(45deg)" }} />
-          <div style={{ position: "absolute", top: 5, right: 45, width: 18, height: 18, background: "rgba(255,255,255,0.07)", transform: "rotate(30deg)" }} />
-          <div style={{ height: 3, background: "rgba(255,255,255,0.9)", borderRadius: 2, width: "50%", marginBottom: 4 }} />
-          <div style={{ height: 2, background: defaultDesign.accentColor, borderRadius: 2, width: "35%", filter: "brightness(2)" }} />
-        </div>
-        <div style={{ height: 2.5, background: `linear-gradient(90deg, ${defaultDesign.accentColor}, ${defaultDesign.primaryColor})`, marginBottom: 6 }} />
-        <div style={{ display: "flex", gap: 8, padding: "0 10px" }}>
-          <div style={{ flex: 2 }}>{[80,60,70,55].map((w, i) => <div key={i} style={{ height: 1.5, background: "#eee", borderRadius: 2, width: `${w}%`, marginBottom: 3 }} />)}</div>
-          <div style={{ flex: 1 }}>{[1,2,3].map(i => <div key={i} style={{ height: 1.5, background: `${defaultDesign.accentColor}30`, borderLeft: `2px solid ${defaultDesign.accentColor}`, paddingLeft: 2, marginBottom: 4 }} />)}</div>
-        </div>
-      </div>
-    ),
-    modern: (
-      <div style={{ width: "100%", height: "100%", background: "#fff", display: "flex" }}>
-        <div style={{ width: "38%", background: defaultDesign.primaryColor, padding: "10px 8px" }}>
-          <div style={{ width: 28, height: 28, borderRadius: "50%", background: defaultDesign.accentColor, opacity: 0.7, marginBottom: 6 }} />
-          <div style={{ height: 2.5, background: "rgba(255,255,255,0.8)", borderRadius: 2, width: "80%", marginBottom: 3 }} />
-          <div style={{ height: 1.5, background: defaultDesign.accentColor, borderRadius: 2, width: "55%", opacity: 0.8, marginBottom: 8 }} />
-          {[1,2,3,4].map(i => <div key={i} style={{ height: 1.5, background: "rgba(255,255,255,0.15)", borderRadius: 2, width: "90%", marginBottom: 3 }} />)}
-        </div>
-        <div style={{ flex: 1, padding: "10px 8px" }}>
-          <div style={{ height: 2, background: defaultDesign.primaryColor, borderRadius: 2, width: "60%", marginBottom: 3, opacity: 0.7 }} />
-          <div style={{ height: 1.5, background: defaultDesign.accentColor, borderRadius: 2, width: "40%", marginBottom: 8, opacity: 0.5 }} />
-          {[85,65,75,55,70].map((w, i) => <div key={i} style={{ height: 1.5, background: "#eee", borderRadius: 2, width: `${w}%`, marginBottom: 3 }} />)}
-        </div>
-      </div>
-    ),
-    minimal: (
-      <div style={{ width: "100%", height: "100%", background: "#fff", padding: "12px" }}>
-        <div style={{ borderBottom: `3px solid ${defaultDesign.primaryColor}`, paddingBottom: 6, marginBottom: 8 }}>
-          <div style={{ height: 3, background: defaultDesign.primaryColor, borderRadius: 2, width: "60%", marginBottom: 3 }} />
-          <div style={{ height: 1.5, background: defaultDesign.accentColor, borderRadius: 2, width: "40%" }} />
-        </div>
-        {[1,2,3].map(i => (
-          <div key={i} style={{ marginBottom: 5 }}>
-            <div style={{ height: 2, background: `${defaultDesign.primaryColor}60`, borderRadius: 2, width: "35%", marginBottom: 2 }} />
-            {[90,70,80].map((w, j) => <div key={j} style={{ height: 1.5, background: "#eee", borderRadius: 2, width: `${w}%`, marginBottom: 2 }} />)}
-          </div>
-        ))}
-      </div>
-    ),
-  };
+// ─── Templates enrichis avec image + score ATS ────────────────────────────────
+interface TemplateGalleryItem {
+  id: TemplateId;
+  name: string;
+  description: string;
+  atsScore: number;
+  image: string;
+  colors: string[];
+  category: "modern" | "classic";
+  columns: 1 | 2 | 3;
+  hasPhoto: boolean;
+  isRecommended?: boolean;
+}
 
-  return (
-    <button
-      onClick={onSelect}
-      className={`relative group flex flex-col rounded-2xl overflow-hidden border-2 transition-all duration-200 text-left ${
-        selected
-          ? "border-primary shadow-lg shadow-primary/20 scale-[1.02]"
-          : "border-border hover:border-primary/40 hover:shadow-md"
-      }`}
-    >
-      {/* Preview */}
-      <div className="relative bg-muted/30 overflow-hidden" style={{ height: 160 }}>
-        <div style={{ transform: "scale(1)", width: "100%", height: "100%" }}>
-          {previews[id]}
-        </div>
-        {selected && (
-          <div className="absolute top-2 right-2 w-6 h-6 rounded-full bg-primary flex items-center justify-center">
-            <Check className="h-3.5 w-3.5 text-primary-foreground" />
-          </div>
-        )}
-      </div>
-      {/* Label */}
-      <div className={`px-4 py-3 flex items-center justify-between ${selected ? "bg-primary/5" : "bg-card"}`}>
-        <div>
-          <p className={`font-semibold text-sm ${selected ? "text-primary" : "text-foreground"}`}>{name}</p>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            {id === "classic" ? "Sidebar · Photo ronde" :
-             id === "dark" ? "Fond sombre · Accent vif" :
-             id === "light" ? "Header coloré · Épuré" :
-             id === "modern" ? "2 colonnes · Violet" :
-             id === "minimal" ? "Épuré · Typographie" :
-             "Géométrique · Moderne"}
-          </p>
-        </div>
-        <div className="flex gap-1">
-          <div className="w-3.5 h-3.5 rounded-full border border-border/50" style={{ background: defaultDesign.primaryColor }} />
-          <div className="w-3.5 h-3.5 rounded-full border border-border/50" style={{ background: defaultDesign.accentColor }} />
-        </div>
-      </div>
-    </button>
-  );
-};
+const GALLERY_TEMPLATES: TemplateGalleryItem[] = [
+  {
+    id: "modern",
+    name: "Moderne Pro",
+    description: "Design moderne avec photo, parfait pour les jeunes diplômés",
+    atsScore: 95,
+    image: "/images/cv-template-modern-pro.png",
+    colors: ["#7C3AED", "#22C55E", "#3B82F6"],
+    category: "modern",
+    columns: 2,
+    hasPhoto: true,
+    isRecommended: true,
+  },
+  {
+    id: "classic",
+    name: "Classique Elite",
+    description: "Template traditionnel, idéal pour tous secteurs",
+    atsScore: 92,
+    image: "/images/cv-template-classic-elite.png",
+    colors: ["#22C55E", "#3B82F6", "#6B7280"],
+    category: "classic",
+    columns: 1,
+    hasPhoto: false,
+    isRecommended: true,
+  },
+  {
+    id: "geo",
+    name: "Créatif Plus",
+    description: "Design créatif pour les métiers artistiques",
+    atsScore: 88,
+    image: "/images/cv-template-creative-plus.png",
+    colors: ["#7C3AED", "#EC4899", "#F97316"],
+    category: "modern",
+    columns: 3,
+    hasPhoto: true,
+    isRecommended: true,
+  },
+  {
+    id: "dark",
+    name: "Executive",
+    description: "Sobre et percutant pour les profils seniors",
+    atsScore: 90,
+    image: "/images/cv-template-executive.png",
+    colors: ["#EF4444", "#6B7280"],
+    category: "classic",
+    columns: 1,
+    hasPhoto: false,
+  },
+  {
+    id: "minimal",
+    name: "Minimaliste",
+    description: "Épuré et élégant, typographie soignée",
+    atsScore: 87,
+    image: "/images/cv-template-minimal.png",
+    colors: ["#14B8A6", "#3B82F6"],
+    category: "classic",
+    columns: 2,
+    hasPhoto: false,
+  },
+  {
+    id: "light",
+    name: "Étudiant",
+    description: "Moderne et accessible pour les premières candidatures",
+    atsScore: 85,
+    image: "/images/cv-template-student.png",
+    colors: ["#EAB308", "#F97316"],
+    category: "modern",
+    columns: 1,
+    hasPhoto: true,
+  },
+];
+
+const ALL_TEMPLATES_EXTRA = [
+  { name: "Tech Pro", image: "/images/cv-template-tech-pro.png", colors: ["#6366F1", "#7C3AED"], score: 91 },
+  { name: "Designer", image: "/images/cv-template-designer.png", colors: ["#EC4899", "#EF4444"], score: 86 },
+  { name: "Business", image: "/images/cv-template-business.png", colors: ["#10B981", "#22C55E"], score: 89 },
+];
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 const CVBuilder = () => {
@@ -177,17 +133,44 @@ const CVBuilder = () => {
   const [isOptimizing, setIsOptimizing] = useState(false);
   const [showMobilePreview, setShowMobilePreview] = useState(false);
   const [importedFileName, setImportedFileName] = useState<string | null>(null);
-  const [templateId, setTemplateId] = useState<TemplateId>("classic");
+  const [templateId, setTemplateId] = useState<TemplateId>("modern");
   const [designOptions, setDesignOptions] = useState<CVDesignOptions>({
-    primaryColor: "#0f1b3d",
-    textColor: "#1a1a2e",
-    accentColor: "#c9a84c",
+    primaryColor: "#7c3aed",
+    textColor: "#1e1b4b",
+    accentColor: "#a78bfa",
   });
+
+  // Sidebar filters
+  const [filterPhoto, setFilterPhoto] = useState<"all" | "oui" | "non">("all");
+  const [filterDesign, setFilterDesign] = useState<("modern" | "classic")[]>([]);
+  const [filterColumns, setFilterColumns] = useState<number[]>([]);
+
+  // Personalization form state
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [withPhoto, setWithPhoto] = useState(true);
 
   const handleTemplateSelect = (id: TemplateId) => {
     setTemplateId(id);
     const tpl = CV_TEMPLATES.find(t => t.id === id);
     if (tpl) setDesignOptions(prev => ({ ...tpl.defaultDesign, photoUrl: prev.photoUrl }));
+  };
+
+  const getFilteredTemplates = () => {
+    return GALLERY_TEMPLATES.filter(t => {
+      if (filterPhoto === "oui" && !t.hasPhoto) return false;
+      if (filterPhoto === "non" && t.hasPhoto) return false;
+      if (filterDesign.length > 0 && !filterDesign.includes(t.category)) return false;
+      if (filterColumns.length > 0 && !filterColumns.includes(t.columns)) return false;
+      return true;
+    });
+  };
+
+  const toggleDesignFilter = (val: "modern" | "classic") => {
+    setFilterDesign(prev => prev.includes(val) ? prev.filter(v => v !== val) : [...prev, val]);
+  };
+  const toggleColumnsFilter = (val: number) => {
+    setFilterColumns(prev => prev.includes(val) ? prev.filter(v => v !== val) : [...prev, val]);
   };
 
   // Parse a file (PDF/DOCX/TXT) and fill cvData via AI
@@ -233,7 +216,14 @@ const CVBuilder = () => {
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
-      if (data?.cvData) { setCvData(data.cvData); toast.success("CV importé et structuré avec succès !"); }
+      if (data?.cvData) {
+        // Pre-fill name from personalization form
+        const updatedData = { ...data.cvData };
+        if (firstName) updatedData.personalInfo = { ...updatedData.personalInfo, firstName };
+        if (lastName) updatedData.personalInfo = { ...updatedData.personalInfo, lastName };
+        setCvData(updatedData);
+        toast.success("CV importé et structuré avec succès !");
+      }
     } catch (err: any) {
       toast.error("Erreur IA: " + (err.message || "Erreur inconnue"));
     } finally { setIsLoading(false); }
@@ -276,101 +266,278 @@ const CVBuilder = () => {
     } catch (err: any) { toast.error("Erreur: " + err.message); }
   };
 
+  const handleContinue = () => {
+    // Pre-fill name if provided
+    if (firstName || lastName) {
+      setCvData(prev => ({
+        ...prev,
+        personalInfo: {
+          ...prev.personalInfo,
+          firstName: firstName || prev.personalInfo.firstName,
+          lastName: lastName || prev.personalInfo.lastName,
+        },
+      }));
+    }
+    setStep("editor");
+  };
+
+  const filteredTemplates = getFilteredTemplates();
+  const recommendedTemplates = filteredTemplates.filter(t => t.isRecommended);
+
   // ── STEP 1: Template selection ─────────────────────────────────────────────
   if (step === "select") {
     return (
       <div className="min-h-screen bg-background flex flex-col">
-        {/* Nav publique unifiée */}
-        {!user && <PublicNav />}
-
-        {/* Header interne (étapes) */}
-        <header className="sticky top-0 z-40 border-b border-border/50 bg-background/80 backdrop-blur-xl">
-          <div className="container mx-auto px-4 h-12 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Button variant="ghost" size="sm" onClick={() => user ? navigate("/dashboard") : navigate("/")} className="gap-1.5">
-                <ArrowLeft className="h-4 w-4" />
-                Retour
-              </Button>
-              {user && (
+        {/* Header unifié */}
+        {!user ? (
+          <PublicNav />
+        ) : (
+          <header className="sticky top-0 z-50 bg-background border-b border-border">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Button variant="ghost" size="sm" onClick={() => navigate("/dashboard")} className="gap-1.5">
+                  <ArrowLeft className="h-4 w-4" />
+                  Tableau de bord
+                </Button>
+                <div className="h-5 w-px bg-border" />
                 <div className="flex items-center gap-2">
                   <img src={logoBlack} alt="Cronos" className="h-6 w-auto" />
-                  <span className="font-semibold text-foreground hidden sm:inline text-sm">CV Builder</span>
+                  <span className="font-semibold text-foreground text-sm">CV Builder</span>
                 </div>
+              </div>
+            </div>
+          </header>
+        )}
+
+        {/* Hero banner violet */}
+        <div className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground py-12 px-4">
+          <div className="max-w-7xl mx-auto">
+            <div className="mb-8">
+              <h1 className="text-3xl md:text-4xl font-bold mb-3">Créez votre CV parfait</h1>
+              <p className="text-lg text-white/90">Maximisez vos opportunités avec nos templates optimisés ATS</p>
+            </div>
+
+            {/* Personalization form */}
+            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 md:p-8">
+              <h2 className="text-xl font-semibold mb-6">Personnalisez votre CV</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div>
+                  <label className="block text-sm font-medium mb-2">Prénom</label>
+                  <input
+                    type="text"
+                    value={firstName}
+                    onChange={e => setFirstName(e.target.value)}
+                    placeholder="Votre prénom"
+                    className="w-full px-4 py-3 bg-white/20 border border-white/30 rounded-xl text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-transparent transition-all"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">Nom</label>
+                  <input
+                    type="text"
+                    value={lastName}
+                    onChange={e => setLastName(e.target.value)}
+                    placeholder="Votre nom"
+                    className="w-full px-4 py-3 bg-white/20 border border-white/30 rounded-xl text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-transparent transition-all"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">Palette de couleurs</label>
+                  <div className="flex space-x-3">
+                    {[
+                      { color: "#7C3AED", label: "violet" },
+                      { color: "#22C55E", label: "green" },
+                      { color: "#3B82F6", label: "blue" },
+                      { color: "#475569", label: "slate" },
+                    ].map(({ color }) => (
+                      <button
+                        key={color}
+                        onClick={() => setDesignOptions(prev => ({ ...prev, primaryColor: color }))}
+                        className="w-10 h-10 rounded-xl shadow-lg hover:scale-110 transition-transform"
+                        style={{
+                          background: color,
+                          border: designOptions.primaryColor === color ? "2px solid white" : "2px solid transparent",
+                        }}
+                      />
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">CV avec photo</label>
+                  <div className="flex items-center space-x-3">
+                    <button
+                      onClick={() => setWithPhoto(v => !v)}
+                      className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors focus:outline-none ${withPhoto ? "bg-white/50" : "bg-white/30"}`}
+                    >
+                      <span
+                        className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-md transition-transform ${withPhoto ? "translate-x-6" : "translate-x-1"}`}
+                      />
+                    </button>
+                    <span className="text-sm font-medium">{withPhoto ? "Oui" : "Non"}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Main content */}
+        <main className="max-w-7xl mx-auto px-4 md:px-8 py-12 flex-1 w-full">
+          <div className="flex flex-col lg:flex-row gap-8">
+
+            {/* Sidebar filtres */}
+            <aside className="w-full lg:w-72 bg-muted/50 rounded-2xl p-6 h-fit border border-border shrink-0">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
+                  <SlidersHorizontal className="h-4 w-4 text-primary" />
+                  Filtres
+                </h3>
+              </div>
+
+              <div className="space-y-6">
+                <div>
+                  <h4 className="font-medium text-foreground mb-3">Photo</h4>
+                  <div className="space-y-2">
+                    {([["all", "Tous"], ["oui", "Oui"], ["non", "Non"]] as const).map(([val, label]) => (
+                      <label key={val} className="flex items-center cursor-pointer group">
+                        <input
+                          type="radio"
+                          name="photo"
+                          checked={filterPhoto === val}
+                          onChange={() => setFilterPhoto(val)}
+                          className="mr-3 accent-purple-600"
+                        />
+                        <span className="text-muted-foreground group-hover:text-foreground text-sm">{label}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="border-t border-border pt-6">
+                  <h4 className="font-medium text-foreground mb-3">Design</h4>
+                  <div className="space-y-2">
+                    {([["modern", "Moderne"], ["classic", "Classique"]] as const).map(([val, label]) => (
+                      <label key={val} className="flex items-center cursor-pointer group">
+                        <input
+                          type="checkbox"
+                          checked={filterDesign.includes(val)}
+                          onChange={() => toggleDesignFilter(val)}
+                          className="mr-3 accent-purple-600"
+                        />
+                        <span className="text-muted-foreground group-hover:text-foreground text-sm">{label}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="border-t border-border pt-6">
+                  <h4 className="font-medium text-foreground mb-3">Colonnes</h4>
+                  <div className="space-y-2">
+                    {[1, 2, 3].map(n => (
+                      <label key={n} className="flex items-center cursor-pointer group">
+                        <input
+                          type="radio"
+                          name="columns"
+                          checked={filterColumns.length === 0 ? false : filterColumns.includes(n)}
+                          onChange={() => toggleColumnsFilter(n)}
+                          className="mr-3 accent-purple-600"
+                        />
+                        <span className="text-muted-foreground group-hover:text-foreground text-sm">{n} colonne{n > 1 ? "s" : ""}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </aside>
+
+            {/* Templates section */}
+            <div className="flex-1">
+              {/* Badge succès */}
+              <div className="bg-gradient-to-r from-green-500/10 to-green-500/5 border border-green-500/20 rounded-xl p-4 mb-8">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center shrink-0">
+                    <Check className="h-5 w-5 text-white" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-foreground">Templates optimisés pour maximiser vos chances</p>
+                    <p className="text-sm text-muted-foreground">Gagnez du temps avec nos modèles validés par des recruteurs</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Recommandés */}
+              {recommendedTemplates.length > 0 && (
+                <section className="mb-12">
+                  <h2 className="text-2xl font-bold text-foreground mb-6">Recommandés pour vous</h2>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {recommendedTemplates.map(tpl => (
+                      <TemplateCard
+                        key={tpl.id}
+                        tpl={tpl}
+                        selected={templateId === tpl.id}
+                        onSelect={() => handleTemplateSelect(tpl.id)}
+                        size="large"
+                      />
+                    ))}
+                  </div>
+                </section>
               )}
-            </div>
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <span className="font-semibold text-primary">1</span>
-              <span>Choisir un modèle</span>
-              <ChevronRight className="h-3.5 w-3.5" />
-              <span>2</span>
-              <span>Éditer le contenu</span>
-            </div>
-          </div>
-        </header>
 
-        <main className="flex-1 container mx-auto px-4 py-10 max-w-5xl">
-          <div className="text-center mb-10">
-            <h1 className="text-3xl font-bold text-foreground mb-2">Choisissez votre modèle</h1>
-            <p className="text-muted-foreground">Sélectionnez un design de CV. Vous pourrez personnaliser les couleurs dans l'étape suivante.</p>
-          </div>
+              {/* Tous nos modèles */}
+              <section>
+                <h2 className="text-2xl font-bold text-foreground mb-6">Tous nos modèles</h2>
+                <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
+                  {filteredTemplates.map(tpl => (
+                    <TemplateCard
+                      key={tpl.id + "-all"}
+                      tpl={tpl}
+                      selected={templateId === tpl.id}
+                      onSelect={() => handleTemplateSelect(tpl.id)}
+                      size="small"
+                    />
+                  ))}
+                  {ALL_TEMPLATES_EXTRA.map(tpl => (
+                    <ExtraTemplateCard key={tpl.name} tpl={tpl} />
+                  ))}
+                </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-5 mb-10">
-            {CV_TEMPLATES.map(tpl => (
-              <TemplateCard
-                key={tpl.id}
-                id={tpl.id}
-                name={tpl.name}
-                defaultDesign={tpl.defaultDesign}
-                selected={templateId === tpl.id}
-                onSelect={() => handleTemplateSelect(tpl.id)}
-              />
-            ))}
-          </div>
-
-          {/* Color customization on selection screen */}
-          <div className="bg-card/60 border border-border/50 rounded-2xl p-6 mb-8 max-w-md mx-auto">
-            <div className="flex items-center gap-2 mb-4">
-              <Palette className="h-4 w-4 text-primary" />
-              <h2 className="font-semibold text-sm text-foreground">Personnaliser les couleurs</h2>
+                {/* CTA */}
+                <div className="text-center">
+                  <Button
+                    size="lg"
+                    onClick={handleContinue}
+                    className="bg-primary hover:bg-primary/90 text-white font-semibold py-3 px-8 rounded-xl shadow-lg hover:shadow-xl gap-2"
+                  >
+                    <Eye className="h-4 w-4" />
+                    Continuer avec « {GALLERY_TEMPLATES.find(t => t.id === templateId)?.name || templateId} »
+                    <ArrowRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              </section>
             </div>
-            <div className="grid grid-cols-3 gap-4">
-              <div className="flex flex-col items-center gap-2">
-                <label className="text-xs text-muted-foreground font-medium">Principal</label>
-                <input
-                  type="color"
-                  value={designOptions.primaryColor}
-                  onChange={e => setDesignOptions(prev => ({ ...prev, primaryColor: e.target.value }))}
-                  className="w-10 h-10 rounded-lg cursor-pointer border border-border"
-                />
-              </div>
-              <div className="flex flex-col items-center gap-2">
-                <label className="text-xs text-muted-foreground font-medium">Accent</label>
-                <input
-                  type="color"
-                  value={designOptions.accentColor}
-                  onChange={e => setDesignOptions(prev => ({ ...prev, accentColor: e.target.value }))}
-                  className="w-10 h-10 rounded-lg cursor-pointer border border-border"
-                />
-              </div>
-              <div className="flex flex-col items-center gap-2">
-                <label className="text-xs text-muted-foreground font-medium">Texte</label>
-                <input
-                  type="color"
-                  value={designOptions.textColor}
-                  onChange={e => setDesignOptions(prev => ({ ...prev, textColor: e.target.value }))}
-                  className="w-10 h-10 rounded-lg cursor-pointer border border-border"
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="flex justify-center">
-            <Button size="lg" onClick={() => setStep("editor")} className="gap-2 px-10 h-12 text-base">
-              Continuer avec ce modèle
-              <ChevronRight className="h-5 w-5" />
-            </Button>
           </div>
         </main>
+
+        {/* Footer standard du site */}
+        <footer className="bg-card/50 border-t border-border/30 pt-12 pb-8">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex flex-col md:flex-row justify-between items-center mb-8">
+              <div className="flex items-center gap-3 mb-6 md:mb-0">
+                <img src={logoBlack} alt="Cronos" className="h-8 w-auto" />
+                <span className="text-xl font-bold text-foreground font-display">Cronos</span>
+              </div>
+              <div className="flex gap-8">
+                <Link to="/help" className="text-muted-foreground hover:text-foreground transition-colors text-sm">Aide</Link>
+                <Link to="/privacy-policy" className="text-muted-foreground hover:text-foreground transition-colors text-sm">Confidentialité</Link>
+                <Link to="/terms-of-service" className="text-muted-foreground hover:text-foreground transition-colors text-sm">Conditions</Link>
+                <Link to="/mentions-legales" className="text-muted-foreground hover:text-foreground transition-colors text-sm">Mentions légales</Link>
+              </div>
+            </div>
+            <div className="text-center text-muted-foreground text-xs">
+              © 2025 Cronos. Tous droits réservés.
+            </div>
+          </div>
+        </footer>
       </div>
     );
   }
@@ -414,7 +581,6 @@ const CVBuilder = () => {
               </TabsList>
             </Tabs>
 
-            {/* Sector */}
             <div>
               <Label className="text-xs mb-1 block text-muted-foreground">Secteur cible</Label>
               <Select value={sector} onValueChange={setSector}>
@@ -489,5 +655,86 @@ const CVBuilder = () => {
     </div>
   );
 };
+
+// ─── Template Card (large & small variant) ────────────────────────────────────
+const TemplateCard = ({
+  tpl,
+  selected,
+  onSelect,
+  size,
+}: {
+  tpl: TemplateGalleryItem;
+  selected: boolean;
+  onSelect: () => void;
+  size: "large" | "small";
+}) => (
+  <div
+    onClick={onSelect}
+    className={`bg-card rounded-2xl border-2 cursor-pointer group transition-all relative ${
+      selected
+        ? "border-primary shadow-xl shadow-primary/10"
+        : "border-border hover:border-primary hover:shadow-xl"
+    }`}
+  >
+    <div className={`overflow-hidden rounded-t-2xl bg-muted/30 p-3 ${size === "large" ? "h-56" : "h-40"}`}>
+      <img
+        src={tpl.image}
+        alt={tpl.name}
+        className="w-full h-full object-cover rounded-xl"
+        onError={e => { (e.target as HTMLImageElement).src = "/placeholder.svg"; }}
+      />
+      {selected && (
+        <div className="absolute top-3 right-3 w-7 h-7 bg-primary rounded-full flex items-center justify-center shadow-lg">
+          <Check className="h-4 w-4 text-primary-foreground" />
+        </div>
+      )}
+    </div>
+    <div className={size === "large" ? "p-5" : "p-3"}>
+      <div className="flex items-center justify-between mb-1">
+        <h3 className={`font-semibold text-foreground ${size === "small" ? "text-sm" : ""}`}>{tpl.name}</h3>
+        <span className="px-2 py-0.5 bg-green-500/10 text-green-600 text-xs font-semibold rounded-lg">{tpl.atsScore}%</span>
+      </div>
+      {size === "large" && <p className="text-sm text-muted-foreground mb-3">{tpl.description}</p>}
+      <div className="flex items-center justify-between">
+        <div className="flex space-x-1.5">
+          {tpl.colors.map(c => (
+            <span key={c} className="w-3 h-3 rounded-full" style={{ background: c }} />
+          ))}
+        </div>
+        <button className="text-primary hover:text-primary/80 font-medium text-sm flex items-center gap-1 group-hover:underline">
+          Utiliser <ArrowRight className="h-3 w-3" />
+        </button>
+      </div>
+    </div>
+  </div>
+);
+
+// ─── Extra Template Card (coming soon / locked) ────────────────────────────────
+const ExtraTemplateCard = ({ tpl }: { tpl: { name: string; image: string; colors: string[]; score: number } }) => (
+  <div className="bg-card rounded-2xl border-2 border-border opacity-70 cursor-not-allowed group relative">
+    <div className="h-40 overflow-hidden rounded-t-2xl bg-muted/30 p-3">
+      <img
+        src={tpl.image}
+        alt={tpl.name}
+        className="w-full h-full object-cover rounded-xl grayscale-[30%]"
+        onError={e => { (e.target as HTMLImageElement).src = "/placeholder.svg"; }}
+      />
+      <div className="absolute top-3 right-3 bg-muted text-muted-foreground text-[10px] font-semibold px-2 py-0.5 rounded-full">
+        Bientôt
+      </div>
+    </div>
+    <div className="p-3">
+      <div className="flex items-center justify-between mb-1">
+        <h3 className="font-semibold text-foreground text-sm">{tpl.name}</h3>
+        <span className="px-2 py-0.5 bg-muted text-muted-foreground text-xs font-semibold rounded-lg">{tpl.score}%</span>
+      </div>
+      <div className="flex space-x-1">
+        {tpl.colors.map(c => (
+          <span key={c} className="w-2 h-2 rounded-full" style={{ background: c }} />
+        ))}
+      </div>
+    </div>
+  </div>
+);
 
 export default CVBuilder;
