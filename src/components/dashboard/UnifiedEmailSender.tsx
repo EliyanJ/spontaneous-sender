@@ -973,11 +973,11 @@ export const UnifiedEmailSender = () => {
             </ScrollArea>
 
             {/* Footer actions */}
-            <div className="mt-4 pt-3 border-t border-white/10 flex justify-between items-center">
-              <button className="text-xs text-indigo-400 hover:text-indigo-300 font-semibold" onClick={handleSelectAll}>
+            <div className="mt-4 pt-3 border-t border-border flex justify-between items-center">
+              <button className="text-xs text-primary hover:text-primary/80 font-semibold" onClick={handleSelectAll}>
                 {selectedCompanies.size === companies.length ? "Désélectionner tout" : "Tout sélectionner"}
               </button>
-              <button className="text-xs text-muted-foreground hover:text-gray-200" onClick={() => { setSelectedCompanies(new Set()); setManualRecipients([]); }}>
+              <button className="text-xs text-muted-foreground hover:text-foreground" onClick={() => { setSelectedCompanies(new Set()); setManualRecipients([]); }}>
                 Vider la liste
               </button>
             </div>
@@ -985,13 +985,13 @@ export const UnifiedEmailSender = () => {
 
           {/* AI Options Card (Premium) */}
           {isPremium ? (
-            <div className="bg-[#121215]/60 backdrop-blur-xl border border-white/[0.08] rounded-2xl p-5 relative overflow-hidden">
+            <div className="bg-card border border-border rounded-2xl p-5 relative overflow-hidden">
               {/* Decorative blur */}
-              <div className="absolute -top-10 -right-10 w-32 h-32 bg-indigo-600/20 rounded-full blur-3xl pointer-events-none" />
+              <div className="absolute -top-10 -right-10 w-32 h-32 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
 
               <div className="flex justify-between items-center mb-5 relative z-10">
-                <h3 className="font-semibold text-gray-100 flex items-center gap-2">
-                  <Sparkles className="h-4 w-4 text-purple-400" />
+                <h3 className="font-semibold text-foreground flex items-center gap-2">
+                  <Sparkles className="h-4 w-4 text-primary" />
                   Options IA
                 </h3>
                 <span className="text-[10px] font-bold bg-gradient-to-r from-amber-200 to-yellow-400 text-black px-2 py-0.5 rounded-full uppercase tracking-wider">
@@ -1003,11 +1003,11 @@ export const UnifiedEmailSender = () => {
                 {/* Toggle: AI Emails */}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-indigo-500/20 flex items-center justify-center text-indigo-400">
+                    <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
                       <Mail className="h-4 w-4" />
                     </div>
                     <div>
-                      <div className="text-sm font-semibold text-gray-100">Emails personnalisés</div>
+                      <div className="text-sm font-semibold text-foreground">Emails personnalisés</div>
                       <div className="text-xs text-muted-foreground">Génération unique par entreprise</div>
                     </div>
                   </div>
@@ -1017,26 +1017,26 @@ export const UnifiedEmailSender = () => {
                 {/* Toggle: Cover Letters */}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center text-purple-400">
+                    <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
                       <FileText className="h-4 w-4" />
                     </div>
                     <div>
-                      <div className="text-sm font-semibold text-gray-100">Lettres de motivation</div>
+                      <div className="text-sm font-semibold text-foreground">Lettres de motivation</div>
                       <div className="text-xs text-muted-foreground">PDF généré et attaché</div>
                     </div>
                   </div>
                   <Switch checked={enableCoverLetter} onCheckedChange={setEnableCoverLetter} />
                 </div>
 
-                <div className="h-px bg-white/10 my-2" />
+                <div className="h-px bg-border my-2" />
 
                 {/* Dropdowns: Approach + Tone */}
                 {enableAIEmails && (
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <Label className="text-xs font-semibold text-gray-300 uppercase tracking-tight mb-1.5 block">Approche</Label>
+                      <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-tight mb-1.5 block">Approche</Label>
                       <Select value={selectedSubjectType} onValueChange={setSelectedSubjectType}>
-                        <SelectTrigger className="bg-[#27272a]/40 border-white/10 text-xs">
+                        <SelectTrigger className="bg-background border-border text-xs">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -1049,9 +1049,9 @@ export const UnifiedEmailSender = () => {
                       </Select>
                     </div>
                     <div>
-                      <Label className="text-xs font-semibold text-gray-300 uppercase tracking-tight mb-1.5 block">Ton</Label>
+                      <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-tight mb-1.5 block">Ton</Label>
                       <Select value={selectedTone} onValueChange={setSelectedTone}>
-                        <SelectTrigger className="bg-[#27272a]/40 border-white/10 text-xs">
+                        <SelectTrigger className="bg-background border-border text-xs">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
