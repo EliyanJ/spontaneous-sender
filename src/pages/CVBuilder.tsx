@@ -4,7 +4,6 @@ import {
   ArrowLeft, Loader2, Sparkles, Save, Eye, ChevronDown, ChevronUp,
   Check, ArrowRight, Camera, CameraOff,
 } from "lucide-react";
-import { PublicNav } from "@/components/PublicNav";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -360,23 +359,62 @@ const CVBuilder = () => {
     return (
       <div className="min-h-screen bg-background flex flex-col">
         {/* Header */}
-        {!user ? (
-          <PublicNav />
-        ) : (
-          <header className="sticky top-0 z-50 bg-background border-b border-border">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center gap-3">
-              <Button variant="ghost" size="sm" onClick={() => navigate("/dashboard")} className="gap-1.5">
-                <ArrowLeft className="h-4 w-4" />
-                Tableau de bord
-              </Button>
-              <div className="h-5 w-px bg-border" />
-              <div className="flex items-center gap-2">
-                <img src={logoBlack} alt="Cronos" className="h-6 w-auto" />
-                <span className="font-semibold text-foreground text-sm">CV Builder</span>
+        {/* Header unifié — même structure pour visiteurs et utilisateurs connectés */}
+        <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-border transition-all duration-300">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex justify-between items-center h-20">
+              {/* Logo */}
+              <Link to="/" className="flex items-center gap-3">
+                <img src={logoBlack} alt="Cronos" className="h-9 w-auto" />
+                <span className="text-2xl font-bold tracking-tight text-gray-900">Cronos</span>
+              </Link>
+
+              {/* Nav desktop */}
+              <nav className="hidden md:flex items-center gap-8">
+                {[
+                  { label: "Comparatif de CV", href: "/score-cv" },
+                  { label: "Création de CV", href: "/cv-builder" },
+                  { label: "Conseil personnalisé", href: "/blog" },
+                  { label: "Offres d'emploi", href: "/offres-emploi" },
+                  { label: "Tarifs", href: "/pricing" },
+                ].map(l => (
+                  <Link
+                    key={l.href}
+                    to={l.href}
+                    className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
+                  >
+                    {l.label}
+                  </Link>
+                ))}
+              </nav>
+
+              {/* Actions desktop */}
+              <div className="hidden md:flex items-center gap-3">
+                {user ? (
+                  <Button size="sm" onClick={() => navigate("/dashboard")} className="bg-primary hover:bg-primary/90 text-primary-foreground px-5 rounded-lg font-medium text-sm">
+                    Tableau de bord
+                  </Button>
+                ) : (
+                  <>
+                    <Button variant="ghost" size="sm" onClick={() => navigate("/login")} className="text-sm font-medium text-gray-700 hover:text-gray-900">
+                      Se connecter
+                    </Button>
+                    <Button size="sm" onClick={() => navigate("/login")} className="bg-primary hover:bg-primary/90 text-primary-foreground px-5 rounded-lg shadow-lg shadow-primary/20 font-medium text-sm">
+                      Commencer
+                    </Button>
+                  </>
+                )}
+              </div>
+
+              {/* Mobile */}
+              <div className="md:hidden">
+                <Button size="sm" onClick={() => navigate(user ? "/dashboard" : "/login")} className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg px-4 text-xs">
+                  {user ? "Dashboard" : "Commencer"}
+                </Button>
               </div>
             </div>
-          </header>
-        )}
+          </div>
+        </header>
 
         {/* ── Hero banner violet ── */}
         <div className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground py-10 px-4">
