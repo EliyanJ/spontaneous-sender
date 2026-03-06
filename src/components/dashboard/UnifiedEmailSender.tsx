@@ -891,12 +891,12 @@ export const UnifiedEmailSender = () => {
                 onChange={(e) => setManualEmail(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleAddManualRecipient(); } }}
                 placeholder="Ajouter un email manuellement..."
-                className="bg-[#27272a]/40 border-white/10 pr-10 text-sm"
+                className="bg-background border-border pr-10 text-sm"
               />
               <Button
                 variant="ghost"
                 size="icon"
-                className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 text-muted-foreground hover:text-indigo-400"
+                className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 text-muted-foreground hover:text-primary"
                 onClick={handleAddManualRecipient}
               >
                 <Plus className="h-4 w-4" />
@@ -906,8 +906,8 @@ export const UnifiedEmailSender = () => {
             {/* Manual recipients badges */}
             {manualRecipients.length > 0 && (
               <div className="flex flex-wrap gap-1.5 mb-3">
-                {manualRecipients.map((email) => (
-                  <Badge key={email} variant="secondary" className="gap-1 text-xs bg-indigo-500/10 border-indigo-500/20 text-indigo-300">
+                  {manualRecipients.map((email) => (
+                  <Badge key={email} variant="secondary" className="gap-1 text-xs bg-primary/10 border-primary/20 text-primary">
                     <span className="max-w-[160px] truncate">{email}</span>
                     <Button variant="ghost" size="icon" className="h-4 w-4 p-0" onClick={() => handleRemoveManualRecipient(email)}>
                       <X className="h-3 w-3" />
