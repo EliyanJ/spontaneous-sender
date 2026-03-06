@@ -1,47 +1,61 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { ChevronDown, Menu, X, FileText, Target, Briefcase, BookOpen } from "lucide-react";
+import { ChevronDown, Menu, X, PenLine, BarChart2, Briefcase, Newspaper } from "lucide-react";
 import { cn } from "@/lib/utils";
 import logoBlack from "@/assets/logo-black.png";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { useAuth } from "@/hooks/useAuth";
 
 const TOOLS = [
-  { label: "Créateur de CV", href: "/cv-builder", icon: FileText, desc: "Générez un CV professionnel" },
-  { label: "Score CV", href: "/score-cv", icon: Target, desc: "Analysez votre CV avec l'ATS" },
-  { label: "Offres d'emploi", href: "/offres-emploi", icon: Briefcase, desc: "Parcourez les offres du marché" },
-  { label: "Blog", href: "/blog", icon: BookOpen, desc: "Conseils carrière & stratégies" },
+  {
+    label: "Créateur de CV",
+    href: "/cv-builder",
+    Icon: PenLine,
+    desc: "Créez un CV parfait",
+    iconBg: "bg-blue-100 dark:bg-blue-900/40",
+    iconColor: "text-blue-600 dark:text-blue-400",
+    iconHoverBg: "group-hover/item:bg-blue-600 dark:group-hover/item:bg-blue-500",
+    iconHoverColor: "group-hover/item:text-white",
+  },
+  {
+    label: "Score CV",
+    href: "/score-cv",
+    Icon: BarChart2,
+    desc: "Analysez votre impact",
+    iconBg: "bg-green-100 dark:bg-green-900/40",
+    iconColor: "text-green-600 dark:text-green-400",
+    iconHoverBg: "group-hover/item:bg-green-600 dark:group-hover/item:bg-green-500",
+    iconHoverColor: "group-hover/item:text-white",
+  },
+  {
+    label: "Offres d'emplois",
+    href: "/offres-emploi",
+    Icon: Briefcase,
+    desc: "Trouvez votre job",
+    iconBg: "bg-purple-100 dark:bg-purple-900/40",
+    iconColor: "text-purple-600 dark:text-purple-400",
+    iconHoverBg: "group-hover/item:bg-purple-600 dark:group-hover/item:bg-purple-500",
+    iconHoverColor: "group-hover/item:text-white",
+  },
+  {
+    label: "Blog",
+    href: "/blog",
+    Icon: Newspaper,
+    desc: "Conseils carrière",
+    iconBg: "bg-orange-100 dark:bg-orange-900/40",
+    iconColor: "text-orange-600 dark:text-orange-400",
+    iconHoverBg: "group-hover/item:bg-orange-600 dark:group-hover/item:bg-orange-500",
+    iconHoverColor: "group-hover/item:text-white",
+  },
 ];
 
 export const Header = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const [scrolled, setScrolled] = useState(false);
+  const { user } = useAuth();
   const [toolsOpen, setToolsOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [mobileToolsOpen, setMobileToolsOpen] = useState(false);
-  const [mounted, setMounted] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 10);
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
-
-  // Close dropdown on outside click
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
-        setToolsOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, []);
 
   // Close mobile menu on route change
   useEffect(() => {
@@ -60,224 +74,190 @@ export const Header = () => {
   };
 
   return (
-    <>
-      <header
-        className={cn(
-          "fixed top-0 left-0 right-0 z-50 transition-all duration-300",
-          mounted ? "animate-[header-enter_0.4s_ease-out_forwards]" : "opacity-0",
-          scrolled
-            ? "bg-white/96 backdrop-blur-[14px] border-b border-black/[0.08] shadow-sm"
-            : "bg-white/90 backdrop-blur-[12px] border-b border-transparent"
-        )}
-        style={{ WebkitBackdropFilter: "blur(12px)" }}
-      >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center h-[68px] gap-8">
+    <header className="fixed top-0 w-full z-50 px-4 py-4 md:px-8">
+      <div className="max-w-7xl mx-auto">
 
-            {/* ── Logo image noir ── */}
-            <Link to="/" className="flex items-center flex-shrink-0 opacity-90 hover:opacity-100 transition-opacity duration-200">
-              <img src={logoBlack} alt="Cronos" className="h-[72px] w-auto" />
+        {/* ── Main nav pill ── */}
+        <nav className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-[10px] rounded-2xl px-6 py-3 flex items-center justify-between shadow-sm border border-white/50 dark:border-white/10">
+
+          {/* Logo */}
+          <Link to="/" className="flex items-center gap-2 flex-shrink-0">
+            <img src={logoBlack} alt="Cronos" className="h-[72px] w-auto dark:invert" />
+          </Link>
+
+          {/* Desktop menu */}
+          <div className="hidden md:flex items-center gap-8">
+            <button
+              onClick={handleHowItWorks}
+              className="text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 font-medium transition-colors text-sm"
+            >
+              Comment ça marche
+            </button>
+            <Link
+              to="/pricing"
+              className="text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 font-medium transition-colors text-sm"
+            >
+              Tarif
             </Link>
 
-            {/* ── Desktop nav (collé au logo) ── */}
-            <nav className="hidden md:flex items-center gap-0.5">
-              {/* Comment ça marche */}
-              <button
-                onClick={handleHowItWorks}
-                className="relative px-3 py-2 text-sm font-normal text-[#374151] hover:text-[#7c3aed] transition-colors duration-200 group"
-              >
-                Comment ça marche
-                <span className="absolute bottom-1 left-3 right-3 h-[2px] bg-[#7c3aed] scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left rounded-full" />
-              </button>
-
-              {/* Tarifs */}
-              <Link
-                to="/pricing"
-                className="relative px-3 py-2 text-sm font-normal text-[#374151] hover:text-[#7c3aed] transition-colors duration-200 group"
-              >
-                Tarifs
-                <span className="absolute bottom-1 left-3 right-3 h-[2px] bg-[#7c3aed] scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left rounded-full" />
-              </Link>
-
-              {/* Outils dropdown */}
-              <div ref={dropdownRef} className="relative">
-                <button
-                  onClick={() => setToolsOpen(v => !v)}
+            {/* Outils dropdown */}
+            <div
+              className="relative group py-2"
+              onMouseLeave={() => setToolsOpen(false)}
+              onMouseEnter={() => setToolsOpen(true)}
+            >
+              <button className="flex items-center gap-1 text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 font-medium transition-colors text-sm focus:outline-none">
+                Outils
+                <ChevronDown
                   className={cn(
-                    "relative flex items-center gap-1.5 px-3 py-2 text-sm font-normal transition-colors duration-200 group",
-                    toolsOpen ? "text-[#7c3aed]" : "text-[#374151] hover:text-[#7c3aed]"
+                    "text-xs w-3.5 h-3.5 transition-transform duration-300",
+                    toolsOpen && "rotate-180"
                   )}
-                >
-                  Outils
-                  <ChevronDown
-                    className={cn(
-                      "h-3.5 w-3.5 transition-transform duration-200",
-                      toolsOpen && "rotate-180"
-                    )}
-                  />
-                  <span className="absolute bottom-1 left-3 right-3 h-[2px] bg-[#7c3aed] scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left rounded-full" />
-                </button>
-
-                {/* Dropdown panel */}
-                {toolsOpen && (
-                  <div
-                    className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-64 bg-white rounded-xl overflow-hidden z-50"
-                    style={{
-                      boxShadow: "0 8px 32px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.06)",
-                      border: "1px solid rgba(0,0,0,0.06)",
-                      animation: "dropdown-enter 0.2s ease-out forwards",
-                    }}
-                  >
-                    <div className="p-1.5">
-                      {TOOLS.map(tool => (
-                        <Link
-                          key={tool.href}
-                          to={tool.href}
-                          onClick={() => setToolsOpen(false)}
-                          className="flex items-start gap-3 px-3 py-2.5 rounded-lg hover:bg-[#7c3aed]/6 group/item transition-colors duration-150"
-                        >
-                          <div className="mt-0.5 w-8 h-8 rounded-lg bg-[#7c3aed]/10 flex items-center justify-center flex-shrink-0 group-hover/item:bg-[#7c3aed]/20 transition-colors">
-                            <tool.icon className="h-4 w-4 text-[#7c3aed]" />
-                          </div>
-                          <div>
-                            <p className="text-sm font-medium text-gray-900 group-hover/item:text-[#7c3aed] transition-colors">{tool.label}</p>
-                            <p className="text-xs text-gray-500 mt-0.5">{tool.desc}</p>
-                          </div>
-                        </Link>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </nav>
-
-            {/* Spacer */}
-            <div className="flex-1" />
-
-            {/* ── CTA + ThemeToggle ── */}
-            <div className="hidden md:flex items-center gap-2">
-              <ThemeToggle />
-              <Link
-                to="/register"
-                className="group relative inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-semibold text-white transition-all duration-200 overflow-hidden"
-                style={{
-                  background: "linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%)",
-                  boxShadow: "0 4px 14px rgba(124,58,237,0.35)",
-                  animation: "cta-pulse 3s ease-in-out infinite",
-                }}
-                onMouseEnter={e => {
-                  const el = e.currentTarget as HTMLElement;
-                  el.style.boxShadow = "0 6px 20px rgba(124,58,237,0.5)";
-                  el.style.transform = "scale(1.02)";
-                }}
-                onMouseLeave={e => {
-                  const el = e.currentTarget as HTMLElement;
-                  el.style.boxShadow = "0 4px 14px rgba(124,58,237,0.35)";
-                  el.style.transform = "scale(1)";
-                }}
-              >
-                Commencer
-                <svg className="h-3.5 w-3.5 group-hover:translate-x-0.5 transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                </svg>
-              </Link>
-            </div>
-
-            {/* ── Mobile burger ── */}
-            <div className="md:hidden flex items-center gap-1">
-              <ThemeToggle />
-              <button
-                onClick={() => setMobileOpen(v => !v)}
-                className="p-2 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors"
-                aria-label="Menu"
-              >
-                {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+                />
               </button>
+
+              {/* Dropdown panel — CSS hover driven */}
+              <div
+                className={cn(
+                  "absolute top-full left-1/2 -translate-x-1/2 w-64 pt-4 transition-all duration-300",
+                  toolsOpen ? "opacity-100 visible translate-y-0" : "opacity-0 invisible translate-y-2.5"
+                )}
+              >
+                <div className="bg-white/80 dark:bg-slate-800/90 backdrop-blur-[10px] rounded-xl shadow-lg border border-white/40 dark:border-white/10 p-2 overflow-hidden">
+                  {TOOLS.map(tool => (
+                    <Link
+                      key={tool.href}
+                      to={tool.href}
+                      onClick={() => setToolsOpen(false)}
+                      className="block px-4 py-3 rounded-lg hover:bg-white/60 dark:hover:bg-white/10 transition-colors group/item"
+                    >
+                      <div className="flex items-start gap-3">
+                        <div
+                          className={cn(
+                            "w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5 transition-colors",
+                            tool.iconBg,
+                            tool.iconColor,
+                            tool.iconHoverBg,
+                            tool.iconHoverColor
+                          )}
+                        >
+                          <tool.Icon className="w-3.5 h-3.5" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">{tool.label}</p>
+                          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{tool.desc}</p>
+                        </div>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
-        </div>
+
+          {/* Right side: connexion + ThemeToggle + CTA */}
+          <div className="flex items-center gap-4">
+            {/* Connexion */}
+            {!user ? (
+              <Link
+                to="/login"
+                className="hidden lg:block text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white text-sm font-medium transition-colors"
+              >
+                Connexion
+              </Link>
+            ) : (
+              <Link
+                to="/dashboard"
+                className="hidden lg:block text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white text-sm font-medium transition-colors"
+              >
+                Mon Dashboard
+              </Link>
+            )}
+
+            {/* Theme toggle */}
+            <ThemeToggle />
+
+            {/* CTA Commencer */}
+            <Link
+              to={user ? "/dashboard" : "/register"}
+              className="bg-[#7835e7] hover:bg-[#6829cc] text-white px-5 py-2.5 rounded-full text-sm font-semibold transition-all shadow-md shadow-purple-500/20 flex items-center gap-2 group"
+            >
+              <span>{user ? "Dashboard" : "Commencer"}</span>
+              <svg
+                className="h-3.5 w-3.5 group-hover:translate-x-0.5 transition-transform duration-200"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2.5}
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+              </svg>
+            </Link>
+
+            {/* Mobile burger */}
+            <button
+              onClick={() => setMobileOpen(v => !v)}
+              className="md:hidden text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 focus:outline-none"
+              aria-label="Menu"
+            >
+              {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </button>
+          </div>
+        </nav>
 
         {/* ── Mobile menu ── */}
         {mobileOpen && (
-          <div
-            className="md:hidden bg-white border-t border-gray-100"
-            style={{ animation: "mobile-menu-enter 0.25s ease-out forwards" }}
-          >
-            <div className="max-w-7xl mx-auto px-4 py-4 space-y-1">
+          <div className="md:hidden mt-2 bg-white/80 dark:bg-slate-900/90 backdrop-blur-[10px] rounded-2xl p-4 border border-white/50 dark:border-white/10 shadow-lg">
+            <div className="flex flex-col gap-4">
               <button
                 onClick={handleHowItWorks}
-                className="w-full text-left px-4 py-3 rounded-xl text-sm font-medium text-gray-700 hover:text-[#7c3aed] hover:bg-[#7c3aed]/6 transition-colors"
+                className="text-left text-slate-700 dark:text-slate-200 font-medium px-2 py-1 hover:bg-white/50 dark:hover:bg-white/10 rounded-lg transition-colors text-sm"
               >
                 Comment ça marche
               </button>
               <Link
                 to="/pricing"
-                className="block px-4 py-3 rounded-xl text-sm font-medium text-gray-700 hover:text-[#7c3aed] hover:bg-[#7c3aed]/6 transition-colors"
+                className="text-slate-700 dark:text-slate-200 font-medium px-2 py-1 hover:bg-white/50 dark:hover:bg-white/10 rounded-lg transition-colors text-sm"
               >
-                Tarifs
+                Tarif
               </Link>
 
-              {/* Outils accordion mobile */}
-              <div>
-                <button
-                  onClick={() => setMobileToolsOpen(v => !v)}
-                  className="w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-medium text-gray-700 hover:text-[#7c3aed] hover:bg-[#7c3aed]/6 transition-colors"
-                >
-                  Outils
-                  <ChevronDown className={cn("h-4 w-4 transition-transform duration-200", mobileToolsOpen && "rotate-180")} />
-                </button>
-                {mobileToolsOpen && (
-                  <div className="ml-4 mt-1 space-y-0.5">
-                    {TOOLS.map(tool => (
-                      <Link
-                        key={tool.href}
-                        to={tool.href}
-                        className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm text-gray-600 hover:text-[#7c3aed] hover:bg-[#7c3aed]/6 transition-colors"
-                      >
-                        <tool.icon className="h-4 w-4 text-[#7c3aed]/70" />
-                        {tool.label}
-                      </Link>
-                    ))}
-                  </div>
-                )}
+              <div className="border-t border-slate-200 dark:border-slate-700 pt-2">
+                <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 px-2">Outils</p>
+                {TOOLS.map(tool => (
+                  <Link
+                    key={tool.href}
+                    to={tool.href}
+                    className={cn(
+                      "flex items-center gap-3 px-2 py-2 hover:bg-white/50 dark:hover:bg-white/10 rounded-lg transition-colors",
+                      tool.iconColor
+                    )}
+                  >
+                    <tool.Icon className="w-4 h-4" />
+                    <span className="text-slate-700 dark:text-slate-200 text-sm">{tool.label}</span>
+                  </Link>
+                ))}
               </div>
 
-              <div className="pt-3 border-t border-gray-100">
+              <div className="border-t border-slate-200 dark:border-slate-700 pt-3 flex flex-col gap-3">
                 <Link
-                  to="/register"
-                  className="flex items-center justify-center gap-2 w-full px-5 py-3 rounded-full text-sm font-semibold text-white"
-                  style={{
-                    background: "linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%)",
-                    boxShadow: "0 4px 14px rgba(124,58,237,0.3)",
-                  }}
+                  to={user ? "/dashboard" : "/login"}
+                  className="text-center text-slate-600 dark:text-slate-300 font-medium text-sm"
                 >
-                  Commencer →
+                  {user ? "Mon Dashboard" : "Connexion"}
+                </Link>
+                <Link
+                  to={user ? "/dashboard" : "/register"}
+                  className="flex items-center justify-center gap-2 w-full px-5 py-3 rounded-full text-sm font-semibold text-white bg-[#7835e7] hover:bg-[#6829cc] transition-colors shadow-md shadow-purple-500/20"
+                >
+                  {user ? "Dashboard" : "Commencer"} →
                 </Link>
               </div>
             </div>
           </div>
         )}
-      </header>
 
-      {/* Keyframes injected as a style tag */}
-      <style>{`
-        @keyframes header-enter {
-          from { opacity: 0; transform: translateY(-12px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes dropdown-enter {
-          from { opacity: 0; transform: translateY(-8px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes mobile-menu-enter {
-          from { opacity: 0; transform: translateY(-6px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes cta-pulse {
-          0%, 100% { box-shadow: 0 4px 14px rgba(124,58,237,0.35); }
-          50%       { box-shadow: 0 4px 20px rgba(124,58,237,0.55); }
-        }
-      `}</style>
-    </>
+      </div>
+    </header>
   );
 };
