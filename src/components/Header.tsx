@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { ChevronDown, Menu, X, PenLine, BarChart2, Briefcase, Newspaper } from "lucide-react";
 import { cn } from "@/lib/utils";
-import logoBlack from "@/assets/logo-black.png";
+import logoBlack from "@/assets/logo-black-new.png";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -74,16 +74,25 @@ export const Header = () => {
   };
 
   return (
-    <header className="fixed top-0 w-full z-50 px-4 py-4 md:px-8">
+    <header className="fixed top-0 w-full z-50 px-4 md:px-8" style={{ paddingTop: "8px", paddingBottom: "8px" }}>
       <div className="max-w-7xl mx-auto">
 
-        {/* ── Main nav pill ── */}
-        <nav className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-[10px] rounded-2xl px-6 py-3 flex items-center justify-between shadow-sm border border-white/50 dark:border-white/10">
+        {/* ── Main nav pill — fixed 64px total height ── */}
+        <nav className="h-12 bg-white/70 dark:bg-slate-900/70 backdrop-blur-[10px] rounded-2xl px-4 flex items-center justify-between shadow-sm border border-white/50 dark:border-white/10">
 
-          {/* Logo */}
-          <Link to="/" className="flex items-center gap-2 flex-shrink-0">
-            <img src={logoBlack} alt="Cronos" className="h-[72px] w-auto dark:invert" />
-          </Link>
+          {/* Left: Logo + ThemeToggle */}
+          <div className="flex items-center gap-3 flex-shrink-0">
+            <Link to="/" className="flex items-center flex-shrink-0">
+              <img
+                src={logoBlack}
+                alt="Cronos"
+                className="dark:invert"
+                style={{ height: "28px", width: "auto", objectFit: "contain", display: "block" }}
+              />
+            </Link>
+            {/* Theme toggle — discret, right after logo */}
+            <ThemeToggle />
+          </div>
 
           {/* Desktop menu */}
           <div className="hidden md:flex items-center gap-8">
@@ -116,7 +125,6 @@ export const Header = () => {
                 />
               </button>
 
-              {/* Dropdown panel — CSS hover driven */}
               <div
                 className={cn(
                   "absolute top-full left-1/2 -translate-x-1/2 w-64 pt-4 transition-all duration-300",
@@ -155,9 +163,8 @@ export const Header = () => {
             </div>
           </div>
 
-          {/* Right side: connexion + ThemeToggle + CTA */}
-          <div className="flex items-center gap-4">
-            {/* Connexion */}
+          {/* Right side: connexion + CTA */}
+          <div className="flex items-center gap-3">
             {!user ? (
               <Link
                 to="/login"
@@ -174,16 +181,12 @@ export const Header = () => {
               </Link>
             )}
 
-            {/* Theme toggle */}
-            <ThemeToggle />
-
             {/* CTA Commencer */}
             <Link
               to={user ? "/dashboard" : "/register"}
-              className="bg-[#7835e7] hover:bg-[#6829cc] text-white px-5 py-2.5 rounded-full text-sm font-semibold transition-all shadow-md shadow-purple-500/20 flex items-center gap-2 group"
+              className="bg-[#7835e7] hover:bg-[#6829cc] text-white px-4 py-2 rounded-full text-sm font-semibold transition-all shadow-md shadow-purple-500/20 flex items-center gap-2"
             >
-              {/* Windows logo */}
-              <svg className="h-3.5 w-3.5 opacity-90" viewBox="0 0 24 24" fill="currentColor">
+              <svg className="h-3.5 w-3.5 opacity-90 shrink-0" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M0 3.449L9.75 2.1v9.451H0m10.949-9.602L24 0v11.4H10.949M0 12.6h9.75v9.451L0 20.699M10.949 12.749H24V24l-12.9-1.801" />
               </svg>
               <span>{user ? "Dashboard" : "Commencer"}</span>
