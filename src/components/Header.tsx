@@ -154,8 +154,9 @@ export const Header = () => {
             {/* Spacer */}
             <div className="flex-1" />
 
-            {/* ── CTA ── */}
-            <div className="hidden md:flex items-center">
+            {/* ── CTA + ThemeToggle ── */}
+            <div className="hidden md:flex items-center gap-2">
+              <ThemeToggle />
               <Link
                 to="/register"
                 className="group relative inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-semibold text-white transition-all duration-200 overflow-hidden"
@@ -183,7 +184,8 @@ export const Header = () => {
             </div>
 
             {/* ── Mobile burger ── */}
-            <div className="md:hidden flex items-center">
+            <div className="md:hidden flex items-center gap-1">
+              <ThemeToggle />
               <button
                 onClick={() => setMobileOpen(v => !v)}
                 className="p-2 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors"
