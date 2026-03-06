@@ -56,42 +56,43 @@
   }
 
   .dark {
-    /* Dark Mode — GetCronos violet */
-    --background: 263 20% 6%;
-    --foreground: 210 40% 98%;
+    /* Dark Mode — GetCronos — pure black base */
+    --background: 0 0% 0%;
+    --foreground: 0 0% 100%;
 
-    --card: 263 20% 8%;
-    --card-foreground: 210 40% 98%;
+    --card: 0 0% 7%;
+    --card-foreground: 0 0% 100%;
 
-    --popover: 263 20% 10%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 0 0% 9%;
+    --popover-foreground: 0 0% 100%;
 
-    /* Violet plus lumineux en dark */
-    --primary: 263 75% 63%;
+    /* Violet identique en dark — #7835e7 */
+    --primary: 263 75% 62%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 263 25% 17%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 0 0% 10%;
+    --secondary-foreground: 0 0% 82%;
 
-    --muted: 263 20% 14%;
-    --muted-foreground: 263 15% 55%;
+    --muted: 0 0% 10%;
+    --muted-foreground: 0 0% 82%;
 
-    --accent: 263 25% 17%;
-    --accent-foreground: 263 75% 80%;
+    --accent: 0 0% 13%;
+    --accent-foreground: 0 0% 100%;
 
     --destructive: 0 63% 45%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 263 25% 18%;
-    --input: 263 25% 18%;
-    --ring: 263 75% 63%;
+    /* Bordures subtiles rgba(255,255,255,0.1) */
+    --border: 0 0% 16%;
+    --input: 0 0% 16%;
+    --ring: 263 75% 62%;
 
     /* Custom tokens - Dark */
-    --gradient-primary: linear-gradient(135deg, hsl(263 75% 63%), hsl(263 75% 48%));
+    --gradient-primary: linear-gradient(135deg, hsl(263 75% 62%), hsl(263 75% 48%));
     --gradient-accent: linear-gradient(135deg, hsl(263 75% 50%), hsl(280 60% 45%));
-    --gradient-surface: linear-gradient(180deg, hsl(263 20% 8%), hsl(263 20% 6%));
-    --glow-primary: 0 0 40px hsl(263 75% 63% / 0.3);
-    --glow-accent: 0 0 60px hsl(263 75% 63% / 0.15);
+    --gradient-surface: linear-gradient(180deg, hsl(0 0% 7%), hsl(0 0% 0%));
+    --glow-primary: 0 0 40px hsl(263 75% 62% / 0.3);
+    --glow-accent: 0 0 60px hsl(263 75% 62% / 0.15);
   }
 }
 
