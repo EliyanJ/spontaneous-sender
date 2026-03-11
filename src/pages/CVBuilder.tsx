@@ -1,7 +1,7 @@
-import React, { useState, useCallback } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import React, { useState, useCallback, useEffect } from "react";
+import { Link } from "react-router-dom";
 import {
-  Loader2, Check, ArrowRight, Camera, CameraOff, ChevronDown, ChevronUp,
+  Check, ArrowRight, Camera, CameraOff, ChevronDown, ChevronUp, FileText,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -14,17 +14,7 @@ import { Logo } from "@/components/Logo";
 import { useQuery } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
 
-const SECTORS = [
-  { value: "finance", label: "Finance & Corporate" },
-  { value: "marketing", label: "Marketing & Communication" },
-  { value: "tech", label: "Tech & IT" },
-  { value: "consulting", label: "Conseil & Stratégie" },
-  { value: "rh", label: "Ressources Humaines" },
-  { value: "commerce", label: "Commerce & Vente" },
-  { value: "general", label: "Généraliste" },
-];
-
-// Palettes de couleurs prédéfinies — chaque palette change les 3 couleurs du template
+// Palettes de couleurs prédéfinies
 const COLOR_PALETTES = [
   { id: "violet", label: "Violet", primary: "#7C3AED", accent: "#A78BFA", text: "#1e1b4b" },
   { id: "green",  label: "Vert",   primary: "#16A34A", accent: "#4ADE80", text: "#14532D" },
@@ -34,61 +24,15 @@ const COLOR_PALETTES = [
   { id: "orange", label: "Orange", primary: "#EA580C", accent: "#FDBA74", text: "#431407" },
 ];
 
-interface TemplateGalleryItem {
-  id: TemplateId;
+interface DBTemplate {
+  id: string;
   name: string;
-  description: string;
-  image: string;
-  hasPhoto: boolean;
-  imageNoPhoto?: string; // image alternative sans photo
+  sector: string;
+  thumbnail_url: string | null;
+  is_active: boolean;
 }
 
-const GALLERY_TEMPLATES: TemplateGalleryItem[] = [
-  {
-    id: "modern",
-    name: "Moderne Pro",
-    description: "Design moderne avec sidebar, parfait pour les jeunes diplômés",
-    image: "/images/cv-template-modern-pro.png",
-    hasPhoto: true,
-  },
-  {
-    id: "classic",
-    name: "Classique Elite",
-    description: "Template traditionnel, idéal pour tous secteurs",
-    image: "/images/cv-template-classic-elite.png",
-    hasPhoto: false,
-  },
-  {
-    id: "geo",
-    name: "Créatif Plus",
-    description: "Design créatif pour les métiers artistiques",
-    image: "/images/cv-template-creative-plus.png",
-    hasPhoto: true,
-  },
-  {
-    id: "dark",
-    name: "Executive",
-    description: "Sobre et percutant pour les profils seniors",
-    image: "/images/cv-template-executive.png",
-    hasPhoto: false,
-  },
-  {
-    id: "minimal",
-    name: "Minimaliste",
-    description: "Épuré et élégant, typographie soignée",
-    image: "/images/cv-template-minimal.png",
-    hasPhoto: false,
-  },
-  {
-    id: "light",
-    name: "Étudiant",
-    description: "Moderne et accessible pour les premières candidatures",
-    image: "/images/cv-template-student.png",
-    hasPhoto: true,
-  },
-];
-
-// ─── Template Card with hover overlay & live name preview ─────────────────────
+// ─── Template Card (DB-based) ─────────────────────────────────────────────────
 const TemplateCard = ({
   tpl,
   selected,
@@ -96,15 +40,13 @@ const TemplateCard = ({
   firstName,
   lastName,
   primaryColor,
-  withPhoto,
 }: {
-  tpl: TemplateGalleryItem;
+  tpl: DBTemplate;
   selected: boolean;
   onSelect: () => void;
   firstName: string;
   lastName: string;
   primaryColor: string;
-  withPhoto: boolean;
 }) => {
   const [hovered, setHovered] = useState(false);
   const displayName = [firstName, lastName].filter(Boolean).join(" ") || "Votre Nom";
@@ -120,23 +62,40 @@ const TemplateCard = ({
           : "border-border hover:border-primary/60 hover:shadow-xl"
       }`}
     >
-      {/* Template image with live name overlay */}
-      <div className="relative h-64 bg-muted/30 overflow-hidden">
-        <img
-          src={tpl.image}
-          alt={tpl.name}
-          className="w-full h-full object-cover transition-transform duration-300"
-          style={{ transform: hovered ? "scale(1.03)" : "scale(1)" }}
-          onError={e => { (e.target as HTMLImageElement).src = "/placeholder.svg"; }}
-        />
+      {/* Template preview area */}
+      <div className="relative h-64 overflow-hidden">
+        {tpl.thumbnail_url ? (
+          <img
+            src={tpl.thumbnail_url}
+            alt={tpl.name}
+            className="w-full h-full object-cover transition-transform duration-300"
+            style={{ transform: hovered ? "scale(1.03)" : "scale(1)" }}
+            onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
+          />
+        ) : (
+          /* Placeholder visuel quand pas de thumbnail */
+          <div
+            className="w-full h-full flex flex-col items-center justify-center gap-3"
+            style={{
+              background: `linear-gradient(135deg, ${primaryColor}22 0%, ${primaryColor}08 100%)`,
+              transform: hovered ? "scale(1.02)" : "scale(1)",
+              transition: "transform 0.3s",
+            }}
+          >
+            <FileText className="h-12 w-12 opacity-30" style={{ color: primaryColor }} />
+            <span className="text-sm font-medium opacity-50" style={{ color: primaryColor }}>
+              Aperçu non disponible
+            </span>
+          </div>
+        )}
 
-        {/* Color tint overlay reflecting selected primary color */}
+        {/* Color tint overlay */}
         <div
           className="absolute inset-0 opacity-10 pointer-events-none transition-opacity duration-300"
           style={{ background: primaryColor }}
         />
 
-        {/* Live name preview — always visible */}
+        {/* Live name preview */}
         <div
           className="absolute bottom-0 left-0 right-0 px-3 pt-6 pb-2 text-center text-white text-sm font-bold truncate"
           style={{ background: `linear-gradient(to top, ${primaryColor}F0 0%, transparent 100%)` }}
@@ -163,22 +122,19 @@ const TemplateCard = ({
 
         {/* Selected badge */}
         {selected && (
-          <div className="absolute top-2.5 right-2.5 w-7 h-7 rounded-full flex items-center justify-center shadow-lg" style={{ background: primaryColor }}>
+          <div
+            className="absolute top-2.5 right-2.5 w-7 h-7 rounded-full flex items-center justify-center shadow-lg"
+            style={{ background: primaryColor }}
+          >
             <Check className="h-4 w-4 text-white" />
           </div>
         )}
 
-        {/* Photo indicator */}
+        {/* Sector badge */}
         <div className="absolute top-2.5 left-2.5">
-          {tpl.hasPhoto ? (
-            <span className="flex items-center gap-1 text-[10px] font-semibold bg-black/40 text-white px-2 py-0.5 rounded-full backdrop-blur-sm">
-              <Camera className="h-2.5 w-2.5" /> Avec photo
-            </span>
-          ) : (
-            <span className="flex items-center gap-1 text-[10px] font-semibold bg-black/40 text-white px-2 py-0.5 rounded-full backdrop-blur-sm">
-              <CameraOff className="h-2.5 w-2.5" /> Sans photo
-            </span>
-          )}
+          <span className="flex items-center gap-1 text-[10px] font-semibold bg-black/40 text-white px-2 py-0.5 rounded-full backdrop-blur-sm">
+            {tpl.sector || "Généraliste"}
+          </span>
         </div>
       </div>
 
@@ -186,8 +142,10 @@ const TemplateCard = ({
       <div className={`px-4 py-3 transition-colors ${selected ? "bg-primary/5" : "bg-card"}`}>
         <div className="flex items-center justify-between">
           <div>
-            <p className={`font-semibold text-sm ${selected ? "text-primary" : "text-foreground"}`}>{tpl.name}</p>
-            <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{tpl.description}</p>
+            <p className={`font-semibold text-sm ${selected ? "text-primary" : "text-foreground"}`}>
+              {tpl.name}
+            </p>
+            <p className="text-xs text-muted-foreground mt-0.5">Modèle professionnel</p>
           </div>
           <div
             className="w-6 h-6 rounded-full border-2 border-border shrink-0 ml-2"
@@ -199,15 +157,25 @@ const TemplateCard = ({
   );
 };
 
+// ─── Skeleton card ─────────────────────────────────────────────────────────────
+const TemplateCardSkeleton = () => (
+  <div className="rounded-2xl border-2 border-border overflow-hidden">
+    <Skeleton className="h-64 w-full rounded-none" />
+    <div className="px-4 py-3 bg-card">
+      <Skeleton className="h-4 w-32 mb-2" />
+      <Skeleton className="h-3 w-24" />
+    </div>
+  </div>
+);
+
 // ─── Main Component ───────────────────────────────────────────────────────────
 const CVBuilder = () => {
-  const navigate = useNavigate();
   const { user } = useAuth();
   const [step, setStep] = useState<"select" | "editor">("select");
   const [cvData, setCvData] = useState<CVData>(emptyCVData);
   const [isLoading, setIsLoading] = useState(false);
   const [importedFileName, setImportedFileName] = useState<string | null>(null);
-  const [templateId, setTemplateId] = useState<TemplateId>("modern");
+  const [templateId, setTemplateId] = useState<string>("");
   const [selectedPalette, setSelectedPalette] = useState(COLOR_PALETTES[0]);
   const [designOptions, setDesignOptions] = useState<CVDesignOptions>({
     primaryColor: COLOR_PALETTES[0].primary,
@@ -215,29 +183,40 @@ const CVBuilder = () => {
     accentColor: COLOR_PALETTES[0].accent,
   });
 
-  // Hero form state
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [withPhoto, setWithPhoto] = useState(true);
-
-  // Show all templates
   const [showAllTemplates, setShowAllTemplates] = useState(false);
+
+  // ── Charger les templates depuis la BDD ──
+  const { data: dbTemplates = [], isLoading: templatesLoading } = useQuery({
+    queryKey: ["cv-templates-active"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("cv_templates")
+        .select("id, name, sector, thumbnail_url, is_active")
+        .eq("is_active", true)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data || []) as DBTemplate[];
+    },
+  });
+
+  // Auto-select le premier template dès que la liste est chargée
+  useEffect(() => {
+    if (dbTemplates.length > 0 && !templateId) {
+      setTemplateId(dbTemplates[0].id);
+    }
+  }, [dbTemplates, templateId]);
 
   const handlePaletteSelect = (palette: typeof COLOR_PALETTES[0]) => {
     setSelectedPalette(palette);
     setDesignOptions({ primaryColor: palette.primary, accentColor: palette.accent, textColor: palette.text });
   };
 
-  const handleTemplateSelect = (id: TemplateId) => {
-    setTemplateId(id);
-  };
+  const recommendedTemplates = dbTemplates.slice(0, 3);
+  const extraTemplates = dbTemplates.slice(3);
 
-  // Filter templates based on photo toggle — strict match
-  const visibleTemplates = GALLERY_TEMPLATES.filter(t => t.hasPhoto === withPhoto);
-  const recommendedTemplates = visibleTemplates.slice(0, 3);
-  const extraTemplates = visibleTemplates.slice(3);
-
-  // Parse a file (PDF/DOCX/TXT) and fill cvData via AI
   const handleFileParsed = useCallback(async (file: File) => {
     if (file.type === "text/plain" || file.name.endsWith(".txt")) {
       const text = await file.text();
@@ -304,6 +283,7 @@ const CVBuilder = () => {
         user_id: user.id,
         name: `CV - ${cvData.personalInfo.firstName} ${cvData.personalInfo.lastName}`.trim() || "Mon CV",
         cv_data: cvData as any,
+        template_id: templateId || undefined,
       });
       if (error) throw error;
       toast.success("CV sauvegardé !");
@@ -326,13 +306,13 @@ const CVBuilder = () => {
 
   // ── STEP 1: Template selection ─────────────────────────────────────────────
   if (step === "select") {
-    const selectedTplName = GALLERY_TEMPLATES.find(t => t.id === templateId)?.name || templateId;
+    const selectedTplName = dbTemplates.find(t => t.id === templateId)?.name || "ce modèle";
 
     return (
       <div className="min-h-screen bg-background flex flex-col">
         <Header />
 
-        {/* ── Hero banner violet ── */}
+        {/* ── Hero banner ── */}
         <div className="mt-[72px] bg-gradient-to-br from-primary to-primary/80 text-primary-foreground py-10 px-4">
           <div className="max-w-7xl mx-auto">
             <h1 className="text-3xl md:text-4xl font-bold mb-2">Créez votre CV parfait</h1>
@@ -419,7 +399,7 @@ const CVBuilder = () => {
         {/* ── Main content ── */}
         <main className="max-w-7xl mx-auto px-4 md:px-8 py-12 flex-1 w-full">
 
-          {/* Badge succès */}
+          {/* Badge validé recruteurs */}
           <div className="bg-gradient-to-r from-green-500/10 to-green-500/5 border border-green-500/20 rounded-xl p-4 mb-10 flex items-center gap-3">
             <div className="w-9 h-9 bg-green-500 rounded-full flex items-center justify-center shrink-0">
               <Check className="h-4 w-4 text-white" />
@@ -430,27 +410,46 @@ const CVBuilder = () => {
             </div>
           </div>
 
-          {/* Recommandés — 3 templates */}
+          {/* Galerie de templates */}
           <section className="mb-8">
             <h2 className="text-2xl font-bold text-foreground mb-6">Choisissez votre modèle</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {recommendedTemplates.map(tpl => (
-                <TemplateCard
-                  key={tpl.id}
-                  tpl={tpl}
-                  selected={templateId === tpl.id}
-                  onSelect={() => handleTemplateSelect(tpl.id)}
-                  firstName={firstName}
-                  lastName={lastName}
-                  primaryColor={selectedPalette.primary}
-                  withPhoto={withPhoto}
-                />
-              ))}
-            </div>
+
+            {/* État de chargement */}
+            {templatesLoading && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {[1, 2, 3].map(i => <TemplateCardSkeleton key={i} />)}
+              </div>
+            )}
+
+            {/* Aucun template */}
+            {!templatesLoading && dbTemplates.length === 0 && (
+              <div className="flex flex-col items-center justify-center py-20 text-center border-2 border-dashed border-border rounded-2xl">
+                <FileText className="h-12 w-12 text-muted-foreground mb-4" />
+                <p className="text-lg font-medium text-foreground mb-2">Aucun modèle disponible pour le moment</p>
+                <p className="text-sm text-muted-foreground">Les templates créés dans l'administration apparaîtront ici.</p>
+              </div>
+            )}
+
+            {/* Templates recommandés (3 premiers) */}
+            {!templatesLoading && recommendedTemplates.length > 0 && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {recommendedTemplates.map(tpl => (
+                  <TemplateCard
+                    key={tpl.id}
+                    tpl={tpl}
+                    selected={templateId === tpl.id}
+                    onSelect={() => setTemplateId(tpl.id)}
+                    firstName={firstName}
+                    lastName={lastName}
+                    primaryColor={selectedPalette.primary}
+                  />
+                ))}
+              </div>
+            )}
           </section>
 
           {/* Voir tous nos modèles — bouton toggle */}
-          {extraTemplates.length > 0 && (
+          {!templatesLoading && extraTemplates.length > 0 && (
             <div className="text-center mb-6">
               <button
                 onClick={() => setShowAllTemplates(v => !v)}
@@ -465,7 +464,7 @@ const CVBuilder = () => {
             </div>
           )}
 
-          {/* Extra templates révélés */}
+          {/* Extra templates */}
           {showAllTemplates && extraTemplates.length > 0 && (
             <section className="mb-10">
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -474,11 +473,10 @@ const CVBuilder = () => {
                     key={tpl.id + "-extra"}
                     tpl={tpl}
                     selected={templateId === tpl.id}
-                    onSelect={() => handleTemplateSelect(tpl.id)}
+                    onSelect={() => setTemplateId(tpl.id)}
                     firstName={firstName}
                     lastName={lastName}
                     primaryColor={selectedPalette.primary}
-                    withPhoto={withPhoto}
                   />
                 ))}
               </div>
@@ -486,22 +484,25 @@ const CVBuilder = () => {
           )}
 
           {/* CTA continuer */}
-          <div className="flex justify-center mt-6">
-            <Button
-              size="lg"
-              onClick={handleContinue}
-              className="gap-2 px-10 h-12 text-base font-semibold shadow-lg shadow-primary/20"
-            >
-              Créer mon CV — {selectedTplName}
-              <ArrowRight className="h-5 w-5" />
-            </Button>
-          </div>
+          {!templatesLoading && dbTemplates.length > 0 && (
+            <div className="flex justify-center mt-6">
+              <Button
+                size="lg"
+                onClick={handleContinue}
+                disabled={!templateId}
+                className="gap-2 px-10 h-12 text-base font-semibold shadow-lg shadow-primary/20"
+              >
+                Créer mon CV — {selectedTplName}
+                <ArrowRight className="h-5 w-5" />
+              </Button>
+            </div>
+          )}
         </main>
 
-        {/* ── SEO Content + FAQ ── */}
+        {/* SEO Content + FAQ */}
         <CVBuilderSEOSection />
 
-        {/* Footer standard */}
+        {/* Footer */}
         <footer className="bg-card/50 border-t border-border/30 pt-12 pb-8">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex flex-col md:flex-row justify-between items-center mb-8">
@@ -542,7 +543,7 @@ const CVBuilder = () => {
   );
 };
 
-// ─── SEO Section + FAQ Accordion ──────────────────────────────────────────────
+// ─── SEO Section + FAQ ────────────────────────────────────────────────────────
 const FAQ_ITEMS = [
   {
     q: "Comment créer un CV professionnel gratuitement ?",
@@ -581,7 +582,6 @@ const CVBuilderSEOSection = () => {
     <section className="bg-muted/30 border-t border-border/50 py-16 px-4">
       <div className="max-w-4xl mx-auto">
 
-        {/* Texte SEO */}
         <div className="mb-14 text-center">
           <h2 className="text-3xl font-bold text-foreground mb-5">
             Créez un CV professionnel en ligne — rapide, gratuit, optimisé
@@ -599,7 +599,6 @@ const CVBuilderSEOSection = () => {
           </p>
         </div>
 
-        {/* Avantages en grid */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-14">
           {[
             { emoji: "🎯", title: "Optimisé ATS", desc: "Tous nos modèles passent les filtres des logiciels de recrutement" },
@@ -614,7 +613,6 @@ const CVBuilderSEOSection = () => {
           ))}
         </div>
 
-        {/* FAQ Accordion */}
         <div>
           <h2 className="text-2xl font-bold text-foreground mb-8 text-center">
             Questions fréquentes sur la création de CV
