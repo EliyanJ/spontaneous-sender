@@ -11,7 +11,8 @@ import {
   FileText,
   Search,
   Tag,
-  Bot
+  Bot,
+  LayoutTemplate
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Logo } from "@/components/Logo";
