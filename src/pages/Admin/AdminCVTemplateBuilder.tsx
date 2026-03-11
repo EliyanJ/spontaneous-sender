@@ -341,6 +341,7 @@ export const AdminCVTemplateBuilder = () => {
       if (error) throw error;
       if (data) {
         setTemplateName(data.name);
+        setThumbnailUrl(data.thumbnail_url ?? null);
         try {
           const parsed = JSON.parse(data.html_template);
           if (parsed.version === "canvas-v2" && parsed.elements) {
@@ -351,6 +352,28 @@ export const AdminCVTemplateBuilder = () => {
       return data;
     },
   });
+
+  // ── Upload thumbnail ────────────────────────────────────────────────────────
+  const handleThumbnailUpload = async (file: File) => {
+    if (!file.type.startsWith("image/")) {
+      toast({ title: "Fichier invalide", description: "Veuillez sélectionner une image (PNG, JPG, WebP)", variant: "destructive" });
+      return;
+    }
+    setIsUploadingThumb(true);
+    try {
+      const ext = file.name.split(".").pop() || "png";
+      const path = `cv-templates/thumb-${Date.now()}.${ext}`;
+      const { error: upErr } = await supabase.storage.from("cms-media").upload(path, file, { upsert: true });
+      if (upErr) throw upErr;
+      const { data: urlData } = supabase.storage.from("cms-media").getPublicUrl(path);
+      setThumbnailUrl(urlData.publicUrl);
+      toast({ title: "Image uploadée ✓", description: "Elle sera enregistrée avec le template." });
+    } catch (e: any) {
+      toast({ title: "Erreur upload", description: e.message, variant: "destructive" });
+    } finally {
+      setIsUploadingThumb(false);
+    }
+  };
 
   const saveMutation = useMutation({
     mutationFn: async () => {
