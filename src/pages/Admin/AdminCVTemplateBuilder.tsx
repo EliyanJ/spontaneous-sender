@@ -306,6 +306,9 @@ export const AdminCVTemplateBuilder = () => {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [editingTextId, setEditingTextId] = useState<string | null>(null);
   const [isImporting, setIsImporting] = useState(false);
+  const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(null);
+  const [isUploadingThumb, setIsUploadingThumb] = useState(false);
+  const thumbnailInputRef = useRef<HTMLInputElement>(null);
 
   // Drag / resize state
   const canvasRef = useRef<HTMLDivElement>(null);
