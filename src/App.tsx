@@ -41,6 +41,8 @@ import {
   AdminPromos,
   AdminATSTraining,
   AdminChatbot,
+  AdminCVTemplates,
+  AdminCVTemplateBuilder,
 } from "./pages/Admin";
 import AdminTicketDetail from "./pages/Admin/AdminTicketDetail";
 import BlogPost from "./pages/BlogPost";
