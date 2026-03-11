@@ -83,7 +83,7 @@ export const ContactSearch = ({ onNavigateToTab }: ContactSearchProps) => {
 
   // Timer for elapsed time
   useEffect(() => {
-    let interval: NodeJS.Timeout;
+    let interval: ReturnType<typeof setInterval>;
     if (isSearching) {
       interval = setInterval(() => {
         setElapsedTime(prev => prev + 1);

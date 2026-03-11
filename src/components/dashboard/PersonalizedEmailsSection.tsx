@@ -154,7 +154,7 @@ export const PersonalizedEmailsSection = () => {
   }, []);
 
   useEffect(() => {
-    let interval: NodeJS.Timeout;
+    let interval: ReturnType<typeof setInterval>;
     if (isGenerating) {
       interval = setInterval(() => {
         setElapsedTime(prev => prev + 1);
