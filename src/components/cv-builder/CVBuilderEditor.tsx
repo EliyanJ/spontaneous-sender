@@ -879,9 +879,9 @@ export const CVBuilderEditor = ({
 
         {/* Scrollable preview area */}
         <div className="flex-1 overflow-y-auto overflow-x-hidden bg-slate-100 p-3">
-          {/* scale: column is 360px, A4 at 794px → scale ≈ 0.42 */}
-          <div style={{ transformOrigin: "top left", transform: "scale(0.42)", width: "794px", pointerEvents: "none" }}>
-            <CVPreview cvData={cvData} templateId={templateId} designOptions={designOptions} />
+          {/* scale: column is 354px, A4 at 794px → 354/794 ≈ 0.446 */}
+          <div style={{ transformOrigin: "top left", transform: "scale(0.446)", width: "794px", minHeight: "1123px", pointerEvents: "none" }}>
+            <CVPreview cvData={cvData} templateId={templateId} designOptions={designOptions} standalone={false} />
           </div>
         </div>
       </aside>

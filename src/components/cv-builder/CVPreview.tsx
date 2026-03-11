@@ -10,6 +10,8 @@ interface CVPreviewProps {
   cvData: CVData;
   templateId?: string;
   designOptions?: CVDesignOptions;
+  /** Si false : rend uniquement le contenu brut du CV (pas de header, pas de scale interne) */
+  standalone?: boolean;
 }
 
 // ─── Short (legacy) template IDs ──────────────────────────────────────────────
@@ -584,7 +586,7 @@ const CanvasTemplateRenderer = ({ cvData, templateId }: { cvData: CVData; templa
 };
 
 // ─── Main CVPreview component ────────────────────────────────────────────────
-export const CVPreview = ({ cvData, templateId = "classic", designOptions }: CVPreviewProps) => {
+export const CVPreview = ({ cvData, templateId = "classic", designOptions, standalone = true }: CVPreviewProps) => {
   const previewRef = useRef<HTMLDivElement>(null);
 
   const defaultDesigns: Record<string, CVDesignOptions> = {
@@ -627,6 +629,16 @@ export const CVPreview = ({ cvData, templateId = "classic", designOptions }: CVP
     }
   };
 
+  // Mode intégré (colonne droite du builder) : contenu brut uniquement, pas de header ni de scale
+  if (!standalone) {
+    return (
+      <div ref={previewRef} style={{ width: "794px", minHeight: "1123px" }}>
+        {renderTemplate()}
+      </div>
+    );
+  }
+
+  // Mode standalone (page Finalisation) : header + bouton PDF + scale interne
   return (
     <div className="flex flex-col h-full">
       <div className="flex items-center justify-between mb-3">
