@@ -822,6 +822,68 @@ export const AdminCVTemplateBuilder = () => {
                 {FONT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
               </select>
             </div>
+
+            {/* ── Toggle avec/sans photo ─────────────────────────────────── */}
+            <div className="border-t border-border pt-3 space-y-2">
+              <p className="text-xs font-semibold text-foreground">Photo de profil</p>
+              <div className="flex items-center justify-between gap-2">
+                <Label className="text-xs text-muted-foreground">Template avec photo</Label>
+                <button
+                  onClick={() => setConfig(c => ({ ...c, has_photo: !c.has_photo }))}
+                  className={cn(
+                    "relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full transition-colors",
+                    config.has_photo ? "bg-primary" : "bg-muted"
+                  )}
+                >
+                  <span className={cn(
+                    "pointer-events-none inline-block h-4 w-4 rounded-full bg-white shadow-sm transition-transform mt-0.5",
+                    config.has_photo ? "translate-x-4 ml-0.5" : "translate-x-0.5"
+                  )} />
+                </button>
+              </div>
+              <p className="text-[10px] text-muted-foreground">
+                {config.has_photo ? "✓ Ce template inclut une photo de profil" : "Ce template n'utilise pas de photo"}
+              </p>
+            </div>
+
+            {/* ── Couverture / Thumbnail ──────────────────────────────────── */}
+            <div className="border-t border-border pt-3 space-y-2">
+              <p className="text-xs font-semibold text-foreground">Image de couverture</p>
+              <p className="text-[10px] text-muted-foreground">Affichée dans la galerie du CV Builder</p>
+              {thumbnailUrl ? (
+                <div className="relative group">
+                  <img src={thumbnailUrl} alt="Couverture" className="w-full h-28 object-cover rounded-md border border-border" />
+                  <button
+                    onClick={() => setThumbnailUrl(null)}
+                    className="absolute top-1 right-1 bg-destructive text-destructive-foreground text-[10px] px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    Supprimer
+                  </button>
+                </div>
+              ) : (
+                <div
+                  className="w-full h-20 border-2 border-dashed border-border rounded-md flex flex-col items-center justify-center gap-1 cursor-pointer hover:border-primary/50 hover:bg-primary/5 transition-colors"
+                  onClick={() => thumbnailInputRef.current?.click()}
+                >
+                  {isUploadingThumb ? (
+                    <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                  ) : (
+                    <>
+                      <Upload className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-[10px] text-muted-foreground">Cliquer pour uploader</span>
+                    </>
+                  )}
+                </div>
+              )}
+              <input
+                ref={thumbnailInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={e => { const f = e.target.files?.[0]; if (f) handleThumbnailUpload(f); }}
+              />
+            </div>
+
             <div className="pt-2 border-t border-border">
               <p className="text-xs text-muted-foreground text-center">Sélectionnez un élément pour modifier ses propriétés</p>
             </div>
