@@ -14,7 +14,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { CVPreview } from "./CVPreview";
-import type { CVData, CVDesignOptions, TemplateId } from "@/lib/cv-templates";
+import type { CVData, CVDesignOptions } from "@/lib/cv-templates";
 import { Logo } from "@/components/Logo";
 import { Link } from "react-router-dom";
 
