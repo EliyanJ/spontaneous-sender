@@ -1193,13 +1193,29 @@ export const AdminCVTemplateBuilder = () => {
               {config.elements.map(renderCanvasElement)}
 
               {/* Empty state */}
-              {config.elements.length === 0 && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-300 pointer-events-none">
+              {config.elements.length === 0 && !isImporting && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center text-muted-foreground pointer-events-none">
                   <Plus className="h-12 w-12 mb-3 opacity-40" />
                   <p className="text-sm font-medium opacity-60">Canvas vide</p>
                   <p className="text-xs opacity-40 mt-1">Ajoutez des éléments via la toolbar ou glissez depuis le panneau gauche</p>
+                  <p className="text-xs opacity-30 mt-2">💡 Ou cliquez sur <strong>Importer PDF IA</strong> pour reproduire un CV existant</p>
                 </div>
               )}
+
+              {/* AI Import overlay */}
+              {isImporting && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-background/80 backdrop-blur-sm z-50 pointer-events-none">
+                  <div className="flex flex-col items-center gap-4 bg-card border border-border rounded-xl px-8 py-6 shadow-xl">
+                    <Loader2 className="h-10 w-10 text-primary animate-spin" />
+                    <div className="text-center">
+                      <p className="text-sm font-semibold text-foreground">Analyse IA en cours...</p>
+                      <p className="text-xs text-muted-foreground mt-1">Gemini Vision analyse le design de votre CV</p>
+                      <p className="text-xs text-muted-foreground">Cela peut prendre 15-30 secondes</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
             </div>
             {/* A4 dimensions indicator */}
             <div className="absolute -bottom-6 left-0 right-0 flex justify-center">
