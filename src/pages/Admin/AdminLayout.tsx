@@ -30,6 +30,7 @@ const adminNavItems = [
   { title: "CMS", icon: FileText, path: "/admin/cms" },
   { title: "SEO", icon: Search, path: "/admin/seo" },
   { title: "Chatbot", icon: Bot, path: "/admin/chatbot" },
+  { title: "Templates CV", icon: LayoutTemplate, path: "/admin/cv-templates" },
 ];
 
 export const AdminLayout = () => {
