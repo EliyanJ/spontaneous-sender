@@ -11,7 +11,7 @@ import {
   Trash2, Copy, AlignLeft, AlignCenter, AlignRight,
   Bold, Italic, ChevronUp, ChevronDown, User, Briefcase,
   GraduationCap, Star, Globe, FileText, Target, Rocket,
-  Plus, Lock, Unlock, Eye, EyeOff,
+  Plus, Lock, Unlock, Eye, EyeOff, Upload, Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -303,9 +303,11 @@ export const AdminCVTemplateBuilder = () => {
   const [config, setConfig] = useState<CanvasConfig>(DEFAULT_CONFIG);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [editingTextId, setEditingTextId] = useState<string | null>(null);
+  const [isImporting, setIsImporting] = useState(false);
 
   // Drag / resize state
   const canvasRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const interactionRef = useRef<{
     mode: "move" | "resize";
     startX: number;
@@ -473,6 +475,70 @@ export const AdminCVTemplateBuilder = () => {
       },
     });
   };
+
+  // ── PDF Import ──────────────────────────────────────────────────────────
+
+  const handleImportPDF = useCallback(async (file: File) => {
+    if (!file) return;
+    if (file.size > 10 * 1024 * 1024) {
+      toast({ title: "Fichier trop lourd", description: "Le PDF doit faire moins de 10 MB.", variant: "destructive" });
+      return;
+    }
+    setIsImporting(true);
+    try {
+      // Convert to base64
+      const arrayBuffer = await file.arrayBuffer();
+      const bytes = new Uint8Array(arrayBuffer);
+      let binary = "";
+      for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+      const fileBase64 = btoa(binary);
+
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData?.session?.access_token;
+      if (!token) throw new Error("Non authentifié");
+
+      const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+      const response = await fetch(
+        `https://${projectId}.supabase.co/functions/v1/ai-template-from-pdf`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`,
+          },
+          body: JSON.stringify({ fileBase64, fileName: file.name }),
+        }
+      );
+
+      const result = await response.json();
+
+      if (response.status === 429) {
+        throw new Error(result.error || "Rate limit atteint, réessayez dans quelques instants.");
+      }
+      if (response.status === 402) {
+        throw new Error(result.error || "Crédits IA insuffisants.");
+      }
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || "Erreur lors de l'analyse IA.");
+      }
+
+      setConfig(result.config);
+      setSelectedId(null);
+      toast({
+        title: `✨ Template généré — ${result.elementCount} éléments`,
+        description: "Ajustez le design selon vos besoins.",
+      });
+    } catch (err: any) {
+      toast({
+        title: "Erreur d'import",
+        description: err.message || "Impossible d'analyser le PDF.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsImporting(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  }, []);
 
   // ── Keyboard shortcut ─────────────────────────────────────────────────────
 
@@ -943,7 +1009,6 @@ export const AdminCVTemplateBuilder = () => {
           />
         </div>
 
-        {/* ── Toolbar ── */}
         <div className="flex items-center gap-1 flex-wrap">
           {/* Add text */}
           <Button variant="outline" size="sm" className="h-7 text-xs gap-1.5"
@@ -974,6 +1039,35 @@ export const AdminCVTemplateBuilder = () => {
             onDragStart={() => { paletteDragRef.current = { type: "element", elType: "divider" }; }}
           >
             <Minus className="h-3.5 w-3.5" /> Ligne
+          </Button>
+
+          {/* Separator */}
+          <div className="w-px h-5 bg-border mx-1" />
+
+          {/* PDF Import button */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".pdf"
+            className="hidden"
+            onChange={e => {
+              const file = e.target.files?.[0];
+              if (file) handleImportPDF(file);
+            }}
+          />
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-7 text-xs gap-1.5 border-primary/40 text-primary hover:bg-primary/5"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isImporting}
+            title="Analyser un CV PDF et reproduire son design"
+          >
+            {isImporting ? (
+              <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Analyse IA...</>
+            ) : (
+              <><Upload className="h-3.5 w-3.5" /> Importer PDF IA</>
+            )}
           </Button>
 
           {/* Selection actions */}
@@ -1099,13 +1193,29 @@ export const AdminCVTemplateBuilder = () => {
               {config.elements.map(renderCanvasElement)}
 
               {/* Empty state */}
-              {config.elements.length === 0 && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-300 pointer-events-none">
+              {config.elements.length === 0 && !isImporting && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center text-muted-foreground pointer-events-none">
                   <Plus className="h-12 w-12 mb-3 opacity-40" />
                   <p className="text-sm font-medium opacity-60">Canvas vide</p>
                   <p className="text-xs opacity-40 mt-1">Ajoutez des éléments via la toolbar ou glissez depuis le panneau gauche</p>
+                  <p className="text-xs opacity-30 mt-2">💡 Ou cliquez sur <strong>Importer PDF IA</strong> pour reproduire un CV existant</p>
                 </div>
               )}
+
+              {/* AI Import overlay */}
+              {isImporting && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-background/80 backdrop-blur-sm z-50 pointer-events-none">
+                  <div className="flex flex-col items-center gap-4 bg-card border border-border rounded-xl px-8 py-6 shadow-xl">
+                    <Loader2 className="h-10 w-10 text-primary animate-spin" />
+                    <div className="text-center">
+                      <p className="text-sm font-semibold text-foreground">Analyse IA en cours...</p>
+                      <p className="text-xs text-muted-foreground mt-1">Gemini Vision analyse le design de votre CV</p>
+                      <p className="text-xs text-muted-foreground">Cela peut prendre 15-30 secondes</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
             </div>
             {/* A4 dimensions indicator */}
             <div className="absolute -bottom-6 left-0 right-0 flex justify-center">

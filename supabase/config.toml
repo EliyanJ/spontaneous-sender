@@ -86,3 +86,6 @@ verify_jwt = false
 
 [functions.generate-cv-content]
 verify_jwt = true
+
+[functions.ai-template-from-pdf]
+verify_jwt = true
