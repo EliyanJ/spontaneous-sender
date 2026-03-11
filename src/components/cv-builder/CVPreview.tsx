@@ -586,7 +586,7 @@ const CanvasTemplateRenderer = ({ cvData, templateId }: { cvData: CVData; templa
 };
 
 // ─── Main CVPreview component ────────────────────────────────────────────────
-export const CVPreview = ({ cvData, templateId = "classic", designOptions }: CVPreviewProps) => {
+export const CVPreview = ({ cvData, templateId = "classic", designOptions, standalone = true }: CVPreviewProps) => {
   const previewRef = useRef<HTMLDivElement>(null);
 
   const defaultDesigns: Record<string, CVDesignOptions> = {
