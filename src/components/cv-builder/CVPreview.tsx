@@ -10,6 +10,8 @@ interface CVPreviewProps {
   cvData: CVData;
   templateId?: string;
   designOptions?: CVDesignOptions;
+  /** Si false : rend uniquement le contenu brut du CV (pas de header, pas de scale interne) */
+  standalone?: boolean;
 }
 
 // ─── Short (legacy) template IDs ──────────────────────────────────────────────
