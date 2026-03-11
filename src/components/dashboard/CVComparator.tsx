@@ -295,10 +295,10 @@ export const CVComparator = ({ isPublic, onAnalysisComplete }: CVComparatorProps
       {/* HEADER */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl lg:text-3xl font-bold text-white tracking-tight mb-2">
+          <h1 className="text-2xl lg:text-3xl font-bold text-foreground tracking-tight mb-2">
             Score ATS de votre CV
           </h1>
-          <p className="text-gray-400 text-sm max-w-2xl">
+          <p className="text-muted-foreground text-sm max-w-2xl">
             Analysez la compatibilité de votre CV avec l'offre d'emploi grâce à notre IA. Obtenez un score précis et des conseils pour optimiser votre candidature.
           </p>
         </div>
@@ -306,7 +306,7 @@ export const CVComparator = ({ isPublic, onAnalysisComplete }: CVComparatorProps
           <div className="flex gap-3">
             <button
               onClick={handleReset}
-              className="px-4 py-2 rounded-xl bg-[#18181b]/60 backdrop-blur-xl border border-white/[0.08] text-gray-300 text-sm font-medium hover:text-white hover:bg-white/[0.05] flex items-center transition-all"
+              className="px-4 py-2 rounded-xl bg-card/60 backdrop-blur-xl border border-border text-muted-foreground text-sm font-medium hover:text-foreground hover:bg-muted/50 flex items-center transition-all"
             >
               <RotateCcw className="h-4 w-4 mr-2" />
               Nouvelle analyse
@@ -320,25 +320,25 @@ export const CVComparator = ({ isPublic, onAnalysisComplete }: CVComparatorProps
         <div className="space-y-8">
           {/* Centered hero intro */}
           <div className="text-center max-w-2xl mx-auto">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500/20 to-violet-500/20 mb-6 border border-white/[0.05] shadow-[0_0_20px_rgba(79,70,229,0.15)]">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500/20 to-violet-500/20 mb-6 border border-border shadow-[0_0_20px_rgba(79,70,229,0.15)]">
               <Target className="h-8 w-8 text-indigo-400" />
             </div>
-            <h2 className="text-3xl md:text-4xl font-bold text-white mb-3">Analysez votre compatibilité ATS</h2>
-            <p className="text-gray-400 text-lg">Collez votre CV et l'offre d'emploi pour obtenir un score de compatibilité instantané et des conseils d'optimisation.</p>
+            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-3">Analysez votre compatibilité ATS</h2>
+            <p className="text-muted-foreground text-lg">Collez votre CV et l'offre d'emploi pour obtenir un score de compatibilité instantané et des conseils d'optimisation.</p>
           </div>
 
           {/* Two-column input cards */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* LEFT: CV Input */}
-            <div className="bg-[#18181b]/60 backdrop-blur-xl border border-white/[0.08] rounded-2xl p-6 flex flex-col border-t border-t-white/[0.1] shadow-xl">
+            <div className="bg-card/60 backdrop-blur-xl border border-border rounded-2xl p-6 flex flex-col border-t border-t-border shadow-xl">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-400 border border-blue-500/20">
                     <FileText className="h-5 w-5" />
                   </div>
                   <div>
-                    <h3 className="text-white font-semibold">Votre CV</h3>
-                    <p className="text-xs text-gray-500">Texte brut ou fichier PDF/DOCX</p>
+                    <h3 className="text-foreground font-semibold">Votre CV</h3>
+                    <p className="text-xs text-muted-foreground">Texte brut ou fichier PDF/DOCX</p>
                   </div>
                 </div>
                 <button
@@ -358,21 +358,21 @@ export const CVComparator = ({ isPublic, onAnalysisComplete }: CVComparatorProps
               />
 
               {isParsing ? (
-                <div className="flex-1 min-h-[300px] flex flex-col items-center justify-center gap-3 bg-[#121215]/60 border border-white/[0.1] rounded-xl">
+                <div className="flex-1 min-h-[300px] flex flex-col items-center justify-center gap-3 bg-muted/50 border border-border rounded-xl">
                   <Loader2 className="h-8 w-8 animate-spin text-indigo-400" />
-                  <p className="text-sm text-gray-400">Extraction du texte en cours...</p>
+                  <p className="text-sm text-muted-foreground">Extraction du texte en cours...</p>
                 </div>
               ) : cvFile && cvText ? (
                 <div className="flex-1 min-h-[300px] flex flex-col">
                   <div className="flex items-center gap-2 mb-3 p-3 bg-green-500/10 border border-green-500/20 rounded-lg">
                     <FileCheck className="h-4 w-4 text-green-400" />
                     <span className="text-sm text-green-400 font-medium">{cvFile.name}</span>
-                    <span className="text-xs text-gray-500 ml-auto">{cvText.length} caractères</span>
+                    <span className="text-xs text-muted-foreground ml-auto">{cvText.length} caractères</span>
                   </div>
                   <textarea
                     value={cvText}
                     onChange={(e) => setCvText(e.target.value)}
-                    className="w-full flex-1 bg-[#121215]/60 border border-white/[0.1] rounded-xl p-4 text-sm text-gray-300 placeholder-gray-600 resize-none font-mono leading-relaxed focus:border-indigo-500/50 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all"
+                    className="w-full flex-1 bg-muted/50 border border-border rounded-xl p-4 text-sm text-foreground placeholder:text-muted-foreground/40 resize-none font-mono leading-relaxed focus:border-indigo-500/50 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all"
                   />
                 </div>
               ) : (
@@ -380,10 +380,10 @@ export const CVComparator = ({ isPublic, onAnalysisComplete }: CVComparatorProps
                   <textarea
                     value={cvText}
                     onChange={(e) => setCvText(e.target.value)}
-                    className="w-full h-full bg-[#121215]/60 border border-white/[0.1] rounded-xl p-4 text-sm text-gray-300 placeholder-gray-600 resize-none font-mono leading-relaxed focus:border-indigo-500/50 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all"
+                    className="w-full h-full bg-muted/50 border border-border rounded-xl p-4 text-sm text-foreground placeholder:text-muted-foreground/40 resize-none font-mono leading-relaxed focus:border-indigo-500/50 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all"
                     placeholder={`Copiez le contenu de votre CV ici...\n\nExemple:\nJean Dupont\nDéveloppeur Full Stack\nParis, France\n\nEXPÉRIENCE\nSenior Developer chez TechCorp...`}
                   />
-                  <div className="absolute bottom-4 right-4 text-xs text-gray-500 bg-[#121215]/80 px-2 py-1 rounded border border-white/[0.05]">
+                  <div className="absolute bottom-4 right-4 text-xs text-muted-foreground bg-background/80 px-2 py-1 rounded border border-border/50">
                     {cvText.length} caractères
                   </div>
                 </div>
@@ -391,26 +391,26 @@ export const CVComparator = ({ isPublic, onAnalysisComplete }: CVComparatorProps
             </div>
 
             {/* RIGHT: Job Offer Input */}
-            <div className="bg-[#18181b]/60 backdrop-blur-xl border border-white/[0.08] rounded-2xl p-6 flex flex-col border-t border-t-white/[0.1] shadow-xl">
+            <div className="bg-card/60 backdrop-blur-xl border border-border rounded-2xl p-6 flex flex-col border-t border-t-border shadow-xl">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-lg bg-violet-500/10 flex items-center justify-center text-violet-400 border border-violet-500/20">
                     <Briefcase className="h-5 w-5" />
                   </div>
                   <div>
-                    <h3 className="text-white font-semibold">Offre d'emploi</h3>
-                    <p className="text-xs text-gray-500">Description du poste visé</p>
+                    <h3 className="text-foreground font-semibold">Offre d'emploi</h3>
+                    <p className="text-xs text-muted-foreground">Description du poste visé</p>
                   </div>
                 </div>
               </div>
 
               <div className="mb-4">
-                <label className="block text-xs font-medium text-gray-500 mb-1.5 ml-1">Intitulé du poste</label>
+                <label className="block text-xs font-medium text-muted-foreground mb-1.5 ml-1">Intitulé du poste</label>
                 <input
                   type="text"
                   value={jobTitle}
                   onChange={(e) => setJobTitle(e.target.value)}
-                  className="w-full bg-[#121215]/60 border border-white/[0.1] rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-600 focus:border-indigo-500/50 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all"
+                  className="w-full bg-muted/50 border border-border rounded-xl px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/40 focus:border-indigo-500/50 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all"
                   placeholder="Ex: Product Manager"
                 />
               </div>
@@ -419,12 +419,12 @@ export const CVComparator = ({ isPublic, onAnalysisComplete }: CVComparatorProps
                 <textarea
                   value={jobDescription}
                   onChange={(e) => setJobDescription(e.target.value)}
-                  className="w-full h-full bg-[#121215]/60 border border-white/[0.1] rounded-xl p-4 text-sm text-gray-300 placeholder-gray-600 resize-none font-mono leading-relaxed focus:border-indigo-500/50 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all"
+                  className="w-full h-full bg-muted/50 border border-border rounded-xl p-4 text-sm text-foreground placeholder:text-muted-foreground/40 resize-none font-mono leading-relaxed focus:border-indigo-500/50 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all"
                   placeholder={`Copiez la description de l'offre ici...\n\nExemple:\nNous recherchons un développeur passionné avec 5 ans d'expérience en React et Node.js...`}
                 />
               </div>
 
-              <p className="text-xs text-gray-500 mt-3 flex items-center gap-1.5">
+              <p className="text-xs text-muted-foreground mt-3 flex items-center gap-1.5">
                 <AlertTriangle className="h-3 w-3" />
                 Copiez l'offre complète pour une précision maximale
               </p>
@@ -448,7 +448,7 @@ export const CVComparator = ({ isPublic, onAnalysisComplete }: CVComparatorProps
       {/* ==================== STATE 2: LOADING ==================== */}
       {isAnalyzing && (
         <div className="flex flex-col items-center justify-center py-20">
-          <div className="bg-[#18181b]/60 backdrop-blur-xl border border-indigo-500/30 rounded-3xl p-10 flex flex-col items-center max-w-md w-full shadow-[0_0_40px_rgba(99,102,241,0.2)]">
+          <div className="bg-card/60 backdrop-blur-xl border border-indigo-500/30 rounded-3xl p-10 flex flex-col items-center max-w-md w-full shadow-[0_0_40px_rgba(99,102,241,0.2)]">
             <div className="relative w-32 h-32 mb-8">
               <div className="absolute inset-0 border-4 border-indigo-500/20 rounded-full" />
               <div className="absolute inset-0 border-4 border-t-indigo-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin" />
@@ -456,19 +456,19 @@ export const CVComparator = ({ isPublic, onAnalysisComplete }: CVComparatorProps
                 <Brain className="h-10 w-10 text-indigo-400 animate-pulse" />
               </div>
             </div>
-            <h3 className="text-2xl font-bold text-white mb-2">Analyse en cours...</h3>
-            <p className="text-gray-400 text-sm text-center mb-6">Notre IA scanne votre CV et le compare aux critères de l'offre.</p>
+            <h3 className="text-2xl font-bold text-foreground mb-2">Analyse en cours...</h3>
+            <p className="text-muted-foreground text-sm text-center mb-6">Notre IA scanne votre CV et le compare aux critères de l'offre.</p>
 
             <div className="w-full space-y-3">
-              <div className="flex items-center justify-between text-xs text-gray-300">
+              <div className="flex items-center justify-between text-xs text-foreground/80">
                 <span>Extraction des mots-clés</span>
                 <Check className="h-4 w-4 text-green-400" />
               </div>
-              <div className="flex items-center justify-between text-xs text-gray-300">
+              <div className="flex items-center justify-between text-xs text-foreground/80">
                 <span>Analyse de la structure</span>
                 <Check className="h-4 w-4 text-green-400" />
               </div>
-              <div className="flex items-center justify-between text-xs font-semibold text-indigo-300">
+              <div className="flex items-center justify-between text-xs font-semibold text-indigo-400">
                 <span>Calcul du score final...</span>
                 <Loader2 className="h-4 w-4 animate-spin" />
               </div>
@@ -484,17 +484,17 @@ export const CVComparator = ({ isPublic, onAnalysisComplete }: CVComparatorProps
           {result.extractionWarning && (
             <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4 flex items-center gap-3">
               <AlertTriangle className="h-5 w-5 text-amber-400 shrink-0" />
-              <span className="text-sm text-amber-300">CV incomplet ou mal formaté — Analyse partielle. Importez un CV plus complet pour de meilleurs résultats.</span>
+              <span className="text-sm text-amber-500">CV incomplet ou mal formaté — Analyse partielle. Importez un CV plus complet pour de meilleurs résultats.</span>
             </div>
           )}
 
           {/* Results header */}
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-bold text-white flex items-center gap-3">
+            <h2 className="text-xl font-bold text-foreground flex items-center gap-3">
               <Target className="h-5 w-5 text-indigo-500" />
               Résultats de l'analyse
             </h2>
-            <span className="px-3 py-1 rounded-full bg-green-500/10 text-green-400 border border-green-500/20 text-xs font-medium">
+            <span className="px-3 py-1 rounded-full bg-green-500/10 text-green-600 dark:text-green-400 border border-green-500/20 text-xs font-medium">
               Analyse complétée
             </span>
           </div>
@@ -502,7 +502,7 @@ export const CVComparator = ({ isPublic, onAnalysisComplete }: CVComparatorProps
           {/* Top Row: Score Hero + Detail Cards */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             {/* Score Hero Card */}
-            <div className="lg:col-span-4 bg-[#18181b]/60 backdrop-blur-xl border border-white/[0.08] rounded-2xl p-8 relative overflow-hidden flex flex-col items-center justify-center text-center">
+            <div className="lg:col-span-4 bg-card/60 backdrop-blur-xl border border-border rounded-2xl p-8 relative overflow-hidden flex flex-col items-center justify-center text-center">
               {/* Top gradient bar */}
               <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-red-500 via-amber-500 to-green-500" />
               {/* Decorative glow */}
@@ -511,7 +511,7 @@ export const CVComparator = ({ isPublic, onAnalysisComplete }: CVComparatorProps
               {/* Job badge */}
               {jobTitle && (
                 <div className="mb-6">
-                  <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-indigo-500/10 text-indigo-300 border border-indigo-500/20">
+                  <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-indigo-500/10 text-indigo-500 dark:text-indigo-300 border border-indigo-500/20">
                     <Briefcase className="h-3 w-3 mr-2" />
                     {jobTitle}
                   </span>
@@ -522,7 +522,7 @@ export const CVComparator = ({ isPublic, onAnalysisComplete }: CVComparatorProps
               <div className="relative w-48 h-48 mb-4">
                 <svg className="w-full h-full" viewBox="0 0 100 100">
                   <circle
-                    className="text-gray-800 stroke-current"
+                    className="text-border stroke-current"
                     strokeWidth={8}
                     cx={50}
                     cy={50}
@@ -544,29 +544,29 @@ export const CVComparator = ({ isPublic, onAnalysisComplete }: CVComparatorProps
                   />
                 </svg>
                 <div className="absolute top-0 left-0 w-full h-full flex flex-col items-center justify-center">
-                  <span className="text-5xl font-bold text-white tracking-tighter">{Math.round(score)}</span>
-                  <span className="text-sm text-gray-400 font-medium">/ 100</span>
+                  <span className="text-5xl font-bold text-foreground tracking-tighter">{Math.round(score)}</span>
+                  <span className="text-sm text-muted-foreground font-medium">/ 100</span>
                 </div>
               </div>
 
-              <h3 className="text-xl font-bold text-white mb-1">{getScoreLabel(score)}</h3>
+              <h3 className="text-xl font-bold text-foreground mb-1">{getScoreLabel(score)}</h3>
               <p className={`text-sm font-medium mb-6 ${getScoreTextClass(score)}`}>
                 {result.profession?.name && `Métier détecté : ${result.profession.name}`}
               </p>
 
               {/* Mini stats row */}
               <div className="w-full grid grid-cols-3 gap-2 text-center">
-                <div className="p-3 bg-white/[0.03] rounded-xl border border-white/[0.05]">
-                  <div className="text-xs text-gray-500 mb-1">Hard Skills</div>
-                  <div className="text-indigo-400 font-bold">{hardSkillPct}%</div>
+                <div className="p-3 bg-muted/20 rounded-xl border border-border/50">
+                  <div className="text-xs text-muted-foreground mb-1">Hard Skills</div>
+                  <div className="text-indigo-500 dark:text-indigo-400 font-bold">{hardSkillPct}%</div>
                 </div>
-                <div className="p-3 bg-white/[0.03] rounded-xl border border-white/[0.05]">
-                  <div className="text-xs text-gray-500 mb-1">Structure</div>
-                  <div className="text-blue-400 font-bold">{structureScore}%</div>
+                <div className="p-3 bg-muted/20 rounded-xl border border-border/50">
+                  <div className="text-xs text-muted-foreground mb-1">Structure</div>
+                  <div className="text-blue-500 dark:text-blue-400 font-bold">{structureScore}%</div>
                 </div>
-                <div className="p-3 bg-white/[0.03] rounded-xl border border-white/[0.05]">
-                  <div className="text-xs text-gray-500 mb-1">Soft Skills</div>
-                  <div className="text-violet-400 font-bold">{softSkillPct}%</div>
+                <div className="p-3 bg-muted/20 rounded-xl border border-border/50">
+                  <div className="text-xs text-muted-foreground mb-1">Soft Skills</div>
+                  <div className="text-violet-500 dark:text-violet-400 font-bold">{softSkillPct}%</div>
                 </div>
               </div>
             </div>
@@ -574,39 +574,39 @@ export const CVComparator = ({ isPublic, onAnalysisComplete }: CVComparatorProps
             {/* Detail Cards Grid */}
             <div className="lg:col-span-8 grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Technical Skills Card */}
-              <div className="bg-[#18181b]/60 backdrop-blur-xl border border-white/[0.08] rounded-2xl p-6 flex flex-col border-t-2 border-t-indigo-500/50">
+              <div className="bg-card/60 backdrop-blur-xl border border-border rounded-2xl p-6 flex flex-col border-t-2 border-t-indigo-500/50">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center">
                     <div className="w-10 h-10 rounded-full bg-indigo-500/10 flex items-center justify-center text-indigo-400 mr-3">
                       <Wrench className="h-4 w-4" />
                     </div>
-                    <h4 className="font-semibold text-white">Compétences Techniques</h4>
+                    <h4 className="font-semibold text-foreground">Compétences Techniques</h4>
                   </div>
-                  <span className="text-lg font-bold text-indigo-400">{hardSkillPct}%</span>
+                  <span className="text-lg font-bold text-indigo-500 dark:text-indigo-400">{hardSkillPct}%</span>
                 </div>
 
                 <div className="space-y-4 flex-1">
                   {/* Found */}
                   <div>
-                    <p className="text-xs text-gray-400 uppercase tracking-wider font-semibold mb-2">Trouvés</p>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold mb-2">Trouvés</p>
                     <div className="flex flex-wrap gap-1.5">
                       {result.primaryKeywords.scores.filter(k => k.points > 0).map((k, i) => (
-                        <span key={i} className="px-2.5 py-1 rounded-full bg-green-500/10 border border-green-500/20 text-green-400 text-xs font-medium">
+                        <span key={i} className="px-2.5 py-1 rounded-full bg-green-500/10 border border-green-500/20 text-green-600 dark:text-green-400 text-xs font-medium">
                           {k.keyword}
                         </span>
                       ))}
                       {result.primaryKeywords.scores.filter(k => k.points > 0).length === 0 && (
-                        <span className="text-xs text-gray-500">Aucun mot-clé trouvé</span>
+                        <span className="text-xs text-muted-foreground">Aucun mot-clé trouvé</span>
                       )}
                     </div>
                   </div>
                   {/* Missing */}
                   {result.primaryKeywords.scores.filter(k => k.points === 0).length > 0 && (
                     <div>
-                      <p className="text-xs text-gray-400 uppercase tracking-wider font-semibold mb-2">Manquants</p>
+                      <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold mb-2">Manquants</p>
                       <div className="flex flex-wrap gap-1.5">
                         {result.primaryKeywords.scores.filter(k => k.points === 0).map((k, i) => (
-                          <span key={i} className="px-2.5 py-1 rounded-full bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-medium flex items-center">
+                          <span key={i} className="px-2.5 py-1 rounded-full bg-red-500/10 border border-red-500/20 text-red-500 dark:text-red-400 text-xs font-medium flex items-center">
                             <X className="h-3 w-3 mr-1" />
                             {k.keyword}
                           </span>
@@ -618,37 +618,37 @@ export const CVComparator = ({ isPublic, onAnalysisComplete }: CVComparatorProps
               </div>
 
               {/* Soft Skills Card */}
-              <div className="bg-[#18181b]/60 backdrop-blur-xl border border-white/[0.08] rounded-2xl p-6 flex flex-col border-t-2 border-t-violet-500/50">
+              <div className="bg-card/60 backdrop-blur-xl border border-border rounded-2xl p-6 flex flex-col border-t-2 border-t-violet-500/50">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center">
                     <div className="w-10 h-10 rounded-full bg-violet-500/10 flex items-center justify-center text-violet-400 mr-3">
                       <Heart className="h-4 w-4" />
                     </div>
-                    <h4 className="font-semibold text-white">Soft Skills</h4>
+                    <h4 className="font-semibold text-foreground">Soft Skills</h4>
                   </div>
-                  <span className="text-lg font-bold text-violet-400">{softSkillPct}%</span>
+                  <span className="text-lg font-bold text-violet-500 dark:text-violet-400">{softSkillPct}%</span>
                 </div>
 
                 <div className="space-y-4 flex-1">
                   <div>
-                    <p className="text-xs text-gray-400 uppercase tracking-wider font-semibold mb-2">Trouvés</p>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold mb-2">Trouvés</p>
                     <div className="flex flex-wrap gap-1.5">
                       {result.softSkills.scores.filter(s => s.found).map((s, i) => (
-                        <span key={i} className="px-2.5 py-1 rounded-full bg-violet-500/10 border border-violet-500/20 text-violet-300 text-xs font-medium">
+                        <span key={i} className="px-2.5 py-1 rounded-full bg-violet-500/10 border border-violet-500/20 text-violet-600 dark:text-violet-300 text-xs font-medium">
                           {s.skill}
                         </span>
                       ))}
                       {result.softSkills.scores.filter(s => s.found).length === 0 && (
-                        <span className="text-xs text-gray-500">Aucun soft skill trouvé</span>
+                        <span className="text-xs text-muted-foreground">Aucun soft skill trouvé</span>
                       )}
                     </div>
                   </div>
                   {result.softSkills.scores.filter(s => !s.found).length > 0 && (
                     <div>
-                      <p className="text-xs text-gray-400 uppercase tracking-wider font-semibold mb-2">Manquants</p>
+                      <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold mb-2">Manquants</p>
                       <div className="flex flex-wrap gap-1.5">
                         {result.softSkills.scores.filter(s => !s.found).map((s, i) => (
-                          <span key={i} className="px-2.5 py-1 rounded-full bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-medium flex items-center">
+                          <span key={i} className="px-2.5 py-1 rounded-full bg-red-500/10 border border-red-500/20 text-red-500 dark:text-red-400 text-xs font-medium flex items-center">
                             <X className="h-3 w-3 mr-1" />
                             {s.skill}
                           </span>
@@ -660,61 +660,61 @@ export const CVComparator = ({ isPublic, onAnalysisComplete }: CVComparatorProps
               </div>
 
               {/* Structure & Format Card (full width) */}
-              <div className="md:col-span-2 bg-[#18181b]/60 backdrop-blur-xl border border-white/[0.08] rounded-2xl p-6 border-t-2 border-t-blue-500/50">
+              <div className="md:col-span-2 bg-card/60 backdrop-blur-xl border border-border rounded-2xl p-6 border-t-2 border-t-blue-500/50">
                 <div className="flex items-center justify-between mb-6">
                   <div className="flex items-center">
                     <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-400 mr-3">
                       <ListChecks className="h-4 w-4" />
                     </div>
-                    <h4 className="font-semibold text-white">Structure & Format</h4>
+                    <h4 className="font-semibold text-foreground">Structure & Format</h4>
                   </div>
-                  <span className="text-lg font-bold text-blue-400">{structureScore}%</span>
+                  <span className="text-lg font-bold text-blue-500 dark:text-blue-400">{structureScore}%</span>
                 </div>
 
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                   {structureChecks.map((check, i) => (
-                    <div key={i} className={`flex items-center p-3 rounded-lg border ${check.ok ? 'bg-white/[0.03] border-white/[0.05]' : 'bg-red-500/5 border-red-500/20'}`}>
+                    <div key={i} className={`flex items-center p-3 rounded-lg border ${check.ok ? 'bg-muted/20 border-border/50' : 'bg-red-500/5 border-red-500/20'}`}>
                       {check.ok ? (
-                        <CheckCircle2 className="h-4 w-4 text-green-400 mr-3 shrink-0" />
+                        <CheckCircle2 className="h-4 w-4 text-green-500 dark:text-green-400 mr-3 shrink-0" />
                       ) : (
-                        <XCircle className="h-4 w-4 text-red-400 mr-3 shrink-0" />
+                        <XCircle className="h-4 w-4 text-red-500 dark:text-red-400 mr-3 shrink-0" />
                       )}
-                      <span className="text-sm text-gray-300">{check.label}</span>
+                      <span className="text-sm text-foreground/80">{check.label}</span>
                     </div>
                   ))}
                 </div>
 
                 {/* Extra details: word count, title check, contract, images */}
                 <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-4">
-                  <div className="flex items-center p-3 rounded-lg bg-white/[0.03] border border-white/[0.05]">
+                  <div className="flex items-center p-3 rounded-lg bg-muted/20 border border-border/50">
                     {result.profileSection?.found ? (
-                      <CheckCircle2 className="h-4 w-4 text-green-400 mr-3 shrink-0" />
+                      <CheckCircle2 className="h-4 w-4 text-green-500 dark:text-green-400 mr-3 shrink-0" />
                     ) : (
-                      <XCircle className="h-4 w-4 text-red-400 mr-3 shrink-0" />
+                      <XCircle className="h-4 w-4 text-red-500 dark:text-red-400 mr-3 shrink-0" />
                     )}
-                    <span className="text-sm text-gray-300">Section Profil</span>
+                    <span className="text-sm text-foreground/80">Section Profil</span>
                   </div>
-                  <div className="flex items-center p-3 rounded-lg bg-white/[0.03] border border-white/[0.05]">
+                  <div className="flex items-center p-3 rounded-lg bg-muted/20 border border-border/50">
                     {result.titleCheck?.found ? (
-                      <CheckCircle2 className="h-4 w-4 text-green-400 mr-3 shrink-0" />
+                      <CheckCircle2 className="h-4 w-4 text-green-500 dark:text-green-400 mr-3 shrink-0" />
                     ) : (
-                      <XCircle className="h-4 w-4 text-red-400 mr-3 shrink-0" />
+                      <XCircle className="h-4 w-4 text-red-500 dark:text-red-400 mr-3 shrink-0" />
                     )}
-                    <span className="text-sm text-gray-300">Titre du poste</span>
+                    <span className="text-sm text-foreground/80">Titre du poste</span>
                   </div>
-                  <div className="flex items-center p-3 rounded-lg bg-white/[0.03] border border-white/[0.05]">
+                  <div className="flex items-center p-3 rounded-lg bg-muted/20 border border-border/50">
                     {result.contractType?.found ? (
-                      <CheckCircle2 className="h-4 w-4 text-green-400 mr-3 shrink-0" />
+                      <CheckCircle2 className="h-4 w-4 text-green-500 dark:text-green-400 mr-3 shrink-0" />
                     ) : (
-                      <XCircle className="h-4 w-4 text-amber-400 mr-3 shrink-0" />
+                      <XCircle className="h-4 w-4 text-amber-500 dark:text-amber-400 mr-3 shrink-0" />
                     )}
-                    <span className="text-sm text-gray-300">Type contrat</span>
+                    <span className="text-sm text-foreground/80">Type contrat</span>
                   </div>
-                  <div className="flex items-center p-3 rounded-lg bg-white/[0.03] border border-white/[0.05]">
-                    <span className={`text-sm font-medium mr-2 ${(result.wordCount?.count ?? 0) >= 400 && (result.wordCount?.count ?? 0) <= 1200 ? 'text-green-400' : 'text-amber-400'}`}>
+                  <div className="flex items-center p-3 rounded-lg bg-muted/20 border border-border/50">
+                    <span className={`text-sm font-medium mr-2 ${(result.wordCount?.count ?? 0) >= 400 && (result.wordCount?.count ?? 0) <= 1200 ? 'text-green-500 dark:text-green-400' : 'text-amber-500 dark:text-amber-400'}`}>
                       {result.wordCount?.count ?? 0}
                     </span>
-                    <span className="text-sm text-gray-400">mots</span>
+                    <span className="text-sm text-muted-foreground">mots</span>
                   </div>
                 </div>
               </div>
@@ -723,13 +723,13 @@ export const CVComparator = ({ isPublic, onAnalysisComplete }: CVComparatorProps
 
           {/* Secondary Keywords (if any) */}
           {result.secondaryKeywords.scores.length > 0 && (
-            <div className="bg-[#18181b]/60 backdrop-blur-xl border border-white/[0.08] rounded-2xl p-6">
+            <div className="bg-card/60 backdrop-blur-xl border border-border rounded-2xl p-6">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-full bg-teal-500/10 flex items-center justify-center text-teal-400">
                     <Brain className="h-4 w-4" />
                   </div>
-                  <h4 className="font-semibold text-white">Compétences transversales</h4>
+                  <h4 className="font-semibold text-foreground">Compétences transversales</h4>
                 </div>
                 <span className={`px-2.5 py-1 text-xs rounded-full font-medium border ${getSubScoreBadgeClass(result.secondaryKeywords.total, result.secondaryKeywords.maxTotal)}`}>
                   {getSubScoreLabel(result.secondaryKeywords.total, result.secondaryKeywords.maxTotal)}
@@ -741,8 +741,8 @@ export const CVComparator = ({ isPublic, onAnalysisComplete }: CVComparatorProps
                     key={i}
                     className={`px-2.5 py-1 rounded-full text-xs font-medium border flex items-center ${
                       k.points > 0
-                        ? 'bg-green-500/10 border-green-500/20 text-green-400'
-                        : 'bg-red-500/10 border-red-500/20 text-red-400'
+                        ? 'bg-green-500/10 border-green-500/20 text-green-600 dark:text-green-400'
+                        : 'bg-red-500/10 border-red-500/20 text-red-500 dark:text-red-400'
                     }`}
                   >
                     {k.points === 0 && <X className="h-3 w-3 mr-1" />}
@@ -754,18 +754,18 @@ export const CVComparator = ({ isPublic, onAnalysisComplete }: CVComparatorProps
           )}
 
           {/* Measurable Results */}
-          <div className="bg-[#18181b]/60 backdrop-blur-xl border border-white/[0.08] rounded-2xl p-6">
+          <div className="bg-card/60 backdrop-blur-xl border border-border rounded-2xl p-6">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-amber-500/10 flex items-center justify-center text-amber-400">
                   <Hash className="h-4 w-4" />
                 </div>
-                <h4 className="font-semibold text-white">Résultats mesurables</h4>
+                <h4 className="font-semibold text-foreground">Résultats mesurables</h4>
               </div>
               <span className={`px-2.5 py-1 text-xs rounded-full font-medium border ${
-                (result.measurableResults?.count ?? 0) >= 5 ? 'bg-green-500/10 text-green-400 border-green-500/20' :
-                (result.measurableResults?.count ?? 0) >= 1 ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' :
-                'bg-red-500/10 text-red-400 border-red-500/20'
+                (result.measurableResults?.count ?? 0) >= 5 ? 'bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/20' :
+                (result.measurableResults?.count ?? 0) >= 1 ? 'bg-amber-500/10 text-amber-500 dark:text-amber-400 border-amber-500/20' :
+                'bg-red-500/10 text-red-500 dark:text-red-400 border-red-500/20'
               }`}>
                 {result.measurableResults?.count ?? 0} détecté(s)
               </span>
@@ -773,29 +773,29 @@ export const CVComparator = ({ isPublic, onAnalysisComplete }: CVComparatorProps
             {(result.measurableResults?.examples ?? []).length > 0 && (
               <div className="flex flex-wrap gap-1.5 mb-3">
                 {(result.measurableResults?.examples ?? []).map((ex, i) => (
-                  <span key={i} className="px-2.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-300 text-xs font-medium">
+                  <span key={i} className="px-2.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-300 text-xs font-medium">
                     {ex.trim()}
                   </span>
                 ))}
               </div>
             )}
-            <p className="text-xs text-gray-400">
+            <p className="text-xs text-muted-foreground">
               Privilégiez les pourcentages et chiffres concrets. Ex : "+35% de trafic", "budget de 50k€", "réduction de 20% des délais".
             </p>
           </div>
 
           {/* Proximity Bonus */}
           {result.proximity.bonus > 0 && (
-            <div className="bg-[#18181b]/60 backdrop-blur-xl border border-indigo-500/20 rounded-2xl p-6">
+            <div className="bg-card/60 backdrop-blur-xl border border-indigo-500/20 rounded-2xl p-6">
               <div className="flex items-center gap-3 mb-3">
                 <div className="w-8 h-8 rounded-full bg-indigo-500/20 flex items-center justify-center text-indigo-400">
                   <Target className="h-4 w-4" />
                 </div>
-                <h4 className="font-semibold text-white">Bonus de proximité <span className="text-indigo-400">+{result.proximity.bonus} pts</span></h4>
+                <h4 className="font-semibold text-foreground">Bonus de proximité <span className="text-indigo-500 dark:text-indigo-400">+{result.proximity.bonus} pts</span></h4>
               </div>
               <div className="space-y-1">
                 {result.proximity.details.map((d, i) => (
-                  <p key={i} className="text-xs text-gray-400">"{d.secondary}" proche de "{d.primary}"</p>
+                  <p key={i} className="text-xs text-muted-foreground">"{d.secondary}" proche de "{d.primary}"</p>
                 ))}
               </div>
             </div>
@@ -803,15 +803,15 @@ export const CVComparator = ({ isPublic, onAnalysisComplete }: CVComparatorProps
 
           {/* Advice Section */}
           {adviceItems.length > 0 && (
-            <div className="bg-[#18181b]/60 backdrop-blur-xl border border-white/[0.08] rounded-2xl p-8 border-l-4 border-l-indigo-500 relative overflow-hidden">
+            <div className="bg-card/60 backdrop-blur-xl border border-border rounded-2xl p-8 border-l-4 border-l-indigo-500 relative overflow-hidden">
               <div className="absolute top-0 right-0 p-4 opacity-5">
-                <Lightbulb className="h-32 w-32 text-white" />
+                <Lightbulb className="h-32 w-32 text-foreground" />
               </div>
               <div className="flex items-center mb-6">
                 <div className="w-8 h-8 rounded-full bg-indigo-500/20 flex items-center justify-center text-indigo-400 mr-3">
                   <Lightbulb className="h-4 w-4" />
                 </div>
-                <h3 className="text-lg font-bold text-white">Conseils personnalisés pour atteindre {Math.min(score + 20, 100)}+</h3>
+                <h3 className="text-lg font-bold text-foreground">Conseils personnalisés pour atteindre {Math.min(score + 20, 100)}+</h3>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 relative z-10">
@@ -821,8 +821,8 @@ export const CVComparator = ({ isPublic, onAnalysisComplete }: CVComparatorProps
                       {i + 1}
                     </span>
                     <div className="ml-4">
-                      <h5 className="text-white font-medium text-sm mb-1">{advice.title}</h5>
-                      <p className="text-gray-400 text-sm leading-relaxed">{advice.text}</p>
+                      <h5 className="text-foreground font-medium text-sm mb-1">{advice.title}</h5>
+                      <p className="text-muted-foreground text-sm leading-relaxed">{advice.text}</p>
                     </div>
                   </div>
                 ))}
