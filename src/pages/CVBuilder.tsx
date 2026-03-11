@@ -213,8 +213,13 @@ const CVBuilder = () => {
     setDesignOptions({ primaryColor: palette.primary, accentColor: palette.accent, textColor: palette.text });
   };
 
-  const recommendedTemplates = dbTemplates.slice(0, 3);
-  const extraTemplates = dbTemplates.slice(3);
+  // Filtrage par photo
+  const filteredTemplates = withPhoto === null
+    ? dbTemplates
+    : dbTemplates.filter(t => (withPhoto ? t.has_photo === true : t.has_photo !== true));
+
+  const recommendedTemplates = filteredTemplates.slice(0, 3);
+  const extraTemplates = filteredTemplates.slice(3);
 
   const handleFileParsed = useCallback(async (file: File) => {
     if (file.type === "text/plain" || file.name.endsWith(".txt")) {
