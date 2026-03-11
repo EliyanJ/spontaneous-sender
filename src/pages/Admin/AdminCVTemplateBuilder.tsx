@@ -493,34 +493,13 @@ export const AdminCVTemplateBuilder = () => {
       for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
       const fileBase64 = btoa(binary);
 
-      const { data: sessionData } = await supabase.auth.getSession();
-      const token = sessionData?.session?.access_token;
-      if (!token) throw new Error("Non authentifié");
+      // Use supabase.functions.invoke() — handles large payloads reliably
+      const { data: result, error } = await supabase.functions.invoke("ai-template-from-pdf", {
+        body: { fileBase64, fileName: file.name },
+      });
 
-      const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
-      const response = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/ai-template-from-pdf`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}`,
-          },
-          body: JSON.stringify({ fileBase64, fileName: file.name }),
-        }
-      );
-
-      const result = await response.json();
-
-      if (response.status === 429) {
-        throw new Error(result.error || "Rate limit atteint, réessayez dans quelques instants.");
-      }
-      if (response.status === 402) {
-        throw new Error(result.error || "Crédits IA insuffisants.");
-      }
-      if (!response.ok || !result.success) {
-        throw new Error(result.error || "Erreur lors de l'analyse IA.");
-      }
+      if (error) throw new Error(error.message || "Erreur lors de l'analyse IA.");
+      if (!result?.success) throw new Error(result?.error || "Erreur lors de l'analyse IA.");
 
       setConfig(result.config);
       setSelectedId(null);
