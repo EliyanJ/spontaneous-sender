@@ -163,22 +163,14 @@ export const HorizontalNav = ({ activeTab, onTabChange }: HorizontalNavProps) =>
         <span className="hidden lg:inline">CV Builder</span>
       </button>
 
-      {/* Admin: Score CV button */}
-      {isAdmin && (
-        <button
-          onClick={() => handleTabClick('cv-score')}
-          className={cn(
-            "flex items-center gap-2 px-3 md:px-4 py-2 md:py-2.5 rounded-xl font-medium text-sm transition-all duration-300 shrink-0",
-            activeTab === 'cv-score' 
-              ? "bg-primary text-primary-foreground shadow-lg" 
-              : "text-muted-foreground hover:text-foreground hover:bg-accent"
-          )}
-          style={activeTab === 'cv-score' ? { boxShadow: '0 0 20px hsl(var(--primary) / 0.3)' } : {}}
-        >
-          <FileBarChart className="h-4 w-4" />
-          <span className="hidden lg:inline">Score CV</span>
-        </button>
-      )}
+      {/* Score CV button — navigates to /score-cv page */}
+      <button
+        onClick={() => navigate('/score-cv')}
+        className="flex items-center gap-2 px-3 md:px-4 py-2 md:py-2.5 rounded-xl font-medium text-sm transition-all duration-300 shrink-0 text-muted-foreground hover:text-foreground hover:bg-accent"
+      >
+        <FileBarChart className="h-4 w-4" />
+        <span className="hidden lg:inline">Score CV</span>
+      </button>
 
       {/* Admin button - only visible for admins */}
       {isAdmin && (
