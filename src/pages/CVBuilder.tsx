@@ -30,6 +30,7 @@ interface DBTemplate {
   sector: string;
   thumbnail_url: string | null;
   is_active: boolean;
+  has_photo?: boolean;
 }
 
 // ─── Template Card (DB-based) ─────────────────────────────────────────────────
@@ -179,7 +180,7 @@ const CVBuilder = () => {
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
-  const [withPhoto, setWithPhoto] = useState(true);
+  const [withPhoto, setWithPhoto] = useState<boolean | null>(null); // null = tous
   const [showAllTemplates, setShowAllTemplates] = useState(false);
 
   // ── Charger les templates depuis la BDD ──
@@ -188,11 +189,15 @@ const CVBuilder = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("cv_templates")
-        .select("id, name, sector, thumbnail_url, is_active")
+        .select("id, name, sector, thumbnail_url, is_active, html_template")
         .eq("is_active", true)
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return (data || []) as DBTemplate[];
+      return (data || []).map(t => {
+        let has_photo: boolean | undefined;
+        try { has_photo = JSON.parse(t.html_template || "{}").has_photo ?? undefined; } catch { /**/ }
+        return { id: t.id, name: t.name, sector: t.sector, thumbnail_url: t.thumbnail_url, is_active: t.is_active, has_photo } as DBTemplate;
+      });
     },
   });
 
@@ -208,8 +213,13 @@ const CVBuilder = () => {
     setDesignOptions({ primaryColor: palette.primary, accentColor: palette.accent, textColor: palette.text });
   };
 
-  const recommendedTemplates = dbTemplates.slice(0, 3);
-  const extraTemplates = dbTemplates.slice(3);
+  // Filtrage par photo
+  const filteredTemplates = withPhoto === null
+    ? dbTemplates
+    : dbTemplates.filter(t => (withPhoto ? t.has_photo === true : t.has_photo !== true));
+
+  const recommendedTemplates = filteredTemplates.slice(0, 3);
+  const extraTemplates = filteredTemplates.slice(3);
 
   const handleFileParsed = useCallback(async (file: File) => {
     if (file.type === "text/plain" || file.name.endsWith(".txt")) {
@@ -364,9 +374,19 @@ const CVBuilder = () => {
                   <label className="block text-sm font-medium mb-2">Photo sur le CV</label>
                   <div className="flex gap-2">
                     <button
+                      onClick={() => setWithPhoto(null)}
+                      className={`flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl border transition-all text-sm font-medium flex-1 ${
+                        withPhoto === null
+                          ? "bg-white/30 border-white/70 text-white shadow-lg"
+                          : "bg-white/10 border-white/20 text-white/60 hover:bg-white/15"
+                      }`}
+                    >
+                      Tous
+                    </button>
+                    <button
                       onClick={() => setWithPhoto(true)}
-                      className={`flex items-center justify-center gap-1.5 px-3 py-3 rounded-xl border transition-all text-sm font-medium flex-1 ${
-                        withPhoto
+                      className={`flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl border transition-all text-sm font-medium flex-1 ${
+                        withPhoto === true
                           ? "bg-white/30 border-white/70 text-white shadow-lg"
                           : "bg-white/10 border-white/20 text-white/60 hover:bg-white/15"
                       }`}
@@ -375,8 +395,8 @@ const CVBuilder = () => {
                     </button>
                     <button
                       onClick={() => setWithPhoto(false)}
-                      className={`flex items-center justify-center gap-1.5 px-3 py-3 rounded-xl border transition-all text-sm font-medium flex-1 ${
-                        !withPhoto
+                      className={`flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl border transition-all text-sm font-medium flex-1 ${
+                        withPhoto === false
                           ? "bg-white/30 border-white/70 text-white shadow-lg"
                           : "bg-white/10 border-white/20 text-white/60 hover:bg-white/15"
                       }`}

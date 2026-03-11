@@ -65,6 +65,8 @@ export interface CanvasConfig {
   backgroundColor: string;
   fontFamily: string;
   elements: CanvasElement[];
+  /** Si true : le template est conçu pour accueillir une photo de profil */
+  has_photo?: boolean;
 }
 
 // ─── Legacy types (for backward compat) ──────────────────────────────────────
@@ -304,6 +306,9 @@ export const AdminCVTemplateBuilder = () => {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [editingTextId, setEditingTextId] = useState<string | null>(null);
   const [isImporting, setIsImporting] = useState(false);
+  const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(null);
+  const [isUploadingThumb, setIsUploadingThumb] = useState(false);
+  const thumbnailInputRef = useRef<HTMLInputElement>(null);
 
   // Drag / resize state
   const canvasRef = useRef<HTMLDivElement>(null);
@@ -336,6 +341,7 @@ export const AdminCVTemplateBuilder = () => {
       if (error) throw error;
       if (data) {
         setTemplateName(data.name);
+        setThumbnailUrl(data.thumbnail_url ?? null);
         try {
           const parsed = JSON.parse(data.html_template);
           if (parsed.version === "canvas-v2" && parsed.elements) {
@@ -347,6 +353,28 @@ export const AdminCVTemplateBuilder = () => {
     },
   });
 
+  // ── Upload thumbnail ────────────────────────────────────────────────────────
+  const handleThumbnailUpload = async (file: File) => {
+    if (!file.type.startsWith("image/")) {
+      toast({ title: "Fichier invalide", description: "Veuillez sélectionner une image (PNG, JPG, WebP)", variant: "destructive" });
+      return;
+    }
+    setIsUploadingThumb(true);
+    try {
+      const ext = file.name.split(".").pop() || "png";
+      const path = `cv-templates/thumb-${Date.now()}.${ext}`;
+      const { error: upErr } = await supabase.storage.from("cms-media").upload(path, file, { upsert: true });
+      if (upErr) throw upErr;
+      const { data: urlData } = supabase.storage.from("cms-media").getPublicUrl(path);
+      setThumbnailUrl(urlData.publicUrl);
+      toast({ title: "Image uploadée ✓", description: "Elle sera enregistrée avec le template." });
+    } catch (e: any) {
+      toast({ title: "Erreur upload", description: e.message, variant: "destructive" });
+    } finally {
+      setIsUploadingThumb(false);
+    }
+  };
+
   const saveMutation = useMutation({
     mutationFn: async () => {
       const payload = {
@@ -355,6 +383,7 @@ export const AdminCVTemplateBuilder = () => {
         css_styles: "",
         sector: "custom",
         is_active: true,
+        thumbnail_url: thumbnailUrl ?? undefined,
       };
       if (templateId) {
         const { error } = await supabase.from("cv_templates").update(payload).eq("id", templateId);
@@ -793,6 +822,68 @@ export const AdminCVTemplateBuilder = () => {
                 {FONT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
               </select>
             </div>
+
+            {/* ── Toggle avec/sans photo ─────────────────────────────────── */}
+            <div className="border-t border-border pt-3 space-y-2">
+              <p className="text-xs font-semibold text-foreground">Photo de profil</p>
+              <div className="flex items-center justify-between gap-2">
+                <Label className="text-xs text-muted-foreground">Template avec photo</Label>
+                <button
+                  onClick={() => setConfig(c => ({ ...c, has_photo: !c.has_photo }))}
+                  className={cn(
+                    "relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full transition-colors",
+                    config.has_photo ? "bg-primary" : "bg-muted"
+                  )}
+                >
+                  <span className={cn(
+                    "pointer-events-none inline-block h-4 w-4 rounded-full bg-white shadow-sm transition-transform mt-0.5",
+                    config.has_photo ? "translate-x-4 ml-0.5" : "translate-x-0.5"
+                  )} />
+                </button>
+              </div>
+              <p className="text-[10px] text-muted-foreground">
+                {config.has_photo ? "✓ Ce template inclut une photo de profil" : "Ce template n'utilise pas de photo"}
+              </p>
+            </div>
+
+            {/* ── Couverture / Thumbnail ──────────────────────────────────── */}
+            <div className="border-t border-border pt-3 space-y-2">
+              <p className="text-xs font-semibold text-foreground">Image de couverture</p>
+              <p className="text-[10px] text-muted-foreground">Affichée dans la galerie du CV Builder</p>
+              {thumbnailUrl ? (
+                <div className="relative group">
+                  <img src={thumbnailUrl} alt="Couverture" className="w-full h-28 object-cover rounded-md border border-border" />
+                  <button
+                    onClick={() => setThumbnailUrl(null)}
+                    className="absolute top-1 right-1 bg-destructive text-destructive-foreground text-[10px] px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    Supprimer
+                  </button>
+                </div>
+              ) : (
+                <div
+                  className="w-full h-20 border-2 border-dashed border-border rounded-md flex flex-col items-center justify-center gap-1 cursor-pointer hover:border-primary/50 hover:bg-primary/5 transition-colors"
+                  onClick={() => thumbnailInputRef.current?.click()}
+                >
+                  {isUploadingThumb ? (
+                    <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                  ) : (
+                    <>
+                      <Upload className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-[10px] text-muted-foreground">Cliquer pour uploader</span>
+                    </>
+                  )}
+                </div>
+              )}
+              <input
+                ref={thumbnailInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={e => { const f = e.target.files?.[0]; if (f) handleThumbnailUpload(f); }}
+              />
+            </div>
+
             <div className="pt-2 border-t border-border">
               <p className="text-xs text-muted-foreground text-center">Sélectionnez un élément pour modifier ses propriétés</p>
             </div>
