@@ -1,11 +1,11 @@
 import React, { useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Printer } from "lucide-react";
-import { type CVData, type CVDesignOptions, type TemplateId } from "@/lib/cv-templates";
+import { type CVData, type CVDesignOptions } from "@/lib/cv-templates";
 
 interface CVPreviewProps {
   cvData: CVData;
-  templateId?: TemplateId;
+  templateId?: string;
   designOptions?: CVDesignOptions;
 }
 
@@ -498,7 +498,7 @@ const EduItem = ({ edu }: { edu: CVData["education"][0] }) => (
 export const CVPreview = ({ cvData, templateId = "classic", designOptions }: CVPreviewProps) => {
   const previewRef = useRef<HTMLDivElement>(null);
 
-  const defaultDesigns: Record<TemplateId, CVDesignOptions> = {
+  const defaultDesigns: Record<string, CVDesignOptions> = {
     classic: { primaryColor: "#0f1b3d", textColor: "#1a1a2e", accentColor: "#c9a84c" },
     dark: { primaryColor: "#111827", textColor: "#e5e7eb", accentColor: "#10b981" },
     light: { primaryColor: "#16a34a", textColor: "#1a1a1a", accentColor: "#15803d" },
