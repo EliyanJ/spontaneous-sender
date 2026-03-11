@@ -629,6 +629,16 @@ export const CVPreview = ({ cvData, templateId = "classic", designOptions, stand
     }
   };
 
+  // Mode intégré (colonne droite du builder) : contenu brut uniquement, pas de header ni de scale
+  if (!standalone) {
+    return (
+      <div ref={previewRef} style={{ width: "794px", minHeight: "1123px" }}>
+        {renderTemplate()}
+      </div>
+    );
+  }
+
+  // Mode standalone (page Finalisation) : header + bouton PDF + scale interne
   return (
     <div className="flex flex-col h-full">
       <div className="flex items-center justify-between mb-3">
