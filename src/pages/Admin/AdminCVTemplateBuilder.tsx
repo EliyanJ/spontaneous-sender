@@ -303,9 +303,11 @@ export const AdminCVTemplateBuilder = () => {
   const [config, setConfig] = useState<CanvasConfig>(DEFAULT_CONFIG);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [editingTextId, setEditingTextId] = useState<string | null>(null);
+  const [isImporting, setIsImporting] = useState(false);
 
   // Drag / resize state
   const canvasRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const interactionRef = useRef<{
     mode: "move" | "resize";
     startX: number;
