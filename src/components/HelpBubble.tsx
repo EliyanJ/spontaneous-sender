@@ -158,7 +158,7 @@ export const HelpBubble = () => {
               </p>
             </div>
 
-            <div className="text-xs text-muted-foreground bg-muted p-2 rounded">
+            <div className="hidden">
               📍 Page actuelle: <code>{location.pathname}</code>
             </div>
 
