@@ -319,92 +319,43 @@ const CVBuilder = () => {
         {/* ── Hero banner ── */}
         <div className="mt-[72px] bg-gradient-to-br from-primary to-primary/80 text-primary-foreground py-10 px-4">
           <div className="max-w-7xl mx-auto">
-            <h1 className="text-3xl md:text-4xl font-bold mb-2">Créez votre CV parfait</h1>
-            <p className="text-base text-white/80 mb-8">Personnalisez l'aperçu en temps réel avant de choisir votre modèle</p>
+            <h1 className="text-3xl md:text-4xl font-bold mb-1">Créez votre CV parfait</h1>
+            <p className="text-base text-white/80 mb-1">Personnalisez l'aperçu en temps réel avant de choisir votre modèle</p>
+            <p className="text-sm text-white/60 mb-8">Créez votre CV étape par étape grâce à notre assistant intelligent — coordonnées, expériences, compétences et plus encore.</p>
 
-            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 md:p-8">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-end">
-
-                {/* Prénom */}
-                <div>
-                  <label className="block text-sm font-medium mb-2">Prénom</label>
-                  <input
-                    type="text"
-                    value={firstName}
-                    onChange={e => setFirstName(e.target.value)}
-                    placeholder="Ex : Marie"
-                    className="w-full px-4 py-3 bg-white/20 border border-white/30 rounded-xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/50 transition-all"
-                  />
-                </div>
-
-                {/* Nom */}
-                <div>
-                  <label className="block text-sm font-medium mb-2">Nom</label>
-                  <input
-                    type="text"
-                    value={lastName}
-                    onChange={e => setLastName(e.target.value)}
-                    placeholder="Ex : Dupont"
-                    className="w-full px-4 py-3 bg-white/20 border border-white/30 rounded-xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/50 transition-all"
-                  />
-                </div>
-
-                {/* Palette de couleurs */}
-                <div>
-                  <label className="block text-sm font-medium mb-2">Couleur principale</label>
-                  <div className="flex gap-2 flex-wrap">
-                    {COLOR_PALETTES.map(p => (
-                      <button
-                        key={p.id}
-                        title={p.label}
-                        onClick={() => handlePaletteSelect(p)}
-                        className="w-9 h-9 rounded-xl shadow-md hover:scale-110 transition-transform"
-                        style={{
-                          background: p.primary,
-                          outline: selectedPalette.id === p.id ? "3px solid white" : "3px solid transparent",
-                          outlineOffset: "2px",
-                        }}
-                      />
-                    ))}
-                  </div>
-                </div>
-
-                {/* Boutons photo / sans photo */}
-                <div>
-                  <label className="block text-sm font-medium mb-2">Photo sur le CV</label>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => setWithPhoto(null)}
-                      className={`flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl border transition-all text-sm font-medium flex-1 ${
-                        withPhoto === null
-                          ? "bg-white/30 border-white/70 text-white shadow-lg"
-                          : "bg-white/10 border-white/20 text-white/60 hover:bg-white/15"
-                      }`}
-                    >
-                      Tous
-                    </button>
-                    <button
-                      onClick={() => setWithPhoto(true)}
-                      className={`flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl border transition-all text-sm font-medium flex-1 ${
-                        withPhoto === true
-                          ? "bg-white/30 border-white/70 text-white shadow-lg"
-                          : "bg-white/10 border-white/20 text-white/60 hover:bg-white/15"
-                      }`}
-                    >
-                      <Camera className="h-4 w-4" /> Avec photo
-                    </button>
-                    <button
-                      onClick={() => setWithPhoto(false)}
-                      className={`flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl border transition-all text-sm font-medium flex-1 ${
-                        withPhoto === false
-                          ? "bg-white/30 border-white/70 text-white shadow-lg"
-                          : "bg-white/10 border-white/20 text-white/60 hover:bg-white/15"
-                      }`}
-                    >
-                      <CameraOff className="h-4 w-4" /> Sans photo
-                    </button>
-                  </div>
-                </div>
+            <div className="bg-white/10 backdrop-blur-sm rounded-2xl px-6 py-5 inline-block">
+              <label className="block text-sm font-medium mb-3">Photo sur le CV</label>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setWithPhoto(null)}
+                  className={`flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl border transition-all text-sm font-medium ${
+                    withPhoto === null
+                      ? "bg-white/30 border-white/70 text-white shadow-lg"
+                      : "bg-white/10 border-white/20 text-white/60 hover:bg-white/15"
+                  }`}
+                >
+                  Tous
+                </button>
+                <button
+                  onClick={() => setWithPhoto(true)}
+                  className={`flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl border transition-all text-sm font-medium ${
+                    withPhoto === true
+                      ? "bg-white/30 border-white/70 text-white shadow-lg"
+                      : "bg-white/10 border-white/20 text-white/60 hover:bg-white/15"
+                  }`}
+                >
+                  <Camera className="h-4 w-4" /> Avec photo
+                </button>
+                <button
+                  onClick={() => setWithPhoto(false)}
+                  className={`flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl border transition-all text-sm font-medium ${
+                    withPhoto === false
+                      ? "bg-white/30 border-white/70 text-white shadow-lg"
+                      : "bg-white/10 border-white/20 text-white/60 hover:bg-white/15"
+                  }`}
+                >
+                  <CameraOff className="h-4 w-4" /> Sans photo
+                </button>
               </div>
             </div>
           </div>
