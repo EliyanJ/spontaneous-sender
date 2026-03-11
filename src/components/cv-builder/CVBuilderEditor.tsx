@@ -836,7 +836,7 @@ export const CVBuilderEditor = ({
         </div>
 
         {/* ── Sticky bottom navigation ── */}
-        <div className="fixed bottom-0 left-0 right-0 lg:left-[280px] xl:left-[320px] 2xl:right-[400px] bg-white/95 backdrop-blur-md border-t border-gray-100 px-4 sm:px-8 lg:px-8 py-4 z-20">
+        <div className="fixed bottom-0 left-0 right-0 lg:left-[280px] xl:left-[320px] xl:right-[360px] bg-white/95 backdrop-blur-md border-t border-gray-100 px-4 sm:px-8 lg:px-8 py-4 z-20">
           <div className="max-w-2xl mx-auto flex items-center justify-between gap-4">
             {currentStep !== "finalize" ? (
               <>
@@ -866,10 +866,10 @@ export const CVBuilderEditor = ({
         </div>
       </main>
 
-      {/* ── RIGHT PREVIEW PANEL (Desktop only) ── */}
-      <aside className="hidden 2xl:flex flex-col w-[400px] shrink-0 bg-[#F8FAFC] border-l border-[#E2E8F0] h-screen sticky top-0 overflow-hidden">
+      {/* ── RIGHT PREVIEW PANEL (xl+ screens) ── */}
+      <aside className="hidden xl:flex flex-col w-[360px] shrink-0 bg-[#F8FAFC] border-l border-[#E2E8F0] h-screen sticky top-0 overflow-hidden">
         {/* Header */}
-        <div className="px-5 py-4 border-b border-[#E2E8F0] bg-white flex items-center justify-between shrink-0">
+        <div className="px-4 py-3 border-b border-[#E2E8F0] bg-white flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
             <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Aperçu en temps réel</span>
@@ -878,9 +878,9 @@ export const CVBuilderEditor = ({
         </div>
 
         {/* Scrollable preview area */}
-        <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 bg-slate-100">
-          {/* CV scaled to fit the ~380px column */}
-          <div style={{ transformOrigin: "top left", transform: "scale(0.48)", width: "794px", pointerEvents: "none" }}>
+        <div className="flex-1 overflow-y-auto overflow-x-hidden bg-slate-100 p-3">
+          {/* scale: column is 360px, A4 at 794px → scale ≈ 0.42 */}
+          <div style={{ transformOrigin: "top left", transform: "scale(0.42)", width: "794px", pointerEvents: "none" }}>
             <CVPreview cvData={cvData} templateId={templateId} designOptions={designOptions} />
           </div>
         </div>
