@@ -11,7 +11,7 @@ import {
   Trash2, Copy, AlignLeft, AlignCenter, AlignRight,
   Bold, Italic, ChevronUp, ChevronDown, User, Briefcase,
   GraduationCap, Star, Globe, FileText, Target, Rocket,
-  Plus, Lock, Unlock, Eye, EyeOff,
+  Plus, Lock, Unlock, Eye, EyeOff, Upload, Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
