@@ -383,6 +383,7 @@ export const AdminCVTemplateBuilder = () => {
         css_styles: "",
         sector: "custom",
         is_active: true,
+        thumbnail_url: thumbnailUrl ?? undefined,
       };
       if (templateId) {
         const { error } = await supabase.from("cv_templates").update(payload).eq("id", templateId);
