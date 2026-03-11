@@ -179,7 +179,7 @@ const CVBuilder = () => {
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
-  const [withPhoto, setWithPhoto] = useState(true);
+  const [withPhoto, setWithPhoto] = useState<boolean | null>(null); // null = tous
   const [showAllTemplates, setShowAllTemplates] = useState(false);
 
   // ── Charger les templates depuis la BDD ──
@@ -188,11 +188,15 @@ const CVBuilder = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("cv_templates")
-        .select("id, name, sector, thumbnail_url, is_active")
+        .select("id, name, sector, thumbnail_url, is_active, html_template")
         .eq("is_active", true)
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return (data || []) as DBTemplate[];
+      return (data || []).map(t => {
+        let has_photo: boolean | undefined;
+        try { has_photo = JSON.parse(t.html_template || "{}").has_photo ?? undefined; } catch { /**/ }
+        return { id: t.id, name: t.name, sector: t.sector, thumbnail_url: t.thumbnail_url, is_active: t.is_active, has_photo } as DBTemplate;
+      });
     },
   });
 
