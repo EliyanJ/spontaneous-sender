@@ -31,7 +31,7 @@ interface CVBuilderEditorProps {
   onClearImport: () => void;
   designOptions: CVDesignOptions;
   onDesignChange: (options: CVDesignOptions) => void;
-  templateId: TemplateId;
+  templateId: string;
   onSave: () => void;
   onBack: () => void;
   isOptimizing?: boolean;
