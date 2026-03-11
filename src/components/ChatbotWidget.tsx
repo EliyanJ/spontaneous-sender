@@ -323,7 +323,7 @@ export const ChatbotWidget = () => {
               </TabsTrigger>
               <TabsTrigger value="ticket" className="flex-1 gap-1.5 text-xs">
                 <TicketIcon className="h-3.5 w-3.5" />
-                Ticket
+                Signaler un problème
               </TabsTrigger>
             </TabsList>
 
