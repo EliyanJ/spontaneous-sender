@@ -1,11 +1,11 @@
 import React, { useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Printer } from "lucide-react";
-import { type CVData, type CVDesignOptions, type TemplateId } from "@/lib/cv-templates";
+import { type CVData, type CVDesignOptions } from "@/lib/cv-templates";
 
 interface CVPreviewProps {
   cvData: CVData;
-  templateId?: TemplateId;
+  templateId?: string;
   designOptions?: CVDesignOptions;
 }
 

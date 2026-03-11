@@ -541,7 +541,7 @@ const StepSkills = ({ cvData, onChange }: { cvData: CVData; onChange: (d: CVData
 
 // ─── Step: Finalize ───────────────────────────────────────────────────────────
 const StepFinalize = ({ cvData, templateId, designOptions, onSave }: {
-  cvData: CVData; templateId: TemplateId; designOptions: CVDesignOptions; onSave: () => void;
+  cvData: CVData; templateId: string; designOptions: CVDesignOptions; onSave: () => void;
 }) => (
   <div className="space-y-6">
     <div className="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 rounded-2xl p-6 flex items-start gap-4">
