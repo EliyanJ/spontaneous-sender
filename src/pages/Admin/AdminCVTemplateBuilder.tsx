@@ -1009,7 +1009,6 @@ export const AdminCVTemplateBuilder = () => {
           />
         </div>
 
-        {/* ── Toolbar ── */}
         <div className="flex items-center gap-1 flex-wrap">
           {/* Add text */}
           <Button variant="outline" size="sm" className="h-7 text-xs gap-1.5"
@@ -1040,6 +1039,35 @@ export const AdminCVTemplateBuilder = () => {
             onDragStart={() => { paletteDragRef.current = { type: "element", elType: "divider" }; }}
           >
             <Minus className="h-3.5 w-3.5" /> Ligne
+          </Button>
+
+          {/* Separator */}
+          <div className="w-px h-5 bg-border mx-1" />
+
+          {/* PDF Import button */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".pdf"
+            className="hidden"
+            onChange={e => {
+              const file = e.target.files?.[0];
+              if (file) handleImportPDF(file);
+            }}
+          />
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-7 text-xs gap-1.5 border-primary/40 text-primary hover:bg-primary/5"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isImporting}
+            title="Analyser un CV PDF et reproduire son design"
+          >
+            {isImporting ? (
+              <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Analyse IA...</>
+            ) : (
+              <><Upload className="h-3.5 w-3.5" /> Importer PDF IA</>
+            )}
           </Button>
 
           {/* Selection actions */}
