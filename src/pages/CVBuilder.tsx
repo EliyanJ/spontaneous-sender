@@ -374,9 +374,19 @@ const CVBuilder = () => {
                   <label className="block text-sm font-medium mb-2">Photo sur le CV</label>
                   <div className="flex gap-2">
                     <button
+                      onClick={() => setWithPhoto(null)}
+                      className={`flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl border transition-all text-sm font-medium flex-1 ${
+                        withPhoto === null
+                          ? "bg-white/30 border-white/70 text-white shadow-lg"
+                          : "bg-white/10 border-white/20 text-white/60 hover:bg-white/15"
+                      }`}
+                    >
+                      Tous
+                    </button>
+                    <button
                       onClick={() => setWithPhoto(true)}
-                      className={`flex items-center justify-center gap-1.5 px-3 py-3 rounded-xl border transition-all text-sm font-medium flex-1 ${
-                        withPhoto
+                      className={`flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl border transition-all text-sm font-medium flex-1 ${
+                        withPhoto === true
                           ? "bg-white/30 border-white/70 text-white shadow-lg"
                           : "bg-white/10 border-white/20 text-white/60 hover:bg-white/15"
                       }`}
@@ -385,8 +395,8 @@ const CVBuilder = () => {
                     </button>
                     <button
                       onClick={() => setWithPhoto(false)}
-                      className={`flex items-center justify-center gap-1.5 px-3 py-3 rounded-xl border transition-all text-sm font-medium flex-1 ${
-                        !withPhoto
+                      className={`flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl border transition-all text-sm font-medium flex-1 ${
+                        withPhoto === false
                           ? "bg-white/30 border-white/70 text-white shadow-lg"
                           : "bg-white/10 border-white/20 text-white/60 hover:bg-white/15"
                       }`}
