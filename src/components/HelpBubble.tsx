@@ -102,10 +102,11 @@ export const HelpBubble = () => {
       <DialogTrigger asChild>
         <Button
           variant="default"
-          size="icon"
-          className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 h-12 w-12 sm:h-14 sm:w-14 rounded-full shadow-lg hover:shadow-xl transition-all z-50 bg-primary hover:bg-primary/90"
+          size="default"
+          className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 rounded-full shadow-lg hover:shadow-xl transition-all z-50 bg-primary hover:bg-primary/90 gap-2 px-4 py-3"
         >
-          <HelpCircle className="h-5 w-5 sm:h-6 sm:w-6" />
+          <HelpCircle className="h-4 w-4" />
+          <span>Reporter un problème</span>
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
@@ -157,7 +158,7 @@ export const HelpBubble = () => {
               </p>
             </div>
 
-            <div className="text-xs text-muted-foreground bg-muted p-2 rounded">
+            <div className="hidden">
               📍 Page actuelle: <code>{location.pathname}</code>
             </div>
 
@@ -170,7 +171,7 @@ export const HelpBubble = () => {
               ) : (
                 <>
                   <Send className="mr-2 h-4 w-4" />
-                  Envoyer le ticket
+                  Envoyer
                 </>
               )}
             </Button>
