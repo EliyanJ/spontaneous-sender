@@ -1,12 +1,58 @@
 import React, { useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { Printer } from "lucide-react";
+import { Printer, Loader2 } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { type CVData, type CVDesignOptions } from "@/lib/cv-templates";
+import { DynamicCVRenderer } from "./DynamicCVRenderer";
 
 interface CVPreviewProps {
   cvData: CVData;
   templateId?: string;
   designOptions?: CVDesignOptions;
+}
+
+// ─── Short (legacy) template IDs ──────────────────────────────────────────────
+const LEGACY_TEMPLATE_IDS = new Set(["classic", "dark", "light", "geo", "modern", "minimal"]);
+
+function isUUID(id: string) {
+  return !LEGACY_TEMPLATE_IDS.has(id);
+}
+
+// ─── Adapter: CVData (builder format) → DynamicCVRenderer CVData ──────────────
+function adaptCVData(cvData: CVData): import("./DynamicCVRenderer").CVData {
+  return {
+    firstName: cvData.personalInfo.firstName || "",
+    lastName: cvData.personalInfo.lastName || "",
+    title: cvData.personalInfo.title || "",
+    email: cvData.personalInfo.email || "",
+    phone: cvData.personalInfo.phone || "",
+    address: cvData.personalInfo.address || "",
+    linkedin: cvData.personalInfo.linkedin || "",
+    summary: cvData.summary || "",
+    experiences: cvData.experiences
+      .filter(e => e.role || e.company)
+      .map(e => ({
+        role: e.role,
+        company: e.company,
+        startDate: e.dates?.split(/[-–]/)[0]?.trim() || e.dates || "",
+        endDate: "",
+        description: e.bullets.filter(Boolean).join("\n"),
+        current: false,
+      })),
+    education: cvData.education
+      .filter(e => e.degree || e.school)
+      .map(e => ({
+        degree: e.degree,
+        school: e.school,
+        year: e.dates || "",
+        description: "",
+      })),
+    skills: [...cvData.skills.technical, ...cvData.skills.soft],
+    languages: cvData.languages
+      .filter(l => l.name)
+      .map(l => ({ language: l.name, level: l.level })),
+  };
 }
 
 const placeholder = (text: string) => (
@@ -87,7 +133,6 @@ const DarkTemplate = ({ cvData, d }: { cvData: CVData; d: CVDesignOptions }) => 
   const allSkills = [...cvData.skills.technical, ...cvData.skills.soft];
   return (
     <div className="cv-page" style={{ display: "flex", minHeight: "297mm", fontFamily: "'Helvetica Neue', Arial, sans-serif", fontSize: "10pt", color: d.textColor, background: d.primaryColor }}>
-      {/* Sidebar */}
       <div style={{ width: "70mm", background: "rgba(0,0,0,0.4)", color: d.textColor, padding: "28px 20px", borderRight: `2px solid ${d.accentColor}`, flexShrink: 0 }}>
         {d.photoUrl && (
           <div style={{ textAlign: "center", marginBottom: 16 }}>
@@ -122,7 +167,6 @@ const DarkTemplate = ({ cvData, d }: { cvData: CVData; d: CVDesignOptions }) => 
           </div>
         )}
       </div>
-      {/* Main */}
       <div style={{ flex: 1, padding: "28px 24px" }}>
         {cvData.summary && (
           <p style={{ fontSize: "9.5pt", opacity: 0.8, lineHeight: 1.7, marginBottom: 24, borderLeft: `3px solid ${d.accentColor}`, paddingLeft: 12 }}>{cvData.summary}</p>
@@ -159,7 +203,6 @@ const LightTemplate = ({ cvData, d }: { cvData: CVData; d: CVDesignOptions }) =>
   const allSkills = [...cvData.skills.technical, ...cvData.skills.soft];
   return (
     <div className="cv-page" style={{ minHeight: "297mm", fontFamily: "'Helvetica Neue', Arial, sans-serif", fontSize: "10pt", color: d.textColor, background: "#fff" }}>
-      {/* Header */}
       <div style={{ background: d.primaryColor, color: "#fff", padding: "28px 36px 20px" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
           {d.photoUrl && (
@@ -180,7 +223,6 @@ const LightTemplate = ({ cvData, d }: { cvData: CVData; d: CVDesignOptions }) =>
           {cvData.personalInfo.address && <span>· {cvData.personalInfo.address}</span>}
         </div>
       </div>
-      {/* Body */}
       <div style={{ padding: "24px 36px" }}>
         {cvData.summary && (
           <div style={{ background: `${d.primaryColor}15`, borderLeft: `4px solid ${d.primaryColor}`, padding: "10px 14px", marginBottom: 20, fontSize: "9.5pt", lineHeight: 1.6, borderRadius: "0 6px 6px 0" }}>
@@ -231,9 +273,7 @@ const GeoTemplate = ({ cvData, d }: { cvData: CVData; d: CVDesignOptions }) => {
   const allSkills = [...cvData.skills.technical, ...cvData.skills.soft];
   return (
     <div className="cv-page" style={{ minHeight: "297mm", fontFamily: "'Helvetica Neue', Arial, sans-serif", fontSize: "10pt", color: d.textColor, background: "#fff" }}>
-      {/* Geometric header */}
       <div style={{ background: d.primaryColor, padding: "24px 36px", position: "relative", overflow: "hidden", minHeight: "100px" }}>
-        {/* Geometric shapes */}
         <div style={{ position: "absolute", top: -20, right: 120, width: 100, height: 100, background: "rgba(255,255,255,0.08)", transform: "rotate(45deg)" }} />
         <div style={{ position: "absolute", top: 10, right: 60, width: 60, height: 60, background: "rgba(255,255,255,0.06)", transform: "rotate(30deg)" }} />
         <div style={{ position: "absolute", bottom: -30, right: 180, width: 80, height: 80, background: "rgba(255,255,255,0.05)", transform: "rotate(20deg)" }} />
@@ -258,9 +298,7 @@ const GeoTemplate = ({ cvData, d }: { cvData: CVData; d: CVDesignOptions }) => {
           )}
         </div>
       </div>
-      {/* Accent bar */}
       <div style={{ height: 4, background: `linear-gradient(90deg, ${d.accentColor}, ${d.primaryColor})` }} />
-      {/* Body 2 cols */}
       <div style={{ display: "flex", padding: "20px 36px", gap: 24 }}>
         <div style={{ flex: 2 }}>
           {cvData.summary && (
@@ -308,7 +346,6 @@ const ModernTemplate = ({ cvData, d }: { cvData: CVData; d: CVDesignOptions }) =
   const allSkills = [...cvData.skills.technical, ...cvData.skills.soft];
   return (
     <div className="cv-page" style={{ display: "flex", minHeight: "297mm", fontFamily: "'Helvetica Neue', Arial, sans-serif", fontSize: "10pt", color: d.textColor, background: "#fff" }}>
-      {/* Left sidebar */}
       <div style={{ width: "68mm", background: d.primaryColor, padding: "32px 20px", display: "flex", flexDirection: "column", gap: "18px", flexShrink: 0 }}>
         {d.photoUrl && (
           <div style={{ textAlign: "center" }}>
@@ -351,7 +388,6 @@ const ModernTemplate = ({ cvData, d }: { cvData: CVData; d: CVDesignOptions }) =
           </div>
         )}
       </div>
-      {/* Right content */}
       <div style={{ flex: 1, padding: "28px 26px" }}>
         {cvData.summary && (
           <div style={{ background: `${d.primaryColor}08`, borderLeft: `4px solid ${d.accentColor}`, padding: "10px 14px", marginBottom: 20, fontSize: "9.5pt", lineHeight: 1.7, borderRadius: "0 6px 6px 0", color: "#444" }}>
@@ -376,7 +412,6 @@ const MinimalTemplate = ({ cvData, d }: { cvData: CVData; d: CVDesignOptions }) 
   const allSkills = [...cvData.skills.technical, ...cvData.skills.soft];
   return (
     <div className="cv-page" style={{ minHeight: "297mm", fontFamily: "'Georgia', serif", fontSize: "10pt", color: d.textColor, background: "#fff", padding: "36px 40px" }}>
-      {/* Header */}
       <div style={{ borderBottom: `3px solid ${d.primaryColor}`, paddingBottom: 14, marginBottom: 20 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
           {d.photoUrl && (
@@ -402,7 +437,6 @@ const MinimalTemplate = ({ cvData, d }: { cvData: CVData; d: CVDesignOptions }) 
       {cvData.summary && (
         <p style={{ fontSize: "9.5pt", lineHeight: 1.8, marginBottom: 20, color: "#555", fontStyle: "italic" }}>{cvData.summary}</p>
       )}
-      {/* Two-col layout */}
       <div style={{ display: "flex", gap: 28 }}>
         <div style={{ flex: 2 }}>
           <div style={{ fontSize: "9pt", fontWeight: 700, textTransform: "uppercase", letterSpacing: "3px", color: d.primaryColor, marginBottom: 10 }}>Expériences</div>
@@ -494,6 +528,61 @@ const EduItem = ({ edu }: { edu: CVData["education"][0] }) => (
   </div>
 );
 
+// ─── Canvas-v2 Template Renderer ─────────────────────────────────────────────
+const CanvasTemplateRenderer = ({ cvData, templateId }: { cvData: CVData; templateId: string }) => {
+  const { data: template, isLoading } = useQuery({
+    queryKey: ["cv-template-preview", templateId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("cv_templates")
+        .select("id, name, html_template, css_styles")
+        .eq("id", templateId)
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!templateId,
+    staleTime: 60_000,
+  });
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center" style={{ width: "210mm", minHeight: "297mm", background: "#f9f9f9" }}>
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (!template) {
+    return (
+      <div className="flex items-center justify-center" style={{ width: "210mm", minHeight: "297mm", background: "#f9f9f9" }}>
+        <p className="text-muted-foreground text-sm">Template introuvable</p>
+      </div>
+    );
+  }
+
+  let config: any;
+  try {
+    config = JSON.parse(template.html_template || "{}");
+  } catch {
+    return (
+      <div className="flex items-center justify-center" style={{ width: "210mm", minHeight: "297mm", background: "#f9f9f9" }}>
+        <p className="text-muted-foreground text-sm">Template invalide</p>
+      </div>
+    );
+  }
+
+  const rendererData = adaptCVData(cvData);
+
+  return (
+    <DynamicCVRenderer
+      config={config}
+      cvData={rendererData}
+      scale={1}
+    />
+  );
+};
+
 // ─── Main CVPreview component ────────────────────────────────────────────────
 export const CVPreview = ({ cvData, templateId = "classic", designOptions }: CVPreviewProps) => {
   const previewRef = useRef<HTMLDivElement>(null);
@@ -507,7 +596,7 @@ export const CVPreview = ({ cvData, templateId = "classic", designOptions }: CVP
     minimal: { primaryColor: "#18181b", textColor: "#27272a", accentColor: "#f97316" },
   };
 
-  const d: CVDesignOptions = { ...defaultDesigns[templateId], ...designOptions };
+  const d: CVDesignOptions = { ...(defaultDesigns[templateId] || defaultDesigns.classic), ...designOptions };
 
   const handlePrint = () => {
     const printWindow = window.open("", "_blank");
@@ -523,6 +612,11 @@ export const CVPreview = ({ cvData, templateId = "classic", designOptions }: CVP
   };
 
   const renderTemplate = () => {
+    // UUID → canvas-v2 template from DB
+    if (isUUID(templateId)) {
+      return <CanvasTemplateRenderer cvData={cvData} templateId={templateId} />;
+    }
+    // Legacy hardcoded templates
     switch (templateId) {
       case "dark": return <DarkTemplate cvData={cvData} d={d} />;
       case "light": return <LightTemplate cvData={cvData} d={d} />;

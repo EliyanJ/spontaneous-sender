@@ -662,7 +662,7 @@ export const CVBuilderEditor = ({
       )}
 
       {/* ── LEFT SIDEBAR / STEPPER (Desktop) ── */}
-      <aside className="hidden lg:flex flex-col w-[320px] xl:w-[360px] bg-[#F8FAFC] border-r border-[#E2E8F0] h-screen sticky top-0 overflow-y-auto p-6 xl:p-8 shrink-0">
+      <aside className="hidden lg:flex flex-col w-[280px] xl:w-[320px] bg-[#F8FAFC] border-r border-[#E2E8F0] h-screen sticky top-0 overflow-y-auto p-6 xl:p-8 shrink-0">
         {/* Logo */}
         <div className="flex items-center gap-3 mb-10">
           <Link to="/" className="flex items-center gap-2.5">
