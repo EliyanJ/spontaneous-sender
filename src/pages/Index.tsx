@@ -100,8 +100,6 @@ const Index = () => {
         return <UnifiedEmailSender />;
       case "campaigns":
         return <CampaignsHub />;
-      case "cv-score":
-        return <CVComparator />;
       case "settings":
         return <Settings />;
       default:
