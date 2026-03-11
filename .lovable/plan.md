@@ -1,96 +1,157 @@
 
-# Plan SEO — 4 chantiers majeurs
+## Ce que je comprends
 
-## Vue d'ensemble
-Le message couvre 4 sujets distincts. Je vais les traiter dans l'ordre de priorité SEO/business :
+L'utilisateur veut un éditeur style **Canva** — pas un outil de drag & drop de sections prédéfinies, mais un vrai éditeur canvas où on peut :
+- Placer des éléments librement (blocs de texte, formes, lignes, images)
+- Positionner avec la souris (drag pour déplacer, handles pour redimensionner)
+- Changer couleur, police, taille, fond, bordures via un panel
+- Ajouter du texte libre (pas seulement des sections préfixées)
+- Les sections CV (expériences, etc.) sont des blocs suggérés qu'on peut placer, mais pas obligatoires
+- Tout ça sauvegardé en JSON et rendu dynamiquement dans le CV Builder
 
----
+## Architecture : Éditeur Canvas libre (style Canva/Figma simplifié)
 
-## 1. Page publique `/score-cv` — Landing SEO + Comparateur CV gratuit
+### Principe technique
+Chaque élément est un objet avec position `x, y`, dimensions `width, height`, type (`text` | `cv-section` | `shape` | `divider`), et styles inline. Le canvas est une `div` avec `position: relative`, chaque bloc a `position: absolute`. Drag avec mousedown/mousemove/mouseup natif sur le canvas.
 
-**Objectif** : Page publique (sans auth), accessible aux moteurs, avec le comparateur ATS intégré + tunnel d'inscription post-essai.
+### Types d'éléments
+- **`text`** : Texte libre éditable (double-clic → contentEditable), position absolue
+- **`cv-section`** : Un des 8 blocs CV avec contenu placeholder dynamique
+- **`shape`** : Rectangle coloré (pour fonds, barres décoratives, sidebar)
+- **`divider`** : Ligne horizontale/verticale
 
-### Structure de la page
+### Structure JSON sauvegardée (nouvelle)
+```json
+{
+  "canvasWidth": 595,
+  "canvasHeight": 842,
+  "fontFamily": "Helvetica",
+  "elements": [
+    {
+      "id": "el-1",
+      "type": "shape",
+      "x": 0, "y": 0, "width": 180, "height": 842,
+      "styles": { "backgroundColor": "#0f1b3d", "borderRadius": 0 }
+    },
+    {
+      "id": "el-2",
+      "type": "cv-section",
+      "sectionId": "contact",
+      "x": 10, "y": 20, "width": 160, "height": 120,
+      "styles": { "color": "#fff", "fontSize": 10, "fontFamily": "Helvetica" }
+    },
+    {
+      "id": "el-3",
+      "type": "text",
+      "x": 200, "y": 30, "width": 370, "height": 40,
+      "content": "MON CV PROFESSIONNEL",
+      "styles": { "fontSize": 22, "fontWeight": "700", "color": "#0f1b3d" }
+    }
+  ]
+}
 ```
-/score-cv  (route publique, pas de ProtectedRoute)
-├── Hero section  →  H1 + CTA "Tester gratuitement"
-├── Outil comparateur (CVComparator réutilisé tel quel)
-├── Popup post-analyse  →  "Créez votre compte gratuit pour comparer à l'infini"
-│     └── Formulaire email/password → création de compte Supabase
-└── Section SEO bas de page
-      ├── Texte riche avec mots-clés (H2, paragraphes, gras)
-      └── Accordéons FAQ (ex: "Comment fonctionne l'ATS ?", "Pourquoi optimiser son CV ?")
+
+### Interface (3 colonnes)
+```text
+┌────────────────────────────────────────────────────────────────────┐
+│  [← Retour] [Nom du template_______] [Annuler] [Sauvegarder ✓]     │
+│  [T Texte] [⬛ Forme] [─ Ligne] [📋 Section CV ▾] [🖼 Image]        │
+├──────────────┬──────────────────────────────────┬─────────────────┤
+│  LEFT PANEL  │        CANVAS A4 (595×842px)      │  RIGHT PANEL    │
+│              │  ┌────────────────────────────┐  │                 │
+│  Sections CV │  │ ████ (shape fond sidebar)  │  │  Élément selec: │
+│  suggérées   │  │ [Contact]  [Titre texte]   │  │  - Position x,y │
+│  (drag/clic  │  │ [Skills]   [Expériences]   │  │  - W / H        │
+│  pour ajouter│  │ [Languages][Formation]     │  │  - Couleur fond │
+│  sur canvas) │  │            [Ligne déco]    │  │  - Couleur texte│
+│              │  └────────────────────────────┘  │  - Police       │
+│  Rappel :    │                                   │  - Taille fonte │
+│  • Expériences│  Clic sur élément → sélection   │  - Gras/Italic  │
+│  • Contact   │  Drag → déplace                  │  - Border       │
+│  • Résumé    │  Double-clic texte → édite        │  - BorderRadius │
+│  • Skills    │  Handles coin → redimensionne     │  - Opacité      │
+│  • Formation │                                   │  - Z-index      │
+│  • Langues   │                                   │  - Supprimer    │
+└──────────────┴──────────────────────────────────┴─────────────────┘
 ```
 
-### Logique d'accès
-- L'outil fonctionne **1 fois sans compte**
-- Après analyse → popup `AuthDialog` personnalisée avec message de valeur
-- Compte créé → redirect `/dashboard?tab=cv`
+## Plan d'implémentation
 
-### SEO technique sur cette page
-- `useSEO("/score-cv")` → meta title/desc configurable depuis le BO
-- Balise H1 unique, H2 dans les sections FAQ
-- Texte ~800 mots minimum en bas de page (géré via CMS ou hardcodé)
-- Canonical URL configurée
-- Ajout de `/score-cv` dans `SITE_PAGES` de `AdminSEO.tsx`
+### Réécrire complètement `AdminCVTemplateBuilder.tsx`
 
----
+Un seul fichier, tout de A à Z. Structure :
 
-## 2. Amélioration du CMS — Sélecteur de balise HTML + effets de texte
+**1. Types**
+```typescript
+type ElementType = "text" | "cv-section" | "shape" | "divider";
+interface CanvasElement {
+  id: string;
+  type: ElementType;
+  x: number; y: number;
+  width: number; height: number;
+  sectionId?: SectionId; // si type = "cv-section"
+  content?: string;      // si type = "text"
+  styles: {
+    backgroundColor?: string;
+    color?: string;
+    fontSize?: number;
+    fontWeight?: string;
+    fontStyle?: string;
+    fontFamily?: string;
+    borderRadius?: number;
+    border?: string;
+    opacity?: number;
+    textAlign?: string;
+    zIndex?: number;
+  };
+}
+interface CanvasConfig {
+  canvasWidth: number;
+  canvasHeight: number;
+  backgroundColor: string;
+  fontFamily: string;
+  elements: CanvasElement[];
+}
+```
 
-**Problème actuel** : `AdminPageEditor.tsx` a H1/H2/H3 dans la barre d'outils mais pas de sélecteur explicite de balise pour les blocs de texte. Pas d'effet "texte souligné coloré" type mise en avant.
+**2. Interactions canvas (mousedown/move/up)**
+- `onMouseDown` sur un élément → start drag (mode "move")
+- `onMouseDown` sur un handle de coin → start resize
+- `onDoubleClick` sur un élément `text` → passe en mode édition `contentEditable`
+- Clic sur canvas vide → désélectionne
+- Suppression avec touche `Delete` ou `Backspace` quand un élément est sélectionné
 
-### Ce qu'on ajoute
-- **Sélecteur de balise** dans la toolbar : dropdown `<p>` / `<h1>` / `<h2>` / `<h3>` avec règle visuelle "1 seul H1 par page" (warning si H1 déjà présent)
-- **Effet texte surligné** : bouton "Highlight" dans la toolbar → `<mark>` stylé avec couleur configurable (rose/jaune comme l'image fournie)
-- Les couleurs de highlight configurables via `ColorPickerPopover` déjà existant
+**3. Left panel**
+- Boutons d'ajout rapide : Ajouter Texte, Ajouter Forme, Ajouter Ligne
+- Liste des 8 sections CV avec icônes — clic ou drag → ajoute au centre du canvas
+- Section "Formes" : rectangle plein, rectangle vide (bordure)
 
----
+**4. Toolbar haut du canvas**
+- Police globale + taille
+- Raccourcis : Gras, Italique, Alignement texte
+- Ordre (monter/descendre z-index)
+- Groupement couleurs rapides
 
-## 3. CV Builder — Nouveaux modèles + personnalisation design
+**5. Right panel (propriétés de l'élément sélectionné)**
+- Onglet "Position & Taille" : x, y, w, h en inputs numériques
+- Onglet "Style" : couleur fond, couleur texte, police, taille, gras/italic, bordure, radius, opacité
+- Bouton "Supprimer l'élément" en rouge en bas
 
-**Actuel** : 4 templates (`classic`, `dark`, `light`, `geo`) avec couleurs configurables. Photo déjà supportée (`photoUrl` dans `CVDesignOptions`).
+**6. Sauvegarde**
+- `JSON.stringify(canvasConfig)` dans `html_template`
+- Compatible avec l'existant (on détecte si c'est l'ancien format sections ou le nouveau format elements)
 
-### Ajouts
-- **2-3 nouveaux templates** inspirés des screenshots fournis :
-  - `modern-two-col` : deux colonnes (sidebar colorée + contenu), avec photo ronde en haut
-  - `minimal-line` : séparateurs de ligne épurés, typographie aérée
-- **Sélecteur de template visuel** : grille de miniatures cliquables (comme le site concurrent montré)
-- **Panneau design** : couleur de fond de section, couleur du texte, couleur d'accent — déjà partiellement présent, à enrichir
-- **Upload photo** : interface d'upload vers Supabase Storage + affichage dans le template
+**7. DynamicCVRenderer mis à jour**
+- Détecter le nouveau format (`config.elements` présent)
+- Rendre chaque élément en `position: absolute` avec ses styles
+- Pour `cv-section` : rendre le contenu placeholder de la section
 
----
+### Fichiers modifiés
+1. `src/pages/Admin/AdminCVTemplateBuilder.tsx` — Réécriture complète
+2. `src/components/cv-builder/DynamicCVRenderer.tsx` — Support du nouveau format canvas
 
-## 4. SEO global — Optimisations techniques
+### Pas de nouvelles dépendances
+Tout en vanilla React (mousedown/move/up), pas de react-dnd, pas de konva, pas de fabric.js — pour rester léger et dans les contraintes du projet.
 
-- Ajout `/score-cv` dans `AdminSEO.tsx` SITE_PAGES
-- `robots.txt` : vérifier que `/score-cv` est indexable (actuellement public/robots.txt)
-- Sitemap XML statique : créer `public/sitemap.xml` avec les URLs principales
-- Structure JSON-LD Schema.org sur `/score-cv` (SoftwareApplication)
-- `useSEO` déjà en place sur Landing — à ajouter sur `/score-cv` et Pricing
-
----
-
-## Fichiers à créer/modifier
-
-| Fichier | Action |
-|---|---|
-| `src/pages/CVScorePage.tsx` | CRÉER — page publique SEO |
-| `src/components/dashboard/CVComparator.tsx` | MODIFIER — prop `isPublic` pour désactiver auth check |
-| `src/components/CVScoreAuthPopup.tsx` | CRÉER — popup post-analyse |
-| `src/pages/Admin/AdminSEO.tsx` | MODIFIER — ajouter `/score-cv` |
-| `src/pages/Admin/AdminPageEditor.tsx` | MODIFIER — sélecteur balise + highlight |
-| `src/lib/cv-templates.ts` | MODIFIER — 2 nouveaux templates |
-| `src/components/cv-builder/CVPreview.tsx` | MODIFIER — render nouveaux templates |
-| `src/components/cv-builder/CVBuilderForm.tsx` | MODIFIER — sélecteur visuel templates |
-| `src/App.tsx` | MODIFIER — route `/score-cv` publique |
-| `public/sitemap.xml` | CRÉER |
-
----
-
-## Ordre d'implémentation recommandé
-
-1. Page `/score-cv` + popup auth (impact SEO + business immédiat)
-2. SEO technique global (sitemap, schema.org)
-3. CMS éditeur amélioré (balises H + highlight)
-4. CV Builder nouveaux templates + sélecteur visuel
+### Gestion de la rétrocompatibilité
+L'ancien format (`config.sections`) reste supporté dans `DynamicCVRenderer`. Le nouveau format (`config.elements`) est détecté par la présence du champ `elements`.
