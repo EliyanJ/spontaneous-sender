@@ -1,5 +1,8 @@
 import React from "react";
-import type { TemplateConfig, TemplateSection, SectionId } from "@/pages/Admin/AdminCVTemplateBuilder";
+import type {
+  TemplateConfig, TemplateSection, SectionId,
+  CanvasConfig, CanvasElement,
+} from "@/pages/Admin/AdminCVTemplateBuilder";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -38,13 +41,33 @@ export interface CVData {
   languages?: Array<{ language?: string; level?: string }>;
 }
 
+// DynamicCVRenderer accepts either the old TemplateConfig or the new CanvasConfig
+type AnyConfig = TemplateConfig | CanvasConfig;
+
 interface DynamicCVRendererProps {
-  config: TemplateConfig;
+  config: AnyConfig;
   cvData: CVData;
   scale?: number;
 }
 
-// ─── Section renderers ────────────────────────────────────────────────────────
+// ─── Type guard ───────────────────────────────────────────────────────────────
+
+function isCanvasConfig(c: AnyConfig): c is CanvasConfig {
+  return (c as CanvasConfig).version === "canvas-v2" && Array.isArray((c as CanvasConfig).elements);
+}
+
+// ─── Section title helper ─────────────────────────────────────────────────────
+
+const SectionTitle: React.FC<{ label: string; accentColor?: string; textColor?: string; fontSize?: number }> = ({
+  label, accentColor = "#c9a84c", textColor, fontSize = 10,
+}) => (
+  <div style={{ marginBottom: 8 }}>
+    <div style={{ fontWeight: 700, fontSize: fontSize + 1, letterSpacing: "0.03em", textTransform: "uppercase", color: textColor }}>{label}</div>
+    <div style={{ height: 2, width: 32, background: accentColor, marginTop: 3, borderRadius: 1 }} />
+  </div>
+);
+
+// ─── Section renderers (legacy layout) ───────────────────────────────────────
 
 const renderContact = (cvData: CVData, section: TemplateSection) => {
   const { styles } = section;
@@ -133,17 +156,9 @@ const renderSkills = (cvData: CVData, section: TemplateSection, accentColor: str
       <SectionTitle label="Compétences" accentColor={accentColor} textColor={styles.textColor} fontSize={styles.fontSize} />
       <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
         {skills.map((skill, i) => (
-          <span
-            key={i}
-            style={{
-              fontSize: styles.fontSize - 1.5,
-              padding: "2px 8px",
-              borderRadius: 10,
-              background: `${accentColor}25`,
-              color: styles.textColor,
-              border: `1px solid ${accentColor}40`,
-            }}
-          >{skill}</span>
+          <span key={i} style={{ fontSize: styles.fontSize - 1.5, padding: "2px 8px", borderRadius: 10, background: `${accentColor}25`, color: styles.textColor, border: `1px solid ${accentColor}40` }}>
+            {skill}
+          </span>
         ))}
       </div>
     </div>
@@ -185,25 +200,13 @@ const renderLanguages = (cvData: CVData, section: TemplateSection, accentColor: 
   );
 };
 
-// ─── Section title helper ─────────────────────────────────────────────────────
-
-const SectionTitle: React.FC<{ label: string; accentColor: string; textColor: string; fontSize: number }> = ({
-  label, accentColor, fontSize
-}) => (
-  <div style={{ marginBottom: 8 }}>
-    <div style={{ fontWeight: 700, fontSize: fontSize + 1, letterSpacing: "0.03em", textTransform: "uppercase" }}>{label}</div>
-    <div style={{ height: 2, width: 32, background: accentColor, marginTop: 3, borderRadius: 1 }} />
-  </div>
-);
-
-// ─── Section dispatcher ───────────────────────────────────────────────────────
+// ─── Section dispatcher (legacy) ──────────────────────────────────────────────
 
 const renderSection = (section: TemplateSection, cvData: CVData, config: TemplateConfig): React.ReactNode => {
   const { styles } = section;
   const borderStyle = styles.borderBottom !== "none"
     ? `${styles.borderBottomWidth}px ${styles.borderBottom} ${styles.borderBottomColor}`
     : undefined;
-
   const wrapperStyle: React.CSSProperties = {
     background: styles.bg === "transparent" ? "transparent" : styles.bg,
     color: styles.textColor,
@@ -212,7 +215,6 @@ const renderSection = (section: TemplateSection, cvData: CVData, config: Templat
     fontFamily: config.fontFamily,
     fontSize: styles.fontSize,
   };
-
   let content: React.ReactNode = null;
   switch (section.id as SectionId) {
     case "contact":          content = renderContact(cvData, section); break;
@@ -224,79 +226,185 @@ const renderSection = (section: TemplateSection, cvData: CVData, config: Templat
     case "education":        content = renderEducation(cvData, section, config.accentColor); break;
     case "languages":        content = renderLanguages(cvData, section, config.accentColor); break;
   }
-
   if (!content) return null;
   return <div key={section.id} style={wrapperStyle}>{content}</div>;
+};
+
+// ─── Canvas element renderer (new v2) ─────────────────────────────────────────
+
+const renderCanvasElementForExport = (el: CanvasElement, cvData: CVData): React.ReactNode => {
+  if (el.visible === false) return null;
+  const style: React.CSSProperties = {
+    position: "absolute",
+    left: el.x,
+    top: el.y,
+    width: el.width,
+    height: el.height,
+    opacity: el.styles.opacity ?? 1,
+    zIndex: el.styles.zIndex ?? "auto",
+    overflow: "hidden",
+  };
+
+  if (el.type === "text") {
+    return (
+      <div key={el.id} style={{
+        ...style,
+        color: el.styles.color ?? "#1a1a2e",
+        fontSize: el.styles.fontSize ?? 12,
+        fontWeight: el.styles.fontWeight ?? "normal",
+        fontStyle: el.styles.fontStyle ?? "normal",
+        fontFamily: el.styles.fontFamily ?? "Helvetica, Arial, sans-serif",
+        textAlign: el.styles.textAlign ?? "left",
+        lineHeight: el.styles.lineHeight ?? 1.4,
+        letterSpacing: el.styles.letterSpacing ? `${el.styles.letterSpacing}em` : "normal",
+        backgroundColor: el.styles.backgroundColor ?? "transparent",
+        padding: el.styles.padding ? `${el.styles.padding}px` : "4px",
+        borderRadius: el.styles.borderRadius ? `${el.styles.borderRadius}px` : 0,
+        border: el.styles.borderStyle && el.styles.borderStyle !== "none"
+          ? `${el.styles.borderWidth ?? 1}px ${el.styles.borderStyle} ${el.styles.borderColor ?? "#000"}`
+          : (el.styles.border ?? "none"),
+        wordBreak: "break-word",
+        whiteSpace: "pre-wrap",
+        boxSizing: "border-box",
+      }}>
+        {el.content ?? ""}
+      </div>
+    );
+  }
+
+  if (el.type === "shape") {
+    return (
+      <div key={el.id} style={{
+        ...style,
+        backgroundColor: el.styles.backgroundColor ?? "#cccccc",
+        borderRadius: el.styles.borderRadius ? `${el.styles.borderRadius}px` : 0,
+        border: el.styles.borderStyle && el.styles.borderStyle !== "none"
+          ? `${el.styles.borderWidth ?? 1}px ${el.styles.borderStyle} ${el.styles.borderColor ?? "#000"}`
+          : (el.styles.border ?? "none"),
+      }} />
+    );
+  }
+
+  if (el.type === "divider") {
+    return (
+      <div key={el.id} style={{
+        ...style,
+        backgroundColor: el.styles.backgroundColor ?? "#cccccc",
+        borderRadius: el.styles.borderRadius ? `${el.styles.borderRadius}px` : 0,
+      }} />
+    );
+  }
+
+  if (el.type === "cv-section" && el.sectionId) {
+    const sectionId = el.sectionId as SectionId;
+    const sectionStyle: React.CSSProperties = {
+      ...style,
+      backgroundColor: el.styles.backgroundColor ?? "transparent",
+      color: el.styles.color ?? "#1a1a2e",
+      fontFamily: el.styles.fontFamily ?? "Helvetica, Arial, sans-serif",
+      fontSize: el.styles.fontSize ?? 10,
+      boxSizing: "border-box",
+    };
+
+    const legacySection: TemplateSection = {
+      id: sectionId,
+      zone: "main",
+      order: 0,
+      enabled: true,
+      required: false,
+      styles: {
+        bg: el.styles.backgroundColor ?? "transparent",
+        textColor: el.styles.color ?? "#1a1a2e",
+        fontSize: el.styles.fontSize ?? 10,
+        padding: el.styles.padding ?? 12,
+        borderBottom: "none",
+        borderBottomColor: "#e5e7eb",
+        borderBottomWidth: 1,
+        borderRadius: el.styles.borderRadius ?? 0,
+      },
+    };
+
+    const legacyConfig: TemplateConfig = {
+      layout: "full",
+      sidebarWidth: 0,
+      sidebarBg: "#ffffff",
+      mainBg: "#ffffff",
+      fontFamily: el.styles.fontFamily ?? "Helvetica, Arial, sans-serif",
+      primaryColor: "#0f1b3d",
+      accentColor: "#c9a84c",
+      textColor: el.styles.color ?? "#1a1a2e",
+      sections: [legacySection],
+    };
+
+    return (
+      <div key={el.id} style={sectionStyle}>
+        {renderSection(legacySection, cvData, legacyConfig)}
+      </div>
+    );
+  }
+
+  return null;
 };
 
 // ─── Main renderer ────────────────────────────────────────────────────────────
 
 export const DynamicCVRenderer: React.FC<DynamicCVRendererProps> = ({ config, cvData, scale = 1 }) => {
-  const sidebarSections = config.sections
+
+  // ── New canvas v2 format ──
+  if (isCanvasConfig(config)) {
+    return (
+      <div style={{
+        width: config.canvasWidth,
+        height: config.canvasHeight,
+        backgroundColor: config.backgroundColor,
+        position: "relative",
+        overflow: "hidden",
+        fontFamily: config.fontFamily,
+        transform: scale !== 1 ? `scale(${scale})` : undefined,
+        transformOrigin: scale !== 1 ? "top left" : undefined,
+      }}>
+        {config.elements.map(el => renderCanvasElementForExport(el, cvData))}
+      </div>
+    );
+  }
+
+  // ── Legacy format (sections-based) ──
+  const legacyConfig = config as TemplateConfig;
+
+  const sidebarSections = legacyConfig.sections
     .filter(s => s.zone === "sidebar" && s.enabled)
     .sort((a, b) => a.order - b.order);
 
-  const mainSections = config.sections
+  const mainSections = legacyConfig.sections
     .filter(s => s.zone === "main" && s.enabled)
     .sort((a, b) => a.order - b.order);
 
-  const allSections = config.sections
+  const allSections = legacyConfig.sections
     .filter(s => s.enabled)
     .sort((a, b) => a.order - b.order);
 
   return (
-    <div
-      style={{
-        width: 595,
-        minHeight: 842,
-        fontFamily: config.fontFamily,
-        color: config.textColor,
-        transform: scale !== 1 ? `scale(${scale})` : undefined,
-        transformOrigin: scale !== 1 ? "top left" : undefined,
-        display: "flex",
-      }}
-    >
-      {config.layout === "sidebar" ? (
+    <div style={{
+      width: 595,
+      minHeight: 842,
+      fontFamily: legacyConfig.fontFamily,
+      color: legacyConfig.textColor,
+      transform: scale !== 1 ? `scale(${scale})` : undefined,
+      transformOrigin: scale !== 1 ? "top left" : undefined,
+      display: "flex",
+    }}>
+      {legacyConfig.layout === "sidebar" ? (
         <>
-          {/* Sidebar */}
-          <div
-            style={{
-              width: config.sidebarWidth,
-              background: config.sidebarBg,
-              flexShrink: 0,
-              display: "flex",
-              flexDirection: "column",
-              minHeight: 842,
-            }}
-          >
-            {sidebarSections.map(section => renderSection(section, cvData, config))}
+          <div style={{ width: legacyConfig.sidebarWidth, background: legacyConfig.sidebarBg, flexShrink: 0, display: "flex", flexDirection: "column", minHeight: 842 }}>
+            {sidebarSections.map(section => renderSection(section, cvData, legacyConfig))}
           </div>
-
-          {/* Main */}
-          <div
-            style={{
-              flex: 1,
-              background: config.mainBg,
-              display: "flex",
-              flexDirection: "column",
-              minHeight: 842,
-            }}
-          >
-            {mainSections.map(section => renderSection(section, cvData, config))}
+          <div style={{ flex: 1, background: legacyConfig.mainBg, display: "flex", flexDirection: "column", minHeight: 842 }}>
+            {mainSections.map(section => renderSection(section, cvData, legacyConfig))}
           </div>
         </>
       ) : (
-        /* Full layout */
-        <div
-          style={{
-            flex: 1,
-            background: config.mainBg,
-            display: "flex",
-            flexDirection: "column",
-            minHeight: 842,
-          }}
-        >
-          {allSections.map(section => renderSection(section, cvData, config))}
+        <div style={{ flex: 1, background: legacyConfig.mainBg, display: "flex", flexDirection: "column", minHeight: 842 }}>
+          {allSections.map(section => renderSection(section, cvData, legacyConfig))}
         </div>
       )}
     </div>
