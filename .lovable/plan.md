@@ -1,64 +1,96 @@
 
-## Diagnostic complet
+# Plan SEO — 4 chantiers majeurs
 
-**Problème 1 — CVPreview ne sait pas afficher les templates canvas-v2**
-`CVPreview.tsx` ligne 526 : le `renderTemplate()` fait un `switch(templateId)` sur des valeurs en dur `"classic"`, `"dark"`, etc. Quand `templateId` est un UUID de la BDD (ex : `"4a2b..."`), ça tombe dans le `default:` → `ClassicTemplate`. Le template canvas-v2 n'est jamais rendu.
-
-**Problème 2 — Aucune prévisualisation temps réel dans les étapes**
-`CVBuilderEditor.tsx` est un layout à **2 colonnes** sur desktop : gauche = stepper + formulaire, droite = **absente**. L'aperçu du CV n'existe qu'à l'étape "Finalisation" (dans `StepFinalize`). Le bouton mobile "Aperçu" ouvre une modale, mais sur desktop il n'y a pas de colonne droite avec preview temps réel.
-
-**Problème 3 — Mismatch de format entre CVData du builder et DynamicCVRenderer**
-- `CVData` du builder (dans `cv-templates.ts`) a : `experiences[].bullets` (tableau de strings), `skills.technical[]`, `skills.soft[]`, `education[].dates`
-- `CVData` de `DynamicCVRenderer.tsx` attend : `experiences[].description` (string), `skills: string[]`, `education[].year`
-Il faut un adaptateur pour passer du format builder au format DynamicCVRenderer.
-
-**Problème 4 — Données template non chargées dans l'éditeur**
-`CVBuilderEditor` reçoit `templateId` (un UUID) mais ne charge pas le template depuis la BDD pour l'afficher. Il passe `templateId` à `CVPreview` qui ne sait pas l'utiliser.
+## Vue d'ensemble
+Le message couvre 4 sujets distincts. Je vais les traiter dans l'ordre de priorité SEO/business :
 
 ---
 
-## Solution
+## 1. Page publique `/score-cv` — Landing SEO + Comparateur CV gratuit
 
-### Étape 1 — Adapter CVPreview pour les templates canvas-v2
+**Objectif** : Page publique (sans auth), accessible aux moteurs, avec le comparateur ATS intégré + tunnel d'inscription post-essai.
 
-Dans `CVPreview.tsx`, ajouter :
-1. Un `useQuery` qui charge le template depuis `cv_templates` si `templateId` est un UUID (pas un des 6 IDs courts hardcodés)
-2. Si le template est un `canvas-v2`, appeler `DynamicCVRenderer` avec un **adaptateur de données** qui convertit le format `CVData` builder → format `DynamicCVRenderer`
-3. Sinon, continuer avec le switch actuel pour rétrocompat
-
-Adaptateur `buildCVDataForRenderer(cvData: CVData) → RendererCVData` :
-```text
-experiences[].bullets.join("\n") → experiences[].description
-skills.technical + skills.soft   → skills: string[]
-education[].dates                → education[].year
-personalInfo.firstName/lastName  → firstName, lastName (top level)
-personalInfo.title               → title
-... etc
+### Structure de la page
+```
+/score-cv  (route publique, pas de ProtectedRoute)
+├── Hero section  →  H1 + CTA "Tester gratuitement"
+├── Outil comparateur (CVComparator réutilisé tel quel)
+├── Popup post-analyse  →  "Créez votre compte gratuit pour comparer à l'infini"
+│     └── Formulaire email/password → création de compte Supabase
+└── Section SEO bas de page
+      ├── Texte riche avec mots-clés (H2, paragraphes, gras)
+      └── Accordéons FAQ (ex: "Comment fonctionne l'ATS ?", "Pourquoi optimiser son CV ?")
 ```
 
-### Étape 2 — Ajouter la prévisualisation temps réel sur la droite dans CVBuilderEditor
+### Logique d'accès
+- L'outil fonctionne **1 fois sans compte**
+- Après analyse → popup `AuthDialog` personnalisée avec message de valeur
+- Compte créé → redirect `/dashboard?tab=cv`
 
-Modifier le layout de `CVBuilderEditor` : transformer le layout actuel `flex-row` en **3 colonnes** sur desktop :
-- **Gauche** (w-[320px]) : stepper (existant, intact)  
-- **Centre** (flex-1) : formulaires par étapes (existant, intact)  
-- **Droite** (w-[380px]) : panneau de prévisualisation fixe, sticky, avec le CV en temps réel
+### SEO technique sur cette page
+- `useSEO("/score-cv")` → meta title/desc configurable depuis le BO
+- Balise H1 unique, H2 dans les sections FAQ
+- Texte ~800 mots minimum en bas de page (géré via CMS ou hardcodé)
+- Canonical URL configurée
+- Ajout de `/score-cv` dans `SITE_PAGES` de `AdminSEO.tsx`
 
-La colonne droite contient :
-- Titre "Aperçu en temps réel"  
-- `CVPreview` scalé (scale ~0.55) avec le `templateId` et `designOptions` passés en props
-- Le panneau est `sticky top-0 h-screen overflow-hidden` pour qu'il reste visible pendant le scroll du formulaire
+---
 
-Ajuster le bottom bar de navigation pour qu'elle ne couvre pas la colonne droite (`right-0` reste car la colonne droite est sticky et pas scrollable).
+## 2. Amélioration du CMS — Sélecteur de balise HTML + effets de texte
 
-### Fichiers modifiés
+**Problème actuel** : `AdminPageEditor.tsx` a H1/H2/H3 dans la barre d'outils mais pas de sélecteur explicite de balise pour les blocs de texte. Pas d'effet "texte souligné coloré" type mise en avant.
 
-| Fichier | Changement |
+### Ce qu'on ajoute
+- **Sélecteur de balise** dans la toolbar : dropdown `<p>` / `<h1>` / `<h2>` / `<h3>` avec règle visuelle "1 seul H1 par page" (warning si H1 déjà présent)
+- **Effet texte surligné** : bouton "Highlight" dans la toolbar → `<mark>` stylé avec couleur configurable (rose/jaune comme l'image fournie)
+- Les couleurs de highlight configurables via `ColorPickerPopover` déjà existant
+
+---
+
+## 3. CV Builder — Nouveaux modèles + personnalisation design
+
+**Actuel** : 4 templates (`classic`, `dark`, `light`, `geo`) avec couleurs configurables. Photo déjà supportée (`photoUrl` dans `CVDesignOptions`).
+
+### Ajouts
+- **2-3 nouveaux templates** inspirés des screenshots fournis :
+  - `modern-two-col` : deux colonnes (sidebar colorée + contenu), avec photo ronde en haut
+  - `minimal-line` : séparateurs de ligne épurés, typographie aérée
+- **Sélecteur de template visuel** : grille de miniatures cliquables (comme le site concurrent montré)
+- **Panneau design** : couleur de fond de section, couleur du texte, couleur d'accent — déjà partiellement présent, à enrichir
+- **Upload photo** : interface d'upload vers Supabase Storage + affichage dans le template
+
+---
+
+## 4. SEO global — Optimisations techniques
+
+- Ajout `/score-cv` dans `AdminSEO.tsx` SITE_PAGES
+- `robots.txt` : vérifier que `/score-cv` est indexable (actuellement public/robots.txt)
+- Sitemap XML statique : créer `public/sitemap.xml` avec les URLs principales
+- Structure JSON-LD Schema.org sur `/score-cv` (SoftwareApplication)
+- `useSEO` déjà en place sur Landing — à ajouter sur `/score-cv` et Pricing
+
+---
+
+## Fichiers à créer/modifier
+
+| Fichier | Action |
 |---|---|
-| `src/components/cv-builder/CVPreview.tsx` | + useQuery pour charger template canvas-v2 + DynamicCVRenderer + adaptateur de données |
-| `src/components/cv-builder/CVBuilderEditor.tsx` | + colonne droite preview temps réel (desktop) + réajustement layout 3 colonnes |
+| `src/pages/CVScorePage.tsx` | CRÉER — page publique SEO |
+| `src/components/dashboard/CVComparator.tsx` | MODIFIER — prop `isPublic` pour désactiver auth check |
+| `src/components/CVScoreAuthPopup.tsx` | CRÉER — popup post-analyse |
+| `src/pages/Admin/AdminSEO.tsx` | MODIFIER — ajouter `/score-cv` |
+| `src/pages/Admin/AdminPageEditor.tsx` | MODIFIER — sélecteur balise + highlight |
+| `src/lib/cv-templates.ts` | MODIFIER — 2 nouveaux templates |
+| `src/components/cv-builder/CVPreview.tsx` | MODIFIER — render nouveaux templates |
+| `src/components/cv-builder/CVBuilderForm.tsx` | MODIFIER — sélecteur visuel templates |
+| `src/App.tsx` | MODIFIER — route `/score-cv` publique |
+| `public/sitemap.xml` | CRÉER |
 
-### Ce qui NE change PAS
+---
 
-- Les 6 formulaires par étapes → intacts (texte éditable, emplacements des blocs restent fixes dans le template)
-- La structure canvas-v2 du template → non modifiable par l'utilisateur (positions, tailles des blocs figées)
-- Les templates codés en dur `classic/dark/light/geo/modern/minimal` → toujours fonctionnels en fallback
+## Ordre d'implémentation recommandé
+
+1. Page `/score-cv` + popup auth (impact SEO + business immédiat)
+2. SEO technique global (sitemap, schema.org)
+3. CMS éditeur amélioré (balises H + highlight)
+4. CV Builder nouveaux templates + sélecteur visuel
