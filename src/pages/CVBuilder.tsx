@@ -7,10 +7,12 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { CVBuilderEditor } from "@/components/cv-builder/CVBuilderEditor";
-import { emptyCVData, CV_TEMPLATES, type CVData, type CVDesignOptions, type TemplateId } from "@/lib/cv-templates";
+import { emptyCVData, type CVData, type CVDesignOptions } from "@/lib/cv-templates";
 import { useAuth } from "@/hooks/useAuth";
 import { Header } from "@/components/Header";
 import { Logo } from "@/components/Logo";
+import { useQuery } from "@tanstack/react-query";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const SECTORS = [
   { value: "finance", label: "Finance & Corporate" },
