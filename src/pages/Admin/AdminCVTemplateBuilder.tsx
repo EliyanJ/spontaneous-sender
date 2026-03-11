@@ -476,6 +476,70 @@ export const AdminCVTemplateBuilder = () => {
     });
   };
 
+  // ── PDF Import ──────────────────────────────────────────────────────────
+
+  const handleImportPDF = useCallback(async (file: File) => {
+    if (!file) return;
+    if (file.size > 10 * 1024 * 1024) {
+      toast({ title: "Fichier trop lourd", description: "Le PDF doit faire moins de 10 MB.", variant: "destructive" });
+      return;
+    }
+    setIsImporting(true);
+    try {
+      // Convert to base64
+      const arrayBuffer = await file.arrayBuffer();
+      const bytes = new Uint8Array(arrayBuffer);
+      let binary = "";
+      for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+      const fileBase64 = btoa(binary);
+
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData?.session?.access_token;
+      if (!token) throw new Error("Non authentifié");
+
+      const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+      const response = await fetch(
+        `https://${projectId}.supabase.co/functions/v1/ai-template-from-pdf`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`,
+          },
+          body: JSON.stringify({ fileBase64, fileName: file.name }),
+        }
+      );
+
+      const result = await response.json();
+
+      if (response.status === 429) {
+        throw new Error(result.error || "Rate limit atteint, réessayez dans quelques instants.");
+      }
+      if (response.status === 402) {
+        throw new Error(result.error || "Crédits IA insuffisants.");
+      }
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || "Erreur lors de l'analyse IA.");
+      }
+
+      setConfig(result.config);
+      setSelectedId(null);
+      toast({
+        title: `✨ Template généré — ${result.elementCount} éléments`,
+        description: "Ajustez le design selon vos besoins.",
+      });
+    } catch (err: any) {
+      toast({
+        title: "Erreur d'import",
+        description: err.message || "Impossible d'analyser le PDF.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsImporting(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  }, []);
+
   // ── Keyboard shortcut ─────────────────────────────────────────────────────
 
   useEffect(() => {
