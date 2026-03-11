@@ -11,7 +11,6 @@ import { ContactSearch } from "@/components/dashboard/ContactSearch";
 import { UnifiedEmailSender } from "@/components/dashboard/UnifiedEmailSender";
 import { CampaignsHub } from "@/components/dashboard/CampaignsHub";
 import { Settings } from "@/components/dashboard/Settings";
-import { CVComparator } from "@/components/dashboard/CVComparator";
 import { DashboardOverview } from "@/components/dashboard/DashboardOverview";
 
 import { HorizontalNav } from "@/components/HorizontalNav";
@@ -31,7 +30,7 @@ const Index = () => {
   const prevTabRef = useRef(activeTab);
   const isMobile = useIsMobile();
 
-  const tabOrder = ["overview", "search", "entreprises", "emails", "campaigns", "jobs", "cv-score", "settings"];
+  const tabOrder = ["overview", "search", "entreprises", "emails", "campaigns", "jobs", "settings"];
 
   useEffect(() => {
     const tabFromUrl = searchParams.get("tab");
