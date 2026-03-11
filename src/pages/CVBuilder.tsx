@@ -433,6 +433,7 @@ const CVBuilder = () => {
                     tpl={tpl}
                     selected={templateId === tpl.id}
                     onSelect={() => setTemplateId(tpl.id)}
+                    onSelectAndContinue={() => { setTemplateId(tpl.id); handleContinue(); }}
                     firstName={firstName}
                     lastName={lastName}
                     primaryColor={selectedPalette.primary}
@@ -468,6 +469,7 @@ const CVBuilder = () => {
                     tpl={tpl}
                     selected={templateId === tpl.id}
                     onSelect={() => setTemplateId(tpl.id)}
+                    onSelectAndContinue={() => { setTemplateId(tpl.id); handleContinue(); }}
                     firstName={firstName}
                     lastName={lastName}
                     primaryColor={selectedPalette.primary}
