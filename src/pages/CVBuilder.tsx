@@ -37,6 +37,7 @@ const TemplateCard = ({
   tpl,
   selected,
   onSelect,
+  onSelectAndContinue,
   firstName,
   lastName,
   primaryColor,
@@ -44,6 +45,7 @@ const TemplateCard = ({
   tpl: DBTemplate;
   selected: boolean;
   onSelect: () => void;
+  onSelectAndContinue: () => void;
   firstName: string;
   lastName: string;
   primaryColor: string;
@@ -73,7 +75,6 @@ const TemplateCard = ({
             onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
           />
         ) : (
-          /* Placeholder visuel quand pas de thumbnail */
           <div
             className="w-full h-full flex flex-col items-center justify-center gap-3"
             style={{
@@ -97,7 +98,7 @@ const TemplateCard = ({
 
         {/* Live name preview */}
         <div
-          className="absolute bottom-0 left-0 right-0 px-3 pt-6 pb-2 text-center text-white text-sm font-bold truncate"
+          className="absolute bottom-0 left-0 right-0 px-3 pt-6 pb-2 text-center text-white text-sm font-bold truncate pointer-events-none"
           style={{ background: `linear-gradient(to top, ${primaryColor}F0 0%, transparent 100%)` }}
         >
           {displayName}
@@ -106,7 +107,7 @@ const TemplateCard = ({
         {/* Hover overlay with CTA */}
         <div
           className={`absolute inset-0 flex flex-col items-center justify-center gap-3 transition-all duration-200 ${
-            hovered ? "opacity-100" : "opacity-0"
+            hovered ? "opacity-100" : "opacity-0 pointer-events-none"
           }`}
           style={{ background: "rgba(0,0,0,0.52)" }}
         >
@@ -114,7 +115,7 @@ const TemplateCard = ({
           <button
             className="flex items-center gap-2 text-white font-semibold px-5 py-2.5 rounded-xl text-sm transition-transform hover:scale-105"
             style={{ background: primaryColor }}
-            onClick={e => { e.stopPropagation(); onSelect(); }}
+            onClick={e => { e.stopPropagation(); onSelectAndContinue(); }}
           >
             <Check className="h-4 w-4" /> Choisir ce modèle
           </button>
@@ -129,13 +130,6 @@ const TemplateCard = ({
             <Check className="h-4 w-4 text-white" />
           </div>
         )}
-
-        {/* Sector badge */}
-        <div className="absolute top-2.5 left-2.5">
-          <span className="flex items-center gap-1 text-[10px] font-semibold bg-black/40 text-white px-2 py-0.5 rounded-full backdrop-blur-sm">
-            {tpl.sector || "Généraliste"}
-          </span>
-        </div>
       </div>
 
       {/* Card footer */}
@@ -439,6 +433,7 @@ const CVBuilder = () => {
                     tpl={tpl}
                     selected={templateId === tpl.id}
                     onSelect={() => setTemplateId(tpl.id)}
+                    onSelectAndContinue={() => { setTemplateId(tpl.id); handleContinue(); }}
                     firstName={firstName}
                     lastName={lastName}
                     primaryColor={selectedPalette.primary}
@@ -474,6 +469,7 @@ const CVBuilder = () => {
                     tpl={tpl}
                     selected={templateId === tpl.id}
                     onSelect={() => setTemplateId(tpl.id)}
+                    onSelectAndContinue={() => { setTemplateId(tpl.id); handleContinue(); }}
                     firstName={firstName}
                     lastName={lastName}
                     primaryColor={selectedPalette.primary}
