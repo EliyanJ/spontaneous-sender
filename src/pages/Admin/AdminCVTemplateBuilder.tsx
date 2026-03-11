@@ -65,6 +65,8 @@ export interface CanvasConfig {
   backgroundColor: string;
   fontFamily: string;
   elements: CanvasElement[];
+  /** Si true : le template est conçu pour accueillir une photo de profil */
+  has_photo?: boolean;
 }
 
 // ─── Legacy types (for backward compat) ──────────────────────────────────────
