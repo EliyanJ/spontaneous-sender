@@ -1,96 +1,36 @@
 
-# Plan SEO — 4 chantiers majeurs
+## Problème diagnostiqué
 
-## Vue d'ensemble
-Le message couvre 4 sujets distincts. Je vais les traiter dans l'ordre de priorité SEO/business :
+**Double scaling + double header** dans la colonne preview droite :
 
----
+1. `CVBuilderEditor.tsx` ligne 883 : applique `scale(0.42)` sur `<CVPreview>` via un wrapper div
+2. `CVPreview.tsx` lignes 630-648 : `CVPreview` **lui-même** ajoute un header ("Aperçu A4" + bouton "Imprimer / PDF") et applique encore `scale(0.7)` en interne sur le contenu du CV
+3. Résultat : `0.42 × 0.7 = 0.29` → le CV est minuscule et décalé, le bouton "Imprimer / PDF" apparaît visible dans le visuel preview
 
-## 1. Page publique `/score-cv` — Landing SEO + Comparateur CV gratuit
+## Solution
 
-**Objectif** : Page publique (sans auth), accessible aux moteurs, avec le comparateur ATS intégré + tunnel d'inscription post-essai.
+### Option A : Ajouter un mode `naked` à CVPreview (prop `standalone`)
 
-### Structure de la page
-```
-/score-cv  (route publique, pas de ProtectedRoute)
-├── Hero section  →  H1 + CTA "Tester gratuitement"
-├── Outil comparateur (CVComparator réutilisé tel quel)
-├── Popup post-analyse  →  "Créez votre compte gratuit pour comparer à l'infini"
-│     └── Formulaire email/password → création de compte Supabase
-└── Section SEO bas de page
-      ├── Texte riche avec mots-clés (H2, paragraphes, gras)
-      └── Accordéons FAQ (ex: "Comment fonctionne l'ATS ?", "Pourquoi optimiser son CV ?")
-```
+Ajouter une prop `standalone?: boolean` à `CVPreview` :
+- `standalone={true}` (défaut actuel) → affiche le header + bouton + son propre `scale(0.7)` interne — comportement actuel conservé pour la page Finalisation
+- `standalone={false}` → rend **uniquement** le contenu du template, sans header, sans scale interne
 
-### Logique d'accès
-- L'outil fonctionne **1 fois sans compte**
-- Après analyse → popup `AuthDialog` personnalisée avec message de valeur
-- Compte créé → redirect `/dashboard?tab=cv`
+Dans `CVBuilderEditor`, passer `standalone={false}` à `CVPreview` et garder uniquement le `scale(0.42)` externe.
 
-### SEO technique sur cette page
-- `useSEO("/score-cv")` → meta title/desc configurable depuis le BO
-- Balise H1 unique, H2 dans les sections FAQ
-- Texte ~800 mots minimum en bas de page (géré via CMS ou hardcodé)
-- Canonical URL configurée
-- Ajout de `/score-cv` dans `SITE_PAGES` de `AdminSEO.tsx`
+### Changements précis
 
----
+**`CVPreview.tsx`** :
+- Ajouter prop `standalone?: boolean` (défaut `true`)
+- Wrapper conditionnel : si `!standalone`, retourner directement `<div ref={previewRef}>{renderTemplate()}</div>` sans header ni scale interne
 
-## 2. Amélioration du CMS — Sélecteur de balise HTML + effets de texte
+**`CVBuilderEditor.tsx`** ligne 884 :
+- Changer `<CVPreview cvData={cvData} templateId={templateId} designOptions={designOptions} />` → `<CVPreview cvData={cvData} templateId={templateId} designOptions={designOptions} standalone={false} />`
+- Ajuster le scale du wrapper : la colonne fait 360px, un A4 fait 794px → `360/794 ≈ 0.453`. Changer `scale(0.42)` → `scale(0.453)` pour mieux remplir la colonne
+- Ajouter `height: "794px"` au wrapper pour que la colonne ait la bonne hauteur scrollable (294mm ≈ 1123px × 0.453 ≈ 509px visible)
 
-**Problème actuel** : `AdminPageEditor.tsx` a H1/H2/H3 dans la barre d'outils mais pas de sélecteur explicite de balise pour les blocs de texte. Pas d'effet "texte souligné coloré" type mise en avant.
+## Fichiers modifiés
 
-### Ce qu'on ajoute
-- **Sélecteur de balise** dans la toolbar : dropdown `<p>` / `<h1>` / `<h2>` / `<h3>` avec règle visuelle "1 seul H1 par page" (warning si H1 déjà présent)
-- **Effet texte surligné** : bouton "Highlight" dans la toolbar → `<mark>` stylé avec couleur configurable (rose/jaune comme l'image fournie)
-- Les couleurs de highlight configurables via `ColorPickerPopover` déjà existant
-
----
-
-## 3. CV Builder — Nouveaux modèles + personnalisation design
-
-**Actuel** : 4 templates (`classic`, `dark`, `light`, `geo`) avec couleurs configurables. Photo déjà supportée (`photoUrl` dans `CVDesignOptions`).
-
-### Ajouts
-- **2-3 nouveaux templates** inspirés des screenshots fournis :
-  - `modern-two-col` : deux colonnes (sidebar colorée + contenu), avec photo ronde en haut
-  - `minimal-line` : séparateurs de ligne épurés, typographie aérée
-- **Sélecteur de template visuel** : grille de miniatures cliquables (comme le site concurrent montré)
-- **Panneau design** : couleur de fond de section, couleur du texte, couleur d'accent — déjà partiellement présent, à enrichir
-- **Upload photo** : interface d'upload vers Supabase Storage + affichage dans le template
-
----
-
-## 4. SEO global — Optimisations techniques
-
-- Ajout `/score-cv` dans `AdminSEO.tsx` SITE_PAGES
-- `robots.txt` : vérifier que `/score-cv` est indexable (actuellement public/robots.txt)
-- Sitemap XML statique : créer `public/sitemap.xml` avec les URLs principales
-- Structure JSON-LD Schema.org sur `/score-cv` (SoftwareApplication)
-- `useSEO` déjà en place sur Landing — à ajouter sur `/score-cv` et Pricing
-
----
-
-## Fichiers à créer/modifier
-
-| Fichier | Action |
+| Fichier | Changement |
 |---|---|
-| `src/pages/CVScorePage.tsx` | CRÉER — page publique SEO |
-| `src/components/dashboard/CVComparator.tsx` | MODIFIER — prop `isPublic` pour désactiver auth check |
-| `src/components/CVScoreAuthPopup.tsx` | CRÉER — popup post-analyse |
-| `src/pages/Admin/AdminSEO.tsx` | MODIFIER — ajouter `/score-cv` |
-| `src/pages/Admin/AdminPageEditor.tsx` | MODIFIER — sélecteur balise + highlight |
-| `src/lib/cv-templates.ts` | MODIFIER — 2 nouveaux templates |
-| `src/components/cv-builder/CVPreview.tsx` | MODIFIER — render nouveaux templates |
-| `src/components/cv-builder/CVBuilderForm.tsx` | MODIFIER — sélecteur visuel templates |
-| `src/App.tsx` | MODIFIER — route `/score-cv` publique |
-| `public/sitemap.xml` | CRÉER |
-
----
-
-## Ordre d'implémentation recommandé
-
-1. Page `/score-cv` + popup auth (impact SEO + business immédiat)
-2. SEO technique global (sitemap, schema.org)
-3. CMS éditeur amélioré (balises H + highlight)
-4. CV Builder nouveaux templates + sélecteur visuel
+| `src/components/cv-builder/CVPreview.tsx` | Prop `standalone` — si false, pas de header ni de scale interne |
+| `src/components/cv-builder/CVBuilderEditor.tsx` | Passer `standalone={false}` + ajuster scale externe |
