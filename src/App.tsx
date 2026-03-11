@@ -104,11 +104,14 @@ const App = () => (
             <Route path="cms" element={<AdminCMS />} />
             <Route path="seo" element={<AdminSEO />} />
             <Route path="chatbot" element={<AdminChatbot />} />
+            <Route path="cv-templates" element={<AdminCVTemplates />} />
           </Route>
           
           {/* CMS Editor — fullscreen, outside AdminLayout */}
           <Route path="/admin/cms/:pageId" element={<AdminRoute><AdminPageEditor /></AdminRoute>} />
           <Route path="/admin/cms/blocks/:blockId" element={<AdminRoute><AdminBlockEditor /></AdminRoute>} />
+          <Route path="/admin/cv-templates/new" element={<AdminRoute><AdminCVTemplateBuilder /></AdminRoute>} />
+          <Route path="/admin/cv-templates/:templateId" element={<AdminRoute><AdminCVTemplateBuilder /></AdminRoute>} />
           
           <Route path="/blog/:slug" element={<BlogPost />} />
           <Route path="/p/:slug" element={<BlogPost />} />
