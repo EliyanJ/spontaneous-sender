@@ -678,15 +678,7 @@ export const CVComparator = ({ isPublic, onAnalysisComplete }: CVComparatorProps
                 </div>
 
                 {/* Extra details: word count, title check, contract, images */}
-                <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-4">
-                  <div className="flex items-center p-3 rounded-lg bg-muted/20 border border-border/50">
-                    {result.profileSection?.found ? (
-                      <CheckCircle2 className="h-4 w-4 text-green-500 dark:text-green-400 mr-3 shrink-0" />
-                    ) : (
-                      <XCircle className="h-4 w-4 text-red-500 dark:text-red-400 mr-3 shrink-0" />
-                    )}
-                    <span className="text-sm text-foreground/80">Section Profil</span>
-                  </div>
+                <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-4">
                   <div className="flex items-center p-3 rounded-lg bg-muted/20 border border-border/50">
                     {result.titleCheck?.found ? (
                       <CheckCircle2 className="h-4 w-4 text-green-500 dark:text-green-400 mr-3 shrink-0" />
