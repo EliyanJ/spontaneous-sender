@@ -1,96 +1,83 @@
 
-# Plan SEO — 4 chantiers majeurs
+## Analyse du problème "Secondary Keywords"
 
-## Vue d'ensemble
-Le message couvre 4 sujets distincts. Je vais les traiter dans l'ordre de priorité SEO/business :
+### Ce que fait réellement cette catégorie dans le code
+
+Dans `analyze-cv-ats/index.ts`, ÉTAPE 6 (lignes 301-344) :
+- Elle prend les `dbSecondaryKeywords` de la profession en base **qui apparaissent dans l'offre**
+- PUIS elle complète avec des mots extraits bruts de l'offre (mots fréquents >= 1 occurrence, qui ne sont pas déjà dans primary)
+- Le résultat = max 5 mots, 15 pts max au total (3 pts/mot)
+
+**Le vrai problème** : La majorité des mots qui finissent dans "secondary" sont en réalité des mots extraits bruts de l'offre d'emploi (fallback), pas des compétences catégorisées. C'est pour ça qu'on voit des mots comme "développement" ou "équipes" — ce sont des mots fréquents de l'offre, pas des compétences transversales.
+
+### Décision de refonte
+
+La catégorie `secondaryKeywords` dans l'algo remplit **deux fonctions différentes** qui sont mélangées :
+1. Des vrais mots-clés secondaires catégorisés en base (légitimes)
+2. Des mots extraits bruts en fallback quand pas assez de mots en base (souvent incorrects)
+
+**Solution proposée** : Fusionner les secondary keywords DANS les Hard Skills au niveau du scoring, et supprimer l'affichage séparé "Compétences transversales" côté frontend. Les secondary keywords DB légitimes continueront à compter dans le score (via la fonction), mais ne seront plus affichés comme une catégorie à part qui crée de la confusion.
 
 ---
 
-## 1. Page publique `/score-cv` — Landing SEO + Comparateur CV gratuit
+## Plan d'implémentation
 
-**Objectif** : Page publique (sans auth), accessible aux moteurs, avec le comparateur ATS intégré + tunnel d'inscription post-essai.
+### 1. Frontend — CVComparator.tsx (suppressions)
 
-### Structure de la page
+**Supprimer 3 sections** du résultat :
+
+- **"Compétences transversales"** (lignes 724-754) — toute la card `result.secondaryKeywords.scores.length > 0`
+- **"Bonus de proximité"** (lignes 787-802) — le bloc `result.proximity.bonus > 0`
+- **"Conseils personnalisés"** (lignes 804-831) — le bloc `adviceItems.length > 0`
+- Nettoyer aussi les `adviceItems` qui réfèrent à `missingSecondary` (lignes 268-273 dans la construction des conseils)
+- **"Section Profil"** dans la grille Structure & Format (lignes 690-696) — supprimer cet item de la grille
+
+### 2. Admin ATS — AdminATSTraining.tsx (refonte UI)
+
+**Onglet édition thématique (edit-theme)** :
+- Les labels dans `renderKeywordList` restent en anglais technique actuellement ("Hard Skills (primary)", "Secondary Keywords"...). Les renommer en français clair avec icônes :
+  - `"🔵 Hard Skills — Compétences techniques"` (primary)
+  - `"🟣 Mots-clés secondaires — Compétences complémentaires"` (secondary)  
+  - `"🟢 Soft Skills — Savoir-être"` (soft_skills)
+  - `"🔴 Mots exclus — Mots courants / hors contexte"` (excluded)
+
+**Onglet revue (review tab)** — améliorer la lisibilité des lignes :
+- Actuellement (ligne 658) : `flex items-center gap-2 flex-wrap` → le badge + texte + boutons s'étalent sur la largeur avec le Select "Reclasser" très à droite
+- **Nouveau layout** : ligne avec fond coloré par catégorie, mot bien visible à gauche, actions groupées à droite dans un bloc compact
+- Ajouter **"Mot courant"** dans le Select de reclassement (valeur `"common_word"` → traité comme `excluded` dans `applyCorrections`)
+- Afficher le commentaire IA (`fb.admin_notes`) avec un label de catégorie traduit : `🤖 Reclassé → Hard Skill / Compétence secondaire / Soft Skill / Mot exclu` au lieu du texte brut encodé
+
+### 3. Edge function ats-ai-review — fix encodage + common_word
+
+**Fix encodage** (ligne 162) : Ajouter dans le system prompt :
 ```
-/score-cv  (route publique, pas de ProtectedRoute)
-├── Hero section  →  H1 + CTA "Tester gratuitement"
-├── Outil comparateur (CVComparator réutilisé tel quel)
-├── Popup post-analyse  →  "Créez votre compte gratuit pour comparer à l'infini"
-│     └── Formulaire email/password → création de compte Supabase
-└── Section SEO bas de page
-      ├── Texte riche avec mots-clés (H2, paragraphes, gras)
-      └── Accordéons FAQ (ex: "Comment fonctionne l'ATS ?", "Pourquoi optimiser son CV ?")
+Tu es un expert RH/ATS. Réponds UNIQUEMENT en UTF-8 correct avec les accents français (é, è, à, ç...). N'utilise jamais d'entités HTML ni d'encodages alternatifs. Réponds uniquement avec le JSON demandé.
 ```
 
-### Logique d'accès
-- L'outil fonctionne **1 fois sans compte**
-- Après analyse → popup `AuthDialog` personnalisée avec message de valeur
-- Compte créé → redirect `/dashboard?tab=cv`
+**Ajouter `common_word`** dans l'enum `corrected_category` (ligne 179) :
+```json
+"enum": ["primary", "secondary", "soft_skill", "excluded", "common_word"]
+```
 
-### SEO technique sur cette page
-- `useSEO("/score-cv")` → meta title/desc configurable depuis le BO
-- Balise H1 unique, H2 dans les sections FAQ
-- Texte ~800 mots minimum en bas de page (géré via CMS ou hardcodé)
-- Canonical URL configurée
-- Ajout de `/score-cv` dans `SITE_PAGES` de `AdminSEO.tsx`
+**Mettre à jour le prompt principal** pour expliquer à l'IA ce qu'est `common_word` :
+```
+- common_word : mot trop courant du français, sans valeur de compétence (ex: "travail", "équipe", "développement" au sens générique)
+```
 
----
+### 4. Frontend applyCorrections — gérer common_word
 
-## 2. Amélioration du CMS — Sélecteur de balise HTML + effets de texte
-
-**Problème actuel** : `AdminPageEditor.tsx` a H1/H2/H3 dans la barre d'outils mais pas de sélecteur explicite de balise pour les blocs de texte. Pas d'effet "texte souligné coloré" type mise en avant.
-
-### Ce qu'on ajoute
-- **Sélecteur de balise** dans la toolbar : dropdown `<p>` / `<h1>` / `<h2>` / `<h3>` avec règle visuelle "1 seul H1 par page" (warning si H1 déjà présent)
-- **Effet texte surligné** : bouton "Highlight" dans la toolbar → `<mark>` stylé avec couleur configurable (rose/jaune comme l'image fournie)
-- Les couleurs de highlight configurables via `ColorPickerPopover` déjà existant
+Dans `AdminATSTraining.tsx` ligne 318, ajouter le cas `common_word` :
+```typescript
+else if (fb.corrected_category === "common_word") newExcluded.push(fb.keyword); // traité comme excluded
+```
 
 ---
 
-## 3. CV Builder — Nouveaux modèles + personnalisation design
+## Fichiers modifiés
 
-**Actuel** : 4 templates (`classic`, `dark`, `light`, `geo`) avec couleurs configurables. Photo déjà supportée (`photoUrl` dans `CVDesignOptions`).
-
-### Ajouts
-- **2-3 nouveaux templates** inspirés des screenshots fournis :
-  - `modern-two-col` : deux colonnes (sidebar colorée + contenu), avec photo ronde en haut
-  - `minimal-line` : séparateurs de ligne épurés, typographie aérée
-- **Sélecteur de template visuel** : grille de miniatures cliquables (comme le site concurrent montré)
-- **Panneau design** : couleur de fond de section, couleur du texte, couleur d'accent — déjà partiellement présent, à enrichir
-- **Upload photo** : interface d'upload vers Supabase Storage + affichage dans le template
-
----
-
-## 4. SEO global — Optimisations techniques
-
-- Ajout `/score-cv` dans `AdminSEO.tsx` SITE_PAGES
-- `robots.txt` : vérifier que `/score-cv` est indexable (actuellement public/robots.txt)
-- Sitemap XML statique : créer `public/sitemap.xml` avec les URLs principales
-- Structure JSON-LD Schema.org sur `/score-cv` (SoftwareApplication)
-- `useSEO` déjà en place sur Landing — à ajouter sur `/score-cv` et Pricing
-
----
-
-## Fichiers à créer/modifier
-
-| Fichier | Action |
+| Fichier | Changement |
 |---|---|
-| `src/pages/CVScorePage.tsx` | CRÉER — page publique SEO |
-| `src/components/dashboard/CVComparator.tsx` | MODIFIER — prop `isPublic` pour désactiver auth check |
-| `src/components/CVScoreAuthPopup.tsx` | CRÉER — popup post-analyse |
-| `src/pages/Admin/AdminSEO.tsx` | MODIFIER — ajouter `/score-cv` |
-| `src/pages/Admin/AdminPageEditor.tsx` | MODIFIER — sélecteur balise + highlight |
-| `src/lib/cv-templates.ts` | MODIFIER — 2 nouveaux templates |
-| `src/components/cv-builder/CVPreview.tsx` | MODIFIER — render nouveaux templates |
-| `src/components/cv-builder/CVBuilderForm.tsx` | MODIFIER — sélecteur visuel templates |
-| `src/App.tsx` | MODIFIER — route `/score-cv` publique |
-| `public/sitemap.xml` | CRÉER |
+| `src/components/dashboard/CVComparator.tsx` | Suppression sections : Secondary Keywords, Proximity Bonus, Conseils personnalisés, item "Section Profil" dans Structure |
+| `src/pages/Admin/AdminATSTraining.tsx` | Labels français dans edit-theme, refonte layout lignes revue, ajout "Mot courant", fix affichage commentaire IA |
+| `supabase/functions/ats-ai-review/index.ts` | Fix encodage prompt, ajout common_word dans enum |
 
----
-
-## Ordre d'implémentation recommandé
-
-1. Page `/score-cv` + popup auth (impact SEO + business immédiat)
-2. SEO technique global (sitemap, schema.org)
-3. CMS éditeur amélioré (balises H + highlight)
-4. CV Builder nouveaux templates + sélecteur visuel
