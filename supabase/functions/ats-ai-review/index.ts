@@ -181,7 +181,7 @@ IMPORTANT: Les mots courants du français ne sont PAS des compétences. Utilise 
                     properties: {
                       keyword: { type: 'string' },
                       original_category: { type: 'string' },
-                      corrected_category: { type: 'string', enum: ['primary', 'secondary', 'soft_skill', 'excluded'] },
+                      corrected_category: { type: 'string', enum: ['primary', 'secondary', 'soft_skill', 'excluded', 'common_word'] },
                       is_valid: { type: 'boolean' },
                       reason: { type: 'string' },
                     },
