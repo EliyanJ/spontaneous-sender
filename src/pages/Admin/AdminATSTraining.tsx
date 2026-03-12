@@ -8,12 +8,15 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
+import { Slider } from "@/components/ui/slider";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { toast } from "sonner";
 import {
   RefreshCw, Brain, CheckCircle, XCircle, ArrowRight, Sparkles, ChevronLeft, Plus, X, Save,
-  Upload, FileText, Loader2, Zap, FolderOpen, Briefcase, AlertCircle, ChevronRight
+  Upload, FileText, Loader2, Zap, FolderOpen, Briefcase, AlertCircle, ChevronRight, TrendingUp, Settings2
 } from "lucide-react";
+
+
 
 interface Profession {
   id: string;
