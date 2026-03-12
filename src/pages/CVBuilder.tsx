@@ -289,7 +289,16 @@ const CVBuilder = () => {
     } catch (err: any) { toast.error("Erreur: " + err.message); }
   };
 
-  const handleContinue = () => {
+  const handleContinue = (forcedTemplateId?: string) => {
+    const tid = forcedTemplateId || templateId;
+    if (!tid) {
+      setNoTemplateError(true);
+      // scroll to templates
+      document.getElementById("templates-gallery")?.scrollIntoView({ behavior: "smooth" });
+      return;
+    }
+    setNoTemplateError(false);
+    if (forcedTemplateId) setTemplateId(forcedTemplateId);
     if (firstName || lastName) {
       setCvData(prev => ({
         ...prev,
