@@ -531,11 +531,39 @@ export const AdminATSTraining = () => {
                     </div>
                   </div>
                 </CardHeader>
-                <CardContent className="space-y-6">
-                  {renderKeywordList("Hard Skills (primary)", "bg-blue-500/20 text-blue-400 border-blue-500/30", editPrimary, setEditPrimary, newPrimary, setNewPrimary)}
-                  {renderKeywordList("Secondary Keywords", "bg-purple-500/20 text-purple-400 border-purple-500/30", editSecondary, setEditSecondary, newSecondary, setNewSecondary)}
-                  {renderKeywordList("Soft Skills", "bg-green-500/20 text-green-400 border-green-500/30", editSoftSkills, setEditSoftSkills, newSoftSkill, setNewSoftSkill)}
-                  {renderKeywordList("Mots exclus", "bg-red-500/20 text-red-400 border-red-500/30", editExcluded, setEditExcluded, newExcluded, setNewExcluded)}
+                <CardContent className="space-y-8">
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 pb-1 border-b border-blue-500/20">
+                      <span className="text-base">🔵</span>
+                      <span className="text-sm font-semibold text-blue-400">Hard Skills — Compétences techniques principales</span>
+                      <span className="text-xs text-muted-foreground ml-auto">Outils, logiciels, technologies, certifications</span>
+                    </div>
+                    {renderKeywordList("Hard Skill", "bg-blue-500/20 text-blue-400 border-blue-500/30", editPrimary, setEditPrimary, newPrimary, setNewPrimary)}
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 pb-1 border-b border-purple-500/20">
+                      <span className="text-base">🟣</span>
+                      <span className="text-sm font-semibold text-purple-400">Mots-clés secondaires — Compétences complémentaires</span>
+                      <span className="text-xs text-muted-foreground ml-auto">Connaissances associées au métier</span>
+                    </div>
+                    {renderKeywordList("Mot-clé secondaire", "bg-purple-500/20 text-purple-400 border-purple-500/30", editSecondary, setEditSecondary, newSecondary, setNewSecondary)}
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 pb-1 border-b border-green-500/20">
+                      <span className="text-base">🟢</span>
+                      <span className="text-sm font-semibold text-green-400">Soft Skills — Savoir-être</span>
+                      <span className="text-xs text-muted-foreground ml-auto">Qualités comportementales et interpersonnelles</span>
+                    </div>
+                    {renderKeywordList("Soft skill", "bg-green-500/20 text-green-400 border-green-500/30", editSoftSkills, setEditSoftSkills, newSoftSkill, setNewSoftSkill)}
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 pb-1 border-b border-red-500/20">
+                      <span className="text-base">🔴</span>
+                      <span className="text-sm font-semibold text-red-400">Mots exclus — Mots courants / hors contexte</span>
+                      <span className="text-xs text-muted-foreground ml-auto">Mots génériques sans valeur de compétence</span>
+                    </div>
+                    {renderKeywordList("Mot exclu", "bg-red-500/20 text-red-400 border-red-500/30", editExcluded, setEditExcluded, newExcluded, setNewExcluded)}
+                  </div>
                 </CardContent>
               </Card>
 

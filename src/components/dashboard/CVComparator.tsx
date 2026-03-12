@@ -238,7 +238,6 @@ export const CVComparator = ({ isPublic, onAnalysisComplete }: CVComparatorProps
   const adviceItems: Array<{ title: string; text: string }> = [];
   if (result) {
     const missingPrimary = result.primaryKeywords.scores.filter(k => k.points === 0);
-    const missingSecondary = result.secondaryKeywords.scores.filter(k => k.points === 0);
     const missingSoft = result.softSkills.scores.filter(s => !s.found);
 
     if (missingPrimary.length > 0) {
@@ -263,12 +262,6 @@ export const CVComparator = ({ isPublic, onAnalysisComplete }: CVComparatorProps
       adviceItems.push({
         title: "Développez vos soft skills",
         text: `Mentionnez ${missingSoft.map(s => `"${s.skill}"`).join(', ')} à travers des exemples concrets dans vos expériences.`
-      });
-    }
-    if (missingSecondary.length > 0) {
-      adviceItems.push({
-        title: "Renforcez les compétences transversales",
-        text: `Intégrez ces termes : ${missingSecondary.map(k => `"${k.keyword}"`).join(', ')} dans vos descriptions.`
       });
     }
   }
