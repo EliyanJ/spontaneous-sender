@@ -201,12 +201,7 @@ const CVBuilder = () => {
     },
   });
 
-  // Auto-select le premier template dès que la liste est chargée
-  useEffect(() => {
-    if (dbTemplates.length > 0 && !templateId) {
-      setTemplateId(dbTemplates[0].id);
-    }
-  }, [dbTemplates, templateId]);
+  const [noTemplateError, setNoTemplateError] = useState(false);
 
   const handlePaletteSelect = (palette: typeof COLOR_PALETTES[0]) => {
     setSelectedPalette(palette);
