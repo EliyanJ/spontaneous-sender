@@ -163,7 +163,7 @@ IMPORTANT: Les mots courants du français ne sont PAS des compétences. Utilise 
       body: JSON.stringify({
         model: 'google/gemini-2.5-flash',
         messages: [
-          { role: 'system', content: 'Tu es un expert RH/ATS. Réponds uniquement avec le JSON demandé.' },
+          { role: 'system', content: 'Tu es un expert RH/ATS. Réponds UNIQUEMENT en UTF-8 correct avec les accents français (é, è, à, ç, ô, î...). N\'utilise jamais d\'entités HTML ni d\'encodages alternatifs. Réponds uniquement avec le JSON demandé via le tool call.' },
           { role: 'user', content: prompt },
         ],
         tools: [{
