@@ -7,8 +7,9 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
-import { RefreshCw, Brain, CheckCircle, XCircle, ArrowRight, Sparkles, ChevronLeft, Plus, X, Save, Upload, FileText, Loader2 } from "lucide-react";
+import { RefreshCw, Brain, CheckCircle, XCircle, ArrowRight, Sparkles, ChevronLeft, Plus, X, Save, Upload, FileText, Loader2, Zap } from "lucide-react";
 
 interface Profession {
   id: string;
