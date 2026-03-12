@@ -65,9 +65,12 @@ export type Database = {
           created_at: string
           excluded_words: Json | null
           id: string
+          is_theme: boolean
           last_trained_at: string | null
           name: string
+          parent_theme_id: string | null
           primary_keywords: Json
+          profession_status: string
           secondary_keywords: Json
           soft_skills: Json
           training_count: number | null
@@ -78,9 +81,12 @@ export type Database = {
           created_at?: string
           excluded_words?: Json | null
           id?: string
+          is_theme?: boolean
           last_trained_at?: string | null
           name: string
+          parent_theme_id?: string | null
           primary_keywords?: Json
+          profession_status?: string
           secondary_keywords?: Json
           soft_skills?: Json
           training_count?: number | null
@@ -91,14 +97,25 @@ export type Database = {
           created_at?: string
           excluded_words?: Json | null
           id?: string
+          is_theme?: boolean
           last_trained_at?: string | null
           name?: string
+          parent_theme_id?: string | null
           primary_keywords?: Json
+          profession_status?: string
           secondary_keywords?: Json
           soft_skills?: Json
           training_count?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "ats_professions_parent_theme_id_fkey"
+            columns: ["parent_theme_id"]
+            isOneToOne: false
+            referencedRelation: "ats_professions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       campaigns: {
         Row: {
@@ -434,6 +451,7 @@ export type Database = {
           id: string
           job_description: string
           job_title: string
+          needs_profession_suggestion: boolean
           profession_id: string | null
           profession_name: string | null
           total_score: number
@@ -448,6 +466,7 @@ export type Database = {
           id?: string
           job_description: string
           job_title: string
+          needs_profession_suggestion?: boolean
           profession_id?: string | null
           profession_name?: string | null
           total_score?: number
@@ -462,6 +481,7 @@ export type Database = {
           id?: string
           job_description?: string
           job_title?: string
+          needs_profession_suggestion?: boolean
           profession_id?: string | null
           profession_name?: string | null
           total_score?: number
