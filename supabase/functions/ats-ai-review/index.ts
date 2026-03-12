@@ -6,6 +6,87 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
+// ===== SHARED: callSuggestProfession helper =====
+async function callSuggestProfession({ job_title, job_description, existing_themes, LOVABLE_API_KEY, high_freq_keywords, medium_freq_keywords }: {
+  job_title: string;
+  job_description: string;
+  existing_themes?: any[];
+  LOVABLE_API_KEY: string;
+  high_freq_keywords?: string[];
+  medium_freq_keywords?: string[];
+}) {
+  const themesListStr = (existing_themes || []).map((t: any) => `- ${t.name} (${t.category || 'sans catégorie'})`).join('\n');
+  const freqHint = high_freq_keywords?.length
+    ? `\n\nMots-clés à haute fréquence (≥70%) à mettre en primary_keywords: ${high_freq_keywords.join(', ')}\nMots-clés moyenne fréquence (40-70%) à mettre en secondary_keywords: ${medium_freq_keywords?.join(', ') || ''}`
+    : '';
+
+  const suggestPrompt = `Tu es un expert RH et ATS. Un poste a été analysé mais aucun métier connu ne correspond.
+
+Intitulé du poste: "${job_title}"
+Description / contexte:
+${(job_description || '').substring(0, 4000)}
+
+Thématiques existantes dans notre base:
+${themesListStr || 'Aucune thématique encore.'}${freqHint}
+
+Ta mission:
+1. Identifie le nom précis du métier correspondant à ce poste (ex: "Scrum Master", "Revenue Operations Manager", "Data Engineer")
+2. Détermine quelle thématique parente de la liste ci-dessus est la plus adaptée (ou propose d'en créer une nouvelle si vraiment nécessaire)
+3. Extrais les mots-clés spécifiques à CE métier (pas les mots génériques de la thématique)
+
+Sois précis et concret. Les mots-clés doivent être des compétences réelles utilisées dans les ATS.`;
+
+  const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'google/gemini-2.5-flash',
+      messages: [
+        { role: 'system', content: 'Tu es un expert RH/ATS. Réponds uniquement en UTF-8 avec les accents français corrects. Utilise uniquement le tool call demandé.' },
+        { role: 'user', content: suggestPrompt },
+      ],
+      tools: [{
+        type: 'function',
+        function: {
+          name: 'suggest_profession',
+          description: 'Suggest a new profession to add to the ATS database',
+          parameters: {
+            type: 'object',
+            properties: {
+              suggested_job_name: { type: 'string', description: 'Nom précis du métier (ex: Scrum Master)' },
+              suggested_theme_name: { type: 'string', description: 'Nom de la thématique parente existante ou nouvelle (ex: Gestion de projet)' },
+              is_new_theme: { type: 'boolean', description: "true si la thématique parente est nouvelle et n'existe pas encore" },
+              confidence: { type: 'number', description: 'Niveau de confiance de 0 à 1' },
+              reasoning: { type: 'string', description: 'Explication courte du choix en français' },
+              primary_keywords: { type: 'array', items: { type: 'string' }, description: 'Mots-clés hard skills spécifiques à CE métier' },
+              secondary_keywords: { type: 'array', items: { type: 'string' }, description: 'Mots-clés secondaires spécifiques à ce métier' },
+              soft_skills: { type: 'array', items: { type: 'string' }, description: 'Soft skills typiques de ce métier' },
+              aliases: { type: 'array', items: { type: 'string' }, description: 'Intitulés alternatifs pour ce métier' },
+            },
+            required: ['suggested_job_name', 'suggested_theme_name', 'is_new_theme', 'confidence', 'reasoning', 'primary_keywords', 'secondary_keywords', 'soft_skills', 'aliases'],
+          },
+        },
+      }],
+      tool_choice: { type: 'function', function: { name: 'suggest_profession' } },
+    }),
+  });
+
+  if (!aiResponse.ok) {
+    const status = aiResponse.status;
+    const text = await aiResponse.text();
+    console.error('AI suggest_profession error:', status, text);
+    throw new Error('AI suggestion failed');
+  }
+
+  const aiData = await aiResponse.json();
+  const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
+  if (toolCall?.function?.arguments) {
+    return JSON.parse(toolCall.function.arguments);
+  }
+  return null;
+}
+
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
