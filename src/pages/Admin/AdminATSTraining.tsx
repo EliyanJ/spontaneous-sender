@@ -136,6 +136,13 @@ export const AdminATSTraining = () => {
   const [suggestedKeywords, setSuggestedKeywords] = useState<SuggestedKeyword[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Cluster monitoring state
+  const [clusters, setClusters] = useState<JobCluster[]>([]);
+  const [clusterThreshold, setClusterThreshold] = useState(3);
+  const [showClusterSettings, setShowClusterSettings] = useState(false);
+
+
+
   useEffect(() => {
     loadProfessions();
     loadAnalyses();
