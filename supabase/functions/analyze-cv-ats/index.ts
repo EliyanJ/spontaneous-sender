@@ -279,7 +279,7 @@ async function updateClusterAndMaybeSuggest(supabase: any, {
   }
 }
 
-
+serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
