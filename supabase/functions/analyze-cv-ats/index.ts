@@ -481,8 +481,11 @@ serve(async (req) => {
       },
       profession: {
         name: profession?.name || 'Non identifié',
+        isTheme: profession?.is_theme ?? true,
+        parentThemeName: parentTheme?.name || null,
         isPartialMatch,
         confidence: professionConfidence,
+        needsSuggestion: needsProfessionSuggestion,
       },
       primaryKeywords: {
         scores: primaryScores,
