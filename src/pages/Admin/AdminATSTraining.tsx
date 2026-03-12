@@ -7,8 +7,9 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
-import { RefreshCw, Brain, CheckCircle, XCircle, ArrowRight, Sparkles, ChevronLeft, Plus, X, Save, Upload, FileText, Loader2 } from "lucide-react";
+import { RefreshCw, Brain, CheckCircle, XCircle, ArrowRight, Sparkles, ChevronLeft, Plus, X, Save, Upload, FileText, Loader2, Zap } from "lucide-react";
 
 interface Profession {
   id: string;
@@ -63,6 +64,8 @@ export const AdminATSTraining = () => {
   const [feedbacks, setFeedbacks] = useState<Map<string, KeywordFeedback>>(new Map());
   const [adminNotes, setAdminNotes] = useState("");
   const [aiReviewing, setAiReviewing] = useState(false);
+  const [bulkReviewing, setBulkReviewing] = useState(false);
+  const [bulkProgress, setBulkProgress] = useState({ current: 0, total: 0, done: false });
 
   // Theme editing state
   const [editingProfession, setEditingProfession] = useState<Profession | null>(null);
@@ -370,6 +373,106 @@ export const AdminATSTraining = () => {
     }
   };
 
+  const runBulkAiReview = async () => {
+    // Fetch all unreviewed analyses with a profession_id
+    const { data: unreviewed } = await supabase
+      .from("cv_analyses")
+      .select("*")
+      .eq("admin_reviewed", false)
+      .not("profession_id", "is", null)
+      .order("created_at", { ascending: false })
+      .limit(50);
+
+    if (!unreviewed || unreviewed.length === 0) {
+      toast.info("Aucune analyse non revue avec une thématique identifiée.");
+      return;
+    }
+
+    setBulkReviewing(true);
+    setBulkProgress({ current: 0, total: unreviewed.length, done: false });
+
+    const { data: { session } } = await supabase.auth.getSession();
+    let successCount = 0;
+    let errorCount = 0;
+
+    for (let i = 0; i < unreviewed.length; i++) {
+      const analysis = unreviewed[i] as CvAnalysis;
+      setBulkProgress(p => ({ ...p, current: i + 1 }));
+      try {
+        // 1. Get AI suggestions
+        const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ats-ai-review`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${session?.access_token}` },
+          body: JSON.stringify({ analysis }),
+        });
+        if (!res.ok) throw new Error("Erreur IA");
+        const result = await res.json();
+        if (!result.suggestions || result.suggestions.length === 0) {
+          // Mark as reviewed with no changes
+          await supabase.from("cv_analyses").update({ admin_reviewed: true, admin_feedback: { notes: "Revue IA auto — aucune correction", corrections_count: 0 } }).eq("id", analysis.id);
+          successCount++;
+          continue;
+        }
+
+        // 2. Build corrections map from AI suggestions
+        const profId = analysis.profession_id!;
+        const prof = professions.find(p => p.id === profId);
+        if (!prof) { errorCount++; continue; }
+
+        const newExcluded = [...prof.excluded_words];
+        const newPrimaryKw = [...prof.primary_keywords];
+        const newSecondaryKw = [...prof.secondary_keywords];
+        const newSoftSkillsKw = [...prof.soft_skills];
+        const feedbackInserts: any[] = [];
+
+        for (const s of result.suggestions) {
+          feedbackInserts.push({
+            profession_id: profId,
+            keyword: s.keyword,
+            original_category: s.original_category,
+            corrected_category: s.corrected_category,
+            is_valid: s.is_valid,
+            admin_notes: s.reason || "Revue IA auto",
+            source: "ai_bulk",
+          });
+          if (!s.is_valid || s.corrected_category === "common_word" || s.corrected_category === "excluded") {
+            if (!newExcluded.includes(s.keyword)) newExcluded.push(s.keyword);
+            [newPrimaryKw, newSecondaryKw, newSoftSkillsKw].forEach(arr => { const idx = arr.indexOf(s.keyword); if (idx > -1) arr.splice(idx, 1); });
+          } else if (s.corrected_category !== s.original_category) {
+            [newPrimaryKw, newSecondaryKw, newSoftSkillsKw].forEach(arr => { const idx = arr.indexOf(s.keyword); if (idx > -1) arr.splice(idx, 1); });
+            if (s.corrected_category === "primary") newPrimaryKw.push(s.keyword);
+            else if (s.corrected_category === "secondary") newSecondaryKw.push(s.keyword);
+            else if (s.corrected_category === "soft_skill") newSoftSkillsKw.push(s.keyword);
+          }
+        }
+
+        // 3. Apply corrections
+        if (feedbackInserts.length > 0) await supabase.from("ats_keyword_feedback").insert(feedbackInserts);
+        await supabase.from("ats_professions").update({
+          excluded_words: newExcluded, primary_keywords: newPrimaryKw, secondary_keywords: newSecondaryKw, soft_skills: newSoftSkillsKw,
+          last_trained_at: new Date().toISOString(), training_count: (prof.training_count || 0) + result.suggestions.length,
+        }).eq("id", profId);
+        await supabase.from("cv_analyses").update({
+          admin_reviewed: true, admin_feedback: { notes: "Revue IA automatique", corrections_count: result.suggestions.length },
+        }).eq("id", analysis.id);
+
+        // Update local profession cache so next iterations are based on latest data
+        const updatedProf = { ...prof, excluded_words: newExcluded, primary_keywords: newPrimaryKw, secondary_keywords: newSecondaryKw, soft_skills: newSoftSkillsKw, training_count: (prof.training_count || 0) + result.suggestions.length };
+        setProfessions(prev => prev.map(p => p.id === profId ? updatedProf : p));
+
+        successCount++;
+      } catch {
+        errorCount++;
+      }
+    }
+
+    setBulkProgress(p => ({ ...p, done: true }));
+    setBulkReviewing(false);
+    toast.success(`Revue IA terminée : ${successCount} analyses traitées${errorCount > 0 ? `, ${errorCount} erreurs` : ""}`);
+    loadProfessions();
+    loadAnalyses();
+  };
+
   const getAnalysisKeywords = (analysis: CvAnalysis) => {
     const result = analysis.analysis_result;
     const keywords: Array<{ keyword: string; category: string; found: boolean }> = [];
@@ -451,8 +554,41 @@ export const AdminATSTraining = () => {
         <div className="flex items-center gap-2">
           <Badge variant="outline" className="text-xs">{professions.length} thématiques</Badge>
           <Badge variant="outline" className="text-xs">{analyses.filter(a => !a.admin_reviewed).length} à revoir</Badge>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={runBulkAiReview}
+            disabled={bulkReviewing || analyses.filter(a => !a.admin_reviewed).length === 0}
+            className="border-primary/50 text-primary hover:bg-primary/10"
+          >
+            {bulkReviewing ? (
+              <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+            ) : (
+              <Zap className="h-4 w-4 mr-1" />
+            )}
+            {bulkReviewing
+              ? `Revue en cours... (${bulkProgress.current}/${bulkProgress.total})`
+              : `Revue IA en masse (${analyses.filter(a => !a.admin_reviewed).length})`}
+          </Button>
         </div>
       </div>
+
+      {/* Bulk review progress bar */}
+      {bulkReviewing && (
+        <Card className="bg-card border-primary/30">
+          <CardContent className="pt-4 pb-3 space-y-2">
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-foreground font-medium flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-primary animate-pulse" />
+                Revue IA automatique en cours...
+              </span>
+              <span className="text-muted-foreground">{bulkProgress.current} / {bulkProgress.total} analyses</span>
+            </div>
+            <Progress value={bulkProgress.total > 0 ? (bulkProgress.current / bulkProgress.total) * 100 : 0} className="h-2" />
+            <p className="text-xs text-muted-foreground">Chaque analyse est envoyée à l'IA pour validation et les corrections sont appliquées automatiquement.</p>
+          </CardContent>
+        </Card>
+      )}
 
       <Tabs value={tab} onValueChange={setTab}>
         <TabsList>
