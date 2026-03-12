@@ -54,7 +54,7 @@ const Landing = () => {
 
         <main className="pt-[56px]">
           {/* Hero Section - 2 colonnes */}
-          <section className="relative pt-8 pb-24 lg:pt-12 lg:pb-32 overflow-hidden min-h-[800px] flex items-center">
+          <section className="relative pt-8 pb-10 lg:pt-12 lg:pb-14 overflow-hidden min-h-[800px] flex items-center">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full relative z-10">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
 
@@ -202,7 +202,7 @@ const Landing = () => {
           </section>
 
           {/* Target Audience */}
-          <section className="py-24 bg-card/30">
+          <section className="py-12 bg-card/30">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
               <div className="text-center mb-16">
                 <h2 className="text-3xl font-bold text-foreground mb-4 font-display">À qui s'adresse Cronos ?</h2>
