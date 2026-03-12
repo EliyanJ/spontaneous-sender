@@ -2,8 +2,9 @@ import React, { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { ChevronDown, Menu, X, PenLine, BarChart2, Briefcase, Newspaper } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Logo } from "@/components/Logo";
-import logoIcon from "@/assets/logo-icon.png";
+import { useTheme } from "next-themes";
+import logoIconLight from "@/assets/logo-icon.png";
+import logoIconDark from "@/assets/logo-icon-dark.png";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -54,15 +55,21 @@ export const Header = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
+  const { resolvedTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
   const [toolsOpen, setToolsOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [mobileToolsOpen, setMobileToolsOpen] = useState(false);
+
+  useEffect(() => setMounted(true), []);
 
   // Close mobile menu on route change
   useEffect(() => {
     setMobileOpen(false);
     setToolsOpen(false);
   }, [location.pathname]);
+
+  const logoSrc = !mounted || resolvedTheme === "dark" ? logoIconLight : logoIconDark;
 
   const handleHowItWorks = () => {
     if (location.pathname === "/") {
@@ -84,7 +91,7 @@ export const Header = () => {
           {/* Left: Logo + ThemeToggle */}
           <div className="flex items-center gap-3 flex-shrink-0">
             <Link to="/" className="flex items-center flex-shrink-0">
-              <img src={logoIcon} alt="Cronos" style={{ height: "40px", width: "auto", objectFit: "contain", display: "block" }} />
+              <img src={logoSrc} alt="Cronos" style={{ height: "40px", width: "auto", objectFit: "contain", display: "block" }} />
             </Link>
             {/* Theme toggle — discret, right after logo */}
             <ThemeToggle />
