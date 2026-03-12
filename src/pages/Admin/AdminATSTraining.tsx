@@ -64,6 +64,8 @@ export const AdminATSTraining = () => {
   const [feedbacks, setFeedbacks] = useState<Map<string, KeywordFeedback>>(new Map());
   const [adminNotes, setAdminNotes] = useState("");
   const [aiReviewing, setAiReviewing] = useState(false);
+  const [bulkReviewing, setBulkReviewing] = useState(false);
+  const [bulkProgress, setBulkProgress] = useState({ current: 0, total: 0, done: false });
 
   // Theme editing state
   const [editingProfession, setEditingProfession] = useState<Profession | null>(null);
