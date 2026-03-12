@@ -98,6 +98,187 @@ function generousScore(cvCount: number, jobCount: number, maxPoints: number): nu
   return Math.round((0.5 + 0.5 * Math.min(1, cvCount / jobCount)) * maxPoints * 10) / 10;
 }
 
+// ===== AUTO-CLUSTER: normalize title for clustering =====
+function normalizeTitle(title: string): string {
+  return title.toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+// ===== AUTO-CLUSTER: extract words from text for frequency analysis =====
+const CLUSTER_STOP_WORDS = new Set([
+  'dans', 'avec', 'pour', 'nous', 'vous', 'leur', 'sont', 'sera', 'etre', 'avoir', 'fait', 'faire',
+  'comme', 'tout', 'tous', 'toute', 'cette', 'cela', 'chez', 'entre', 'vers', 'sous', 'notre', 'votre',
+  'mission', 'missions', 'poste', 'profil', 'entreprise', 'equipe', 'candidat', 'experience',
+  'annee', 'annees', 'recherche', 'competences', 'formation', 'niveau', 'connaissance',
+  'bonne', 'bonnes', 'travail', 'activite', 'type', 'temps', 'plein', 'lieu', 'contrat',
+  'offre', 'description', 'responsabilites', 'projet', 'mise', 'place', 'cadre', 'sein',
+]);
+
+function extractClusterKeywords(text: string): string[] {
+  const normalized = text.toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9\s]/g, ' ');
+  return normalized.split(/\s+/).filter(w =>
+    w.length >= 4 && !CLUSTER_STOP_WORDS.has(w) && !/^\d+$/.test(w)
+  );
+}
+
+// ===== AUTO-CLUSTER: main clustering logic =====
+async function updateClusterAndMaybeSuggest(supabase: any, {
+  jobTitle, jobDescription, analysisId,
+}: {
+  jobTitle: string;
+  jobDescription: string;
+  analysisId: string;
+}) {
+  const normTitle = normalizeTitle(jobTitle);
+  if (!normTitle || normTitle.length < 3) return;
+
+  // Fetch current cluster (if any)
+  const { data: existing } = await supabase
+    .from('job_title_clusters')
+    .select('*')
+    .eq('normalized_title', normTitle)
+    .maybeSingle();
+
+  // Build keyword frequencies from this job description
+  const words = extractClusterKeywords(jobDescription || jobTitle);
+  const wordFreqMap: Record<string, number> = {};
+  for (const w of words) wordFreqMap[w] = (wordFreqMap[w] || 0) + 1;
+
+  // Merge with existing frequencies
+  const prevFreqs: Record<string, number[]> = existing?.keyword_frequencies || {};
+  const newAnalysisIds: string[] = [...(existing?.analysis_ids || []), analysisId];
+  const newCount = (existing?.analysis_count || 0) + 1;
+  const newRawTitles: string[] = existing?.raw_titles?.includes(jobTitle) ? existing.raw_titles : [...(existing?.raw_titles || []), jobTitle];
+
+  // Each frequency entry is an array of per-analysis occurrence counts
+  const mergedFreqs: Record<string, number[]> = { ...prevFreqs };
+  for (const [word, count] of Object.entries(wordFreqMap)) {
+    mergedFreqs[word] = [...(mergedFreqs[word] || []), count];
+  }
+
+  // Upsert cluster
+  const { data: upserted, error: upsertErr } = await supabase
+    .from('job_title_clusters')
+    .upsert({
+      normalized_title: normTitle,
+      raw_titles: newRawTitles,
+      analysis_ids: newAnalysisIds,
+      analysis_count: newCount,
+      keyword_frequencies: mergedFreqs,
+      status: existing?.suggested_profession_id ? 'processed' : 'pending',
+      updated_at: new Date().toISOString(),
+    }, { onConflict: 'normalized_title' })
+    .select('*')
+    .single();
+
+  if (upsertErr) {
+    console.error('Cluster upsert error:', upsertErr);
+    return;
+  }
+
+  const threshold = upserted.cluster_threshold || 3;
+
+  // Check if threshold reached and no suggestion yet
+  if (newCount >= threshold && !upserted.suggested_profession_id) {
+    console.log(`Cluster threshold reached for "${normTitle}" (${newCount}/${threshold}) — triggering auto-suggest`);
+
+    // Compute per-word frequencies as ratios (appearances in X% of analyses)
+    const highFreqKws: string[] = [];
+    const medFreqKws: string[] = [];
+    for (const [word, counts] of Object.entries(mergedFreqs)) {
+      const appearsInCount = counts.length; // how many analyses contained this word
+      const ratio = appearsInCount / newCount;
+      if (ratio >= 0.7) highFreqKws.push(word);
+      else if (ratio >= 0.4) medFreqKws.push(word);
+    }
+
+    // Top 20 high-freq, top 15 medium-freq
+    const topHighFreq = highFreqKws.sort((a, b) => (mergedFreqs[b]?.length || 0) - (mergedFreqs[a]?.length || 0)).slice(0, 20);
+    const topMedFreq = medFreqKws.sort((a, b) => (mergedFreqs[b]?.length || 0) - (mergedFreqs[a]?.length || 0)).slice(0, 15);
+
+    // Fetch existing themes for AI context
+    const { data: themes } = await supabase
+      .from('ats_professions')
+      .select('id, name, category')
+      .eq('is_theme', true)
+      .eq('profession_status', 'active');
+
+    // Call ats-ai-review auto_cluster_suggest mode
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
+    const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+
+    const aiRes = await fetch(`${supabaseUrl}/functions/v1/ats-ai-review`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${serviceKey}`,
+      },
+      body: JSON.stringify({
+        mode: 'auto_cluster_suggest',
+        normalized_title: normTitle,
+        raw_titles: newRawTitles,
+        high_freq_keywords: topHighFreq,
+        medium_freq_keywords: topMedFreq,
+        existing_themes: themes || [],
+        cluster_id: upserted.id,
+      }),
+    });
+
+    if (!aiRes.ok) {
+      console.error('auto_cluster_suggest call failed:', aiRes.status);
+      return;
+    }
+
+    const aiData = await aiRes.json();
+    const suggestion = aiData?.suggestion;
+    if (!suggestion) return;
+
+    // Find parent theme
+    let parentThemeId: string | null = null;
+    if (!suggestion.is_new_theme && themes) {
+      const matched = themes.find((t: any) => t.name.toLowerCase() === suggestion.suggested_theme_name.toLowerCase());
+      parentThemeId = matched?.id || null;
+    } else if (suggestion.is_new_theme) {
+      const { data: newTheme } = await supabase.from('ats_professions').insert({
+        name: suggestion.suggested_theme_name,
+        is_theme: true,
+        profession_status: 'active',
+        primary_keywords: [],
+        secondary_keywords: [],
+        soft_skills: [],
+      }).select('id').single();
+      parentThemeId = newTheme?.id || null;
+    }
+
+    // Create profession as pending_review
+    const { data: newProf } = await supabase.from('ats_professions').insert({
+      name: suggestion.suggested_job_name,
+      is_theme: false,
+      parent_theme_id: parentThemeId,
+      profession_status: 'pending_review',
+      primary_keywords: suggestion.primary_keywords || topHighFreq.slice(0, 12),
+      secondary_keywords: suggestion.secondary_keywords || topMedFreq.slice(0, 8),
+      soft_skills: suggestion.soft_skills || [],
+      aliases: suggestion.aliases || newRawTitles.filter((t: string) => t !== suggestion.suggested_job_name),
+    }).select('id').single();
+
+    if (newProf?.id) {
+      // Link cluster to the new profession
+      await supabase.from('job_title_clusters').update({
+        suggested_profession_id: newProf.id,
+        status: 'processed',
+      }).eq('id', upserted.id);
+
+      console.log(`Auto-created pending_review profession "${suggestion.suggested_job_name}" from cluster "${normTitle}"`);
+    }
+  }
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -556,7 +737,7 @@ serve(async (req) => {
     // ===== SAVE ANALYSIS TO cv_analyses for admin review =====
     if (userId) {
       try {
-        await supabase.from('cv_analyses').insert({
+        const { data: savedAnalysis } = await supabase.from('cv_analyses').insert({
           user_id: userId,
           job_title: jobTitle,
           job_description: jobDescription.substring(0, 10000),
@@ -567,7 +748,20 @@ serve(async (req) => {
           analysis_result: result,
           admin_reviewed: false,
           needs_profession_suggestion: needsProfessionSuggestion,
-        });
+        }).select('id').single();
+
+        // ===== AUTO-CLUSTER: feed unknown professions into clustering system =====
+        if (needsProfessionSuggestion && savedAnalysis?.id) {
+          try {
+            await updateClusterAndMaybeSuggest(supabase, {
+              jobTitle,
+              jobDescription,
+              analysisId: savedAnalysis.id,
+            });
+          } catch (clusterErr) {
+            console.error('Cluster update failed (non-blocking):', clusterErr);
+          }
+        }
       } catch (saveErr) {
         console.error('Failed to save cv_analysis (non-blocking):', saveErr);
       }

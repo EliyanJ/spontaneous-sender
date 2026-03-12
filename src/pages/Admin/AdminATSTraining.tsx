@@ -8,12 +8,15 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
+import { Slider } from "@/components/ui/slider";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { toast } from "sonner";
 import {
   RefreshCw, Brain, CheckCircle, XCircle, ArrowRight, Sparkles, ChevronLeft, Plus, X, Save,
-  Upload, FileText, Loader2, Zap, FolderOpen, Briefcase, AlertCircle, ChevronRight
+  Upload, FileText, Loader2, Zap, FolderOpen, Briefcase, AlertCircle, ChevronRight, TrendingUp, Settings2
 } from "lucide-react";
+
+
 
 interface Profession {
   id: string;
@@ -72,6 +75,22 @@ interface ProfessionSuggestion {
   aliases: string[];
 }
 
+interface JobCluster {
+  id: string;
+  normalized_title: string;
+  raw_titles: string[];
+  analysis_ids: string[];
+  analysis_count: number;
+  keyword_frequencies: Record<string, number[]>;
+  suggested_profession_id: string | null;
+  status: string;
+  cluster_threshold: number;
+  created_at: string;
+  updated_at: string;
+}
+
+
+
 const CATEGORIES = ["RH", "Marketing", "Communication", "Tech / IT", "Finance", "Commercial", "Juridique", "Santé", "Logistique", "Ingénierie", "Design", "Éducation", "Autre"];
 
 export const AdminATSTraining = () => {
@@ -117,9 +136,17 @@ export const AdminATSTraining = () => {
   const [suggestedKeywords, setSuggestedKeywords] = useState<SuggestedKeyword[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Cluster monitoring state
+  const [clusters, setClusters] = useState<JobCluster[]>([]);
+  const [clusterThreshold, setClusterThreshold] = useState(3);
+  const [showClusterSettings, setShowClusterSettings] = useState(false);
+
+
+
   useEffect(() => {
     loadProfessions();
     loadAnalyses();
+    loadClusters();
   }, []);
 
   const loadProfessions = async () => {
@@ -137,7 +164,32 @@ export const AdminATSTraining = () => {
     })));
   };
 
-  const loadAnalyses = async () => {
+  const loadClusters = async () => {
+    const { data } = await supabase
+      .from("job_title_clusters" as any)
+      .select("*")
+      .order("analysis_count", { ascending: false })
+      .limit(50);
+    if (data) setClusters(data as JobCluster[]);
+  };
+
+  const updateClusterThreshold = async (newThreshold: number) => {
+    setClusterThreshold(newThreshold);
+    // Update all pending clusters with the new threshold
+    await supabase
+      .from("job_title_clusters" as any)
+      .update({ cluster_threshold: newThreshold })
+      .eq("status", "pending");
+    toast.success(`Seuil mis à jour : ${newThreshold} analyses`);
+  };
+
+  const deleteCluster = async (clusterId: string) => {
+    await supabase.from("job_title_clusters" as any).delete().eq("id", clusterId);
+    toast.success("Cluster supprimé");
+    loadClusters();
+  };
+
+
     setLoading(true);
     let query = supabase.from("cv_analyses").select("*").order("created_at", { ascending: false }).limit(100);
     if (filterReviewed === "unreviewed") query = query.eq("admin_reviewed", false);
@@ -909,6 +961,139 @@ export const AdminATSTraining = () => {
                 </CardContent>
               </Card>
             )}
+
+            {/* ===== CLUSTER MONITORING SECTION ===== */}
+            <Card className="bg-card border-border/50">
+              <CardHeader className="pb-2">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <TrendingUp className="h-4 w-4 text-primary" />
+                    Clusters en cours — détection automatique de nouveaux métiers
+                    {clusters.filter(c => c.status === 'pending').length > 0 && (
+                      <Badge variant="outline" className="text-xs">{clusters.filter(c => c.status === 'pending').length} actifs</Badge>
+                    )}
+                  </CardTitle>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      size="sm" variant="ghost" className="h-7 text-xs"
+                      onClick={() => setShowClusterSettings(!showClusterSettings)}
+                    >
+                      <Settings2 className="h-3.5 w-3.5 mr-1" /> Réglages
+                    </Button>
+                    <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={loadClusters}>
+                      <RefreshCw className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {/* Threshold settings */}
+                {showClusterSettings && (
+                  <div className="p-3 rounded-lg bg-muted/30 border border-border/50 space-y-3">
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <label className="text-sm font-medium">Seuil de déclenchement IA</label>
+                        <Badge variant="outline" className="text-xs font-mono">{clusterThreshold} analyses</Badge>
+                      </div>
+                      <Slider
+                        value={[clusterThreshold]}
+                        onValueChange={([v]) => setClusterThreshold(v)}
+                        onValueCommit={([v]) => updateClusterThreshold(v)}
+                        min={2}
+                        max={10}
+                        step={1}
+                        className="w-full"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Quand {clusterThreshold} analyses d'un même intitulé inconnu sont collectées → l'IA propose automatiquement un nouveau métier.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {clusters.length === 0 && (
+                  <p className="text-xs text-muted-foreground italic py-2">
+                    Aucun cluster en cours. Dès qu'un intitulé de poste non identifié est analysé, il apparaît ici.
+                  </p>
+                )}
+
+                {clusters.map(cluster => {
+                  const progress = Math.min(100, (cluster.analysis_count / (cluster.cluster_threshold || clusterThreshold)) * 100);
+                  const isComplete = cluster.analysis_count >= (cluster.cluster_threshold || clusterThreshold);
+                  const linkedProfession = cluster.suggested_profession_id
+                    ? professions.find(p => p.id === cluster.suggested_profession_id)
+                    : null;
+
+                  // Compute top keywords from frequencies
+                  const topKws = Object.entries(cluster.keyword_frequencies || {})
+                    .sort((a, b) => (b[1] as number[]).length - (a[1] as number[]).length)
+                    .slice(0, 6)
+                    .map(([w]) => w);
+
+                  return (
+                    <div
+                      key={cluster.id}
+                      className={`p-3 rounded-lg border transition-colors ${
+                        cluster.status === 'processed'
+                          ? 'bg-green-500/5 border-green-500/20'
+                          : isComplete
+                          ? 'bg-orange-500/5 border-orange-500/30'
+                          : 'bg-muted/20 border-border/30'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1 min-w-0 space-y-1.5">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-medium text-sm capitalize">{cluster.normalized_title}</span>
+                            {cluster.status === 'processed' && linkedProfession && (
+                              <Badge className="text-xs bg-green-500/20 text-green-400 border-green-500/30">
+                                ✓ → {linkedProfession.name}
+                              </Badge>
+                            )}
+                            {cluster.status === 'processed' && !linkedProfession && (
+                              <Badge className="text-xs bg-green-500/20 text-green-400 border-green-500/30">✓ Traité</Badge>
+                            )}
+                            {isComplete && cluster.status === 'pending' && (
+                              <Badge className="text-xs bg-orange-500/20 text-orange-400 border-orange-500/30 animate-pulse">
+                                🤖 En attente de suggestion IA...
+                              </Badge>
+                            )}
+                          </div>
+                          {cluster.raw_titles && cluster.raw_titles.length > 1 && (
+                            <div className="text-xs text-muted-foreground">
+                              Variantes: {cluster.raw_titles.slice(0, 3).join(' · ')}
+                              {cluster.raw_titles.length > 3 && ` +${cluster.raw_titles.length - 3}`}
+                            </div>
+                          )}
+                          {topKws.length > 0 && (
+                            <div className="flex flex-wrap gap-1">
+                              {topKws.map((kw, i) => (
+                                <Badge key={i} className="text-xs bg-muted text-muted-foreground border-border/50">{kw}</Badge>
+                              ))}
+                            </div>
+                          )}
+                          <div className="space-y-1">
+                            <div className="flex items-center justify-between text-xs text-muted-foreground">
+                              <span>{cluster.analysis_count} analyse{cluster.analysis_count !== 1 ? 's' : ''}</span>
+                              <span>seuil: {cluster.cluster_threshold || clusterThreshold}</span>
+                            </div>
+                            <Progress value={progress} className="h-1.5" />
+                          </div>
+                        </div>
+                        <Button
+                          size="sm" variant="ghost"
+                          className="h-6 w-6 p-0 shrink-0 text-muted-foreground hover:text-destructive"
+                          onClick={() => deleteCluster(cluster.id)}
+                          title="Supprimer ce cluster"
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </CardContent>
+            </Card>
           </div>
         </TabsContent>
 
