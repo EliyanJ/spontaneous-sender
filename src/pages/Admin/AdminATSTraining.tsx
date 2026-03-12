@@ -8,8 +8,12 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { toast } from "sonner";
-import { RefreshCw, Brain, CheckCircle, XCircle, ArrowRight, Sparkles, ChevronLeft, Plus, X, Save, Upload, FileText, Loader2, Zap } from "lucide-react";
+import {
+  RefreshCw, Brain, CheckCircle, XCircle, ArrowRight, Sparkles, ChevronLeft, Plus, X, Save,
+  Upload, FileText, Loader2, Zap, FolderOpen, Briefcase, AlertCircle, ChevronRight
+} from "lucide-react";
 
 interface Profession {
   id: string;
@@ -22,6 +26,9 @@ interface Profession {
   soft_skills: string[];
   last_trained_at: string | null;
   training_count: number;
+  parent_theme_id: string | null;
+  is_theme: boolean;
+  profession_status: string;
 }
 
 interface CvAnalysis {
@@ -35,6 +42,7 @@ interface CvAnalysis {
   admin_reviewed: boolean;
   admin_feedback: any;
   created_at: string;
+  needs_profession_suggestion?: boolean;
 }
 
 interface KeywordFeedback {
@@ -52,6 +60,18 @@ interface SuggestedKeyword {
   accepted: boolean | null;
 }
 
+interface ProfessionSuggestion {
+  suggested_job_name: string;
+  suggested_theme_name: string;
+  is_new_theme: boolean;
+  confidence: number;
+  reasoning: string;
+  primary_keywords: string[];
+  secondary_keywords: string[];
+  soft_skills: string[];
+  aliases: string[];
+}
+
 const CATEGORIES = ["RH", "Marketing", "Communication", "Tech / IT", "Finance", "Commercial", "Juridique", "Santé", "Logistique", "Ingénierie", "Design", "Éducation", "Autre"];
 
 export const AdminATSTraining = () => {
@@ -67,8 +87,16 @@ export const AdminATSTraining = () => {
   const [bulkReviewing, setBulkReviewing] = useState(false);
   const [bulkProgress, setBulkProgress] = useState({ current: 0, total: 0, done: false });
 
+  // New profession suggestion state
+  const [aiSuggesting, setAiSuggesting] = useState(false);
+  const [profSuggestion, setProfSuggestion] = useState<ProfessionSuggestion | null>(null);
+  const [editSuggestion, setEditSuggestion] = useState<ProfessionSuggestion | null>(null);
+  const [creatingFromSuggestion, setCreatingFromSuggestion] = useState(false);
+
   // Theme editing state
   const [editingProfession, setEditingProfession] = useState<Profession | null>(null);
+  const [editParentThemeId, setEditParentThemeId] = useState<string>("");
+  const [editIsTheme, setEditIsTheme] = useState(true);
   const [editCategory, setEditCategory] = useState("");
   const [editAliases, setEditAliases] = useState<string[]>([]);
   const [editPrimary, setEditPrimary] = useState<string[]>([]);
@@ -81,6 +109,8 @@ export const AdminATSTraining = () => {
   const [newSoftSkill, setNewSoftSkill] = useState("");
   const [newExcluded, setNewExcluded] = useState("");
   const [saving, setSaving] = useState(false);
+  const [creatingNew, setCreatingNew] = useState(false);
+  const [newProfName, setNewProfName] = useState("");
 
   // File import state
   const [importing, setImporting] = useState(false);
@@ -93,7 +123,7 @@ export const AdminATSTraining = () => {
   }, []);
 
   const loadProfessions = async () => {
-    const { data } = await supabase.from("ats_professions").select("*");
+    const { data } = await supabase.from("ats_professions").select("*").order("is_theme", { ascending: false }).order("name");
     if (data) setProfessions(data.map(p => ({
       ...p,
       aliases: (p.aliases as string[]) || [],
@@ -101,6 +131,9 @@ export const AdminATSTraining = () => {
       primary_keywords: (p.primary_keywords as string[]) || [],
       secondary_keywords: (p.secondary_keywords as string[]) || [],
       soft_skills: (p.soft_skills as string[]) || [],
+      parent_theme_id: (p as any).parent_theme_id || null,
+      is_theme: (p as any).is_theme ?? true,
+      profession_status: (p as any).profession_status || 'active',
     })));
   };
 
@@ -116,8 +149,14 @@ export const AdminATSTraining = () => {
 
   useEffect(() => { loadAnalyses(); }, [filterReviewed]);
 
+  // ===== COMPUTED: hierarchy =====
+  const themes = professions.filter(p => p.is_theme && !p.parent_theme_id);
+  const getChildJobs = (themeId: string) => professions.filter(p => p.parent_theme_id === themeId);
+  const pendingReview = professions.filter(p => p.profession_status === 'pending_review');
+  const orphanJobs = professions.filter(p => !p.is_theme && !p.parent_theme_id); // jobs without a theme parent
+
   // ===== THEME EDITING =====
-  const openThemeEditor = (prof: Profession) => {
+  const openThemeEditor = (prof: Profession, presetParentThemeId?: string, presetIsTheme?: boolean) => {
     setEditingProfession(prof);
     setEditCategory(prof.category || "");
     setEditAliases([...prof.aliases]);
@@ -125,15 +164,36 @@ export const AdminATSTraining = () => {
     setEditSecondary([...prof.secondary_keywords]);
     setEditSoftSkills([...prof.soft_skills]);
     setEditExcluded([...prof.excluded_words]);
+    setEditParentThemeId(presetParentThemeId ?? prof.parent_theme_id ?? "");
+    setEditIsTheme(presetIsTheme !== undefined ? presetIsTheme : prof.is_theme);
     setSuggestedKeywords([]);
     setTab("edit-theme");
   };
 
+  const openNewProfessionForm = (parentThemeId?: string) => {
+    const skeleton: Profession = {
+      id: "__new__",
+      name: "",
+      category: null,
+      aliases: [],
+      excluded_words: [],
+      primary_keywords: [],
+      secondary_keywords: [],
+      soft_skills: [],
+      last_trained_at: null,
+      training_count: 0,
+      parent_theme_id: parentThemeId || null,
+      is_theme: !parentThemeId,
+      profession_status: "active",
+    };
+    setNewProfName("");
+    openThemeEditor(skeleton, parentThemeId, !parentThemeId);
+    setCreatingNew(true);
+  };
+
   const addToList = (list: string[], setList: (v: string[]) => void, value: string, setInput: (v: string) => void) => {
     const trimmed = value.trim();
-    if (trimmed && !list.includes(trimmed)) {
-      setList([...list, trimmed]);
-    }
+    if (trimmed && !list.includes(trimmed)) setList([...list, trimmed]);
     setInput("");
   };
 
@@ -145,16 +205,30 @@ export const AdminATSTraining = () => {
     if (!editingProfession) return;
     setSaving(true);
     try {
-      const { error } = await supabase.from("ats_professions").update({
+      const payload: any = {
         category: editCategory || null,
         aliases: editAliases,
         primary_keywords: editPrimary,
         secondary_keywords: editSecondary,
         soft_skills: editSoftSkills,
         excluded_words: editExcluded,
-      }).eq("id", editingProfession.id);
-      if (error) throw error;
-      toast.success("Thématique sauvegardée !");
+        parent_theme_id: editParentThemeId || null,
+        is_theme: editIsTheme,
+      };
+
+      if (creatingNew) {
+        const nameToUse = newProfName.trim() || editingProfession.name;
+        if (!nameToUse) { toast.error("Entrez un nom"); setSaving(false); return; }
+        const { error } = await supabase.from("ats_professions").insert({ ...payload, name: nameToUse, profession_status: 'active' });
+        if (error) throw error;
+        toast.success(`${editIsTheme ? "Thématique" : "Métier"} créé(e) !`);
+        setCreatingNew(false);
+      } else {
+        const { error } = await supabase.from("ats_professions").update(payload).eq("id", editingProfession.id);
+        if (error) throw error;
+        toast.success(`${editIsTheme ? "Thématique" : "Métier"} sauvegardé(e) !`);
+      }
+
       loadProfessions();
       setEditingProfession(null);
       setTab("thematiques");
@@ -173,23 +247,16 @@ export const AdminATSTraining = () => {
     setSuggestedKeywords([]);
 
     try {
-      // Read file as base64
       const arrayBuffer = await file.arrayBuffer();
       const bytes = new Uint8Array(arrayBuffer);
       let binary = "";
-      for (let i = 0; i < bytes.length; i++) {
-        binary += String.fromCharCode(bytes[i]);
-      }
+      for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
       const base64 = btoa(binary);
 
-      // Extract text via parse-cv-document
       const { data: { session } } = await supabase.auth.getSession();
       const parseRes = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/parse-cv-document`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${session?.access_token}`,
-        },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${session?.access_token}` },
         body: JSON.stringify({ fileBase64: base64, fileName: file.name, fileType: file.type }),
       });
 
@@ -197,13 +264,9 @@ export const AdminATSTraining = () => {
       const parseResult = await parseRes.json();
       if (!parseResult.success) throw new Error(parseResult.error || "Extraction échouée");
 
-      // Now use AI to extract keywords
       const aiRes = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ats-ai-review`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${session?.access_token}`,
-        },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${session?.access_token}` },
         body: JSON.stringify({
           mode: "extract_keywords",
           text: parseResult.text,
@@ -218,11 +281,7 @@ export const AdminATSTraining = () => {
       const aiResult = await aiRes.json();
 
       if (aiResult.keywords) {
-        setSuggestedKeywords(aiResult.keywords.map((k: any) => ({
-          keyword: k.keyword,
-          category: k.category,
-          accepted: null,
-        })));
+        setSuggestedKeywords(aiResult.keywords.map((k: any) => ({ keyword: k.keyword, category: k.category, accepted: null })));
         toast.success(`${aiResult.keywords.length} mots-clés détectés`);
       }
     } catch (err: any) {
@@ -235,13 +294,9 @@ export const AdminATSTraining = () => {
 
   const acceptSuggestion = (index: number) => {
     const kw = suggestedKeywords[index];
-    if (kw.category === "primary" && !editPrimary.includes(kw.keyword)) {
-      setEditPrimary([...editPrimary, kw.keyword]);
-    } else if (kw.category === "secondary" && !editSecondary.includes(kw.keyword)) {
-      setEditSecondary([...editSecondary, kw.keyword]);
-    } else if (kw.category === "soft_skill" && !editSoftSkills.includes(kw.keyword)) {
-      setEditSoftSkills([...editSoftSkills, kw.keyword]);
-    }
+    if (kw.category === "primary" && !editPrimary.includes(kw.keyword)) setEditPrimary([...editPrimary, kw.keyword]);
+    else if (kw.category === "secondary" && !editSecondary.includes(kw.keyword)) setEditSecondary([...editSecondary, kw.keyword]);
+    else if (kw.category === "soft_skill" && !editSoftSkills.includes(kw.keyword)) setEditSoftSkills([...editSoftSkills, kw.keyword]);
     const updated = [...suggestedKeywords];
     updated[index] = { ...kw, accepted: true };
     setSuggestedKeywords(updated);
@@ -271,11 +326,103 @@ export const AdminATSTraining = () => {
     toast.success("Tous les mots-clés acceptés");
   };
 
+  // ===== AI PROFESSION SUGGESTION =====
+  const runAiProfessionSuggestion = async (analysis: CvAnalysis) => {
+    setAiSuggesting(true);
+    setProfSuggestion(null);
+    setEditSuggestion(null);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ats-ai-review`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${session?.access_token}` },
+        body: JSON.stringify({
+          mode: "suggest_profession",
+          job_title: analysis.job_title,
+          job_description: analysis.analysis_result?.jobDescription || analysis.job_title,
+          existing_themes: themes.map(t => ({ name: t.name, category: t.category })),
+        }),
+      });
+      if (!res.ok) throw new Error("Erreur IA");
+      const result = await res.json();
+      if (result.suggestion) {
+        setProfSuggestion(result.suggestion);
+        setEditSuggestion({ ...result.suggestion });
+        toast.success("Suggestion IA générée !");
+      }
+    } catch (err: any) {
+      toast.error("Erreur suggestion IA: " + err.message);
+    } finally {
+      setAiSuggesting(false);
+    }
+  };
+
+  const createProfessionFromSuggestion = async () => {
+    if (!editSuggestion) return;
+    setCreatingFromSuggestion(true);
+    try {
+      // Find or create parent theme
+      let parentThemeId: string | null = null;
+      if (!editSuggestion.is_new_theme) {
+        const matchedTheme = themes.find(t => t.name.toLowerCase() === editSuggestion.suggested_theme_name.toLowerCase());
+        parentThemeId = matchedTheme?.id || null;
+      } else {
+        // Create new theme
+        const { data: newTheme, error: themeErr } = await supabase.from("ats_professions").insert({
+          name: editSuggestion.suggested_theme_name,
+          is_theme: true,
+          profession_status: "active",
+          primary_keywords: [],
+          secondary_keywords: [],
+          soft_skills: [],
+        }).select().single();
+        if (themeErr) throw themeErr;
+        parentThemeId = newTheme.id;
+      }
+
+      // Create the job profession as pending_review
+      const { error } = await supabase.from("ats_professions").insert({
+        name: editSuggestion.suggested_job_name,
+        is_theme: false,
+        parent_theme_id: parentThemeId,
+        profession_status: "pending_review",
+        primary_keywords: editSuggestion.primary_keywords,
+        secondary_keywords: editSuggestion.secondary_keywords,
+        soft_skills: editSuggestion.soft_skills,
+        aliases: editSuggestion.aliases,
+      });
+      if (error) throw error;
+
+      toast.success(`Métier "${editSuggestion.suggested_job_name}" créé en attente de validation`);
+      setProfSuggestion(null);
+      setEditSuggestion(null);
+      loadProfessions();
+    } catch (err: any) {
+      toast.error(err.message);
+    } finally {
+      setCreatingFromSuggestion(false);
+    }
+  };
+
+  const validatePendingProfession = async (profId: string) => {
+    await supabase.from("ats_professions").update({ profession_status: "active" }).eq("id", profId);
+    toast.success("Métier validé et activé !");
+    loadProfessions();
+  };
+
+  const rejectPendingProfession = async (profId: string) => {
+    await supabase.from("ats_professions").delete().eq("id", profId);
+    toast.success("Métier rejeté et supprimé.");
+    loadProfessions();
+  };
+
   // ===== ANALYSIS REVIEW =====
   const openReview = (analysis: CvAnalysis) => {
     setSelectedAnalysis(analysis);
     setFeedbacks(new Map());
     setAdminNotes("");
+    setProfSuggestion(null);
+    setEditSuggestion(null);
     setTab("review");
   };
 
@@ -374,14 +521,9 @@ export const AdminATSTraining = () => {
   };
 
   const runBulkAiReview = async () => {
-    // Fetch all unreviewed analyses with a profession_id
     const { data: unreviewed } = await supabase
-      .from("cv_analyses")
-      .select("*")
-      .eq("admin_reviewed", false)
-      .not("profession_id", "is", null)
-      .order("created_at", { ascending: false })
-      .limit(50);
+      .from("cv_analyses").select("*").eq("admin_reviewed", false).not("profession_id", "is", null)
+      .order("created_at", { ascending: false }).limit(50);
 
     if (!unreviewed || unreviewed.length === 0) {
       toast.info("Aucune analyse non revue avec une thématique identifiée.");
@@ -399,7 +541,6 @@ export const AdminATSTraining = () => {
       const analysis = unreviewed[i] as CvAnalysis;
       setBulkProgress(p => ({ ...p, current: i + 1 }));
       try {
-        // 1. Get AI suggestions
         const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ats-ai-review`, {
           method: "POST",
           headers: { "Content-Type": "application/json", Authorization: `Bearer ${session?.access_token}` },
@@ -408,13 +549,11 @@ export const AdminATSTraining = () => {
         if (!res.ok) throw new Error("Erreur IA");
         const result = await res.json();
         if (!result.suggestions || result.suggestions.length === 0) {
-          // Mark as reviewed with no changes
           await supabase.from("cv_analyses").update({ admin_reviewed: true, admin_feedback: { notes: "Revue IA auto — aucune correction", corrections_count: 0 } }).eq("id", analysis.id);
           successCount++;
           continue;
         }
 
-        // 2. Build corrections map from AI suggestions
         const profId = analysis.profession_id!;
         const prof = professions.find(p => p.id === profId);
         if (!prof) { errorCount++; continue; }
@@ -427,13 +566,8 @@ export const AdminATSTraining = () => {
 
         for (const s of result.suggestions) {
           feedbackInserts.push({
-            profession_id: profId,
-            keyword: s.keyword,
-            original_category: s.original_category,
-            corrected_category: s.corrected_category,
-            is_valid: s.is_valid,
-            admin_notes: s.reason || "Revue IA auto",
-            source: "ai_bulk",
+            profession_id: profId, keyword: s.keyword, original_category: s.original_category,
+            corrected_category: s.corrected_category, is_valid: s.is_valid, admin_notes: s.reason || "Revue IA auto", source: "ai_bulk",
           });
           if (!s.is_valid || s.corrected_category === "common_word" || s.corrected_category === "excluded") {
             if (!newExcluded.includes(s.keyword)) newExcluded.push(s.keyword);
@@ -446,7 +580,6 @@ export const AdminATSTraining = () => {
           }
         }
 
-        // 3. Apply corrections
         if (feedbackInserts.length > 0) await supabase.from("ats_keyword_feedback").insert(feedbackInserts);
         await supabase.from("ats_professions").update({
           excluded_words: newExcluded, primary_keywords: newPrimaryKw, secondary_keywords: newSecondaryKw, soft_skills: newSoftSkillsKw,
@@ -456,10 +589,8 @@ export const AdminATSTraining = () => {
           admin_reviewed: true, admin_feedback: { notes: "Revue IA automatique", corrections_count: result.suggestions.length },
         }).eq("id", analysis.id);
 
-        // Update local profession cache so next iterations are based on latest data
         const updatedProf = { ...prof, excluded_words: newExcluded, primary_keywords: newPrimaryKw, secondary_keywords: newSecondaryKw, soft_skills: newSoftSkillsKw, training_count: (prof.training_count || 0) + result.suggestions.length };
         setProfessions(prev => prev.map(p => p.id === profId ? updatedProf : p));
-
         successCount++;
       } catch {
         errorCount++;
@@ -476,15 +607,9 @@ export const AdminATSTraining = () => {
   const getAnalysisKeywords = (analysis: CvAnalysis) => {
     const result = analysis.analysis_result;
     const keywords: Array<{ keyword: string; category: string; found: boolean }> = [];
-    if (result?.primaryKeywords?.scores) {
-      for (const s of result.primaryKeywords.scores) keywords.push({ keyword: s.keyword, category: "primary", found: s.cvCount > 0 });
-    }
-    if (result?.secondaryKeywords?.scores) {
-      for (const s of result.secondaryKeywords.scores) keywords.push({ keyword: s.keyword, category: "secondary", found: s.cvCount > 0 });
-    }
-    if (result?.softSkills?.scores) {
-      for (const s of result.softSkills.scores) keywords.push({ keyword: s.skill, category: "soft_skill", found: s.found });
-    }
+    if (result?.primaryKeywords?.scores) for (const s of result.primaryKeywords.scores) keywords.push({ keyword: s.keyword, category: "primary", found: s.cvCount > 0 });
+    if (result?.secondaryKeywords?.scores) for (const s of result.secondaryKeywords.scores) keywords.push({ keyword: s.keyword, category: "secondary", found: s.cvCount > 0 });
+    if (result?.softSkills?.scores) for (const s of result.softSkills.scores) keywords.push({ keyword: s.skill, category: "soft_skill", found: s.found });
     return keywords;
   };
 
@@ -516,30 +641,50 @@ export const AdminATSTraining = () => {
   // ===== RENDER HELPERS =====
   const renderKeywordList = (
     label: string, color: string, items: string[], setItems: (v: string[]) => void,
-    inputValue: string, setInputValue: (v: string) => void
+    inputValue: string, setInputValue: (v: string) => void,
+    readOnly = false, inheritedItems?: string[]
   ) => (
     <div className="space-y-2">
       <label className="text-sm font-medium text-foreground">{label} ({items.length})</label>
+
+      {/* Inherited keywords from parent theme (read-only) */}
+      {inheritedItems && inheritedItems.length > 0 && (
+        <div className="space-y-1">
+          <span className="text-xs text-muted-foreground">Hérités de la thématique parente (lecture seule)</span>
+          <div className="flex flex-wrap gap-1.5 p-2 rounded-md bg-muted/30 border border-border/30">
+            {inheritedItems.map((item, i) => (
+              <Badge key={i} className={`${color} opacity-50 text-xs`}>{item}</Badge>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Specific keywords */}
+      {inheritedItems && inheritedItems.length > 0 && (
+        <span className="text-xs text-foreground font-medium">Mots-clés spécifiques à ce métier</span>
+      )}
       <div className="flex flex-wrap gap-1.5">
         {items.map((item, i) => (
           <Badge key={i} className={`${color} pr-1 flex items-center gap-1`}>
             {item}
-            <button onClick={() => removeFromList(items, setItems, i)} className="ml-1 hover:opacity-70"><X className="h-3 w-3" /></button>
+            {!readOnly && <button onClick={() => removeFromList(items, setItems, i)} className="ml-1 hover:opacity-70"><X className="h-3 w-3" /></button>}
           </Badge>
         ))}
       </div>
-      <div className="flex gap-2">
-        <Input
-          value={inputValue}
-          onChange={(e) => setInputValue(e.target.value)}
-          placeholder={`Ajouter un ${label.toLowerCase().replace(/\s*\(\d+\)/, '')}...`}
-          className="h-8 text-sm"
-          onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addToList(items, setItems, inputValue, setInputValue); } }}
-        />
-        <Button size="sm" variant="outline" className="h-8" onClick={() => addToList(items, setItems, inputValue, setInputValue)}>
-          <Plus className="h-3 w-3" />
-        </Button>
-      </div>
+      {!readOnly && (
+        <div className="flex gap-2">
+          <Input
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            placeholder={`Ajouter un ${label.toLowerCase().replace(/\s*\(\d+\)/, '')}...`}
+            className="h-8 text-sm"
+            onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addToList(items, setItems, inputValue, setInputValue); } }}
+          />
+          <Button size="sm" variant="outline" className="h-8" onClick={() => addToList(items, setItems, inputValue, setInputValue)}>
+            <Plus className="h-3 w-3" />
+          </Button>
+        </div>
+      )}
     </div>
   );
 
@@ -549,31 +694,30 @@ export const AdminATSTraining = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground">ATS Training</h1>
-          <p className="text-muted-foreground text-sm">Machine Learning itératif pour le scoring CV</p>
+          <p className="text-muted-foreground text-sm">Machine Learning itératif — hiérarchie Thématiques → Métiers</p>
         </div>
         <div className="flex items-center gap-2">
-          <Badge variant="outline" className="text-xs">{professions.length} thématiques</Badge>
-          <Badge variant="outline" className="text-xs">{analyses.filter(a => !a.admin_reviewed).length} à revoir</Badge>
+          <Badge variant="outline" className="text-xs">{themes.length} thématiques</Badge>
+          <Badge variant="outline" className="text-xs">{professions.filter(p => !p.is_theme).length} métiers</Badge>
+          {pendingReview.length > 0 && (
+            <Badge className="text-xs bg-orange-500/20 text-orange-400 border-orange-500/30">
+              {pendingReview.length} à valider
+            </Badge>
+          )}
+          <Badge variant="outline" className="text-xs">{analyses.filter(a => !a.admin_reviewed).length} analyses à revoir</Badge>
           <Button
-            variant="outline"
-            size="sm"
+            variant="outline" size="sm"
             onClick={runBulkAiReview}
             disabled={bulkReviewing || analyses.filter(a => !a.admin_reviewed).length === 0}
             className="border-primary/50 text-primary hover:bg-primary/10"
           >
-            {bulkReviewing ? (
-              <Loader2 className="h-4 w-4 mr-1 animate-spin" />
-            ) : (
-              <Zap className="h-4 w-4 mr-1" />
-            )}
-            {bulkReviewing
-              ? `Revue en cours... (${bulkProgress.current}/${bulkProgress.total})`
-              : `Revue IA en masse (${analyses.filter(a => !a.admin_reviewed).length})`}
+            {bulkReviewing ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Zap className="h-4 w-4 mr-1" />}
+            {bulkReviewing ? `Revue en cours... (${bulkProgress.current}/${bulkProgress.total})` : `Revue IA en masse (${analyses.filter(a => !a.admin_reviewed).length})`}
           </Button>
         </div>
       </div>
 
-      {/* Bulk review progress bar */}
+      {/* Bulk review progress */}
       {bulkReviewing && (
         <Card className="bg-card border-primary/30">
           <CardContent className="pt-4 pb-3 space-y-2">
@@ -585,59 +729,186 @@ export const AdminATSTraining = () => {
               <span className="text-muted-foreground">{bulkProgress.current} / {bulkProgress.total} analyses</span>
             </div>
             <Progress value={bulkProgress.total > 0 ? (bulkProgress.current / bulkProgress.total) * 100 : 0} className="h-2" />
-            <p className="text-xs text-muted-foreground">Chaque analyse est envoyée à l'IA pour validation et les corrections sont appliquées automatiquement.</p>
           </CardContent>
         </Card>
       )}
 
       <Tabs value={tab} onValueChange={setTab}>
         <TabsList>
-          <TabsTrigger value="thematiques">Thématiques</TabsTrigger>
+          <TabsTrigger value="thematiques">Thématiques & Métiers</TabsTrigger>
           <TabsTrigger value="analyses">Analyses à revoir</TabsTrigger>
           {selectedAnalysis && <TabsTrigger value="review">Revue</TabsTrigger>}
-          {editingProfession && <TabsTrigger value="edit-theme">Édition: {editingProfession.name}</TabsTrigger>}
+          {editingProfession && <TabsTrigger value="edit-theme">
+            {creatingNew ? "Nouveau" : "Édition"}: {newProfName || editingProfession.name || "…"}
+          </TabsTrigger>}
         </TabsList>
 
         {/* ===== TAB: THEMATIQUES ===== */}
         <TabsContent value="thematiques">
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {professions.map(prof => {
-              const analysisCount = analyses.filter(a => a.profession_id === prof.id).length;
-              return (
-                <Card
-                  key={prof.id}
-                  className="bg-card border-border/50 cursor-pointer hover:border-primary/50 transition-colors"
-                  onClick={() => openThemeEditor(prof)}
-                >
-                  <CardHeader className="pb-2">
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-sm font-medium">{prof.name}</CardTitle>
-                      {prof.category && <Badge variant="outline" className="text-xs">{prof.category}</Badge>}
+          <div className="space-y-6">
+            {/* Pending Review Section */}
+            {pendingReview.length > 0 && (
+              <Card className="bg-card border-orange-500/30">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <AlertCircle className="h-4 w-4 text-orange-400" />
+                    🤖 Nouveaux métiers proposés par l'IA — à valider ({pendingReview.length})
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  {pendingReview.map(p => {
+                    const parentName = p.parent_theme_id ? professions.find(t => t.id === p.parent_theme_id)?.name : null;
+                    return (
+                      <div key={p.id} className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 border border-border/50">
+                        <div className="flex-1 min-w-0">
+                          <div className="font-medium text-sm">{p.name}</div>
+                          <div className="text-xs text-muted-foreground">
+                            {parentName ? `📂 ${parentName}` : "Sans thématique"}
+                            {" · "}{p.primary_keywords.length} hard skills · {p.soft_skills.length} soft skills
+                          </div>
+                          {p.primary_keywords.length > 0 && (
+                            <div className="flex flex-wrap gap-1 mt-1">
+                              {p.primary_keywords.slice(0, 5).map((kw, i) => (
+                                <Badge key={i} className="text-xs bg-blue-500/20 text-blue-400 border-blue-500/30">{kw}</Badge>
+                              ))}
+                              {p.primary_keywords.length > 5 && <span className="text-xs text-muted-foreground">+{p.primary_keywords.length - 5}</span>}
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex gap-2 shrink-0">
+                          <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => openThemeEditor(p)}>
+                            Modifier
+                          </Button>
+                          <Button size="sm" className="h-7 text-xs bg-green-600 hover:bg-green-700 text-white" onClick={() => validatePendingProfession(p.id)}>
+                            <CheckCircle className="h-3 w-3 mr-1" /> Valider
+                          </Button>
+                          <Button size="sm" variant="destructive" className="h-7 text-xs" onClick={() => rejectPendingProfession(p.id)}>
+                            <XCircle className="h-3 w-3 mr-1" /> Rejeter
+                          </Button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* New Theme Button */}
+            <div className="flex justify-end">
+              <Button size="sm" variant="outline" onClick={() => openNewProfessionForm(undefined)} className="border-primary/50 text-primary hover:bg-primary/10">
+                <Plus className="h-4 w-4 mr-1" /> Nouvelle thématique
+              </Button>
+            </div>
+
+            {/* Themes Accordion */}
+            <Accordion type="multiple" className="space-y-2">
+              {themes.map(theme => {
+                const children = getChildJobs(theme.id);
+                const pendingChildren = children.filter(c => c.profession_status === 'pending_review');
+                const activeChildren = children.filter(c => c.profession_status === 'active');
+                const analysisCount = analyses.filter(a => a.profession_id === theme.id || children.some(c => c.id === a.profession_id)).length;
+
+                return (
+                  <AccordionItem key={theme.id} value={theme.id} className="border border-border/50 rounded-lg bg-card overflow-hidden">
+                    <AccordionTrigger className="px-4 hover:no-underline hover:bg-muted/30">
+                      <div className="flex items-center gap-3 flex-1 min-w-0">
+                        <FolderOpen className="h-4 w-4 text-primary shrink-0" />
+                        <div className="text-left min-w-0">
+                          <div className="font-medium text-sm flex items-center gap-2">
+                            {theme.name}
+                            {theme.category && <Badge variant="outline" className="text-xs">{theme.category}</Badge>}
+                            {pendingChildren.length > 0 && (
+                              <Badge className="text-xs bg-orange-500/20 text-orange-400 border-orange-500/30">
+                                {pendingChildren.length} 🆕
+                              </Badge>
+                            )}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {activeChildren.length} métier{activeChildren.length !== 1 ? 's' : ''} · {theme.primary_keywords.length} mots-clés communs · {analysisCount} analyses
+                          </div>
+                        </div>
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent>
+                      <div className="px-4 pb-4 pt-1 space-y-3">
+                        {/* Theme keywords summary */}
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground p-2 bg-muted/30 rounded">
+                          <span className="font-medium text-foreground">Base commune:</span>
+                          {theme.primary_keywords.slice(0, 6).map((kw, i) => (
+                            <Badge key={i} className="text-xs bg-blue-500/10 text-blue-400 border-blue-500/20">{kw}</Badge>
+                          ))}
+                          {theme.primary_keywords.length > 6 && <span>+{theme.primary_keywords.length - 6} autres</span>}
+                          <Button size="sm" variant="ghost" className="h-6 ml-auto text-xs" onClick={() => openThemeEditor(theme)}>
+                            Éditer thématique
+                          </Button>
+                        </div>
+
+                        {/* Child jobs */}
+                        {children.length === 0 && (
+                          <p className="text-xs text-muted-foreground italic">Aucun métier spécifique — ajouter des métiers pour plus de précision.</p>
+                        )}
+                        <div className="space-y-2">
+                          {children.map(job => (
+                            <div
+                              key={job.id}
+                              className={`flex items-center gap-3 p-2.5 rounded-lg border cursor-pointer transition-colors hover:border-primary/50 ${
+                                job.profession_status === 'pending_review'
+                                  ? 'bg-orange-500/5 border-orange-500/30'
+                                  : 'bg-muted/20 border-border/30'
+                              }`}
+                              onClick={() => openThemeEditor(job)}
+                            >
+                              <Briefcase className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                              <div className="flex-1 min-w-0">
+                                <div className="text-sm font-medium flex items-center gap-2">
+                                  {job.name}
+                                  {job.profession_status === 'pending_review' && (
+                                    <Badge className="text-xs bg-orange-500/20 text-orange-400 border-orange-500/30">🆕 À valider</Badge>
+                                  )}
+                                </div>
+                                <div className="text-xs text-muted-foreground">
+                                  {job.primary_keywords.length} hard skills propres · {job.soft_skills.length} soft skills · {job.training_count || 0} feedbacks
+                                </div>
+                                {job.aliases.length > 0 && (
+                                  <div className="text-xs text-muted-foreground">Alias: {job.aliases.join(", ")}</div>
+                                )}
+                              </div>
+                              <ChevronRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                            </div>
+                          ))}
+                        </div>
+
+                        {/* Add job button */}
+                        <Button
+                          size="sm" variant="outline"
+                          className="w-full h-7 text-xs border-dashed border-primary/30 text-primary/70 hover:bg-primary/5"
+                          onClick={() => openNewProfessionForm(theme.id)}
+                        >
+                          <Plus className="h-3 w-3 mr-1" /> Ajouter un métier dans "{theme.name}"
+                        </Button>
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+                );
+              })}
+            </Accordion>
+
+            {/* Orphan jobs (jobs without a theme) */}
+            {orphanJobs.length > 0 && (
+              <Card className="bg-card border-border/50">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm text-muted-foreground">Métiers sans thématique parente ({orphanJobs.length})</CardTitle>
+                </CardHeader>
+                <CardContent className="grid gap-2 md:grid-cols-2 lg:grid-cols-3">
+                  {orphanJobs.map(prof => (
+                    <div key={prof.id} className="p-3 rounded border border-border/30 bg-muted/20 cursor-pointer hover:border-primary/50 transition-colors" onClick={() => openThemeEditor(prof)}>
+                      <div className="font-medium text-sm">{prof.name}</div>
+                      <div className="text-xs text-muted-foreground">{prof.primary_keywords.length} keywords · {prof.training_count || 0} feedbacks</div>
                     </div>
-                  </CardHeader>
-                  <CardContent className="space-y-2 text-xs text-muted-foreground">
-                    <div className="flex justify-between">
-                      <span>{prof.primary_keywords.length} hard skills</span>
-                      <span>{prof.secondary_keywords.length} secondary</span>
-                      <span>{prof.soft_skills.length} soft</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>{analysisCount} analyses</span>
-                      <span>{prof.training_count || 0} feedbacks</span>
-                    </div>
-                    {prof.excluded_words.length > 0 && (
-                      <div className="text-xs text-orange-400">{prof.excluded_words.length} mots exclus</div>
-                    )}
-                    {prof.last_trained_at && (
-                      <div className="text-xs">Dernier entraînement: {new Date(prof.last_trained_at).toLocaleDateString("fr-FR")}</div>
-                    )}
-                    {prof.aliases.length > 0 && (
-                      <div className="text-xs text-muted-foreground">Alias: {prof.aliases.join(", ")}</div>
-                    )}
-                  </CardContent>
-                </Card>
-              );
-            })}
+                  ))}
+                </CardContent>
+              </Card>
+            )}
           </div>
         </TabsContent>
 
@@ -646,85 +917,172 @@ export const AdminATSTraining = () => {
           {editingProfession && (
             <div className="space-y-6">
               <div className="flex items-center gap-3">
-                <Button variant="ghost" size="sm" onClick={() => { setEditingProfession(null); setTab("thematiques"); }}>
+                <Button variant="ghost" size="sm" onClick={() => { setEditingProfession(null); setCreatingNew(false); setTab("thematiques"); }}>
                   <ChevronLeft className="h-4 w-4 mr-1" /> Retour
                 </Button>
                 <div>
-                  <h3 className="font-semibold text-lg">{editingProfession.name}</h3>
-                  <p className="text-xs text-muted-foreground">Édition des mots-clés et paramètres</p>
+                  <h3 className="font-semibold text-lg flex items-center gap-2">
+                    {editIsTheme ? <FolderOpen className="h-4 w-4 text-primary" /> : <Briefcase className="h-4 w-4 text-muted-foreground" />}
+                    {creatingNew ? (
+                      <Input
+                        value={newProfName}
+                        onChange={(e) => setNewProfName(e.target.value)}
+                        placeholder={editIsTheme ? "Nom de la thématique..." : "Nom du métier..."}
+                        className="h-8 text-base font-semibold w-64"
+                        autoFocus
+                      />
+                    ) : editingProfession.name}
+                    {editIsTheme ? (
+                      <Badge variant="outline" className="text-xs">Thématique</Badge>
+                    ) : (
+                      <Badge className="text-xs bg-blue-500/20 text-blue-400 border-blue-500/30">Métier spécifique</Badge>
+                    )}
+                  </h3>
+                  {!editIsTheme && editParentThemeId && (
+                    <p className="text-xs text-muted-foreground">
+                      📂 Thématique parente: <strong>{professions.find(p => p.id === editParentThemeId)?.name || editParentThemeId}</strong>
+                    </p>
+                  )}
+                  {!creatingNew && (
+                    <p className="text-xs text-muted-foreground">Édition des mots-clés et paramètres</p>
+                  )}
                 </div>
               </div>
+
+              {/* Type switcher — only when creating new */}
+              {creatingNew && (
+                <Card className="bg-card border-primary/20">
+                  <CardContent className="pt-4">
+                    <div className="flex gap-3">
+                      <Button
+                        size="sm" variant={editIsTheme ? "default" : "outline"}
+                        className="flex-1"
+                        onClick={() => { setEditIsTheme(true); setEditParentThemeId(""); }}
+                      >
+                        <FolderOpen className="h-4 w-4 mr-1" /> Thématique (ex: Gestion de projet)
+                      </Button>
+                      <Button
+                        size="sm" variant={!editIsTheme ? "default" : "outline"}
+                        className="flex-1"
+                        onClick={() => setEditIsTheme(false)}
+                      >
+                        <Briefcase className="h-4 w-4 mr-1" /> Métier spécifique (ex: Scrum Master)
+                      </Button>
+                    </div>
+                    {!editIsTheme && (
+                      <div className="mt-3 space-y-1">
+                        <label className="text-xs font-medium text-muted-foreground">Thématique parente</label>
+                        <Select value={editParentThemeId} onValueChange={setEditParentThemeId}>
+                          <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Choisir une thématique..." /></SelectTrigger>
+                          <SelectContent>
+                            {themes.map(t => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Parent theme: if editing a child job, show which theme it belongs to */}
+              {!editIsTheme && !creatingNew && (
+                <Card className="bg-muted/20 border-border/30">
+                  <CardContent className="pt-4">
+                    <div className="space-y-1">
+                      <label className="text-xs font-medium text-muted-foreground">Thématique parente</label>
+                      <Select value={editParentThemeId} onValueChange={setEditParentThemeId}>
+                        <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Aucune thématique parente..." /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="">Aucune</SelectItem>
+                          {themes.filter(t => t.id !== editingProfession.id).map(t => (
+                            <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
 
               {/* Category & Aliases */}
               <Card className="bg-card border-border/50">
                 <CardHeader className="pb-2"><CardTitle className="text-sm">Paramètres généraux</CardTitle></CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-foreground">Catégorie</label>
-                    <Select value={editCategory} onValueChange={setEditCategory}>
-                      <SelectTrigger><SelectValue placeholder="Choisir une catégorie..." /></SelectTrigger>
-                      <SelectContent>
-                        {CATEGORIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  {editIsTheme && (
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-foreground">Catégorie</label>
+                      <Select value={editCategory} onValueChange={setEditCategory}>
+                        <SelectTrigger><SelectValue placeholder="Choisir une catégorie..." /></SelectTrigger>
+                        <SelectContent>
+                          {CATEGORIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
                   {renderKeywordList("Aliases / Intitulés équivalents", "bg-muted text-muted-foreground", editAliases, setEditAliases, newAlias, setNewAlias)}
                 </CardContent>
               </Card>
 
-              {/* Keywords */}
-              <Card className="bg-card border-border/50">
-                <CardHeader className="pb-2">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-sm">Mots-clés</CardTitle>
-                    <div className="flex gap-2">
-                      <input type="file" ref={fileInputRef} accept=".pdf,.txt,.docx" className="hidden" onChange={handleFileImport} />
-                      <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()} disabled={importing}>
-                        {importing ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Upload className="h-4 w-4 mr-1" />}
-                        {importing ? "Extraction..." : "Importer via fichier"}
-                      </Button>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-8">
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2 pb-1 border-b border-blue-500/20">
-                      <span className="text-base">🔵</span>
-                      <span className="text-sm font-semibold text-blue-400">Hard Skills — Compétences techniques principales</span>
-                      <span className="text-xs text-muted-foreground ml-auto">Outils, logiciels, technologies, certifications</span>
-                    </div>
-                    {renderKeywordList("Hard Skill", "bg-blue-500/20 text-blue-400 border-blue-500/30", editPrimary, setEditPrimary, newPrimary, setNewPrimary)}
-                  </div>
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2 pb-1 border-b border-purple-500/20">
-                      <span className="text-base">🟣</span>
-                      <span className="text-sm font-semibold text-purple-400">Mots-clés secondaires — Compétences complémentaires</span>
-                      <span className="text-xs text-muted-foreground ml-auto">Connaissances associées au métier</span>
-                    </div>
-                    {renderKeywordList("Mot-clé secondaire", "bg-purple-500/20 text-purple-400 border-purple-500/30", editSecondary, setEditSecondary, newSecondary, setNewSecondary)}
-                  </div>
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2 pb-1 border-b border-green-500/20">
-                      <span className="text-base">🟢</span>
-                      <span className="text-sm font-semibold text-green-400">Soft Skills — Savoir-être</span>
-                      <span className="text-xs text-muted-foreground ml-auto">Qualités comportementales et interpersonnelles</span>
-                    </div>
-                    {renderKeywordList("Soft skill", "bg-green-500/20 text-green-400 border-green-500/30", editSoftSkills, setEditSoftSkills, newSoftSkill, setNewSoftSkill)}
-                  </div>
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2 pb-1 border-b border-red-500/20">
-                      <span className="text-base">🔴</span>
-                      <span className="text-sm font-semibold text-red-400">Mots exclus — Mots courants / hors contexte</span>
-                      <span className="text-xs text-muted-foreground ml-auto">Mots génériques sans valeur de compétence</span>
-                    </div>
-                    {renderKeywordList("Mot exclu", "bg-red-500/20 text-red-400 border-red-500/30", editExcluded, setEditExcluded, newExcluded, setNewExcluded)}
-                  </div>
-                </CardContent>
-              </Card>
+              {/* Keywords — with parent theme inherited keywords shown for child jobs */}
+              {(() => {
+                const parent = editParentThemeId ? professions.find(p => p.id === editParentThemeId) : null;
+                return (
+                  <Card className="bg-card border-border/50">
+                    <CardHeader className="pb-2">
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="text-sm">
+                          {editIsTheme ? "Mots-clés communs à tous les métiers de cette thématique" : "Mots-clés spécifiques à ce métier"}
+                        </CardTitle>
+                        <div className="flex gap-2">
+                          <input type="file" ref={fileInputRef} accept=".pdf,.txt,.docx" className="hidden" onChange={handleFileImport} />
+                          <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()} disabled={importing}>
+                            {importing ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Upload className="h-4 w-4 mr-1" />}
+                            {importing ? "Extraction..." : "Importer via fichier"}
+                          </Button>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-8">
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2 pb-1 border-b border-blue-500/20">
+                          <span className="text-base">🔵</span>
+                          <span className="text-sm font-semibold text-blue-400">Hard Skills — Compétences techniques principales</span>
+                          <span className="text-xs text-muted-foreground ml-auto">Outils, logiciels, technologies, certifications</span>
+                        </div>
+                        {renderKeywordList("Hard Skill", "bg-blue-500/20 text-blue-400 border-blue-500/30", editPrimary, setEditPrimary, newPrimary, setNewPrimary, false, parent?.primary_keywords)}
+                      </div>
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2 pb-1 border-b border-purple-500/20">
+                          <span className="text-base">🟣</span>
+                          <span className="text-sm font-semibold text-purple-400">Mots-clés secondaires</span>
+                          <span className="text-xs text-muted-foreground ml-auto">Connaissances associées au métier</span>
+                        </div>
+                        {renderKeywordList("Mot-clé secondaire", "bg-purple-500/20 text-purple-400 border-purple-500/30", editSecondary, setEditSecondary, newSecondary, setNewSecondary, false, parent?.secondary_keywords)}
+                      </div>
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2 pb-1 border-b border-green-500/20">
+                          <span className="text-base">🟢</span>
+                          <span className="text-sm font-semibold text-green-400">Soft Skills — Savoir-être</span>
+                          <span className="text-xs text-muted-foreground ml-auto">Qualités comportementales</span>
+                        </div>
+                        {renderKeywordList("Soft skill", "bg-green-500/20 text-green-400 border-green-500/30", editSoftSkills, setEditSoftSkills, newSoftSkill, setNewSoftSkill, false, parent?.soft_skills)}
+                      </div>
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2 pb-1 border-b border-red-500/20">
+                          <span className="text-base">🔴</span>
+                          <span className="text-sm font-semibold text-red-400">Mots exclus</span>
+                          <span className="text-xs text-muted-foreground ml-auto">Mots génériques sans valeur</span>
+                        </div>
+                        {renderKeywordList("Mot exclu", "bg-red-500/20 text-red-400 border-red-500/30", editExcluded, setEditExcluded, newExcluded, setNewExcluded)}
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })()}
 
               {/* AI Suggested Keywords from file import */}
               {suggestedKeywords.length > 0 && (
-                <Card className="bg-card border-border/50 border-primary/30">
+                <Card className="bg-card border-primary/30">
                   <CardHeader className="pb-2">
                     <div className="flex items-center justify-between">
                       <CardTitle className="text-sm flex items-center gap-2">
@@ -762,7 +1120,7 @@ export const AdminATSTraining = () => {
               <div className="flex justify-end">
                 <Button onClick={saveTheme} disabled={saving}>
                   {saving ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Save className="h-4 w-4 mr-1" />}
-                  Sauvegarder les modifications
+                  {creatingNew ? "Créer" : "Sauvegarder les modifications"}
                 </Button>
               </div>
             </div>
@@ -797,6 +1155,9 @@ export const AdminATSTraining = () => {
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
+                      {a.needs_profession_suggestion && (
+                        <Badge className="text-xs bg-purple-500/20 text-purple-400 border-purple-500/30">🤖 Métier inconnu</Badge>
+                      )}
                       {a.admin_reviewed ? (
                         <Badge className="bg-green-500/20 text-green-400 border-green-500/30">Revue</Badge>
                       ) : (
@@ -821,9 +1182,84 @@ export const AdminATSTraining = () => {
                 </Button>
                 <div>
                   <h3 className="font-semibold">{selectedAnalysis.job_title}</h3>
-                  <p className="text-xs text-muted-foreground">{selectedAnalysis.profession_name} · Score: {selectedAnalysis.total_score}/100</p>
+                  <p className="text-xs text-muted-foreground">
+                    {selectedAnalysis.profession_name} · Score: {selectedAnalysis.total_score}/100
+                    {selectedAnalysis.analysis_result?.profession?.parentThemeName && (
+                      <span className="ml-2">· 📂 {selectedAnalysis.analysis_result.profession.parentThemeName}</span>
+                    )}
+                  </p>
                 </div>
               </div>
+
+              {/* AI Profession Suggestion — shown when no profession identified */}
+              {selectedAnalysis.needs_profession_suggestion && (
+                <Card className="bg-card border-purple-500/30">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm flex items-center gap-2">
+                      <Brain className="h-4 w-4 text-purple-400" />
+                      🤖 Métier non identifié — Suggestion IA
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    {!profSuggestion && (
+                      <Button
+                        variant="outline" size="sm"
+                        onClick={() => runAiProfessionSuggestion(selectedAnalysis)}
+                        disabled={aiSuggesting}
+                        className="border-purple-500/50 text-purple-400 hover:bg-purple-500/10"
+                      >
+                        {aiSuggesting ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Sparkles className="h-4 w-4 mr-1" />}
+                        {aiSuggesting ? "Analyse en cours..." : "🤖 Suggérer un métier par IA"}
+                      </Button>
+                    )}
+
+                    {editSuggestion && (
+                      <div className="space-y-4 mt-2">
+                        <div className="p-3 rounded bg-purple-500/10 border border-purple-500/20 text-xs text-purple-300">
+                          🤖 {profSuggestion?.reasoning} <span className="ml-2 opacity-60">Confiance: {Math.round((profSuggestion?.confidence || 0) * 100)}%</span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="space-y-1">
+                            <label className="text-xs font-medium">Nom du métier</label>
+                            <Input value={editSuggestion.suggested_job_name} onChange={e => setEditSuggestion({ ...editSuggestion, suggested_job_name: e.target.value })} className="h-8 text-sm" />
+                          </div>
+                          <div className="space-y-1">
+                            <label className="text-xs font-medium">Thématique parente</label>
+                            {editSuggestion.is_new_theme ? (
+                              <Input value={editSuggestion.suggested_theme_name} onChange={e => setEditSuggestion({ ...editSuggestion, suggested_theme_name: e.target.value })} className="h-8 text-sm" placeholder="Nouvelle thématique..." />
+                            ) : (
+                              <Select value={editSuggestion.suggested_theme_name} onValueChange={v => setEditSuggestion({ ...editSuggestion, suggested_theme_name: v })}>
+                                <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
+                                <SelectContent>
+                                  {themes.map(t => <SelectItem key={t.id} value={t.name}>{t.name}</SelectItem>)}
+                                </SelectContent>
+                              </Select>
+                            )}
+                          </div>
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-xs font-medium">Hard skills spécifiques détectés</label>
+                          <div className="flex flex-wrap gap-1">
+                            {editSuggestion.primary_keywords.map((kw, i) => (
+                              <Badge key={i} className="bg-blue-500/20 text-blue-400 border-blue-500/30 text-xs">{kw}</Badge>
+                            ))}
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button size="sm" onClick={createProfessionFromSuggestion} disabled={creatingFromSuggestion} className="bg-purple-600 hover:bg-purple-700 text-white">
+                            {creatingFromSuggestion ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Plus className="h-4 w-4 mr-1" />}
+                            Créer ce métier (pending review)
+                          </Button>
+                          <Button size="sm" variant="outline" onClick={() => { setProfSuggestion(null); setEditSuggestion(null); }}>
+                            Annuler
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+
               <Card className="bg-card border-border/50">
                 <CardHeader className="pb-2">
                   <div className="flex items-center justify-between">
@@ -840,15 +1276,11 @@ export const AdminATSTraining = () => {
                     const displayCat = fb?.corrected_category || kw.category;
                     return (
                       <div key={kw.keyword} className={`flex items-center gap-3 rounded-lg px-3 py-2 ${categoryRowBg(displayCat)}`}>
-                        {/* Keyword badge — fixed min-width so it stays left */}
                         <Badge className={`shrink-0 min-w-[80px] justify-center ${categoryColor(displayCat)}`}>{kw.keyword}</Badge>
-                        {/* Category + found status */}
                         <span className="text-xs text-muted-foreground w-28 shrink-0">{categoryLabel(displayCat)} · {kw.found ? "✓ trouvé" : "✗ absent"}</span>
-                        {/* IA note */}
                         {fb?.source === "ai" && fb.admin_notes && (
                           <span className="text-xs text-primary truncate flex-1">🤖 {fb.admin_notes}</span>
                         )}
-                        {/* Actions — pinned to right */}
                         <div className="flex gap-1 ml-auto shrink-0 items-center">
                           <Button size="sm" variant={fb?.is_valid === true ? "default" : "outline"} className="h-6 w-6 p-0" title="Valide" onClick={() => toggleKeywordFeedback(kw.keyword, kw.category, "valid")}>
                             <CheckCircle className="h-3 w-3" />
