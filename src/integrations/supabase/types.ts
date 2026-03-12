@@ -912,6 +912,56 @@ export type Database = {
         }
         Relationships: []
       }
+      job_title_clusters: {
+        Row: {
+          analysis_count: number | null
+          analysis_ids: string[] | null
+          cluster_threshold: number
+          created_at: string | null
+          id: string
+          keyword_frequencies: Json | null
+          normalized_title: string
+          raw_titles: string[] | null
+          status: string
+          suggested_profession_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          analysis_count?: number | null
+          analysis_ids?: string[] | null
+          cluster_threshold?: number
+          created_at?: string | null
+          id?: string
+          keyword_frequencies?: Json | null
+          normalized_title: string
+          raw_titles?: string[] | null
+          status?: string
+          suggested_profession_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          analysis_count?: number | null
+          analysis_ids?: string[] | null
+          cluster_threshold?: number
+          created_at?: string | null
+          id?: string
+          keyword_frequencies?: Json | null
+          normalized_title?: string
+          raw_titles?: string[] | null
+          status?: string
+          suggested_profession_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_title_clusters_suggested_profession_id_fkey"
+            columns: ["suggested_profession_id"]
+            isOneToOne: false
+            referencedRelation: "ats_professions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           age: number | null
