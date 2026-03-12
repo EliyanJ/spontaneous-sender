@@ -310,7 +310,7 @@ export const AdminATSTraining = () => {
           profession_id: profId, keyword: fb.keyword, original_category: fb.original_category,
           corrected_category: fb.corrected_category, is_valid: fb.is_valid, admin_notes: fb.admin_notes || adminNotes, source: fb.source,
         });
-        if (!fb.is_valid) {
+        if (!fb.is_valid || fb.corrected_category === "common_word") {
           if (!newExcluded.includes(fb.keyword)) newExcluded.push(fb.keyword);
           [newPrimaryKw, newSecondaryKw, newSoftSkillsKw].forEach(arr => { const idx = arr.indexOf(fb.keyword); if (idx > -1) arr.splice(idx, 1); });
         } else if (fb.corrected_category !== fb.original_category) {
@@ -318,6 +318,7 @@ export const AdminATSTraining = () => {
           if (fb.corrected_category === "primary") newPrimaryKw.push(fb.keyword);
           else if (fb.corrected_category === "secondary") newSecondaryKw.push(fb.keyword);
           else if (fb.corrected_category === "soft_skill") newSoftSkillsKw.push(fb.keyword);
+          else if (fb.corrected_category === "excluded") { if (!newExcluded.includes(fb.keyword)) newExcluded.push(fb.keyword); }
         }
       }
 
@@ -388,7 +389,25 @@ export const AdminATSTraining = () => {
     if (cat === "primary") return "bg-blue-500/20 text-blue-400 border-blue-500/30";
     if (cat === "secondary") return "bg-purple-500/20 text-purple-400 border-purple-500/30";
     if (cat === "soft_skill") return "bg-green-500/20 text-green-400 border-green-500/30";
+    if (cat === "common_word" || cat === "excluded") return "bg-red-500/20 text-red-400 border-red-500/30";
     return "bg-muted text-muted-foreground";
+  };
+
+  const categoryRowBg = (cat: string) => {
+    if (cat === "primary") return "bg-blue-500/5 border-l-2 border-l-blue-500/40";
+    if (cat === "secondary") return "bg-purple-500/5 border-l-2 border-l-purple-500/40";
+    if (cat === "soft_skill") return "bg-green-500/5 border-l-2 border-l-green-500/40";
+    if (cat === "common_word" || cat === "excluded") return "bg-red-500/5 border-l-2 border-l-red-500/40";
+    return "bg-muted/20";
+  };
+
+  const categoryLabel = (cat: string) => {
+    if (cat === "primary") return "🔵 Hard Skill";
+    if (cat === "secondary") return "🟣 Secondaire";
+    if (cat === "soft_skill") return "🟢 Soft Skill";
+    if (cat === "common_word") return "🔴 Mot courant";
+    if (cat === "excluded") return "🔴 Mot exclu";
+    return cat;
   };
 
   // ===== RENDER HELPERS =====
@@ -531,11 +550,39 @@ export const AdminATSTraining = () => {
                     </div>
                   </div>
                 </CardHeader>
-                <CardContent className="space-y-6">
-                  {renderKeywordList("Hard Skills (primary)", "bg-blue-500/20 text-blue-400 border-blue-500/30", editPrimary, setEditPrimary, newPrimary, setNewPrimary)}
-                  {renderKeywordList("Secondary Keywords", "bg-purple-500/20 text-purple-400 border-purple-500/30", editSecondary, setEditSecondary, newSecondary, setNewSecondary)}
-                  {renderKeywordList("Soft Skills", "bg-green-500/20 text-green-400 border-green-500/30", editSoftSkills, setEditSoftSkills, newSoftSkill, setNewSoftSkill)}
-                  {renderKeywordList("Mots exclus", "bg-red-500/20 text-red-400 border-red-500/30", editExcluded, setEditExcluded, newExcluded, setNewExcluded)}
+                <CardContent className="space-y-8">
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 pb-1 border-b border-blue-500/20">
+                      <span className="text-base">🔵</span>
+                      <span className="text-sm font-semibold text-blue-400">Hard Skills — Compétences techniques principales</span>
+                      <span className="text-xs text-muted-foreground ml-auto">Outils, logiciels, technologies, certifications</span>
+                    </div>
+                    {renderKeywordList("Hard Skill", "bg-blue-500/20 text-blue-400 border-blue-500/30", editPrimary, setEditPrimary, newPrimary, setNewPrimary)}
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 pb-1 border-b border-purple-500/20">
+                      <span className="text-base">🟣</span>
+                      <span className="text-sm font-semibold text-purple-400">Mots-clés secondaires — Compétences complémentaires</span>
+                      <span className="text-xs text-muted-foreground ml-auto">Connaissances associées au métier</span>
+                    </div>
+                    {renderKeywordList("Mot-clé secondaire", "bg-purple-500/20 text-purple-400 border-purple-500/30", editSecondary, setEditSecondary, newSecondary, setNewSecondary)}
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 pb-1 border-b border-green-500/20">
+                      <span className="text-base">🟢</span>
+                      <span className="text-sm font-semibold text-green-400">Soft Skills — Savoir-être</span>
+                      <span className="text-xs text-muted-foreground ml-auto">Qualités comportementales et interpersonnelles</span>
+                    </div>
+                    {renderKeywordList("Soft skill", "bg-green-500/20 text-green-400 border-green-500/30", editSoftSkills, setEditSoftSkills, newSoftSkill, setNewSoftSkill)}
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 pb-1 border-b border-red-500/20">
+                      <span className="text-base">🔴</span>
+                      <span className="text-sm font-semibold text-red-400">Mots exclus — Mots courants / hors contexte</span>
+                      <span className="text-xs text-muted-foreground ml-auto">Mots génériques sans valeur de compétence</span>
+                    </div>
+                    {renderKeywordList("Mot exclu", "bg-red-500/20 text-red-400 border-red-500/30", editExcluded, setEditExcluded, newExcluded, setNewExcluded)}
+                  </div>
                 </CardContent>
               </Card>
 
@@ -651,30 +698,39 @@ export const AdminATSTraining = () => {
                     </Button>
                   </div>
                 </CardHeader>
-                <CardContent className="space-y-3">
+                <CardContent className="space-y-2 p-3">
                   {getAnalysisKeywords(selectedAnalysis).map(kw => {
                     const fb = feedbacks.get(kw.keyword);
+                    const displayCat = fb?.corrected_category || kw.category;
                     return (
-                      <div key={kw.keyword} className="flex items-center gap-2 flex-wrap">
-                        <Badge className={categoryColor(fb?.corrected_category || kw.category)}>{kw.keyword}</Badge>
-                        <span className="text-xs text-muted-foreground">({kw.category}) {kw.found ? "✓ trouvé" : "✗ absent"}</span>
-                        <div className="flex gap-1 ml-auto">
-                          <Button size="sm" variant={fb?.is_valid === true ? "default" : "outline"} className="h-6 px-2 text-xs" onClick={() => toggleKeywordFeedback(kw.keyword, kw.category, "valid")}>
+                      <div key={kw.keyword} className={`flex items-center gap-3 rounded-lg px-3 py-2 ${categoryRowBg(displayCat)}`}>
+                        {/* Keyword badge — fixed min-width so it stays left */}
+                        <Badge className={`shrink-0 min-w-[80px] justify-center ${categoryColor(displayCat)}`}>{kw.keyword}</Badge>
+                        {/* Category + found status */}
+                        <span className="text-xs text-muted-foreground w-28 shrink-0">{categoryLabel(displayCat)} · {kw.found ? "✓ trouvé" : "✗ absent"}</span>
+                        {/* IA note */}
+                        {fb?.source === "ai" && fb.admin_notes && (
+                          <span className="text-xs text-primary truncate flex-1">🤖 {fb.admin_notes}</span>
+                        )}
+                        {/* Actions — pinned to right */}
+                        <div className="flex gap-1 ml-auto shrink-0 items-center">
+                          <Button size="sm" variant={fb?.is_valid === true ? "default" : "outline"} className="h-6 w-6 p-0" title="Valide" onClick={() => toggleKeywordFeedback(kw.keyword, kw.category, "valid")}>
                             <CheckCircle className="h-3 w-3" />
                           </Button>
-                          <Button size="sm" variant={fb?.is_valid === false ? "destructive" : "outline"} className="h-6 px-2 text-xs" onClick={() => toggleKeywordFeedback(kw.keyword, kw.category, "invalid")}>
+                          <Button size="sm" variant={fb?.is_valid === false ? "destructive" : "outline"} className="h-6 w-6 p-0" title="Invalide" onClick={() => toggleKeywordFeedback(kw.keyword, kw.category, "invalid")}>
                             <XCircle className="h-3 w-3" />
                           </Button>
                           <Select onValueChange={(val) => toggleKeywordFeedback(kw.keyword, kw.category, val)}>
-                            <SelectTrigger className="h-6 w-24 text-xs"><SelectValue placeholder="Reclasser" /></SelectTrigger>
+                            <SelectTrigger className="h-6 w-28 text-xs"><SelectValue placeholder="Reclasser" /></SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="primary">Primary</SelectItem>
-                              <SelectItem value="secondary">Secondary</SelectItem>
-                              <SelectItem value="soft_skill">Soft skill</SelectItem>
+                              <SelectItem value="primary">🔵 Hard Skill</SelectItem>
+                              <SelectItem value="secondary">🟣 Secondaire</SelectItem>
+                              <SelectItem value="soft_skill">🟢 Soft Skill</SelectItem>
+                              <SelectItem value="excluded">🔴 Mot exclu</SelectItem>
+                              <SelectItem value="common_word">🔴 Mot courant</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
-                        {fb?.source === "ai" && <span className="text-xs text-primary">🤖 {fb.admin_notes}</span>}
                       </div>
                     );
                   })}

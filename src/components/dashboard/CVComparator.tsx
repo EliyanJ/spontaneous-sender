@@ -238,7 +238,6 @@ export const CVComparator = ({ isPublic, onAnalysisComplete }: CVComparatorProps
   const adviceItems: Array<{ title: string; text: string }> = [];
   if (result) {
     const missingPrimary = result.primaryKeywords.scores.filter(k => k.points === 0);
-    const missingSecondary = result.secondaryKeywords.scores.filter(k => k.points === 0);
     const missingSoft = result.softSkills.scores.filter(s => !s.found);
 
     if (missingPrimary.length > 0) {
@@ -263,12 +262,6 @@ export const CVComparator = ({ isPublic, onAnalysisComplete }: CVComparatorProps
       adviceItems.push({
         title: "Développez vos soft skills",
         text: `Mentionnez ${missingSoft.map(s => `"${s.skill}"`).join(', ')} à travers des exemples concrets dans vos expériences.`
-      });
-    }
-    if (missingSecondary.length > 0) {
-      adviceItems.push({
-        title: "Renforcez les compétences transversales",
-        text: `Intégrez ces termes : ${missingSecondary.map(k => `"${k.keyword}"`).join(', ')} dans vos descriptions.`
       });
     }
   }
@@ -685,15 +678,7 @@ export const CVComparator = ({ isPublic, onAnalysisComplete }: CVComparatorProps
                 </div>
 
                 {/* Extra details: word count, title check, contract, images */}
-                <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-4">
-                  <div className="flex items-center p-3 rounded-lg bg-muted/20 border border-border/50">
-                    {result.profileSection?.found ? (
-                      <CheckCircle2 className="h-4 w-4 text-green-500 dark:text-green-400 mr-3 shrink-0" />
-                    ) : (
-                      <XCircle className="h-4 w-4 text-red-500 dark:text-red-400 mr-3 shrink-0" />
-                    )}
-                    <span className="text-sm text-foreground/80">Section Profil</span>
-                  </div>
+                <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-4">
                   <div className="flex items-center p-3 rounded-lg bg-muted/20 border border-border/50">
                     {result.titleCheck?.found ? (
                       <CheckCircle2 className="h-4 w-4 text-green-500 dark:text-green-400 mr-3 shrink-0" />
@@ -720,38 +705,6 @@ export const CVComparator = ({ isPublic, onAnalysisComplete }: CVComparatorProps
               </div>
             </div>
           </div>
-
-          {/* Secondary Keywords (if any) */}
-          {result.secondaryKeywords.scores.length > 0 && (
-            <div className="bg-card/60 backdrop-blur-xl border border-border rounded-2xl p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-teal-500/10 flex items-center justify-center text-teal-400">
-                    <Brain className="h-4 w-4" />
-                  </div>
-                  <h4 className="font-semibold text-foreground">Compétences transversales</h4>
-                </div>
-                <span className={`px-2.5 py-1 text-xs rounded-full font-medium border ${getSubScoreBadgeClass(result.secondaryKeywords.total, result.secondaryKeywords.maxTotal)}`}>
-                  {getSubScoreLabel(result.secondaryKeywords.total, result.secondaryKeywords.maxTotal)}
-                </span>
-              </div>
-              <div className="flex flex-wrap gap-1.5">
-                {result.secondaryKeywords.scores.map((k, i) => (
-                  <span
-                    key={i}
-                    className={`px-2.5 py-1 rounded-full text-xs font-medium border flex items-center ${
-                      k.points > 0
-                        ? 'bg-green-500/10 border-green-500/20 text-green-600 dark:text-green-400'
-                        : 'bg-red-500/10 border-red-500/20 text-red-500 dark:text-red-400'
-                    }`}
-                  >
-                    {k.points === 0 && <X className="h-3 w-3 mr-1" />}
-                    {k.keyword}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
 
           {/* Measurable Results */}
           <div className="bg-card/60 backdrop-blur-xl border border-border rounded-2xl p-6">
@@ -784,51 +737,6 @@ export const CVComparator = ({ isPublic, onAnalysisComplete }: CVComparatorProps
             </p>
           </div>
 
-          {/* Proximity Bonus */}
-          {result.proximity.bonus > 0 && (
-            <div className="bg-card/60 backdrop-blur-xl border border-indigo-500/20 rounded-2xl p-6">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="w-8 h-8 rounded-full bg-indigo-500/20 flex items-center justify-center text-indigo-400">
-                  <Target className="h-4 w-4" />
-                </div>
-                <h4 className="font-semibold text-foreground">Bonus de proximité <span className="text-indigo-500 dark:text-indigo-400">+{result.proximity.bonus} pts</span></h4>
-              </div>
-              <div className="space-y-1">
-                {result.proximity.details.map((d, i) => (
-                  <p key={i} className="text-xs text-muted-foreground">"{d.secondary}" proche de "{d.primary}"</p>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Advice Section */}
-          {adviceItems.length > 0 && (
-            <div className="bg-card/60 backdrop-blur-xl border border-border rounded-2xl p-8 border-l-4 border-l-indigo-500 relative overflow-hidden">
-              <div className="absolute top-0 right-0 p-4 opacity-5">
-                <Lightbulb className="h-32 w-32 text-foreground" />
-              </div>
-              <div className="flex items-center mb-6">
-                <div className="w-8 h-8 rounded-full bg-indigo-500/20 flex items-center justify-center text-indigo-400 mr-3">
-                  <Lightbulb className="h-4 w-4" />
-                </div>
-                <h3 className="text-lg font-bold text-foreground">Conseils personnalisés pour atteindre {Math.min(score + 20, 100)}+</h3>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 relative z-10">
-                {adviceItems.slice(0, 4).map((advice, i) => (
-                  <div key={i} className="flex items-start">
-                    <span className="flex-shrink-0 w-6 h-6 rounded-full bg-indigo-600 text-white text-xs font-bold flex items-center justify-center mt-0.5">
-                      {i + 1}
-                    </span>
-                    <div className="ml-4">
-                      <h5 className="text-foreground font-medium text-sm mb-1">{advice.title}</h5>
-                      <p className="text-muted-foreground text-sm leading-relaxed">{advice.text}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
       )}
     </div>
