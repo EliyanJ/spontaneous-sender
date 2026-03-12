@@ -389,7 +389,25 @@ export const AdminATSTraining = () => {
     if (cat === "primary") return "bg-blue-500/20 text-blue-400 border-blue-500/30";
     if (cat === "secondary") return "bg-purple-500/20 text-purple-400 border-purple-500/30";
     if (cat === "soft_skill") return "bg-green-500/20 text-green-400 border-green-500/30";
+    if (cat === "common_word" || cat === "excluded") return "bg-red-500/20 text-red-400 border-red-500/30";
     return "bg-muted text-muted-foreground";
+  };
+
+  const categoryRowBg = (cat: string) => {
+    if (cat === "primary") return "bg-blue-500/5 border-l-2 border-l-blue-500/40";
+    if (cat === "secondary") return "bg-purple-500/5 border-l-2 border-l-purple-500/40";
+    if (cat === "soft_skill") return "bg-green-500/5 border-l-2 border-l-green-500/40";
+    if (cat === "common_word" || cat === "excluded") return "bg-red-500/5 border-l-2 border-l-red-500/40";
+    return "bg-muted/20";
+  };
+
+  const categoryLabel = (cat: string) => {
+    if (cat === "primary") return "🔵 Hard Skill";
+    if (cat === "secondary") return "🟣 Secondaire";
+    if (cat === "soft_skill") return "🟢 Soft Skill";
+    if (cat === "common_word") return "🔴 Mot courant";
+    if (cat === "excluded") return "🔴 Mot exclu";
+    return cat;
   };
 
   // ===== RENDER HELPERS =====
