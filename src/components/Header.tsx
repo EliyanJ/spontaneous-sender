@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { ChevronDown, Menu, X, PenLine, BarChart2, Briefcase, Newspaper } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Logo } from "@/components/Logo";
+import logoIcon from "@/assets/logo-icon.png";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -83,7 +84,7 @@ export const Header = () => {
           {/* Left: Logo + ThemeToggle */}
           <div className="flex items-center gap-3 flex-shrink-0">
             <Link to="/" className="flex items-center flex-shrink-0">
-              <Logo height={40} />
+              <img src={logoIcon} alt="Cronos" style={{ height: "40px", width: "auto", objectFit: "contain", display: "block" }} />
             </Link>
             {/* Theme toggle — discret, right after logo */}
             <ThemeToggle />
