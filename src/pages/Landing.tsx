@@ -54,7 +54,7 @@ const Landing = () => {
 
         <main className="pt-[56px]">
           {/* Hero Section - 2 colonnes */}
-          <section className="relative pt-0 pb-10 lg:pt-2 lg:pb-14 overflow-hidden flex items-center">
+          <section className="relative pt-4 pb-10 lg:pt-6 lg:pb-14 overflow-hidden flex items-center">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full relative z-10">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
 
@@ -70,29 +70,29 @@ const Landing = () => {
                     <span className="bg-gradient-to-r from-primary to-[hsl(260_60%_45%)] bg-clip-text text-transparent">Plus vite</span>
                   </h1>
 
-                  <p className="text-lg text-muted-foreground mb-10 leading-relaxed max-w-xl animate-fade-in" style={{ animationDelay: '0.2s' }}>
+                  <p className="text-lg text-muted-foreground mb-6 leading-relaxed max-w-xl animate-fade-in" style={{ animationDelay: '0.2s' }}>
                     Accélérez votre recherche d'emploi avec Cronos. Générez des lettres de motivation personnalisées par IA, automatisez vos candidatures spontanées et suivez vos relances depuis un dashboard unique.
                   </p>
 
-                  <div className="flex flex-col sm:flex-row gap-4 animate-fade-in" style={{ animationDelay: '0.3s' }}>
+                  <div className="flex flex-col sm:flex-row gap-3 animate-fade-in" style={{ animationDelay: '0.3s' }}>
                     <Button
-                      size="lg"
+                      size="default"
                       onClick={() => navigate("/login")}
-                      className="px-8 py-4 h-auto bg-primary hover:bg-primary/90 text-primary-foreground text-lg font-semibold rounded-xl shadow-lg shadow-primary/30 flex items-center gap-2"
+                      className="px-6 py-2.5 h-auto bg-primary hover:bg-primary/90 text-primary-foreground text-base font-semibold rounded-xl shadow-lg shadow-primary/30 flex items-center gap-2"
                     >
                       Créer un compte gratuit <ArrowRight className="h-4 w-4" />
                     </Button>
                     <Button
-                      size="lg"
+                      size="default"
                       variant="outline"
                       onClick={() => navigate('/login')}
-                      className="px-8 py-4 h-auto bg-background border-border text-foreground text-lg font-medium rounded-xl hover:bg-accent flex items-center gap-2"
+                      className="px-6 py-2.5 h-auto bg-background border-border text-foreground text-base font-medium rounded-xl hover:bg-accent flex items-center gap-2"
                     >
                       <Play className="h-4 w-4 text-primary" /> Voir la démo
                     </Button>
                   </div>
 
-                  <div className="mt-10 flex items-center gap-4 text-sm text-muted-foreground animate-fade-in" style={{ animationDelay: '0.4s' }}>
+                  <div className="mt-6 flex items-center gap-4 text-sm text-muted-foreground animate-fade-in" style={{ animationDelay: '0.4s' }}>
                     <div className="flex -space-x-2">
                       {['bg-blue-400', 'bg-purple-400', 'bg-green-400'].map((c, i) => (
                         <div key={i} className={`w-8 h-8 rounded-full ${c} border-2 border-background flex items-center justify-center text-white text-xs font-bold`}>
