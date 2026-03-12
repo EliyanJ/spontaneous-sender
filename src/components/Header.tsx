@@ -3,7 +3,6 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { ChevronDown, Menu, X, PenLine, BarChart2, Briefcase, Newspaper } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTheme } from "next-themes";
-import { useEffect, useState } from "react";
 import logoIconLight from "@/assets/logo-icon.png";
 import logoIconDark from "@/assets/logo-icon-dark.png";
 import { ThemeToggle } from "@/components/ThemeToggle";
