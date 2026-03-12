@@ -120,99 +120,57 @@ Ne retourne que des compétences spécifiques et pertinentes, pas de mots géné
       });
     }
 
-    // ===== MODE: SUGGEST NEW PROFESSION (AI detects unknown job) =====
+    // ===== MODE: SUGGEST NEW PROFESSION (manual admin trigger) =====
     if (body.mode === 'suggest_profession') {
       const { job_title, job_description, existing_themes } = body;
       if (!job_title || !job_description) {
         return new Response(JSON.stringify({ error: 'Missing job_title or job_description' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
       }
+      const suggestion = await callSuggestProfession({ job_title, job_description, existing_themes, LOVABLE_API_KEY });
+      return new Response(JSON.stringify({ suggestion }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
 
-      const themesListStr = (existing_themes || []).map((t: any) => `- ${t.name} (${t.category || 'sans catégorie'})`).join('\n');
-
-      const suggestPrompt = `Tu es un expert RH et ATS. Un poste a été analysé mais aucun métier connu ne correspond.
-
-Intitulé du poste: "${job_title}"
-Description du poste:
-${(job_description || '').substring(0, 3000)}
-
-Thématiques existantes dans notre base:
-${themesListStr || 'Aucune thématique encore.'}
-
-Ta mission:
-1. Identifie le nom précis du métier correspondant à ce poste (ex: "Scrum Master", "Revenue Operations Manager", "Data Engineer")
-2. Détermine quelle thématique parente de la liste ci-dessus est la plus adaptée (ou propose d'en créer une nouvelle si vraiment nécessaire)
-3. Extrais les mots-clés spécifiques à CE métier (pas les mots génériques de la thématique)
-
-Sois précis et concret. Les mots-clés doivent être des compétences réelles utilisées dans les ATS.`;
-
-      const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: 'google/gemini-2.5-flash',
-          messages: [
-            { role: 'system', content: 'Tu es un expert RH/ATS. Réponds uniquement en UTF-8 avec les accents français corrects. Utilise uniquement le tool call demandé.' },
-            { role: 'user', content: suggestPrompt },
-          ],
-          tools: [{
-            type: 'function',
-            function: {
-              name: 'suggest_profession',
-              description: 'Suggest a new profession to add to the ATS database',
-              parameters: {
-                type: 'object',
-                properties: {
-                  suggested_job_name: { type: 'string', description: 'Nom précis du métier (ex: Scrum Master)' },
-                  suggested_theme_name: { type: 'string', description: 'Nom de la thématique parente existante ou nouvelle (ex: Gestion de projet)' },
-                  is_new_theme: { type: 'boolean', description: 'true si la thématique parente est nouvelle et n\'existe pas encore' },
-                  confidence: { type: 'number', description: 'Niveau de confiance de 0 à 1' },
-                  reasoning: { type: 'string', description: 'Explication courte du choix en français' },
-                  primary_keywords: {
-                    type: 'array',
-                    items: { type: 'string' },
-                    description: 'Mots-clés hard skills spécifiques à CE métier (pas à la thématique)'
-                  },
-                  secondary_keywords: {
-                    type: 'array',
-                    items: { type: 'string' },
-                    description: 'Mots-clés secondaires spécifiques à ce métier'
-                  },
-                  soft_skills: {
-                    type: 'array',
-                    items: { type: 'string' },
-                    description: 'Soft skills typiques de ce métier'
-                  },
-                  aliases: {
-                    type: 'array',
-                    items: { type: 'string' },
-                    description: 'Intitulés alternatifs pour ce métier'
-                  },
-                },
-                required: ['suggested_job_name', 'suggested_theme_name', 'is_new_theme', 'confidence', 'reasoning', 'primary_keywords', 'secondary_keywords', 'soft_skills', 'aliases'],
-              },
-            },
-          }],
-          tool_choice: { type: 'function', function: { name: 'suggest_profession' } },
-        }),
-      });
-
-      if (!aiResponse.ok) {
-        const status = aiResponse.status;
-        const text = await aiResponse.text();
-        console.error('AI suggest_profession error:', status, text);
-        throw new Error('AI suggestion failed');
+    // ===== MODE: AUTO CLUSTER SUGGEST (triggered from cluster threshold) =====
+    if (body.mode === 'auto_cluster_suggest') {
+      const { normalized_title, raw_titles, high_freq_keywords, medium_freq_keywords, existing_themes, cluster_id } = body;
+      if (!normalized_title) {
+        return new Response(JSON.stringify({ error: 'Missing normalized_title' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
       }
 
-      const aiData = await aiResponse.json();
-      const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
-      let suggestion = null;
-      if (toolCall?.function?.arguments) {
-        suggestion = JSON.parse(toolCall.function.arguments);
+      // Build a synthetic job description from high-frequency keywords
+      const syntheticJobDesc = `Poste: ${normalized_title}\n\nCompétences fréquemment requises (>70% des offres): ${high_freq_keywords.join(', ')}\n\nCompétences secondaires (40-70% des offres): ${medium_freq_keywords.join(', ')}\n\nIntitulés variantes observés: ${(raw_titles || []).join(', ')}`;
+
+      const suggestPrompt = `Tu es un expert RH et ATS. Basé sur un corpus d'analyses statistiques de CV pour un poste non identifié, suggère le nom précis du métier et sa thématique.
+
+Données statistiques du corpus:
+${syntheticJobDesc}
+
+Thématiques existantes:
+${(existing_themes || []).map((t: any) => `- ${t.name} (${t.category || 'sans catégorie'})`).join('\n') || 'Aucune thématique.'}
+
+IMPORTANT: Les mots-clés haute fréquence (>70%) sont quasi-exclusifs à ce métier. Classe-les en primary_keywords.
+Les mots-clés moyenne fréquence (40-70%) vont en secondary_keywords.`;
+
+      const suggestion = await callSuggestProfession({
+        job_title: normalized_title,
+        job_description: suggestPrompt,
+        existing_themes,
+        LOVABLE_API_KEY,
+        // Override: inject pre-computed keywords directly in tool schema to guide AI
+        high_freq_keywords,
+        medium_freq_keywords,
+      });
+
+      if (suggestion && cluster_id) {
+        // Mark cluster as processed in DB
+        const supabase = createClient(
+          Deno.env.get('SUPABASE_URL') ?? '',
+          Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+        );
+        await supabase.from('job_title_clusters').update({ status: 'processed' }).eq('id', cluster_id);
       }
 
-      return new Response(JSON.stringify({ suggestion }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      return new Response(JSON.stringify({ suggestion }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
     // ===== MODE: REVIEW ANALYSIS KEYWORDS (default) =====

@@ -556,7 +556,7 @@ serve(async (req) => {
     // ===== SAVE ANALYSIS TO cv_analyses for admin review =====
     if (userId) {
       try {
-        await supabase.from('cv_analyses').insert({
+        const { data: savedAnalysis } = await supabase.from('cv_analyses').insert({
           user_id: userId,
           job_title: jobTitle,
           job_description: jobDescription.substring(0, 10000),
@@ -567,7 +567,20 @@ serve(async (req) => {
           analysis_result: result,
           admin_reviewed: false,
           needs_profession_suggestion: needsProfessionSuggestion,
-        });
+        }).select('id').single();
+
+        // ===== AUTO-CLUSTER: feed unknown professions into clustering system =====
+        if (needsProfessionSuggestion && savedAnalysis?.id) {
+          try {
+            await updateClusterAndMaybeSuggest(supabase, {
+              jobTitle,
+              jobDescription,
+              analysisId: savedAnalysis.id,
+            });
+          } catch (clusterErr) {
+            console.error('Cluster update failed (non-blocking):', clusterErr);
+          }
+        }
       } catch (saveErr) {
         console.error('Failed to save cv_analysis (non-blocking):', saveErr);
       }
