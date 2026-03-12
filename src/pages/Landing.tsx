@@ -54,13 +54,13 @@ const Landing = () => {
 
         <main className="pt-[56px]">
           {/* Hero Section - 2 colonnes */}
-          <section className="relative pt-0 pb-10 lg:pt-2 lg:pb-14 overflow-hidden min-h-[800px] flex items-center">
+          <section className="relative pt-0 pb-10 lg:pt-2 lg:pb-14 overflow-hidden flex items-center">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full relative z-10">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
 
                 {/* Colonne gauche - texte */}
                 <div className="text-left">
-                  <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-semibold mb-6 uppercase tracking-wider animate-fade-in">
+                  <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-semibold mb-3 uppercase tracking-wider animate-fade-in">
                     <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
                     Cronos la recherche d'emploi 2.0
                   </div>
