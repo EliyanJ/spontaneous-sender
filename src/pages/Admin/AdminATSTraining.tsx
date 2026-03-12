@@ -554,8 +554,41 @@ export const AdminATSTraining = () => {
         <div className="flex items-center gap-2">
           <Badge variant="outline" className="text-xs">{professions.length} thématiques</Badge>
           <Badge variant="outline" className="text-xs">{analyses.filter(a => !a.admin_reviewed).length} à revoir</Badge>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={runBulkAiReview}
+            disabled={bulkReviewing || analyses.filter(a => !a.admin_reviewed).length === 0}
+            className="border-primary/50 text-primary hover:bg-primary/10"
+          >
+            {bulkReviewing ? (
+              <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+            ) : (
+              <Zap className="h-4 w-4 mr-1" />
+            )}
+            {bulkReviewing
+              ? `Revue en cours... (${bulkProgress.current}/${bulkProgress.total})`
+              : `Revue IA en masse (${analyses.filter(a => !a.admin_reviewed).length})`}
+          </Button>
         </div>
       </div>
+
+      {/* Bulk review progress bar */}
+      {bulkReviewing && (
+        <Card className="bg-card border-primary/30">
+          <CardContent className="pt-4 pb-3 space-y-2">
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-foreground font-medium flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-primary animate-pulse" />
+                Revue IA automatique en cours...
+              </span>
+              <span className="text-muted-foreground">{bulkProgress.current} / {bulkProgress.total} analyses</span>
+            </div>
+            <Progress value={bulkProgress.total > 0 ? (bulkProgress.current / bulkProgress.total) * 100 : 0} className="h-2" />
+            <p className="text-xs text-muted-foreground">Chaque analyse est envoyée à l'IA pour validation et les corrections sont appliquées automatiquement.</p>
+          </CardContent>
+        </Card>
+      )}
 
       <Tabs value={tab} onValueChange={setTab}>
         <TabsList>
