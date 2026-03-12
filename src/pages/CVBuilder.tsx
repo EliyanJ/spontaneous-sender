@@ -401,14 +401,14 @@ const CVBuilder = () => {
 
             {/* Templates recommandés (3 premiers) */}
             {!templatesLoading && recommendedTemplates.length > 0 && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div id="templates-gallery" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {recommendedTemplates.map(tpl => (
                   <TemplateCard
                     key={tpl.id}
                     tpl={tpl}
                     selected={templateId === tpl.id}
-                    onSelect={() => setTemplateId(tpl.id)}
-                    onSelectAndContinue={() => { setTemplateId(tpl.id); handleContinue(); }}
+                    onSelect={() => { setTemplateId(tpl.id); setNoTemplateError(false); handleContinue(tpl.id); }}
+                    onSelectAndContinue={() => handleContinue(tpl.id)}
                     firstName={firstName}
                     lastName={lastName}
                     primaryColor={selectedPalette.primary}
@@ -443,8 +443,8 @@ const CVBuilder = () => {
                     key={tpl.id + "-extra"}
                     tpl={tpl}
                     selected={templateId === tpl.id}
-                    onSelect={() => setTemplateId(tpl.id)}
-                    onSelectAndContinue={() => { setTemplateId(tpl.id); handleContinue(); }}
+                    onSelect={() => { setTemplateId(tpl.id); setNoTemplateError(false); handleContinue(tpl.id); }}
+                    onSelectAndContinue={() => handleContinue(tpl.id)}
                     firstName={firstName}
                     lastName={lastName}
                     primaryColor={selectedPalette.primary}
@@ -456,16 +456,22 @@ const CVBuilder = () => {
 
           {/* CTA continuer */}
           {!templatesLoading && dbTemplates.length > 0 && (
-            <div className="flex justify-center mt-6">
+            <div className="flex flex-col items-center gap-2 mt-6">
               <Button
                 size="lg"
-                onClick={handleContinue}
-                disabled={!templateId}
-                className="gap-2 px-10 h-12 text-base font-semibold shadow-lg shadow-primary/20"
+                onClick={() => handleContinue()}
+                className={`gap-2 px-10 h-12 text-base font-semibold shadow-lg transition-colors ${
+                  noTemplateError
+                    ? "bg-destructive hover:bg-destructive/90 text-destructive-foreground shadow-destructive/20 animate-pulse"
+                    : "shadow-primary/20"
+                }`}
               >
-                Créer mon CV — {selectedTplName}
+                Créer mon CV
                 <ArrowRight className="h-5 w-5" />
               </Button>
+              {noTemplateError && (
+                <p className="text-destructive text-sm font-medium">⬆ Veuillez d'abord choisir un modèle ci-dessus</p>
+              )}
             </div>
           )}
         </main>
