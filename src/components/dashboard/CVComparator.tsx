@@ -706,38 +706,6 @@ export const CVComparator = ({ isPublic, onAnalysisComplete }: CVComparatorProps
             </div>
           </div>
 
-          {/* Secondary Keywords (if any) */}
-          {result.secondaryKeywords.scores.length > 0 && (
-            <div className="bg-card/60 backdrop-blur-xl border border-border rounded-2xl p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-teal-500/10 flex items-center justify-center text-teal-400">
-                    <Brain className="h-4 w-4" />
-                  </div>
-                  <h4 className="font-semibold text-foreground">Compétences transversales</h4>
-                </div>
-                <span className={`px-2.5 py-1 text-xs rounded-full font-medium border ${getSubScoreBadgeClass(result.secondaryKeywords.total, result.secondaryKeywords.maxTotal)}`}>
-                  {getSubScoreLabel(result.secondaryKeywords.total, result.secondaryKeywords.maxTotal)}
-                </span>
-              </div>
-              <div className="flex flex-wrap gap-1.5">
-                {result.secondaryKeywords.scores.map((k, i) => (
-                  <span
-                    key={i}
-                    className={`px-2.5 py-1 rounded-full text-xs font-medium border flex items-center ${
-                      k.points > 0
-                        ? 'bg-green-500/10 border-green-500/20 text-green-600 dark:text-green-400'
-                        : 'bg-red-500/10 border-red-500/20 text-red-500 dark:text-red-400'
-                    }`}
-                  >
-                    {k.points === 0 && <X className="h-3 w-3 mr-1" />}
-                    {k.keyword}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
-
           {/* Measurable Results */}
           <div className="bg-card/60 backdrop-blur-xl border border-border rounded-2xl p-6">
             <div className="flex items-center justify-between mb-4">
