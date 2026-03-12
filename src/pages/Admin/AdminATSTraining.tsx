@@ -146,6 +146,7 @@ export const AdminATSTraining = () => {
   useEffect(() => {
     loadProfessions();
     loadAnalyses();
+    loadClusters();
   }, []);
 
   const loadProfessions = async () => {
@@ -163,7 +164,32 @@ export const AdminATSTraining = () => {
     })));
   };
 
-  const loadAnalyses = async () => {
+  const loadClusters = async () => {
+    const { data } = await supabase
+      .from("job_title_clusters" as any)
+      .select("*")
+      .order("analysis_count", { ascending: false })
+      .limit(50);
+    if (data) setClusters(data as JobCluster[]);
+  };
+
+  const updateClusterThreshold = async (newThreshold: number) => {
+    setClusterThreshold(newThreshold);
+    // Update all pending clusters with the new threshold
+    await supabase
+      .from("job_title_clusters" as any)
+      .update({ cluster_threshold: newThreshold })
+      .eq("status", "pending");
+    toast.success(`Seuil mis à jour : ${newThreshold} analyses`);
+  };
+
+  const deleteCluster = async (clusterId: string) => {
+    await supabase.from("job_title_clusters" as any).delete().eq("id", clusterId);
+    toast.success("Cluster supprimé");
+    loadClusters();
+  };
+
+
     setLoading(true);
     let query = supabase.from("cv_analyses").select("*").order("created_at", { ascending: false }).limit(100);
     if (filterReviewed === "unreviewed") query = query.eq("admin_reviewed", false);
