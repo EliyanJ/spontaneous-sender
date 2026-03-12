@@ -181,15 +181,21 @@ serve(async (req) => {
     });
     const sectionsScore = sectionsResult.reduce((sum, s) => sum + s.points, 0);
 
-    // ===== ETAPE 4: Identify profession =====
-    const { data: professions } = await supabase.from('ats_professions').select('*, category, aliases, excluded_words');
+    // ===== ETAPE 4: Identify profession (with theme hierarchy) =====
+    // Load ALL professions including hierarchy columns
+    const { data: professions } = await supabase
+      .from('ats_professions')
+      .select('*')
+      .eq('profession_status', 'active'); // only active professions, not pending_review
     
-    let profession = null;
+    let profession: any = null;
+    let parentTheme: any = null;
     let isPartialMatch = false;
     let professionConfidence = 0;
     let dbPrimaryKeywords: string[] = [];
     let dbSecondaryKeywords: string[] = [];
     let dbSoftSkills: string[] = [];
+    let needsProfessionSuggestion = false;
 
     if (professions && professions.length > 0) {
       const professionScores = professions.map(prof => {
@@ -231,16 +237,40 @@ serve(async (req) => {
         }
         profession = selected.profession;
         professionConfidence = selected.score;
-        dbPrimaryKeywords = (profession.primary_keywords as string[]) || [];
-        dbSecondaryKeywords = (profession.secondary_keywords as string[]) || [];
-        dbSoftSkills = (profession.soft_skills as string[]) || [];
+
+        // ===== HIERARCHY: if this is a child job (not a theme), merge with parent theme keywords =====
+        if (!profession.is_theme && profession.parent_theme_id) {
+          parentTheme = professions.find(p => p.id === profession.parent_theme_id) || null;
+        }
+
+        // Merge: theme keywords (common base) + specific job keywords
+        const themeKeywords = parentTheme ? (parentTheme.primary_keywords as string[]) || [] : [];
+        const themeSecondary = parentTheme ? (parentTheme.secondary_keywords as string[]) || [] : [];
+        const themeSoftSkills = parentTheme ? (parentTheme.soft_skills as string[]) || [] : [];
+
+        const jobPrimary = (profession.primary_keywords as string[]) || [];
+        const jobSecondary = (profession.secondary_keywords as string[]) || [];
+        const jobSoft = (profession.soft_skills as string[]) || [];
+
+        // Deduplicated merge: specific job keywords first (higher priority), then theme base
+        dbPrimaryKeywords = [...new Set([...jobPrimary, ...themeKeywords])];
+        dbSecondaryKeywords = [...new Set([...jobSecondary, ...themeSecondary])];
+        dbSoftSkills = [...new Set([...jobSoft, ...themeSoftSkills])];
+      } else {
+        // No profession matched above minimum threshold — flag for suggestion
+        needsProfessionSuggestion = true;
       }
     }
 
-    // Load excluded_words for the identified profession and filter them out
+    // Load excluded_words for the identified profession (merge with parent theme excluded words)
     const excludedWords: Set<string> = new Set();
     if (profession && profession.excluded_words) {
       for (const w of (profession.excluded_words as string[])) {
+        excludedWords.add(normalize(w));
+      }
+    }
+    if (parentTheme && parentTheme.excluded_words) {
+      for (const w of (parentTheme.excluded_words as string[])) {
         excludedWords.add(normalize(w));
       }
     }
