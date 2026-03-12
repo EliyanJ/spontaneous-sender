@@ -737,51 +737,6 @@ export const CVComparator = ({ isPublic, onAnalysisComplete }: CVComparatorProps
             </p>
           </div>
 
-          {/* Proximity Bonus */}
-          {result.proximity.bonus > 0 && (
-            <div className="bg-card/60 backdrop-blur-xl border border-indigo-500/20 rounded-2xl p-6">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="w-8 h-8 rounded-full bg-indigo-500/20 flex items-center justify-center text-indigo-400">
-                  <Target className="h-4 w-4" />
-                </div>
-                <h4 className="font-semibold text-foreground">Bonus de proximité <span className="text-indigo-500 dark:text-indigo-400">+{result.proximity.bonus} pts</span></h4>
-              </div>
-              <div className="space-y-1">
-                {result.proximity.details.map((d, i) => (
-                  <p key={i} className="text-xs text-muted-foreground">"{d.secondary}" proche de "{d.primary}"</p>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Advice Section */}
-          {adviceItems.length > 0 && (
-            <div className="bg-card/60 backdrop-blur-xl border border-border rounded-2xl p-8 border-l-4 border-l-indigo-500 relative overflow-hidden">
-              <div className="absolute top-0 right-0 p-4 opacity-5">
-                <Lightbulb className="h-32 w-32 text-foreground" />
-              </div>
-              <div className="flex items-center mb-6">
-                <div className="w-8 h-8 rounded-full bg-indigo-500/20 flex items-center justify-center text-indigo-400 mr-3">
-                  <Lightbulb className="h-4 w-4" />
-                </div>
-                <h3 className="text-lg font-bold text-foreground">Conseils personnalisés pour atteindre {Math.min(score + 20, 100)}+</h3>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 relative z-10">
-                {adviceItems.slice(0, 4).map((advice, i) => (
-                  <div key={i} className="flex items-start">
-                    <span className="flex-shrink-0 w-6 h-6 rounded-full bg-indigo-600 text-white text-xs font-bold flex items-center justify-center mt-0.5">
-                      {i + 1}
-                    </span>
-                    <div className="ml-4">
-                      <h5 className="text-foreground font-medium text-sm mb-1">{advice.title}</h5>
-                      <p className="text-muted-foreground text-sm leading-relaxed">{advice.text}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
       )}
     </div>
