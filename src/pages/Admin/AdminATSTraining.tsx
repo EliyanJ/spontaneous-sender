@@ -75,6 +75,22 @@ interface ProfessionSuggestion {
   aliases: string[];
 }
 
+interface JobCluster {
+  id: string;
+  normalized_title: string;
+  raw_titles: string[];
+  analysis_ids: string[];
+  analysis_count: number;
+  keyword_frequencies: Record<string, number[]>;
+  suggested_profession_id: string | null;
+  status: string;
+  cluster_threshold: number;
+  created_at: string;
+  updated_at: string;
+}
+
+
+
 const CATEGORIES = ["RH", "Marketing", "Communication", "Tech / IT", "Finance", "Commercial", "Juridique", "Santé", "Logistique", "Ingénierie", "Design", "Éducation", "Autre"];
 
 export const AdminATSTraining = () => {
