@@ -566,6 +566,7 @@ serve(async (req) => {
           total_score: totalScore,
           analysis_result: result,
           admin_reviewed: false,
+          needs_profession_suggestion: needsProfessionSuggestion,
         });
       } catch (saveErr) {
         console.error('Failed to save cv_analysis (non-blocking):', saveErr);
