@@ -310,7 +310,7 @@ export const AdminATSTraining = () => {
           profession_id: profId, keyword: fb.keyword, original_category: fb.original_category,
           corrected_category: fb.corrected_category, is_valid: fb.is_valid, admin_notes: fb.admin_notes || adminNotes, source: fb.source,
         });
-        if (!fb.is_valid) {
+        if (!fb.is_valid || fb.corrected_category === "common_word") {
           if (!newExcluded.includes(fb.keyword)) newExcluded.push(fb.keyword);
           [newPrimaryKw, newSecondaryKw, newSoftSkillsKw].forEach(arr => { const idx = arr.indexOf(fb.keyword); if (idx > -1) arr.splice(idx, 1); });
         } else if (fb.corrected_category !== fb.original_category) {
@@ -318,6 +318,7 @@ export const AdminATSTraining = () => {
           if (fb.corrected_category === "primary") newPrimaryKw.push(fb.keyword);
           else if (fb.corrected_category === "secondary") newSecondaryKw.push(fb.keyword);
           else if (fb.corrected_category === "soft_skill") newSoftSkillsKw.push(fb.keyword);
+          else if (fb.corrected_category === "excluded") { if (!newExcluded.includes(fb.keyword)) newExcluded.push(fb.keyword); }
         }
       }
 

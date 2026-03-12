@@ -138,19 +138,24 @@ Ne retourne que des compétences spécifiques et pertinentes, pas de mots géné
       for (const s of result.softSkills.scores) keywords.push({ keyword: s.skill, category: 'soft_skill' });
     }
 
-    const prompt = `Tu es un expert en recrutement et en analyse de CV/ATS. 
+    const prompt = `Tu es un expert en recrutement et en analyse de CV/ATS.
 
 Contexte: Analyse d'un CV pour le poste "${analysis.job_title}" (thématique: ${analysis.profession_name || 'non identifiée'}).
 
 Voici les mots-clés identifiés par notre algorithme de scoring ATS. Pour chaque mot-clé, indique:
 1. Si c'est une VRAIE compétence/soft skill pertinente pour ce poste (is_valid: true/false)
-2. Si la catégorie est correcte (primary = compétence technique principale, secondary = compétence secondaire, soft_skill = savoir-être)
-3. Une courte raison si tu changes quelque chose
+2. Si la catégorie est correcte :
+   - primary : compétence technique principale (outil, logiciel, technologie, certification)
+   - secondary : compétence complémentaire associée au métier
+   - soft_skill : savoir-être, qualité comportementale
+   - excluded : mot technique valide mais hors contexte de ce métier
+   - common_word : mot trop courant du français, sans valeur de compétence (ex: "travail", "équipe", "développement" au sens générique, "projet" seul)
+3. Une courte raison si tu changes quelque chose (en français, avec accents corrects)
 
 Mots-clés à analyser:
 ${keywords.map(k => `- "${k.keyword}" (catégorie actuelle: ${k.category})`).join('\n')}
 
-IMPORTANT: Les mots courants du français ne sont PAS des compétences. Les mots trop génériques seuls ne sont pas des compétences spécifiques.`;
+IMPORTANT: Les mots courants du français ne sont PAS des compétences. Utilise "common_word" pour eux.`;
 
     const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
