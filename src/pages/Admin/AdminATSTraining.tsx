@@ -698,30 +698,39 @@ export const AdminATSTraining = () => {
                     </Button>
                   </div>
                 </CardHeader>
-                <CardContent className="space-y-3">
+                <CardContent className="space-y-2 p-3">
                   {getAnalysisKeywords(selectedAnalysis).map(kw => {
                     const fb = feedbacks.get(kw.keyword);
+                    const displayCat = fb?.corrected_category || kw.category;
                     return (
-                      <div key={kw.keyword} className="flex items-center gap-2 flex-wrap">
-                        <Badge className={categoryColor(fb?.corrected_category || kw.category)}>{kw.keyword}</Badge>
-                        <span className="text-xs text-muted-foreground">({kw.category}) {kw.found ? "✓ trouvé" : "✗ absent"}</span>
-                        <div className="flex gap-1 ml-auto">
-                          <Button size="sm" variant={fb?.is_valid === true ? "default" : "outline"} className="h-6 px-2 text-xs" onClick={() => toggleKeywordFeedback(kw.keyword, kw.category, "valid")}>
+                      <div key={kw.keyword} className={`flex items-center gap-3 rounded-lg px-3 py-2 ${categoryRowBg(displayCat)}`}>
+                        {/* Keyword badge — fixed min-width so it stays left */}
+                        <Badge className={`shrink-0 min-w-[80px] justify-center ${categoryColor(displayCat)}`}>{kw.keyword}</Badge>
+                        {/* Category + found status */}
+                        <span className="text-xs text-muted-foreground w-28 shrink-0">{categoryLabel(displayCat)} · {kw.found ? "✓ trouvé" : "✗ absent"}</span>
+                        {/* IA note */}
+                        {fb?.source === "ai" && fb.admin_notes && (
+                          <span className="text-xs text-primary truncate flex-1">🤖 {fb.admin_notes}</span>
+                        )}
+                        {/* Actions — pinned to right */}
+                        <div className="flex gap-1 ml-auto shrink-0 items-center">
+                          <Button size="sm" variant={fb?.is_valid === true ? "default" : "outline"} className="h-6 w-6 p-0" title="Valide" onClick={() => toggleKeywordFeedback(kw.keyword, kw.category, "valid")}>
                             <CheckCircle className="h-3 w-3" />
                           </Button>
-                          <Button size="sm" variant={fb?.is_valid === false ? "destructive" : "outline"} className="h-6 px-2 text-xs" onClick={() => toggleKeywordFeedback(kw.keyword, kw.category, "invalid")}>
+                          <Button size="sm" variant={fb?.is_valid === false ? "destructive" : "outline"} className="h-6 w-6 p-0" title="Invalide" onClick={() => toggleKeywordFeedback(kw.keyword, kw.category, "invalid")}>
                             <XCircle className="h-3 w-3" />
                           </Button>
                           <Select onValueChange={(val) => toggleKeywordFeedback(kw.keyword, kw.category, val)}>
-                            <SelectTrigger className="h-6 w-24 text-xs"><SelectValue placeholder="Reclasser" /></SelectTrigger>
+                            <SelectTrigger className="h-6 w-28 text-xs"><SelectValue placeholder="Reclasser" /></SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="primary">Primary</SelectItem>
-                              <SelectItem value="secondary">Secondary</SelectItem>
-                              <SelectItem value="soft_skill">Soft skill</SelectItem>
+                              <SelectItem value="primary">🔵 Hard Skill</SelectItem>
+                              <SelectItem value="secondary">🟣 Secondaire</SelectItem>
+                              <SelectItem value="soft_skill">🟢 Soft Skill</SelectItem>
+                              <SelectItem value="excluded">🔴 Mot exclu</SelectItem>
+                              <SelectItem value="common_word">🔴 Mot courant</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
-                        {fb?.source === "ai" && <span className="text-xs text-primary">🤖 {fb.admin_notes}</span>}
                       </div>
                     );
                   })}
