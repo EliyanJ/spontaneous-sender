@@ -321,10 +321,12 @@ export const ChatbotWidget = () => {
                 <Bot className="h-3.5 w-3.5" />
                 Assistant IA
               </TabsTrigger>
+            {user && (
               <TabsTrigger value="ticket" className="flex-1 gap-1.5 text-xs">
                 <TicketIcon className="h-3.5 w-3.5" />
                 Signaler un problème
               </TabsTrigger>
+            )}
             </TabsList>
 
             {/* Chat tab */}
