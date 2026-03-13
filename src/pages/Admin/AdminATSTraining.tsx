@@ -170,7 +170,7 @@ export const AdminATSTraining = () => {
       .select("*")
       .order("analysis_count", { ascending: false })
       .limit(50);
-    if (data) setClusters(data as JobCluster[]);
+    if (data) setClusters((data as unknown) as JobCluster[]);
   };
 
   const updateClusterThreshold = async (newThreshold: number) => {

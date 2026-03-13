@@ -818,14 +818,14 @@ export const UnifiedEmailSender = () => {
         <div className="lg:col-span-4 space-y-6">
 
           {/* Gmail Status Card */}
-          <div className="bg-[#121215]/60 backdrop-blur-xl border border-white/[0.08] rounded-2xl p-5 relative overflow-hidden group">
+          <div className="bg-card border border-border rounded-2xl p-5 relative overflow-hidden group">
             <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
-              <Mail className="h-16 w-16 text-white" />
+              <Mail className="h-16 w-16 text-foreground" />
             </div>
             <div className="flex items-center justify-between relative z-10">
               {checkingGmail ? (
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-muted/30 flex items-center justify-center border border-white/10">
+                  <div className="w-10 h-10 rounded-full bg-muted/30 flex items-center justify-center border border-border">
                     <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
                   </div>
                   <span className="text-sm text-muted-foreground">Vérification...</span>
@@ -834,17 +834,17 @@ export const UnifiedEmailSender = () => {
                 <>
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center border border-green-500/30">
-                      <Mail className="h-5 w-5 text-green-400" />
+                      <Mail className="h-5 w-5 text-green-500" />
                     </div>
                     <div>
-                      <h3 className="text-sm font-medium text-gray-200">Compte Gmail</h3>
+                      <h3 className="text-sm font-medium text-foreground">Compte Gmail</h3>
                       <div className="flex items-center gap-1.5 mt-0.5">
                         <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                        <span className="text-xs text-green-400 font-medium">Connecté</span>
+                        <span className="text-xs text-green-500 font-medium">Connecté</span>
                       </div>
                     </div>
                   </div>
-                  <Button variant="ghost" size="icon" onClick={checkGmailConnection} className="text-muted-foreground hover:text-white">
+                  <Button variant="ghost" size="icon" onClick={checkGmailConnection} className="text-muted-foreground hover:text-foreground">
                     <RefreshCw className="h-4 w-4" />
                   </Button>
                 </>
@@ -854,7 +854,7 @@ export const UnifiedEmailSender = () => {
                     <AlertCircle className="h-5 w-5 text-destructive" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="text-sm font-medium text-gray-200">Gmail non connecté</h3>
+                    <h3 className="text-sm font-medium text-foreground">Gmail non connecté</h3>
                     <Button
                       variant="default"
                       size="sm"
