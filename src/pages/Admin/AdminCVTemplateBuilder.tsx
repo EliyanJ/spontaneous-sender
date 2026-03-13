@@ -1351,7 +1351,7 @@ export const AdminCVTemplateBuilder = () => {
           <Button
             variant="outline"
             size="sm"
-            className="h-7 text-xs gap-1.5 border-green-500/40 text-green-600 hover:bg-green-500/5"
+            className="h-7 text-xs gap-1.5 border-primary/30 text-primary hover:bg-primary/5"
             onClick={() => htmlFileInputRef.current?.click()}
             disabled={isImporting || isImportingHTML}
             title="Importer un template HTML et convertir en canvas éditable"
