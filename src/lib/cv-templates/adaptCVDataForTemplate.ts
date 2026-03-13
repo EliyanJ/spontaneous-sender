@@ -73,8 +73,8 @@ function formatSkillsForTemplate(
   return tech
     .filter((s) => s?.trim())
     .slice(0, 16) // Max 16 compétences = 4 colonnes × 4 rangées
-    .map((skill, i) => ({
-      category: i === 0 ? "Compétences techniques" : "",
+    .map((skill) => ({
+      category: "", // Vide pour tous — le <h2> du template suffit comme titre
       skill_name: skill,
       // Rétrocompatibilité avec les anciens templates detail_1/2/3
       detail_1: skill,

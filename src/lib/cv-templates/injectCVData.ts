@@ -48,7 +48,12 @@ export function injectCVData(templateHtml: string, data: TemplateCVData): string
   const parser = new DOMParser();
   const doc = parser.parseFromString(templateHtml, "text/html");
 
-  // ── 1. Champs texte simples ──
+  // ── 0. Injecter le CSS global pour masquer les éléments vides ──
+  const hiddenStyle = doc.createElement("style");
+  hiddenStyle.textContent = `
+    [data-hidden="true"] { display: none !important; margin: 0 !important; padding: 0 !important; line-height: 0 !important; height: 0 !important; }
+  `;
+  doc.head.appendChild(hiddenStyle);
   doc.querySelectorAll("[data-field]").forEach((el) => {
     if (el.closest("[data-list]")) return;
 
@@ -116,8 +121,26 @@ export function injectCVData(templateHtml: string, data: TemplateCVData): string
         if (value !== undefined && value !== null && value !== "") {
           el.textContent = String(value);
           el.removeAttribute("data-hidden");
+          // Afficher aussi le parent direct si caché
+          const parent = el.parentElement;
+          if (parent && parent !== clone) parent.removeAttribute("data-hidden");
         } else {
           el.setAttribute("data-hidden", "true");
+          // Masquer le parent direct si TOUS ses enfants data-field sont vides
+          const parent = el.parentElement;
+          if (parent && parent !== clone) {
+            const siblings = Array.from(parent.querySelectorAll("[data-field]"));
+            const allHidden = siblings.every(
+              (s) => !s.getAttribute("data-field") || 
+              !itemData[s.getAttribute("data-field")!]
+            );
+            if (allHidden) {
+              (parent as HTMLElement).style.display = "none";
+              (parent as HTMLElement).style.margin = "0";
+              (parent as HTMLElement).style.padding = "0";
+              (parent as HTMLElement).style.lineHeight = "0";
+            }
+          }
         }
       });
 
