@@ -5,6 +5,8 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { type CVData, type CVDesignOptions } from "@/lib/cv-templates";
 import { DynamicCVRenderer } from "./DynamicCVRenderer";
+import { HTMLCVRenderer } from "./HTMLCVRenderer";
+import { adaptCVDataForTemplate } from "@/lib/cv-templates/adaptCVDataForTemplate";
 
 interface CVPreviewProps {
   cvData: CVData;
