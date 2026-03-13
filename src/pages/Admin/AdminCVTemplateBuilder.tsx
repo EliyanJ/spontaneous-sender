@@ -1292,33 +1292,19 @@ export const AdminCVTemplateBuilder = () => {
 
         <div className="flex items-center gap-1 flex-wrap">
           {/* Add text */}
-          <Button variant="outline" size="sm" className="h-7 text-xs gap-1.5"
-            onClick={addText}
-            draggable
-            onDragStart={() => { paletteDragRef.current = { type: "element", elType: "text" }; }}
-          >
+          <Button variant="outline" size="sm" className="h-7 text-xs gap-1.5" onClick={addText}>
             <Type className="h-3.5 w-3.5" /> Texte
           </Button>
           {/* Add shape filled */}
-          <Button variant="outline" size="sm" className="h-7 text-xs gap-1.5"
-            onClick={() => addShape(true)}
-            draggable
-            onDragStart={() => { paletteDragRef.current = { type: "element", elType: "shape" }; }}
-          >
+          <Button variant="outline" size="sm" className="h-7 text-xs gap-1.5" onClick={() => addShape(true)}>
             <Square className="h-3.5 w-3.5 fill-current" /> Forme pleine
           </Button>
           {/* Add shape outline */}
-          <Button variant="outline" size="sm" className="h-7 text-xs gap-1.5"
-            onClick={() => addShape(false)}
-          >
+          <Button variant="outline" size="sm" className="h-7 text-xs gap-1.5" onClick={() => addShape(false)}>
             <Square className="h-3.5 w-3.5" /> Forme vide
           </Button>
           {/* Add divider */}
-          <Button variant="outline" size="sm" className="h-7 text-xs gap-1.5"
-            onClick={addDivider}
-            draggable
-            onDragStart={() => { paletteDragRef.current = { type: "element", elType: "divider" }; }}
-          >
+          <Button variant="outline" size="sm" className="h-7 text-xs gap-1.5" onClick={addDivider}>
             <Minus className="h-3.5 w-3.5" /> Ligne
           </Button>
 
