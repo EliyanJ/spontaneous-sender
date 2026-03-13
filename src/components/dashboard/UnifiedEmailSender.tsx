@@ -891,7 +891,7 @@ export const UnifiedEmailSender = () => {
                 onChange={(e) => setManualEmail(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleAddManualRecipient(); } }}
                 placeholder="Ajouter un email manuellement..."
-                className="bg-[#27272a]/40 border-white/10 pr-10 text-sm"
+                className="pr-10 text-sm"
               />
               <Button
                 variant="ghost"
