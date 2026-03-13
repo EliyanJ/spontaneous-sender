@@ -48,7 +48,12 @@ export function injectCVData(templateHtml: string, data: TemplateCVData): string
   const parser = new DOMParser();
   const doc = parser.parseFromString(templateHtml, "text/html");
 
-  // ── 1. Champs texte simples ──
+  // ── 0. Injecter le CSS global pour masquer les éléments vides ──
+  const hiddenStyle = doc.createElement("style");
+  hiddenStyle.textContent = `
+    [data-hidden="true"] { display: none !important; margin: 0 !important; padding: 0 !important; line-height: 0 !important; height: 0 !important; }
+  `;
+  doc.head.appendChild(hiddenStyle);
   doc.querySelectorAll("[data-field]").forEach((el) => {
     if (el.closest("[data-list]")) return;
 
