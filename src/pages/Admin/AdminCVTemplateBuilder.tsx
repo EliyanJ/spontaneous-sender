@@ -1194,13 +1194,39 @@ export const AdminCVTemplateBuilder = () => {
             size="sm"
             className="h-7 text-xs gap-1.5 border-primary/40 text-primary hover:bg-primary/5"
             onClick={() => fileInputRef.current?.click()}
-            disabled={isImporting}
+            disabled={isImporting || isImportingHTML}
             title="Analyser un CV PDF et reproduire son design"
           >
             {isImporting ? (
               <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Analyse IA...</>
             ) : (
               <><Upload className="h-3.5 w-3.5" /> Importer PDF IA</>
+            )}
+          </Button>
+
+          {/* HTML Import button */}
+          <input
+            ref={htmlFileInputRef}
+            type="file"
+            accept=".html,.htm"
+            className="hidden"
+            onChange={e => {
+              const file = e.target.files?.[0];
+              if (file) handleImportHTML(file);
+            }}
+          />
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-7 text-xs gap-1.5 border-green-500/40 text-green-600 hover:bg-green-500/5"
+            onClick={() => htmlFileInputRef.current?.click()}
+            disabled={isImporting || isImportingHTML}
+            title="Importer un template HTML et convertir en canvas éditable"
+          >
+            {isImportingHTML ? (
+              <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Conversion...</>
+            ) : (
+              <><Code2 className="h-3.5 w-3.5" /> Importer HTML IA</>
             )}
           </Button>
 
