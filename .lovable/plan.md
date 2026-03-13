@@ -1,96 +1,34 @@
 
-# Plan SEO — 4 chantiers majeurs
 
-## Vue d'ensemble
-Le message couvre 4 sujets distincts. Je vais les traiter dans l'ordre de priorité SEO/business :
+## Problèmes identifiés — CVBuilderEditor.tsx
 
----
+### Bug 1 : Soft skills à 2 endroits dans la preview
+Dans `StepSkills`, les soft skills ont leur propre bloc séparé (lignes 480-497). Le bloc **Langues** est lui aussi dans `StepSkills` (lignes 499-537). Il faut **supprimer le bloc "Soft skills" de sa position actuelle** et le **déplacer juste après le bloc Langues**, dans l'ordre : Compétences techniques → Langues → Soft skills.
 
-## 1. Page publique `/score-cv` — Landing SEO + Comparateur CV gratuit
+### Bug 2 : Deux boutons "Sauvegarder mon CV"
+- Un dans `StepFinalize` (ligne 568-573) — dans le corps de l'étape
+- Un dans la barre de navigation sticky du bas (ligne 858-863) — visible aussi à l'étape finalize
 
-**Objectif** : Page publique (sans auth), accessible aux moteurs, avec le comparateur ATS intégré + tunnel d'inscription post-essai.
+**Fix** : Supprimer le bouton du `StepFinalize` et garder seulement celui de la barre sticky, ou inversement. Le plus propre : supprimer le bouton de `StepFinalize` (le sticky est toujours visible et cohérent avec les autres étapes).
 
-### Structure de la page
-```
-/score-cv  (route publique, pas de ProtectedRoute)
-├── Hero section  →  H1 + CTA "Tester gratuitement"
-├── Outil comparateur (CVComparator réutilisé tel quel)
-├── Popup post-analyse  →  "Créez votre compte gratuit pour comparer à l'infini"
-│     └── Formulaire email/password → création de compte Supabase
-└── Section SEO bas de page
-      ├── Texte riche avec mots-clés (H2, paragraphes, gras)
-      └── Accordéons FAQ (ex: "Comment fonctionne l'ATS ?", "Pourquoi optimiser son CV ?")
-```
+### Bug 3 : "Sauvegarder" → "Télécharger en PDF / Word"
+Remplacer les deux occurrences de "Sauvegarder mon CV" par un bouton **"Télécharger mon CV"** avec options PDF/Word. Pour l'instant sans vraie logique d'export (qui est un travail séparé), le bouton appellera `onSave` mais avec un libellé et design orientés téléchargement.
 
-### Logique d'accès
-- L'outil fonctionne **1 fois sans compte**
-- Après analyse → popup `AuthDialog` personnalisée avec message de valeur
-- Compte créé → redirect `/dashboard?tab=cv`
+**Fix** : Remplacer dans la barre sticky (étape finalize) le bouton `Save` par un groupe de deux boutons : **Télécharger en PDF** et **Télécharger en Word** (tous deux appelant `onSave` pour l'instant, avec un toast "Export PDF/Word bientôt disponible" pour le Word).
 
-### SEO technique sur cette page
-- `useSEO("/score-cv")` → meta title/desc configurable depuis le BO
-- Balise H1 unique, H2 dans les sections FAQ
-- Texte ~800 mots minimum en bas de page (géré via CMS ou hardcodé)
-- Canonical URL configurée
-- Ajout de `/score-cv` dans `SITE_PAGES` de `AdminSEO.tsx`
+### Bug 4 : Input compétences techniques bloque à une lettre
+**Cause** : `SkillInput` est un composant défini **à l'intérieur de `StepSkills`** (ligne 422). À chaque render de `StepSkills`, ce composant est **recréé** (nouvelle référence de fonction), ce qui provoque un remount de l'input — la saisie perd le focus après chaque caractère.
+
+**Fix** : Sortir `SkillInput` du scope de `StepSkills` et le définir comme composant de niveau module (avant `StepSkills`), en lui passant les handlers via props. Ou plus simple : remplacer le composant `SkillInput` interne par du JSX inline dans `StepSkills`.
 
 ---
 
-## 2. Amélioration du CMS — Sélecteur de balise HTML + effets de texte
+## Fichier modifié
 
-**Problème actuel** : `AdminPageEditor.tsx` a H1/H2/H3 dans la barre d'outils mais pas de sélecteur explicite de balise pour les blocs de texte. Pas d'effet "texte souligné coloré" type mise en avant.
+**`src/components/cv-builder/CVBuilderEditor.tsx`** — modifications ciblées :
 
-### Ce qu'on ajoute
-- **Sélecteur de balise** dans la toolbar : dropdown `<p>` / `<h1>` / `<h2>` / `<h3>` avec règle visuelle "1 seul H1 par page" (warning si H1 déjà présent)
-- **Effet texte surligné** : bouton "Highlight" dans la toolbar → `<mark>` stylé avec couleur configurable (rose/jaune comme l'image fournie)
-- Les couleurs de highlight configurables via `ColorPickerPopover` déjà existant
+1. **Ligne 422-442** : Sortir `SkillInput` du corps de `StepSkills` → le déclarer au niveau module
+2. **Lignes 480-497** : Déplacer le bloc soft skills **après** le bloc langues (lignes 499-537)
+3. **Lignes 542-574** : Dans `StepFinalize`, supprimer le bouton "Sauvegarder mon CV" (ligne 568-573), garder seulement l'aperçu
+4. **Lignes 857-863** : Remplacer le bouton "Sauvegarder mon CV" par deux boutons côte-à-côte : "Télécharger en PDF" (Download) + "Télécharger en Word" (FileDown)
 
----
-
-## 3. CV Builder — Nouveaux modèles + personnalisation design
-
-**Actuel** : 4 templates (`classic`, `dark`, `light`, `geo`) avec couleurs configurables. Photo déjà supportée (`photoUrl` dans `CVDesignOptions`).
-
-### Ajouts
-- **2-3 nouveaux templates** inspirés des screenshots fournis :
-  - `modern-two-col` : deux colonnes (sidebar colorée + contenu), avec photo ronde en haut
-  - `minimal-line` : séparateurs de ligne épurés, typographie aérée
-- **Sélecteur de template visuel** : grille de miniatures cliquables (comme le site concurrent montré)
-- **Panneau design** : couleur de fond de section, couleur du texte, couleur d'accent — déjà partiellement présent, à enrichir
-- **Upload photo** : interface d'upload vers Supabase Storage + affichage dans le template
-
----
-
-## 4. SEO global — Optimisations techniques
-
-- Ajout `/score-cv` dans `AdminSEO.tsx` SITE_PAGES
-- `robots.txt` : vérifier que `/score-cv` est indexable (actuellement public/robots.txt)
-- Sitemap XML statique : créer `public/sitemap.xml` avec les URLs principales
-- Structure JSON-LD Schema.org sur `/score-cv` (SoftwareApplication)
-- `useSEO` déjà en place sur Landing — à ajouter sur `/score-cv` et Pricing
-
----
-
-## Fichiers à créer/modifier
-
-| Fichier | Action |
-|---|---|
-| `src/pages/CVScorePage.tsx` | CRÉER — page publique SEO |
-| `src/components/dashboard/CVComparator.tsx` | MODIFIER — prop `isPublic` pour désactiver auth check |
-| `src/components/CVScoreAuthPopup.tsx` | CRÉER — popup post-analyse |
-| `src/pages/Admin/AdminSEO.tsx` | MODIFIER — ajouter `/score-cv` |
-| `src/pages/Admin/AdminPageEditor.tsx` | MODIFIER — sélecteur balise + highlight |
-| `src/lib/cv-templates.ts` | MODIFIER — 2 nouveaux templates |
-| `src/components/cv-builder/CVPreview.tsx` | MODIFIER — render nouveaux templates |
-| `src/components/cv-builder/CVBuilderForm.tsx` | MODIFIER — sélecteur visuel templates |
-| `src/App.tsx` | MODIFIER — route `/score-cv` publique |
-| `public/sitemap.xml` | CRÉER |
-
----
-
-## Ordre d'implémentation recommandé
-
-1. Page `/score-cv` + popup auth (impact SEO + business immédiat)
-2. SEO technique global (sitemap, schema.org)
-3. CMS éditeur amélioré (balises H + highlight)
-4. CV Builder nouveaux templates + sélecteur visuel
