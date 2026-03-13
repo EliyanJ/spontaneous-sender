@@ -5,6 +5,8 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { type CVData, type CVDesignOptions } from "@/lib/cv-templates";
 import { DynamicCVRenderer } from "./DynamicCVRenderer";
+import { HTMLCVRenderer } from "./HTMLCVRenderer";
+import { adaptCVDataForTemplate } from "@/lib/cv-templates/adaptCVDataForTemplate";
 
 interface CVPreviewProps {
   cvData: CVData;
@@ -530,7 +532,7 @@ const EduItem = ({ edu }: { edu: CVData["education"][0] }) => (
   </div>
 );
 
-// ─── Canvas-v2 Template Renderer ─────────────────────────────────────────────
+// ─── Canvas-v2 + HTML-v1 Template Renderer ───────────────────────────────────
 const CanvasTemplateRenderer = ({
   cvData,
   templateId,
@@ -545,7 +547,7 @@ const CanvasTemplateRenderer = ({
     queryFn: async () => {
       const { data, error } = await supabase
         .from("cv_templates")
-        .select("id, name, html_template, css_styles")
+        .select("id, name, html_template, css_styles, template_version")
         .eq("id", templateId)
         .single();
       if (error) throw error;
@@ -571,6 +573,21 @@ const CanvasTemplateRenderer = ({
     );
   }
 
+  const version = (template as any).template_version;
+
+  // ── Nouveau système HTML-v1 ──────────────────────────────────────────────
+  if (version === "html-v1") {
+    const templateCvData = adaptCVDataForTemplate(cvData, designOptions?.photoUrl);
+    return (
+      <HTMLCVRenderer
+        templateHtml={template.html_template || ""}
+        cvData={templateCvData}
+        scale={1}
+      />
+    );
+  }
+
+  // ── Ancien système canvas-v2 (rétrocompat) ───────────────────────────────
   let config: any;
   try {
     config = JSON.parse(template.html_template || "{}");

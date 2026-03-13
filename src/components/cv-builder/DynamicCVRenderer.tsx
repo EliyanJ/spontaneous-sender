@@ -2,7 +2,7 @@ import React from "react";
 import type {
   TemplateConfig, TemplateSection, SectionId,
   CanvasConfig, CanvasElement,
-} from "@/pages/Admin/AdminCVTemplateBuilder";
+} from "@/lib/cv-templates/canvas-types";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
