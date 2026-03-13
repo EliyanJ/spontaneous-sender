@@ -327,8 +327,7 @@ export const AdminCVTemplateBuilder = () => {
     handle?: string;
   } | null>(null);
 
-  // Palette drag
-  const paletteDragRef = useRef<{ type: "section"; sectionId: SectionId } | { type: "element"; elType: ElementType } | null>(null);
+  // (drag-and-drop removed — click-to-add only)
 
   // Load existing template
   useQuery({
