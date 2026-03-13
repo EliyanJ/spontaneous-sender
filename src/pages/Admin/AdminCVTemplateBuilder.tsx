@@ -1477,8 +1477,6 @@ export const AdminCVTemplateBuilder = () => {
                 overflow: "hidden",
                 fontFamily: config.fontFamily,
               }}
-              onDragOver={e => e.preventDefault()}
-              onDrop={onCanvasDrop}
             >
               {/* Render all elements */}
               {config.elements.map(renderCanvasElement)}
