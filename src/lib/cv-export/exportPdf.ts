@@ -28,46 +28,72 @@ export async function exportCVToPdf({
   // 1. Injecter les données dans le template
   const finalHtml = injectCVData(templateHtml, cvData);
 
-  // 2. Créer un conteneur hors-écran (PAS display:none → html2canvas ne rend rien si caché)
+  // 2. Parser le HTML pour extraire style et body séparément
+  const parser = new DOMParser();
+  const parsed = parser.parseFromString(finalHtml, "text/html");
+
+  // 3. Préfixer toutes les règles CSS du template avec un sélecteur unique
+  //    pour éviter qu'elles ne "polluent" l'app hôte.
+  const SCOPE_ID = "__cv_export_scope__";
+  const rawCss = parsed.querySelector("style")?.textContent || "";
+  const scopedCss = rawCss
+    .split("}")
+    .map((block) => {
+      const braceIdx = block.indexOf("{");
+      if (braceIdx === -1) return block;
+      const selectors = block.slice(0, braceIdx);
+      const rules = block.slice(braceIdx);
+      // Préfixer chaque sélecteur
+      const prefixed = selectors
+        .split(",")
+        .map((sel) => {
+          const trimmed = sel.trim();
+          if (!trimmed) return "";
+          if (trimmed.startsWith("@") || trimmed.startsWith(":root")) return trimmed;
+          return `#${SCOPE_ID} ${trimmed}`;
+        })
+        .filter(Boolean)
+        .join(", ");
+      return prefixed + rules;
+    })
+    .join("}");
+
+  // 4. Créer le conteneur hors-écran (VISIBLE sinon html2canvas = blanc)
   const container = document.createElement("div");
+  container.id = SCOPE_ID;
   container.style.cssText = [
     "position: fixed",
-    "left: -9999px",
+    "left: -99999px",
     "top: 0",
-    "width: 794px",
-    "height: 1123px",
-    "overflow: hidden",
+    "width: 794px",       // A4 @ 96dpi
+    "min-height: 1123px",
+    "background: #fff",
+    "overflow: visible",
     "z-index: -9999",
   ].join("; ");
+
+  // 5. Ajouter la feuille de style scopée + le contenu HTML
+  const styleEl = document.createElement("style");
+  styleEl.textContent = scopedCss;
+  container.appendChild(styleEl);
+
+  const bodyDiv = document.createElement("div");
+  bodyDiv.innerHTML = parsed.body.innerHTML;
+  container.appendChild(bodyDiv);
+
   document.body.appendChild(container);
 
-  // 3. Créer un iframe isolé pour que le CSS du template ne polue pas l'app
-  const iframe = document.createElement("iframe");
-  iframe.style.cssText = "width: 794px; height: 1123px; border: none; display: block;";
-  iframe.setAttribute("sandbox", "allow-same-origin");
-  container.appendChild(iframe);
-
   try {
-    // 4. Charger le HTML dans l'iframe et attendre rendu complet
-    await new Promise<void>((resolve) => {
-      iframe.onload = () => {
-        // Attendre 500ms supplémentaires pour les polices / images CSS
-        setTimeout(resolve, 500);
-      };
-      iframe.srcdoc = finalHtml;
-    });
+    // 6. Attendre le paint + chargement des polices
+    await new Promise<void>((resolve) => setTimeout(resolve, 700));
 
     onProgress?.("generating");
 
-    // 5. Cibler .cv-page dans l'iframe (fallback sur body)
-    const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
-    if (!iframeDoc) throw new Error("Impossible d'accéder au contenu de l'iframe");
-
+    // 7. Cibler .cv-page (fallback sur bodyDiv)
     const cvPage =
-      iframeDoc.querySelector<HTMLElement>(".cv-page") ||
-      iframeDoc.body;
+      container.querySelector<HTMLElement>(".cv-page") || bodyDiv;
 
-    // 6. Lancer html2pdf avec les options recommandées
+    // 8. Lancer html2pdf
     await html2pdf()
       .set({
         margin: 0,
@@ -76,9 +102,12 @@ export async function exportCVToPdf({
         html2canvas: {
           scale: 2,
           useCORS: true,
+          allowTaint: true,
           letterRendering: true,
           scrollX: 0,
           scrollY: 0,
+          backgroundColor: "#ffffff",
+          logging: false,
         },
         jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
       })
@@ -87,7 +116,9 @@ export async function exportCVToPdf({
 
     onProgress?.("done");
   } finally {
-    // 7. Cleanup DOM
-    document.body.removeChild(container);
+    // 9. Cleanup DOM
+    if (document.body.contains(container)) {
+      document.body.removeChild(container);
+    }
   }
 }
