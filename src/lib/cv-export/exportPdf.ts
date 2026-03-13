@@ -28,52 +28,70 @@ export async function exportCVToPdf({
   // 1. Injecter les données dans le template
   const finalHtml = injectCVData(templateHtml, cvData);
 
-  // 2. Parser le HTML final pour extraire le <style> et le <body>
+  // 2. Parser le HTML pour extraire style et body séparément
   const parser = new DOMParser();
-  const doc = parser.parseFromString(finalHtml, "text/html");
+  const parsed = parser.parseFromString(finalHtml, "text/html");
 
-  // 3. Créer un conteneur hors-écran visible (PAS display:none → html2canvas vide)
-  const wrapper = document.createElement("div");
-  wrapper.style.cssText = [
+  // 3. Préfixer toutes les règles CSS du template avec un sélecteur unique
+  //    pour éviter qu'elles ne "polluent" l'app hôte.
+  const SCOPE_ID = "__cv_export_scope__";
+  const rawCss = parsed.querySelector("style")?.textContent || "";
+  const scopedCss = rawCss
+    .split("}")
+    .map((block) => {
+      const braceIdx = block.indexOf("{");
+      if (braceIdx === -1) return block;
+      const selectors = block.slice(0, braceIdx);
+      const rules = block.slice(braceIdx);
+      // Préfixer chaque sélecteur
+      const prefixed = selectors
+        .split(",")
+        .map((sel) => {
+          const trimmed = sel.trim();
+          if (!trimmed) return "";
+          if (trimmed.startsWith("@") || trimmed.startsWith(":root")) return trimmed;
+          return `#${SCOPE_ID} ${trimmed}`;
+        })
+        .filter(Boolean)
+        .join(", ");
+      return prefixed + rules;
+    })
+    .join("}");
+
+  // 4. Créer le conteneur hors-écran (VISIBLE sinon html2canvas = blanc)
+  const container = document.createElement("div");
+  container.id = SCOPE_ID;
+  container.style.cssText = [
     "position: fixed",
     "left: -99999px",
     "top: 0",
-    "width: 794px",     // A4 @ 96dpi
+    "width: 794px",       // A4 @ 96dpi
     "min-height: 1123px",
+    "background: #fff",
     "overflow: visible",
     "z-index: -9999",
-    "background: white",
   ].join("; ");
-  document.body.appendChild(wrapper);
 
-  // 4. Créer un shadow root pour isoler les styles du template de l'app
-  const shadow = wrapper.attachShadow({ mode: "open" });
+  // 5. Ajouter la feuille de style scopée + le contenu HTML
+  const styleEl = document.createElement("style");
+  styleEl.textContent = scopedCss;
+  container.appendChild(styleEl);
 
-  // 5. Injecter style + contenu dans le shadow DOM
-  //    (le shadow DOM est visible pour html2canvas avec "useCORS: true")
-  const styleEl = doc.querySelector("style");
-  if (styleEl) {
-    const clonedStyle = document.createElement("style");
-    clonedStyle.textContent = styleEl.textContent || "";
-    shadow.appendChild(clonedStyle);
-  }
+  const bodyDiv = document.createElement("div");
+  bodyDiv.innerHTML = parsed.body.innerHTML;
+  container.appendChild(bodyDiv);
 
-  // Cloner le contenu body dans le shadow
-  const contentDiv = document.createElement("div");
-  contentDiv.innerHTML = doc.body.innerHTML;
-  // Forcer width A4
-  contentDiv.style.cssText = "width: 794px; min-height: 1123px; background: white;";
-  shadow.appendChild(contentDiv);
+  document.body.appendChild(container);
 
   try {
+    // 6. Attendre le paint + chargement des polices
+    await new Promise<void>((resolve) => setTimeout(resolve, 700));
+
     onProgress?.("generating");
 
-    // 6. Attendre le paint + polices
-    await new Promise<void>((resolve) => setTimeout(resolve, 600));
-
-    // 7. Cibler .cv-page dans le shadow (fallback sur contentDiv)
+    // 7. Cibler .cv-page (fallback sur bodyDiv)
     const cvPage =
-      (shadow.querySelector<HTMLElement>(".cv-page")) || contentDiv;
+      container.querySelector<HTMLElement>(".cv-page") || bodyDiv;
 
     // 8. Lancer html2pdf
     await html2pdf()
@@ -84,12 +102,12 @@ export async function exportCVToPdf({
         html2canvas: {
           scale: 2,
           useCORS: true,
+          allowTaint: true,
           letterRendering: true,
           scrollX: 0,
           scrollY: 0,
           backgroundColor: "#ffffff",
-          // Cibler l'élément directement (pas d'iframe)
-          foreignObjectRendering: false,
+          logging: false,
         },
         jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
       })
@@ -99,6 +117,8 @@ export async function exportCVToPdf({
     onProgress?.("done");
   } finally {
     // 9. Cleanup DOM
-    document.body.removeChild(wrapper);
+    if (document.body.contains(container)) {
+      document.body.removeChild(container);
+    }
   }
 }
