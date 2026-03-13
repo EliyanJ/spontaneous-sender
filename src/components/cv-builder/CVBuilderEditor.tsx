@@ -428,7 +428,6 @@ const SkillInput = ({ value, onChange: onInputChange, onAdd, placeholder }: {
 // ─── Step: Skills ─────────────────────────────────────────────────────────────
 const StepSkills = ({ cvData, onChange }: { cvData: CVData; onChange: (d: CVData) => void }) => {
   const [inputTech, setInputTech] = useState("");
-  const [inputSoft, setInputSoft] = useState("");
 
   const addTech = (skill: string) => {
     const s = skill.trim();
@@ -437,22 +436,15 @@ const StepSkills = ({ cvData, onChange }: { cvData: CVData; onChange: (d: CVData
     }
     setInputTech("");
   };
-  const addSoft = (skill: string) => {
-    const s = skill.trim();
-    if (s && !cvData.skills.soft.includes(s)) {
-      onChange({ ...cvData, skills: { ...cvData.skills, soft: [...cvData.skills.soft, s] } });
-    }
-    setInputSoft("");
-  };
   const removeTech = (s: string) => onChange({ ...cvData, skills: { ...cvData.skills, technical: cvData.skills.technical.filter(x => x !== s) } });
-  const removeSoft = (s: string) => onChange({ ...cvData, skills: { ...cvData.skills, soft: cvData.skills.soft.filter(x => x !== s) } });
 
   return (
     <div className="space-y-8">
-      {/* Technical */}
+      {/* Technical / Hard skills */}
       <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 sm:p-8 relative overflow-hidden">
         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-400 to-[hsl(var(--primary))]" />
-        <h3 className="text-lg font-bold text-slate-800 mb-4">Compétences techniques</h3>
+        <h3 className="text-lg font-bold text-slate-800 mb-1">Compétences techniques (Hard Skills)</h3>
+        <p className="text-xs text-slate-500 mb-4">Logiciels, outils, langages, certifications…</p>
         <SkillInput value={inputTech} onChange={setInputTech} onAdd={addTech} placeholder="Ex: Excel, Python, SQL..." />
         {cvData.skills.technical.length > 0 && (
           <div className="flex flex-wrap gap-2 mt-4">
@@ -470,7 +462,7 @@ const StepSkills = ({ cvData, onChange }: { cvData: CVData; onChange: (d: CVData
         <div className="mt-5 pt-4 border-t border-gray-100">
           <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Suggestions populaires</p>
           <div className="flex flex-wrap gap-2">
-            {SKILL_SUGGESTIONS.filter(s => !cvData.skills.technical.includes(s) && !cvData.skills.soft.includes(s)).slice(0, 8).map(s => (
+            {SKILL_SUGGESTIONS.filter(s => !cvData.skills.technical.includes(s)).slice(0, 8).map(s => (
               <button
                 key={s}
                 onClick={() => addTech(s)}
@@ -485,7 +477,8 @@ const StepSkills = ({ cvData, onChange }: { cvData: CVData; onChange: (d: CVData
 
       {/* Languages */}
       <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 sm:p-8">
-        <h3 className="text-lg font-bold text-slate-800 mb-4">Langues</h3>
+        <h3 className="text-lg font-bold text-slate-800 mb-1">Langues</h3>
+        <p className="text-xs text-slate-500 mb-4">Les soft skills seront ajoutés dans l'étape suivante (Finalisation).</p>
         <div className="space-y-3">
           {cvData.languages.map((lang, i) => (
             <div key={i} className="flex gap-3 items-center">
@@ -521,25 +514,6 @@ const StepSkills = ({ cvData, onChange }: { cvData: CVData; onChange: (d: CVData
         >
           <Plus className="h-4 w-4" /> Ajouter une langue
         </button>
-      </div>
-
-      {/* Soft skills */}
-      <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 sm:p-8 relative overflow-hidden">
-        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-green-400 to-emerald-600" />
-        <h3 className="text-lg font-bold text-slate-800 mb-4">Soft skills</h3>
-        <SkillInput value={inputSoft} onChange={setInputSoft} onAdd={addSoft} placeholder="Ex: Leadership, Communication..." />
-        {cvData.skills.soft.length > 0 && (
-          <div className="flex flex-wrap gap-2 mt-4">
-            {cvData.skills.soft.map(s => (
-              <span key={s} className="flex items-center gap-1.5 px-3 py-1.5 bg-green-50 border border-green-200 rounded-full text-sm font-medium text-green-800">
-                {s}
-                <button onClick={() => removeSoft(s)} className="hover:text-red-500 transition-colors">
-                  <X className="h-3 w-3" />
-                </button>
-              </span>
-            ))}
-          </div>
-        )}
       </div>
     </div>
   );
