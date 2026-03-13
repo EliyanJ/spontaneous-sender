@@ -837,7 +837,7 @@ export const CVBuilderEditor = ({
         </div>
 
         {/* ── Sticky bottom navigation ── */}
-        <div className="fixed bottom-0 left-0 right-0 lg:left-[280px] xl:left-[320px] xl:right-[360px] bg-white/95 backdrop-blur-md border-t border-gray-100 px-4 sm:px-8 lg:px-8 py-4 z-20">
+        <div className="fixed bottom-0 left-0 right-0 lg:left-[280px] xl:left-[320px] lg:right-[300px] bg-white/95 backdrop-blur-md border-t border-gray-100 px-4 sm:px-8 lg:px-8 py-4 z-20">
           <div className="max-w-2xl mx-auto flex items-center justify-between gap-4">
             <>
               <button
