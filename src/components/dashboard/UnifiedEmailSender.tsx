@@ -871,14 +871,14 @@ export const UnifiedEmailSender = () => {
           </div>
 
           {/* Recipients Card */}
-          <div className="bg-[#121215]/60 backdrop-blur-xl border border-white/[0.08] rounded-2xl p-5 flex flex-col">
+          <div className="bg-card border border-border rounded-2xl p-5 flex flex-col">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="font-semibold text-gray-100 flex items-center gap-2">
-                <Building2 className="h-4 w-4 text-indigo-400" />
+              <h3 className="font-semibold text-foreground flex items-center gap-2">
+                <Building2 className="h-4 w-4 text-indigo-500" />
                 Destinataires
               </h3>
-              <div className="text-xs text-muted-foreground bg-white/5 px-2 py-1 rounded border border-white/5">
-                <span className="text-indigo-400 font-bold">{selectedCount}</span>/{companies.length} sélectionnée(s)
+              <div className="text-xs text-muted-foreground bg-muted/50 px-2 py-1 rounded border border-border">
+                <span className="text-indigo-500 font-bold">{selectedCount}</span>/{companies.length} sélectionnée(s)
                 {manualCount > 0 && <span className="ml-1">+ {manualCount} manuel(s)</span>}
               </div>
             </div>
