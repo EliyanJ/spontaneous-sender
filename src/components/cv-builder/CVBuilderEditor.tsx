@@ -428,7 +428,6 @@ const SkillInput = ({ value, onChange: onInputChange, onAdd, placeholder }: {
 // ─── Step: Skills ─────────────────────────────────────────────────────────────
 const StepSkills = ({ cvData, onChange }: { cvData: CVData; onChange: (d: CVData) => void }) => {
   const [inputTech, setInputTech] = useState("");
-  const [inputSoft, setInputSoft] = useState("");
 
   const addTech = (skill: string) => {
     const s = skill.trim();
@@ -437,22 +436,15 @@ const StepSkills = ({ cvData, onChange }: { cvData: CVData; onChange: (d: CVData
     }
     setInputTech("");
   };
-  const addSoft = (skill: string) => {
-    const s = skill.trim();
-    if (s && !cvData.skills.soft.includes(s)) {
-      onChange({ ...cvData, skills: { ...cvData.skills, soft: [...cvData.skills.soft, s] } });
-    }
-    setInputSoft("");
-  };
   const removeTech = (s: string) => onChange({ ...cvData, skills: { ...cvData.skills, technical: cvData.skills.technical.filter(x => x !== s) } });
-  const removeSoft = (s: string) => onChange({ ...cvData, skills: { ...cvData.skills, soft: cvData.skills.soft.filter(x => x !== s) } });
 
   return (
     <div className="space-y-8">
-      {/* Technical */}
+      {/* Technical / Hard skills */}
       <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 sm:p-8 relative overflow-hidden">
         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-400 to-[hsl(var(--primary))]" />
-        <h3 className="text-lg font-bold text-slate-800 mb-4">Compétences techniques</h3>
+        <h3 className="text-lg font-bold text-slate-800 mb-1">Compétences techniques (Hard Skills)</h3>
+        <p className="text-xs text-slate-500 mb-4">Logiciels, outils, langages, certifications…</p>
         <SkillInput value={inputTech} onChange={setInputTech} onAdd={addTech} placeholder="Ex: Excel, Python, SQL..." />
         {cvData.skills.technical.length > 0 && (
           <div className="flex flex-wrap gap-2 mt-4">
@@ -470,7 +462,7 @@ const StepSkills = ({ cvData, onChange }: { cvData: CVData; onChange: (d: CVData
         <div className="mt-5 pt-4 border-t border-gray-100">
           <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Suggestions populaires</p>
           <div className="flex flex-wrap gap-2">
-            {SKILL_SUGGESTIONS.filter(s => !cvData.skills.technical.includes(s) && !cvData.skills.soft.includes(s)).slice(0, 8).map(s => (
+            {SKILL_SUGGESTIONS.filter(s => !cvData.skills.technical.includes(s)).slice(0, 8).map(s => (
               <button
                 key={s}
                 onClick={() => addTech(s)}
@@ -485,7 +477,8 @@ const StepSkills = ({ cvData, onChange }: { cvData: CVData; onChange: (d: CVData
 
       {/* Languages */}
       <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 sm:p-8">
-        <h3 className="text-lg font-bold text-slate-800 mb-4">Langues</h3>
+        <h3 className="text-lg font-bold text-slate-800 mb-1">Langues</h3>
+        <p className="text-xs text-slate-500 mb-4">Les soft skills seront ajoutés dans l'étape suivante (Finalisation).</p>
         <div className="space-y-3">
           {cvData.languages.map((lang, i) => (
             <div key={i} className="flex gap-3 items-center">
@@ -521,25 +514,6 @@ const StepSkills = ({ cvData, onChange }: { cvData: CVData; onChange: (d: CVData
         >
           <Plus className="h-4 w-4" /> Ajouter une langue
         </button>
-      </div>
-
-      {/* Soft skills */}
-      <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 sm:p-8 relative overflow-hidden">
-        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-green-400 to-emerald-600" />
-        <h3 className="text-lg font-bold text-slate-800 mb-4">Soft skills</h3>
-        <SkillInput value={inputSoft} onChange={setInputSoft} onAdd={addSoft} placeholder="Ex: Leadership, Communication..." />
-        {cvData.skills.soft.length > 0 && (
-          <div className="flex flex-wrap gap-2 mt-4">
-            {cvData.skills.soft.map(s => (
-              <span key={s} className="flex items-center gap-1.5 px-3 py-1.5 bg-green-50 border border-green-200 rounded-full text-sm font-medium text-green-800">
-                {s}
-                <button onClick={() => removeSoft(s)} className="hover:text-red-500 transition-colors">
-                  <X className="h-3 w-3" />
-                </button>
-              </span>
-            ))}
-          </div>
-        )}
       </div>
     </div>
   );
@@ -863,7 +837,7 @@ export const CVBuilderEditor = ({
         </div>
 
         {/* ── Sticky bottom navigation ── */}
-        <div className="fixed bottom-0 left-0 right-0 lg:left-[280px] xl:left-[320px] xl:right-[360px] bg-white/95 backdrop-blur-md border-t border-gray-100 px-4 sm:px-8 lg:px-8 py-4 z-20">
+        <div className="fixed bottom-0 left-0 right-0 lg:left-[280px] xl:left-[320px] lg:right-[300px] bg-white/95 backdrop-blur-md border-t border-gray-100 px-4 sm:px-8 lg:px-8 py-4 z-20">
           <div className="max-w-2xl mx-auto flex items-center justify-between gap-4">
             <>
               <button
@@ -886,8 +860,8 @@ export const CVBuilderEditor = ({
         </div>
       </main>
 
-      {/* ── RIGHT PREVIEW PANEL (xl+ screens) ── */}
-      <aside className="hidden xl:flex flex-col w-[360px] shrink-0 bg-[#F8FAFC] border-l border-[#E2E8F0] h-screen sticky top-0 overflow-hidden">
+      {/* ── RIGHT PREVIEW PANEL (lg+ screens) ── */}
+      <aside className="hidden lg:flex flex-col w-[300px] shrink-0 bg-[#F8FAFC] border-l border-[#E2E8F0] h-screen sticky top-0 overflow-hidden">
         {/* Header */}
         <div className="px-4 py-3 border-b border-[#E2E8F0] bg-white flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2">
@@ -898,14 +872,14 @@ export const CVBuilderEditor = ({
         </div>
 
         {/* Scrollable preview area */}
-        {/* Column inner width = 360px - 24px padding = 336px → scale = 336/794 ≈ 0.423 */}
+        {/* Column inner width = 300px - 24px padding = 276px → scale = 276/794 ≈ 0.348 */}
         <div className="flex-1 overflow-y-auto bg-slate-100 px-3 py-4">
           {/* Outer wrapper: exact size of the scaled A4 sheet, centered */}
-          <div style={{ width: "336px", height: `${Math.round(1123 * 0.423)}px`, overflow: "hidden", position: "relative", margin: "0 auto", boxShadow: "0 2px 16px 0 rgba(0,0,0,0.10)", borderRadius: "4px", background: "#fff" }}>
+          <div style={{ width: "276px", height: `${Math.round(1123 * 0.348)}px`, overflow: "hidden", position: "relative", margin: "0 auto", boxShadow: "0 2px 16px 0 rgba(0,0,0,0.10)", borderRadius: "4px", background: "#fff" }}>
             {/* Inner div: full A4 size, scaled down. cvPreviewRef attaché ici pour la capture PDF */}
             <div
               ref={cvPreviewRef}
-              style={{ transformOrigin: "top left", transform: "scale(0.423)", width: "794px", minHeight: "1123px", position: "absolute", top: 0, left: 0, pointerEvents: "none" }}
+              style={{ transformOrigin: "top left", transform: "scale(0.348)", width: "794px", minHeight: "1123px", position: "absolute", top: 0, left: 0, pointerEvents: "none" }}
             >
               <CVPreview cvData={cvData} templateId={templateId} designOptions={designOptions} standalone={false} />
             </div>
