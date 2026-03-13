@@ -599,6 +599,28 @@ export const CVBuilderEditor = ({
   const [savedCVs, setSavedCVs] = useState<any[]>([]);
   const [cvPopoverOpen, setCvPopoverOpen] = useState(false);
 
+  // ── Fetch template HTML for export (only when on finalize step) ──
+  const { data: templateHtml = "" } = useQuery({
+    queryKey: ["cv-template-html", templateId],
+    enabled: !!templateId && /^[0-9a-f-]{36}$/i.test(templateId),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("cv_templates")
+        .select("html_template, css_styles")
+        .eq("id", templateId)
+        .single();
+      if (error || !data) return "";
+      // Merge html_template + css_styles if separate
+      if (data.css_styles && !data.html_template.includes(data.css_styles)) {
+        return data.html_template.replace("</style>", data.css_styles + "</style>") || data.html_template;
+      }
+      return data.html_template || "";
+    },
+  });
+
+  // ── Adapt cvData → TemplateCVData for export ──
+  const templateCvData = adaptCVDataForTemplate(cvData);
+
   const currentIdx = STEP_ORDER.indexOf(currentStep);
   const progress = ((currentIdx + 1) / STEPS.length) * 100;
 
