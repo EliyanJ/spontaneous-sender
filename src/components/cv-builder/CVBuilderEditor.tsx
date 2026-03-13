@@ -547,13 +547,14 @@ const StepSkills = ({ cvData, onChange }: { cvData: CVData; onChange: (d: CVData
 
 // ─── Step: Finalize ───────────────────────────────────────────────────────────
 const StepFinalize = ({
-  cvData, templateId, designOptions, templateHtml, templateCvData,
+  cvData, templateId, designOptions, templateHtml, templateCvData, previewRef,
 }: {
   cvData: CVData;
   templateId: string;
   designOptions: CVDesignOptions;
   templateHtml: string;
   templateCvData: ReturnType<typeof adaptCVDataForTemplate>;
+  previewRef: React.RefObject<HTMLDivElement>;
 }) => (
   <div className="space-y-6">
     <div className="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 rounded-2xl p-6 flex items-start gap-4">
@@ -566,8 +567,9 @@ const StepFinalize = ({
       </div>
     </div>
 
-    {/* Boutons d'export visibles dans le corps de l'étape */}
+    {/* Boutons d'export : utilise previewRef (DOM React) en priorité */}
     <CVExportButtons
+      previewRef={previewRef}
       templateHtml={templateHtml}
       cvData={templateCvData}
       userName={[cvData.personalInfo?.firstName, cvData.personalInfo?.lastName].filter(Boolean).join(" ")}
@@ -579,7 +581,10 @@ const StepFinalize = ({
       </div>
       <div className="p-4 overflow-auto max-h-[500px]">
         <div className="scale-75 origin-top-left" style={{ width: "133%" }}>
-          <CVPreview cvData={cvData} templateId={templateId} designOptions={designOptions} />
+          {/* Ce div est la cible de capture pour le PDF sur mobile/tablette */}
+          <div ref={previewRef} style={{ width: "794px", minHeight: "1123px" }}>
+            <CVPreview cvData={cvData} templateId={templateId} designOptions={designOptions} standalone={false} />
+          </div>
         </div>
       </div>
     </div>
