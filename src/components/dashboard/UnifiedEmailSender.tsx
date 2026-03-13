@@ -1279,10 +1279,6 @@ export const UnifiedEmailSender = () => {
     </>
   );
 };
-        isOpen={isGenerating}
-        progress={progress}
-        elapsedTime={elapsedTime}
-        currentStep={currentStep}
         processLogs={processLogs}
         totalItems={selectedCompanies.size}
       />
