@@ -32,6 +32,7 @@ export interface TemplateCVData {
     category: string;
     detail_1: string;
     detail_2: string;
+    detail_3?: string;
   }>;
   education?: Array<{
     date: string;

@@ -68,16 +68,30 @@ function formatSkillsForTemplate(
   const tech = skills.technical || [];
 
   if (tech.length > 0) {
-    // Répartition équilibrée en 2 colonnes (gauche / droite)
-    const half = Math.ceil(tech.length / 2);
-    const left = tech.slice(0, half);
-    const right = tech.slice(half);
+    // Répartition en 3 colonnes : chaque ligne = (col1, col2, col3)
+    // On remplit col1 / col2 / col3 ligne par ligne pour une grille 3 colonnes compacte
+    const col1: string[] = [];
+    const col2: string[] = [];
+    const col3: string[] = [];
 
-    for (let i = 0; i < left.length; i++) {
+    tech.forEach((skill, i) => {
+      const col = i % 3;
+      if (col === 0) col1.push(skill);
+      else if (col === 1) col2.push(skill);
+      else col3.push(skill);
+    });
+
+    // On génère les lignes : pour les templates avec detail_1 / detail_2,
+    // on groupe col2+col3 dans detail_2 pour conserver la compatibilité,
+    // mais on encode col3 séparé via detail_3 si supporté.
+    // Approche compatible : on génère 1 entrée par ligne (max 3 skills par row).
+    const rowCount = col1.length; // col1 est toujours la plus grande ou égale
+    for (let i = 0; i < rowCount; i++) {
       result.push({
         category: i === 0 ? "Compétences techniques" : "",
-        detail_1: left[i] || "",
-        detail_2: right[i] || "",
+        detail_1: col1[i] || "",
+        detail_2: col2[i] || "",
+        detail_3: col3[i] || "",
       });
     }
   }
