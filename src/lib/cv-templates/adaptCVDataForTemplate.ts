@@ -68,23 +68,15 @@ function formatSkillsForTemplate(
   const tech = skills.technical || [];
 
   if (tech.length > 0) {
-    for (let i = 0; i < tech.length; i += 3) {
-      const chunk = tech.slice(i, i + 3);
+    // 4 éléments par ligne : detail_1 = 1er, detail_2 = les 3 suivants
+    for (let i = 0; i < tech.length; i += 4) {
+      const chunk = tech.slice(i, i + 4);
       result.push({
         category: i === 0 ? "Compétences techniques" : "",
         detail_1: chunk[0] || "",
         detail_2: chunk.slice(1).join(", ") || "",
       });
     }
-  }
-
-  const soft = skills.soft || [];
-  if (soft.length > 0) {
-    result.push({
-      category: "Soft Skills",
-      detail_1: soft.slice(0, 3).join(", "),
-      detail_2: soft.slice(3).join(", "),
-    });
   }
 
   return result;

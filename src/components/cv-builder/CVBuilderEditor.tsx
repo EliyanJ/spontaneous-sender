@@ -860,8 +860,8 @@ export const CVBuilderEditor = ({
         </div>
       </main>
 
-      {/* ── RIGHT PREVIEW PANEL (xl+ screens) ── */}
-      <aside className="hidden xl:flex flex-col w-[360px] shrink-0 bg-[#F8FAFC] border-l border-[#E2E8F0] h-screen sticky top-0 overflow-hidden">
+      {/* ── RIGHT PREVIEW PANEL (lg+ screens) ── */}
+      <aside className="hidden lg:flex flex-col w-[300px] shrink-0 bg-[#F8FAFC] border-l border-[#E2E8F0] h-screen sticky top-0 overflow-hidden">
         {/* Header */}
         <div className="px-4 py-3 border-b border-[#E2E8F0] bg-white flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2">
@@ -872,14 +872,14 @@ export const CVBuilderEditor = ({
         </div>
 
         {/* Scrollable preview area */}
-        {/* Column inner width = 360px - 24px padding = 336px → scale = 336/794 ≈ 0.423 */}
+        {/* Column inner width = 300px - 24px padding = 276px → scale = 276/794 ≈ 0.348 */}
         <div className="flex-1 overflow-y-auto bg-slate-100 px-3 py-4">
           {/* Outer wrapper: exact size of the scaled A4 sheet, centered */}
-          <div style={{ width: "336px", height: `${Math.round(1123 * 0.423)}px`, overflow: "hidden", position: "relative", margin: "0 auto", boxShadow: "0 2px 16px 0 rgba(0,0,0,0.10)", borderRadius: "4px", background: "#fff" }}>
+          <div style={{ width: "276px", height: `${Math.round(1123 * 0.348)}px`, overflow: "hidden", position: "relative", margin: "0 auto", boxShadow: "0 2px 16px 0 rgba(0,0,0,0.10)", borderRadius: "4px", background: "#fff" }}>
             {/* Inner div: full A4 size, scaled down. cvPreviewRef attaché ici pour la capture PDF */}
             <div
               ref={cvPreviewRef}
-              style={{ transformOrigin: "top left", transform: "scale(0.423)", width: "794px", minHeight: "1123px", position: "absolute", top: 0, left: 0, pointerEvents: "none" }}
+              style={{ transformOrigin: "top left", transform: "scale(0.348)", width: "794px", minHeight: "1123px", position: "absolute", top: 0, left: 0, pointerEvents: "none" }}
             >
               <CVPreview cvData={cvData} templateId={templateId} designOptions={designOptions} standalone={false} />
             </div>
