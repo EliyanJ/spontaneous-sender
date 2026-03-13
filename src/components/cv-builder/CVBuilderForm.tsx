@@ -406,7 +406,7 @@ export const CVBuilderForm = ({
           <div>
             <div className="flex items-center justify-between mb-1">
               <Label className="text-xs">Techniques (séparées par des virgules)</Label>
-              <span className={`text-xs ${cvData.skills.technical.length > 12 ? "text-orange-500 font-medium" : "text-muted-foreground"}`}>
+              <span className={`text-xs font-medium ${cvData.skills.technical.length > 12 ? "text-destructive" : "text-muted-foreground"}`}>
                 {cvData.skills.technical.length}/16 recommandées
               </span>
             </div>
@@ -417,7 +417,7 @@ export const CVBuilderForm = ({
               placeholder="Excel, Python, SQL..."
             />
             {cvData.skills.technical.length > 12 && (
-              <p className="text-xs text-orange-500 mt-1">⚠ Au-delà de 16, les compétences seront coupées dans le CV.</p>
+              <p className="text-xs text-destructive mt-1">⚠ Au-delà de 16, les compétences supplémentaires seront coupées dans le CV.</p>
             )}
           </div>
           <div>
