@@ -386,7 +386,9 @@ const renderCanvasElementForExport = (
 
 // ─── Main renderer ────────────────────────────────────────────────────────────
 
-export const DynamicCVRenderer: React.FC<DynamicCVRendererProps> = ({ config, cvData, scale = 1 }) => {
+export const DynamicCVRenderer: React.FC<DynamicCVRendererProps> = ({
+  config, cvData, scale = 1, photoUrl, primaryColor, accentColor,
+}) => {
 
   // ── New canvas v2 format ──
   if (isCanvasConfig(config)) {
@@ -401,7 +403,7 @@ export const DynamicCVRenderer: React.FC<DynamicCVRendererProps> = ({ config, cv
         transform: scale !== 1 ? `scale(${scale})` : undefined,
         transformOrigin: scale !== 1 ? "top left" : undefined,
       }}>
-        {config.elements.map(el => renderCanvasElementForExport(el, cvData))}
+        {config.elements.map(el => renderCanvasElementForExport(el, cvData, photoUrl, accentColor))}
       </div>
     );
   }
