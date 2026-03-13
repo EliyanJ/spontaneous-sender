@@ -1,9 +1,9 @@
 import React, { useState, useRef } from "react";
 import {
   User, AlignLeft, Briefcase, GraduationCap, Star, Check,
-  ChevronDown, ChevronUp, Plus, Trash2, Eye, X, Save,
+  ChevronDown, ChevronUp, Plus, Trash2, Eye, X,
   Camera, Loader2, Sparkles, ArrowLeft, ArrowRight,
-  Upload, FileText, Database
+  Upload, FileText, Database, Download, FileDown
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
