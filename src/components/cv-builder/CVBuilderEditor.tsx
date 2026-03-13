@@ -1,9 +1,9 @@
 import React, { useState, useRef } from "react";
 import {
   User, AlignLeft, Briefcase, GraduationCap, Star, Check,
-  ChevronDown, ChevronUp, Plus, Trash2, Eye, X, Save,
+  ChevronDown, ChevronUp, Plus, Trash2, Eye, X,
   Camera, Loader2, Sparkles, ArrowLeft, ArrowRight,
-  Upload, FileText, Database
+  Upload, FileText, Database, Download, FileDown
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -397,6 +397,31 @@ const StepEducation = ({ cvData, onChange }: { cvData: CVData; onChange: (d: CVD
   );
 };
 
+// ─── Skill Input (defined at module level to preserve ref identity) ───────────
+const SkillInput = ({ value, onChange: onInputChange, onAdd, placeholder }: {
+  value: string; onChange: (v: string) => void; onAdd: (v: string) => void; placeholder: string;
+}) => (
+  <div className="flex gap-3">
+    <div className="relative flex-1">
+      <Plus className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+      <input
+        className="w-full pl-11 pr-4 py-3 rounded-xl border border-slate-300 focus:border-[hsl(var(--primary))] focus:ring-1 focus:ring-[hsl(var(--primary))] outline-none text-slate-700 bg-gray-50 focus:bg-white placeholder-slate-400 transition-all"
+        placeholder={placeholder}
+        value={value}
+        onChange={e => onInputChange(e.target.value)}
+        onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); onAdd(value); } }}
+      />
+    </div>
+    <button
+      type="button"
+      onClick={() => onAdd(value)}
+      className="bg-[hsl(var(--primary))] hover:opacity-90 text-white font-semibold py-3 px-6 rounded-xl transition-all shadow-md active:scale-95 flex items-center gap-2 whitespace-nowrap"
+    >
+      Ajouter
+    </button>
+  </div>
+);
+
 // ─── Step: Skills ─────────────────────────────────────────────────────────────
 const StepSkills = ({ cvData, onChange }: { cvData: CVData; onChange: (d: CVData) => void }) => {
   const [inputTech, setInputTech] = useState("");
@@ -418,28 +443,6 @@ const StepSkills = ({ cvData, onChange }: { cvData: CVData; onChange: (d: CVData
   };
   const removeTech = (s: string) => onChange({ ...cvData, skills: { ...cvData.skills, technical: cvData.skills.technical.filter(x => x !== s) } });
   const removeSoft = (s: string) => onChange({ ...cvData, skills: { ...cvData.skills, soft: cvData.skills.soft.filter(x => x !== s) } });
-
-  const SkillInput = ({ value, onChange: onInputChange, onAdd, placeholder }: any) => (
-    <div className="flex gap-3">
-      <div className="relative flex-1">
-        <Plus className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-        <input
-          className="w-full pl-11 pr-4 py-3 rounded-xl border border-slate-300 focus:border-[hsl(var(--primary))] focus:ring-1 focus:ring-[hsl(var(--primary))] outline-none text-slate-700 bg-gray-50 focus:bg-white placeholder-slate-400 transition-all"
-          placeholder={placeholder}
-          value={value}
-          onChange={e => onInputChange(e.target.value)}
-          onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); onAdd(value); } }}
-        />
-      </div>
-      <button
-        type="button"
-        onClick={() => onAdd(value)}
-        className="bg-[hsl(var(--primary))] hover:opacity-90 text-white font-semibold py-3 px-6 rounded-xl transition-all shadow-md active:scale-95 flex items-center gap-2 whitespace-nowrap"
-      >
-        Ajouter
-      </button>
-    </div>
-  );
 
   return (
     <div className="space-y-8">
@@ -475,25 +478,6 @@ const StepSkills = ({ cvData, onChange }: { cvData: CVData; onChange: (d: CVData
             ))}
           </div>
         </div>
-      </div>
-
-      {/* Soft skills */}
-      <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 sm:p-8 relative overflow-hidden">
-        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-green-400 to-emerald-600" />
-        <h3 className="text-lg font-bold text-slate-800 mb-4">Soft skills</h3>
-        <SkillInput value={inputSoft} onChange={setInputSoft} onAdd={addSoft} placeholder="Ex: Leadership, Communication..." />
-        {cvData.skills.soft.length > 0 && (
-          <div className="flex flex-wrap gap-2 mt-4">
-            {cvData.skills.soft.map(s => (
-              <span key={s} className="flex items-center gap-1.5 px-3 py-1.5 bg-green-50 border border-green-200 rounded-full text-sm font-medium text-green-800">
-                {s}
-                <button onClick={() => removeSoft(s)} className="hover:text-red-500 transition-colors">
-                  <X className="h-3 w-3" />
-                </button>
-              </span>
-            ))}
-          </div>
-        )}
       </div>
 
       {/* Languages */}
@@ -535,6 +519,25 @@ const StepSkills = ({ cvData, onChange }: { cvData: CVData; onChange: (d: CVData
           <Plus className="h-4 w-4" /> Ajouter une langue
         </button>
       </div>
+
+      {/* Soft skills */}
+      <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 sm:p-8 relative overflow-hidden">
+        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-green-400 to-emerald-600" />
+        <h3 className="text-lg font-bold text-slate-800 mb-4">Soft skills</h3>
+        <SkillInput value={inputSoft} onChange={setInputSoft} onAdd={addSoft} placeholder="Ex: Leadership, Communication..." />
+        {cvData.skills.soft.length > 0 && (
+          <div className="flex flex-wrap gap-2 mt-4">
+            {cvData.skills.soft.map(s => (
+              <span key={s} className="flex items-center gap-1.5 px-3 py-1.5 bg-green-50 border border-green-200 rounded-full text-sm font-medium text-green-800">
+                {s}
+                <button onClick={() => removeSoft(s)} className="hover:text-red-500 transition-colors">
+                  <X className="h-3 w-3" />
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 };
@@ -550,7 +553,7 @@ const StepFinalize = ({ cvData, templateId, designOptions, onSave }: {
       </div>
       <div>
         <h3 className="font-bold text-slate-800 text-lg mb-1">Votre CV est prêt !</h3>
-        <p className="text-slate-600 text-sm">Vous pouvez maintenant sauvegarder votre CV et le télécharger en PDF.</p>
+        <p className="text-slate-600 text-sm">Téléchargez votre CV en PDF ou Word via les boutons ci-dessous.</p>
       </div>
     </div>
 
@@ -564,13 +567,6 @@ const StepFinalize = ({ cvData, templateId, designOptions, onSave }: {
         </div>
       </div>
     </div>
-
-    <button
-      onClick={onSave}
-      className="w-full py-4 bg-[hsl(var(--primary))] hover:opacity-90 text-white font-bold rounded-2xl transition-all shadow-lg flex items-center justify-center gap-3 text-base"
-    >
-      <Save className="h-5 w-5" /> Sauvegarder mon CV
-    </button>
   </div>
 );
 
@@ -855,12 +851,20 @@ export const CVBuilderEditor = ({
                 </button>
               </>
             ) : (
-              <button
-                onClick={onSave}
-                className="w-full flex items-center justify-center gap-3 py-4 bg-[hsl(var(--primary))] hover:opacity-90 text-white font-bold rounded-xl transition-all shadow-lg text-base"
-              >
-                <Save className="h-5 w-5" /> Sauvegarder mon CV
-              </button>
+              <div className="w-full flex gap-3">
+                <button
+                  onClick={onSave}
+                  className="flex-1 flex items-center justify-center gap-2 py-4 bg-[hsl(var(--primary))] hover:opacity-90 text-white font-bold rounded-xl transition-all shadow-lg text-sm"
+                >
+                  <Download className="h-4 w-4" /> Télécharger en PDF
+                </button>
+                <button
+                  onClick={onSave}
+                  className="flex-1 flex items-center justify-center gap-2 py-4 border-2 border-[hsl(var(--primary))] text-[hsl(var(--primary))] font-bold rounded-xl transition-all hover:bg-blue-50 text-sm"
+                >
+                  <FileDown className="h-4 w-4" /> Télécharger en Word
+                </button>
+              </div>
             )}
           </div>
         </div>
