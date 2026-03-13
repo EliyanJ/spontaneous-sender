@@ -549,7 +549,7 @@ export const AdminCVTemplateBuilder = () => {
     }
   }, []);
 
-  // ── HTML Import — client-side iframe DOM parser (no AI needed) ───────────
+  // ── HTML Import — client-side iframe DOM parser ───────────────────────────
 
   const handleImportHTML = useCallback(async (file: File) => {
     if (!file) return;
@@ -563,62 +563,65 @@ export const AdminCVTemplateBuilder = () => {
       const SCALE_X = CANVAS_W / IFRAME_W; // ≈ 0.749
       const SCALE_Y = CANVAS_H / IFRAME_H; // ≈ 0.749
 
-      // Create hidden iframe and inject HTML
-      const blob = new Blob([htmlContent], { type: "text/html" });
-      const blobUrl = URL.createObjectURL(blob);
+      // Position iframe off left edge — opacity:0, no visibility:hidden (would break layout)
       const iframe = document.createElement("iframe");
-      iframe.style.cssText = `position:fixed;top:-9999px;left:-9999px;width:${IFRAME_W}px;height:${IFRAME_H}px;border:none;visibility:hidden;`;
+      iframe.style.cssText = `position:fixed;top:0;left:-${IFRAME_W + 50}px;width:${IFRAME_W}px;height:${IFRAME_H}px;border:none;opacity:0;pointer-events:none;z-index:-9999;`;
       document.body.appendChild(iframe);
 
-      await new Promise<void>((resolve) => {
-        iframe.onload = () => setTimeout(resolve, 300); // wait for fonts/layout
-        iframe.src = blobUrl;
+      // Use srcdoc (more reliable than blob URL in sandboxed environments)
+      await new Promise<void>((resolve, reject) => {
+        const timeout = setTimeout(() => reject(new Error("Timeout chargement HTML (5s)")), 5000);
+        iframe.onload = () => { clearTimeout(timeout); setTimeout(resolve, 500); };
+        iframe.srcdoc = htmlContent;
       });
 
-      const doc = iframe.contentDocument!;
-      const cvPage = doc.querySelector<HTMLElement>(".cv-page, .cv-wrapper, main, body");
-      const iframeRect = iframe.getBoundingClientRect();
+      const doc = iframe.contentDocument;
+      if (!doc || !doc.body) throw new Error("Impossible d'accéder au document HTML.");
 
-      // Helper: get position relative to iframe viewport
-      const getPos = (el: Element) => {
-        const r = el.getBoundingClientRect();
-        // getBoundingClientRect is relative to viewport, iframe is at top=-9999 / left=-9999
+      // Use iframe's window.getComputedStyle for correct style resolution
+      const iwin = iframe.contentWindow!;
+      const gcs = (el: Element) => iwin.getComputedStyle(el as HTMLElement);
+
+      // Reference origin = cv-page element (all getBoundingClientRect in same iframe coords)
+      const cvPageEl = doc.querySelector<HTMLElement>(".cv-page") ?? doc.body;
+      const origin = cvPageEl.getBoundingClientRect();
+
+      const toCanvas = (el: Element) => {
+        const r = el.getBoundingClientRect(); // iframe viewport coords
         return {
-          x: Math.round((r.left - iframeRect.left) * SCALE_X),
-          y: Math.round((r.top - iframeRect.top) * SCALE_Y),
-          w: Math.round(r.width * SCALE_X),
+          x: Math.max(0, Math.round((r.left - origin.left) * SCALE_X)),
+          y: Math.max(0, Math.round((r.top  - origin.top)  * SCALE_Y)),
+          w: Math.round(r.width  * SCALE_X),
           h: Math.round(r.height * SCALE_Y),
         };
       };
 
-      // Extract canvas background color
-      const bgColor = cvPage
-        ? getComputedStyle(cvPage).backgroundColor
-        : "rgb(255,255,255)";
-      const cssRgbToHex = (rgb: string) => {
-        const m = rgb.match(/\d+/g);
-        if (!m) return "#ffffff";
+      const cssRgbToHex = (rgb: string): string => {
+        const m = rgb?.match(/\d+/g);
+        if (!m || m.length < 3) return "#000000";
         return "#" + m.slice(0, 3).map(n => parseInt(n).toString(16).padStart(2, "0")).join("");
       };
-      const canvasBg = bgColor === "rgba(0, 0, 0, 0)" || bgColor === "transparent" ? "#ffffff" : cssRgbToHex(bgColor);
 
-      // Extract font family
-      const bodyFont = getComputedStyle(doc.body).fontFamily || "Arial, sans-serif";
+      const bgRaw = gcs(cvPageEl).backgroundColor;
+      const canvasBg = (!bgRaw || bgRaw === "rgba(0, 0, 0, 0)") ? "#ffffff" : cssRgbToHex(bgRaw);
+      const bodyFont = gcs(doc.body).fontFamily || "Arial, sans-serif";
 
       const elements: CanvasElement[] = [];
       let hasPhoto = false;
-      let photoRight = 0; // right edge of photo element (for contact x offset)
+      let photoEndX = 0;
 
       // 1. Photo placeholder
-      const photoEl = doc.querySelector<HTMLElement>("img.photo, img[alt*='profil'], .profile-photo, img[alt*='profile']");
+      const photoEl = doc.querySelector<HTMLElement>("img.photo, img[alt*='profil' i], .profile-photo");
       if (photoEl) {
         hasPhoto = true;
-        const p = getPos(photoEl);
-        photoRight = p.x + p.w;
+        const p = toCanvas(photoEl);
+        const pw = p.w > 0 ? p.w : Math.round(90 * SCALE_X);
+        const ph = p.h > 0 ? p.h : Math.round(90 * SCALE_Y);
+        photoEndX = p.x + pw;
         elements.push({
           id: `el-photo-${Date.now()}`,
           type: "image",
-          x: p.x, y: p.y, width: p.w, height: p.h,
+          x: p.x, y: p.y, width: pw, height: ph,
           content: "[PHOTO]",
           visible: true, locked: false,
           styles: { backgroundColor: "#e0e0e0", borderRadius: 0 },
@@ -628,125 +631,105 @@ export const AdminCVTemplateBuilder = () => {
       // 2. Header / Contact block
       const headerEl = doc.querySelector<HTMLElement>(".header-content, .cv-header, header");
       if (headerEl) {
-        const p = getPos(headerEl);
-        const cs = getComputedStyle(headerEl);
-        const color = cssRgbToHex(cs.color || "rgb(0,0,0)");
-        // If photo exists, shift x to be after photo
-        const x = hasPhoto ? photoRight + 8 : p.x;
-        const w = CANVAS_W - x - 8;
+        const p = toCanvas(headerEl);
+        const color = cssRgbToHex(gcs(headerEl).color);
+        const x = hasPhoto ? photoEndX + Math.round(10 * SCALE_X) : p.x;
+        const w = CANVAS_W - x - Math.round(5 * SCALE_X);
+        const h = p.h > 0 ? p.h : Math.round(90 * SCALE_Y);
         elements.push({
           id: `el-contact-${Date.now()}`,
-          type: "cv-section",
-          sectionId: "contact",
-          x, y: p.y, width: w, height: p.h,
+          type: "cv-section", sectionId: "contact",
+          x, y: p.y, width: w, height: h,
           visible: true, locked: false,
           styles: { backgroundColor: "transparent", color, fontSize: 10, fontFamily: bodyFont, padding: 8 },
         });
       }
 
-      // 3. Profile summary (div.profile-summary not inside a section)
-      const summaryDiv = doc.querySelector<HTMLElement>(".profile-summary");
-      if (summaryDiv) {
-        const p = getPos(summaryDiv);
-        const cs = getComputedStyle(summaryDiv);
-        const color = cssRgbToHex(cs.color || "rgb(0,0,0)");
+      // 3. Profile summary
+      const summaryEl = doc.querySelector<HTMLElement>(".profile-summary");
+      if (summaryEl) {
+        const p = toCanvas(summaryEl);
+        const color = cssRgbToHex(gcs(summaryEl).color);
         elements.push({
           id: `el-summary-${Date.now()}`,
-          type: "cv-section",
-          sectionId: "summary",
-          x: p.x, y: p.y, width: p.w, height: Math.max(p.h, 40),
+          type: "cv-section", sectionId: "summary",
+          x: p.x, y: p.y, width: p.w || CANVAS_W - p.x * 2, height: Math.max(p.h, 40),
           visible: true, locked: false,
           styles: { backgroundColor: "transparent", color, fontSize: 10, fontFamily: bodyFont, padding: 8 },
         });
       }
 
-      // 4. Sections mapping
       const sectionMapping: [SectionId, RegExp][] = [
-        ["experiences",      /expériences?|professional\s+exp|work\s+exp/i],
-        ["entrepreneurship", /entrepreneuri|parcours\s+entrepren/i],
-        ["skills",           /compétences?|skills?|outils?/i],
-        ["education",        /formations?|certifications?|education|diplômes?/i],
-        ["target_jobs",      /métiers?|objectifs?\s+pro|postes?\s+visés?/i],
-        ["languages",        /langues?|soft\s+skills?/i],
+        ["experiences",      /expériences?|professional|work exp/i],
+        ["entrepreneurship", /entrepreneuri|parcours entrepren/i],
+        ["skills",           /compétences?|skills?/i],
+        ["education",        /formations?|certifications?|education/i],
+        ["target_jobs",      /métiers?|objectifs? pro/i],
+        ["languages",        /langues?|soft skills?/i],
       ];
 
-      const seenSectionIds = new Set<string>(
-        summaryDiv ? ["summary"] : [],
-      );
-      if (headerEl) seenSectionIds.add("contact");
+      const seen = new Set<SectionId>();
+      if (summaryEl) seen.add("summary");
+      if (headerEl) seen.add("contact");
 
-      const allSections = Array.from(doc.querySelectorAll<HTMLElement>("section"));
-      for (const sec of allSections) {
+      for (const sec of Array.from(doc.querySelectorAll<HTMLElement>("section"))) {
         const h2 = sec.querySelector("h2");
-        const h2Text = h2?.textContent?.trim() || "";
-        let sectionId: SectionId | null = null;
-        for (const [id, regex] of sectionMapping) {
-          if (regex.test(h2Text)) { sectionId = id; break; }
+        const h2Text = h2?.textContent?.trim() ?? "";
+        let sid: SectionId | null = null;
+        for (const [id, re] of sectionMapping) {
+          if (re.test(h2Text)) { sid = id; break; }
         }
-        if (!sectionId || seenSectionIds.has(sectionId)) continue;
-        seenSectionIds.add(sectionId);
+        if (!sid || seen.has(sid)) continue;
+        seen.add(sid);
 
-        const p = getPos(sec);
-        const cs = getComputedStyle(sec);
-        const color = cssRgbToHex(cs.color || "rgb(0,0,0)");
+        const p = toCanvas(sec);
+        const color = cssRgbToHex(gcs(sec).color);
 
-        // Add divider above section (where h2 border-bottom is)
+        // Divider from h2 border-bottom
         if (h2) {
-          const h2Style = getComputedStyle(h2);
-          const hasBorder = h2Style.borderBottomWidth !== "0px" && h2Style.borderBottomStyle !== "none";
-          if (hasBorder) {
-            const h2p = getPos(h2);
-            const borderColor = cssRgbToHex(h2Style.borderBottomColor || "rgb(0,0,0)");
+          const h2s = gcs(h2);
+          if (h2s.borderBottomWidth !== "0px" && h2s.borderBottomStyle !== "none") {
+            const hp = toCanvas(h2);
             elements.push({
-              id: `el-div-${Date.now()}-${Math.random().toString(36).slice(2,5)}`,
+              id: `el-div-${sid}-${Math.random().toString(36).slice(2, 5)}`,
               type: "divider",
-              x: h2p.x, y: h2p.y + h2p.h - 2,
-              width: h2p.w, height: 2,
+              x: hp.x, y: hp.y + hp.h - 1, width: hp.w || CANVAS_W - hp.x * 2, height: 2,
               visible: true, locked: false,
-              styles: { backgroundColor: borderColor },
+              styles: { backgroundColor: cssRgbToHex(h2s.borderBottomColor) },
             });
           }
         }
 
         elements.push({
-          id: `el-${sectionId}-${Date.now()}-${Math.random().toString(36).slice(2,5)}`,
-          type: "cv-section",
-          sectionId,
-          x: p.x, y: p.y, width: p.w, height: Math.max(p.h, 40),
+          id: `el-${sid}-${Math.random().toString(36).slice(2, 7)}`,
+          type: "cv-section", sectionId: sid,
+          x: p.x, y: p.y, width: p.w || CANVAS_W - p.x * 2, height: Math.max(p.h, 40),
           visible: true, locked: false,
           styles: { backgroundColor: "transparent", color, fontSize: 10, fontFamily: bodyFont, padding: 8 },
         });
       }
 
-      // 5. Footer grid (langues + intérêts) → map to "languages" if not yet placed
+      // Footer grid → languages fallback
       const footerGrid = doc.querySelector<HTMLElement>(".footer-grid");
-      if (footerGrid && !seenSectionIds.has("languages")) {
-        const p = getPos(footerGrid);
+      if (footerGrid && !seen.has("languages")) {
+        const p = toCanvas(footerGrid);
         elements.push({
           id: `el-languages-${Date.now()}`,
-          type: "cv-section",
-          sectionId: "languages",
-          x: p.x, y: p.y, width: p.w, height: Math.max(p.h, 50),
+          type: "cv-section", sectionId: "languages",
+          x: p.x, y: p.y, width: p.w || CANVAS_W - p.x * 2, height: Math.max(p.h, 50),
           visible: true, locked: false,
           styles: { backgroundColor: "transparent", color: "#000000", fontSize: 10, fontFamily: bodyFont, padding: 8 },
         });
       }
 
-      // Cleanup
       document.body.removeChild(iframe);
-      URL.revokeObjectURL(blobUrl);
 
-      const newConfig: CanvasConfig = {
+      setConfig({
         version: "canvas-v2",
-        canvasWidth: CANVAS_W,
-        canvasHeight: CANVAS_H,
-        backgroundColor: canvasBg,
-        fontFamily: bodyFont,
-        has_photo: hasPhoto,
-        elements,
-      };
-
-      setConfig(newConfig);
+        canvasWidth: CANVAS_W, canvasHeight: CANVAS_H,
+        backgroundColor: canvasBg, fontFamily: bodyFont,
+        has_photo: hasPhoto, elements,
+      });
       setSelectedId(null);
       toast({
         title: `✨ Template importé — ${elements.length} éléments`,
