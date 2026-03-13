@@ -655,7 +655,7 @@ export const CVBuilderEditor = ({
       case "experience": return <StepExperience cvData={cvData} onChange={onChange} />;
       case "education":  return <StepEducation cvData={cvData} onChange={onChange} />;
       case "skills":     return <StepSkills cvData={cvData} onChange={onChange} />;
-      case "finalize":   return <StepFinalize cvData={cvData} templateId={templateId} designOptions={designOptions} onSave={onSave} />;
+      case "finalize":   return <StepFinalize cvData={cvData} templateId={templateId} designOptions={designOptions} templateHtml={templateHtml} templateCvData={templateCvData} />;
     }
   };
 
