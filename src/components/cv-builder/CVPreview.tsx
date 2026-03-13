@@ -531,7 +531,15 @@ const EduItem = ({ edu }: { edu: CVData["education"][0] }) => (
 );
 
 // ─── Canvas-v2 Template Renderer ─────────────────────────────────────────────
-const CanvasTemplateRenderer = ({ cvData, templateId }: { cvData: CVData; templateId: string }) => {
+const CanvasTemplateRenderer = ({
+  cvData,
+  templateId,
+  designOptions,
+}: {
+  cvData: CVData;
+  templateId: string;
+  designOptions?: CVDesignOptions;
+}) => {
   const { data: template, isLoading } = useQuery({
     queryKey: ["cv-template-preview", templateId],
     queryFn: async () => {
@@ -581,6 +589,9 @@ const CanvasTemplateRenderer = ({ cvData, templateId }: { cvData: CVData; templa
       config={config}
       cvData={rendererData}
       scale={1}
+      photoUrl={designOptions?.photoUrl}
+      accentColor={designOptions?.accentColor}
+      primaryColor={designOptions?.primaryColor}
     />
   );
 };
