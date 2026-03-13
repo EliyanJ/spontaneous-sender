@@ -550,6 +550,43 @@ export const AdminCVTemplateBuilder = () => {
     }
   }, []);
 
+  // ── HTML Import ──────────────────────────────────────────────────────────
+
+  const handleImportHTML = useCallback(async (file: File) => {
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+      toast({ title: "Fichier trop lourd", description: "Le fichier HTML doit faire moins de 2 MB.", variant: "destructive" });
+      return;
+    }
+    setIsImportingHTML(true);
+    try {
+      const htmlContent = await file.text();
+
+      const { data: result, error } = await supabase.functions.invoke("html-to-canvas-template", {
+        body: { htmlContent, fileName: file.name },
+      });
+
+      if (error) throw new Error(error.message || "Erreur lors de l'analyse IA.");
+      if (!result?.success) throw new Error(result?.error || "Erreur lors de l'analyse IA.");
+
+      setConfig(result.config);
+      setSelectedId(null);
+      toast({
+        title: `✨ Template généré — ${result.elementCount} éléments`,
+        description: "Design importé depuis le HTML. Ajustez selon vos besoins.",
+      });
+    } catch (err: any) {
+      toast({
+        title: "Erreur d'import HTML",
+        description: err.message || "Impossible d'analyser le HTML.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsImportingHTML(false);
+      if (htmlFileInputRef.current) htmlFileInputRef.current.value = "";
+    }
+  }, []);
+
   // ── Keyboard shortcut ─────────────────────────────────────────────────────
 
   useEffect(() => {
