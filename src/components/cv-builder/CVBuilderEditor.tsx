@@ -547,13 +547,14 @@ const StepSkills = ({ cvData, onChange }: { cvData: CVData; onChange: (d: CVData
 
 // ─── Step: Finalize ───────────────────────────────────────────────────────────
 const StepFinalize = ({
-  cvData, templateId, designOptions, templateHtml, templateCvData,
+  cvData, templateId, designOptions, templateHtml, templateCvData, previewRef,
 }: {
   cvData: CVData;
   templateId: string;
   designOptions: CVDesignOptions;
   templateHtml: string;
   templateCvData: ReturnType<typeof adaptCVDataForTemplate>;
+  previewRef: React.RefObject<HTMLDivElement>;
 }) => (
   <div className="space-y-6">
     <div className="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 rounded-2xl p-6 flex items-start gap-4">
@@ -566,8 +567,9 @@ const StepFinalize = ({
       </div>
     </div>
 
-    {/* Boutons d'export visibles dans le corps de l'étape */}
+    {/* Boutons d'export : utilise previewRef (DOM React) en priorité */}
     <CVExportButtons
+      previewRef={previewRef}
       templateHtml={templateHtml}
       cvData={templateCvData}
       userName={[cvData.personalInfo?.firstName, cvData.personalInfo?.lastName].filter(Boolean).join(" ")}
@@ -579,7 +581,10 @@ const StepFinalize = ({
       </div>
       <div className="p-4 overflow-auto max-h-[500px]">
         <div className="scale-75 origin-top-left" style={{ width: "133%" }}>
-          <CVPreview cvData={cvData} templateId={templateId} designOptions={designOptions} />
+          {/* Ce div est la cible de capture pour le PDF sur mobile/tablette */}
+          <div ref={previewRef} style={{ width: "794px", minHeight: "1123px" }}>
+            <CVPreview cvData={cvData} templateId={templateId} designOptions={designOptions} standalone={false} />
+          </div>
         </div>
       </div>
     </div>
@@ -598,19 +603,22 @@ export const CVBuilderEditor = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [savedCVs, setSavedCVs] = useState<any[]>([]);
   const [cvPopoverOpen, setCvPopoverOpen] = useState(false);
+  // Ref vers le DOM rendu du CV (utilisé pour la capture PDF)
+  const cvPreviewRef = useRef<HTMLDivElement>(null);
 
-  // ── Fetch template HTML for export (only when on finalize step) ──
+  // ── Fetch template HTML for export (fallback html-v1 uniquement) ──
   const { data: templateHtml = "" } = useQuery({
     queryKey: ["cv-template-html", templateId],
     enabled: !!templateId && /^[0-9a-f-]{36}$/i.test(templateId),
     queryFn: async () => {
       const { data, error } = await supabase
         .from("cv_templates")
-        .select("html_template, css_styles")
+        .select("html_template, css_styles, template_version")
         .eq("id", templateId)
         .single();
       if (error || !data) return "";
-      // Merge html_template + css_styles if separate
+      // Retourner seulement pour les templates html-v1
+      if (data.template_version !== "html-v1") return "";
       if (data.css_styles && !data.html_template.includes(data.css_styles)) {
         return data.html_template.replace("</style>", data.css_styles + "</style>") || data.html_template;
       }
@@ -655,7 +663,7 @@ export const CVBuilderEditor = ({
       case "experience": return <StepExperience cvData={cvData} onChange={onChange} />;
       case "education":  return <StepEducation cvData={cvData} onChange={onChange} />;
       case "skills":     return <StepSkills cvData={cvData} onChange={onChange} />;
-      case "finalize":   return <StepFinalize cvData={cvData} templateId={templateId} designOptions={designOptions} templateHtml={templateHtml} templateCvData={templateCvData} />;
+      case "finalize":   return <StepFinalize cvData={cvData} templateId={templateId} designOptions={designOptions} templateHtml={templateHtml} templateCvData={templateCvData} previewRef={cvPreviewRef} />;
     }
   };
 
@@ -890,6 +898,7 @@ export const CVBuilderEditor = ({
               </>
             ) : (
               <CVExportButtons
+                previewRef={cvPreviewRef}
                 templateHtml={templateHtml}
                 cvData={templateCvData}
                 userName={[cvData.personalInfo?.firstName, cvData.personalInfo?.lastName].filter(Boolean).join(" ")}
@@ -916,8 +925,11 @@ export const CVBuilderEditor = ({
         <div className="flex-1 overflow-y-auto bg-slate-100 px-3 py-4">
           {/* Outer wrapper: exact size of the scaled A4 sheet, centered */}
           <div style={{ width: "336px", height: `${Math.round(1123 * 0.423)}px`, overflow: "hidden", position: "relative", margin: "0 auto", boxShadow: "0 2px 16px 0 rgba(0,0,0,0.10)", borderRadius: "4px", background: "#fff" }}>
-            {/* Inner div: full A4 size, scaled down from top-left */}
-            <div style={{ transformOrigin: "top left", transform: "scale(0.423)", width: "794px", minHeight: "1123px", position: "absolute", top: 0, left: 0, pointerEvents: "none" }}>
+            {/* Inner div: full A4 size, scaled down. cvPreviewRef attaché ici pour la capture PDF */}
+            <div
+              ref={cvPreviewRef}
+              style={{ transformOrigin: "top left", transform: "scale(0.423)", width: "794px", minHeight: "1123px", position: "absolute", top: 0, left: 0, pointerEvents: "none" }}
+            >
               <CVPreview cvData={cvData} templateId={templateId} designOptions={designOptions} standalone={false} />
             </div>
           </div>
