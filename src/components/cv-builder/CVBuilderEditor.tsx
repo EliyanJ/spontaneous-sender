@@ -3,8 +3,10 @@ import {
   User, AlignLeft, Briefcase, GraduationCap, Star, Check,
   ChevronDown, ChevronUp, Plus, Trash2, Eye, X,
   Camera, Loader2, Sparkles, ArrowLeft, ArrowRight,
-  Upload, FileText, Database, Download, FileDown
+  Upload, FileText, Database, Download, FileDown, Maximize2
 } from "lucide-react";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
