@@ -1,96 +1,93 @@
 
-# Plan SEO — 4 chantiers majeurs
 
-## Vue d'ensemble
-Le message couvre 4 sujets distincts. Je vais les traiter dans l'ordre de priorité SEO/business :
+## Rapport : Diagnostic de l'export PDF
+
+### Ce que l'image montre
+
+Le PDF généré (cf. screenshot partagé) affiche le contenu **en texte brut, sans aucun style** : pas de couleurs, pas de layout, pas de mise en page. C'est du HTML dépouillé rendu directement par jsPDF sans css appliqué. C'est le signe classique d'un **scoping CSS cassé** ou d'une **cible DOM vide**.
 
 ---
 
-## 1. Page publique `/score-cv` — Landing SEO + Comparateur CV gratuit
+### Analyse du code actuel (`exportPdf.ts`)
 
-**Objectif** : Page publique (sans auth), accessible aux moteurs, avec le comparateur ATS intégré + tunnel d'inscription post-essai.
+#### Flux actuel
 
-### Structure de la page
+```text
+1. injectCVData(templateHtml, cvData)        → HTML final
+2. DOMParser → extraire <style> + body.innerHTML
+3. Préfixer le CSS avec #__cv_export_scope__ (boucle split/join)
+4. Créer un <div id="__cv_export_scope__"> dans le DOM (position: fixed, left: -99999px)
+5. Ajouter <style> scopé + bodyDiv.innerHTML dans ce conteneur
+6. Attendre 700ms
+7. Cibler .cv-page dans le conteneur
+8. html2pdf().from(cvPage).save()
+9. Cleanup
 ```
-/score-cv  (route publique, pas de ProtectedRoute)
-├── Hero section  →  H1 + CTA "Tester gratuitement"
-├── Outil comparateur (CVComparator réutilisé tel quel)
-├── Popup post-analyse  →  "Créez votre compte gratuit pour comparer à l'infini"
-│     └── Formulaire email/password → création de compte Supabase
-└── Section SEO bas de page
-      ├── Texte riche avec mots-clés (H2, paragraphes, gras)
-      └── Accordéons FAQ (ex: "Comment fonctionne l'ATS ?", "Pourquoi optimiser son CV ?")
+
+#### Problèmes identifiés
+
+**Problème 1 — La cible `.cv-page` est introuvable (racine du blank PDF)**
+
+Le `templateHtml` passé à `exportCVToPdf` vient de `CVBuilderEditor` (ligne 603-618). Ce query Supabase retourne la valeur de `html_template`. Or, **tous les templates actuels sont en `canvas-v2`** (JSON, pas HTML). La vérification `template_version === "html-v1"` dans `CVPreview` (ligne 579) ne s'applique qu'aux nouveaux templates html-v1.
+
+Pour les templates legacy (`"classic"`, `"dark"`, etc.) et canvas-v2, `templateHtml` est soit **une chaîne JSON** soit **vide** → `injectCVData` échoue silencieusement → `parsed.body.innerHTML` est vide → `container.querySelector(".cv-page")` = null → fallback sur `bodyDiv` qui est un `<div>` vide → html2canvas capture un rectangle blanc.
+
+**Problème 2 — Le CSS scoping par split/join est fragile**
+
+La technique de scoper le CSS en découpant sur `}` est cassée dès qu'il y a :
+- Des règles `@media { .selector { ... } }` (accolade imbriquée)
+- Des commentaires CSS avec `}`
+- Des règles `@keyframes`
+
+Résultat : des sélecteurs malformés qui font que **aucun style ne s'applique**, même si le HTML est présent.
+
+**Problème 3 — `left: -99999px` + `z-index: -9999`**
+
+`html2canvas` peut rater les éléments avec `z-index` négatif dans certains navigateurs. La recommandation officielle est `position: absolute; top: -9999px; left: -9999px` **sans `z-index` négatif**.
+
+**Problème 4 — Le `templateHtml` passé aux boutons est vide pour les templates legacy**
+
+Dans `CVBuilderEditor` ligne 603-618, le query cherche `html_template` dans la table `cv_templates`. Si `templateId` est `"classic"` ou tout autre ID legacy, le regex `/^[0-9a-f-]{36}$/i` bloque le query (`enabled: false`). Donc `templateHtml = ""` → l'export PDF est appelé avec une chaîne vide.
+
+---
+
+### Solution correcte
+
+Le problème fondamental est architectural : **les templates utilisés par les utilisateurs sont des templates React (canvas-v2 + legacy), pas des templates HTML balisés**. L'export PDF doit donc capturer le **DOM React déjà rendu** (ce qui est dans `CVPreview`), pas reconstruire un HTML à partir du template.
+
+**Approche à implémenter :**
+
+```text
+NOUVELLE LOGIQUE PDF
+─────────────────────────────────────────────
+Au lieu de reconstruire le HTML depuis la DB :
+
+1. Rendre CVPreview dans un conteneur off-screen (div fixe, hors viewport)
+   → C'est du React rendu avec tous les styles inline (les templates legacy 
+     utilisent des styles inline, pas des classes CSS externes)
+   
+2. Utiliser html2canvas directement sur ce div
+   → Capture ce qui est visuellement rendu, identique à la preview
+   
+3. Convertir le canvas en image PNG → l'insérer dans jsPDF
+   → Résultat A4 pixel-perfect
+
+Pour les html-v1 (templateHtml présent) :
+→ Garder l'approche div off-screen mais sans l'iframe,
+  avec le CSS scopé MAIS utiliser postcss/manual re-scopage 
+  simplifié (remplacer :root { et body { par #scope {)
 ```
 
-### Logique d'accès
-- L'outil fonctionne **1 fois sans compte**
-- Après analyse → popup `AuthDialog` personnalisée avec message de valeur
-- Compte créé → redirect `/dashboard?tab=cv`
+**Changements à faire :**
 
-### SEO technique sur cette page
-- `useSEO("/score-cv")` → meta title/desc configurable depuis le BO
-- Balise H1 unique, H2 dans les sections FAQ
-- Texte ~800 mots minimum en bas de page (géré via CMS ou hardcodé)
-- Canonical URL configurée
-- Ajout de `/score-cv` dans `SITE_PAGES` de `AdminSEO.tsx`
+1. **`CVExportButtons.tsx`** : Accepter une prop `previewRef` (ref vers le div du CVPreview déjà dans le DOM) + fallback sur reconstruction HTML
+2. **`exportPdf.ts`** : Réécrire avec deux modes :
+   - Mode "capture React" : prend un `HTMLElement` déjà rendu, html2canvas → jsPDF
+   - Mode "html-v1" : reconstruit le HTML dans un div off-screen
+3. **`CVBuilderEditor.tsx`** : Passer une ref du preview panel aux boutons d'export
 
----
+**Fichiers à modifier :**
+- `src/lib/cv-export/exportPdf.ts` — réécriture complète
+- `src/components/cv-builder/CVExportButtons.tsx` — ajout prop `previewRef`
+- `src/components/cv-builder/CVBuilderEditor.tsx` — ref sur le preview + passer aux boutons
 
-## 2. Amélioration du CMS — Sélecteur de balise HTML + effets de texte
-
-**Problème actuel** : `AdminPageEditor.tsx` a H1/H2/H3 dans la barre d'outils mais pas de sélecteur explicite de balise pour les blocs de texte. Pas d'effet "texte souligné coloré" type mise en avant.
-
-### Ce qu'on ajoute
-- **Sélecteur de balise** dans la toolbar : dropdown `<p>` / `<h1>` / `<h2>` / `<h3>` avec règle visuelle "1 seul H1 par page" (warning si H1 déjà présent)
-- **Effet texte surligné** : bouton "Highlight" dans la toolbar → `<mark>` stylé avec couleur configurable (rose/jaune comme l'image fournie)
-- Les couleurs de highlight configurables via `ColorPickerPopover` déjà existant
-
----
-
-## 3. CV Builder — Nouveaux modèles + personnalisation design
-
-**Actuel** : 4 templates (`classic`, `dark`, `light`, `geo`) avec couleurs configurables. Photo déjà supportée (`photoUrl` dans `CVDesignOptions`).
-
-### Ajouts
-- **2-3 nouveaux templates** inspirés des screenshots fournis :
-  - `modern-two-col` : deux colonnes (sidebar colorée + contenu), avec photo ronde en haut
-  - `minimal-line` : séparateurs de ligne épurés, typographie aérée
-- **Sélecteur de template visuel** : grille de miniatures cliquables (comme le site concurrent montré)
-- **Panneau design** : couleur de fond de section, couleur du texte, couleur d'accent — déjà partiellement présent, à enrichir
-- **Upload photo** : interface d'upload vers Supabase Storage + affichage dans le template
-
----
-
-## 4. SEO global — Optimisations techniques
-
-- Ajout `/score-cv` dans `AdminSEO.tsx` SITE_PAGES
-- `robots.txt` : vérifier que `/score-cv` est indexable (actuellement public/robots.txt)
-- Sitemap XML statique : créer `public/sitemap.xml` avec les URLs principales
-- Structure JSON-LD Schema.org sur `/score-cv` (SoftwareApplication)
-- `useSEO` déjà en place sur Landing — à ajouter sur `/score-cv` et Pricing
-
----
-
-## Fichiers à créer/modifier
-
-| Fichier | Action |
-|---|---|
-| `src/pages/CVScorePage.tsx` | CRÉER — page publique SEO |
-| `src/components/dashboard/CVComparator.tsx` | MODIFIER — prop `isPublic` pour désactiver auth check |
-| `src/components/CVScoreAuthPopup.tsx` | CRÉER — popup post-analyse |
-| `src/pages/Admin/AdminSEO.tsx` | MODIFIER — ajouter `/score-cv` |
-| `src/pages/Admin/AdminPageEditor.tsx` | MODIFIER — sélecteur balise + highlight |
-| `src/lib/cv-templates.ts` | MODIFIER — 2 nouveaux templates |
-| `src/components/cv-builder/CVPreview.tsx` | MODIFIER — render nouveaux templates |
-| `src/components/cv-builder/CVBuilderForm.tsx` | MODIFIER — sélecteur visuel templates |
-| `src/App.tsx` | MODIFIER — route `/score-cv` publique |
-| `public/sitemap.xml` | CRÉER |
-
----
-
-## Ordre d'implémentation recommandé
-
-1. Page `/score-cv` + popup auth (impact SEO + business immédiat)
-2. SEO technique global (sitemap, schema.org)
-3. CMS éditeur amélioré (balises H + highlight)
-4. CV Builder nouveaux templates + sélecteur visuel
