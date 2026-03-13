@@ -1,96 +1,54 @@
 
-# Plan SEO — 4 chantiers majeurs
+## Analyse complète
 
-## Vue d'ensemble
-Le message couvre 4 sujets distincts. Je vais les traiter dans l'ordre de priorité SEO/business :
+### Questions de l'utilisateur — 4 points distincts
+
+**1. Aperçu en haut à droite visible en grand écran**
+Le panel droit `aside` (ligne 890) est `hidden xl:flex` → il n'apparaît qu'à partir de 1280px. Sur l'écran 954px de l'utilisateur (`xl` = 1280px), il est **invisible**. Solution : baisser le breakpoint à `lg` (1024px), et réduire la largeur du panel pour que tout tienne.
+
+**2. Supprimer le bloc "Soft Skills" dans l'étape Compétences**
+Dans `StepSkills` (ligne 526-543), il y a un bloc "Soft skills" séparé. L'utilisateur dit que c'est redondant car la section "Langues & Soft Skills" dans le CV les intègre déjà (via `languages_content` dans `adaptCVDataForTemplate` qui combine les deux). Il faut supprimer ce bloc du formulaire et nettoyer la logique associée (conserver les soft skills existants dans le state si besoin mais ne plus les afficher dans l'étape Compétences). Note : les templates `CVPreview.tsx` utilisent `allSkills = [...cvData.skills.technical, ...cvData.skills.soft]` — si on supprime l'UI soft skills, les données existantes ne seront plus alimentées.
+
+**3. L'IA analyse-t-elle le CV à l'upload ?**
+Oui : `onFileParsed` dans `CVBuilderEditor` déclenche la fonction edge `parse-cv-document` qui utilise l'IA pour extraire et structurer les données. Ce n'est pas un changement de code, juste une réponse à confirmer à l'utilisateur.
+
+**4. Compétences techniques — max 2 éléments par ligne alors qu'on peut en mettre 3-4**
+Dans `adaptCVDataForTemplate.ts` ligne 71 : `for (let i = 0; i < tech.length; i += 3)` → chunks de 3, mais `detail_1` prend le premier, `detail_2` prend `chunk.slice(1).join(", ")`. C'est pour les templates HTML-v1. Pour les templates legacy/canvas dans `CVPreview.tsx`, les compétences sont rendues en `flexWrap` avec des badges — pas de limite de 2. Le problème vient donc de l'adaptateur pour les templates html-v1 : il crée autant de lignes que nécessaire avec 3 éléments par ligne. Augmenter à 4 par ligne (chunks de 4) réduira la hauteur utilisée.
 
 ---
 
-## 1. Page publique `/score-cv` — Landing SEO + Comparateur CV gratuit
+## Plan d'implémentation
 
-**Objectif** : Page publique (sans auth), accessible aux moteurs, avec le comparateur ATS intégré + tunnel d'inscription post-essai.
+### Fichiers à modifier
 
-### Structure de la page
+**`src/components/cv-builder/CVBuilderEditor.tsx`**
+- Changer `aside` de `hidden xl:flex ... w-[360px]` → `hidden lg:flex ... w-[300px]`
+- Dans `StepSkills` : supprimer le bloc "Soft skills" (div + SkillInput + state `inputSoft` + fonctions `addSoft`, `removeSoft`)
+- Dans la sticky bottom bar, ajuster le `xl:right-[360px]` → `lg:right-[300px]`
+- Dans l'aside previewRef, ajuster la scale : colonne 300px - padding 24px = 276px → scale = 276/794 ≈ 0.348
+
+**`src/lib/cv-templates/adaptCVDataForTemplate.ts`**
+- `formatSkillsForTemplate` : passer de chunks de 3 à chunks de 4 éléments par ligne
+- Supprimer la partie qui injecte les soft skills dans le bloc `skills` (puisque les soft skills sont déjà dans `languages_content`)
+
+### Résumé des changements visuels
+
+```text
+AVANT                          APRÈS
+─────────────────────          ─────────────────────
+Panel droit: hidden xl:flex    Panel droit: hidden lg:flex (visible dès 1024px)
+w-[360px]                      w-[300px]  
+scale: 0.423                   scale: 0.348 (336px → 276px)
+
+Étape Compétences:             Étape Compétences:
+  - Compétences techniques ✓     - Compétences techniques ✓
+  - Langues ✓                    - Langues ✓
+  - Soft Skills ✗ (supprimé)
+
+Hard skills par ligne: 3       Hard skills par ligne: 4
+Soft skills dans skills[]:     Soft skills: seulement dans
+  injectés (redondant)           languages_content (langues & soft)
 ```
-/score-cv  (route publique, pas de ProtectedRoute)
-├── Hero section  →  H1 + CTA "Tester gratuitement"
-├── Outil comparateur (CVComparator réutilisé tel quel)
-├── Popup post-analyse  →  "Créez votre compte gratuit pour comparer à l'infini"
-│     └── Formulaire email/password → création de compte Supabase
-└── Section SEO bas de page
-      ├── Texte riche avec mots-clés (H2, paragraphes, gras)
-      └── Accordéons FAQ (ex: "Comment fonctionne l'ATS ?", "Pourquoi optimiser son CV ?")
-```
 
-### Logique d'accès
-- L'outil fonctionne **1 fois sans compte**
-- Après analyse → popup `AuthDialog` personnalisée avec message de valeur
-- Compte créé → redirect `/dashboard?tab=cv`
-
-### SEO technique sur cette page
-- `useSEO("/score-cv")` → meta title/desc configurable depuis le BO
-- Balise H1 unique, H2 dans les sections FAQ
-- Texte ~800 mots minimum en bas de page (géré via CMS ou hardcodé)
-- Canonical URL configurée
-- Ajout de `/score-cv` dans `SITE_PAGES` de `AdminSEO.tsx`
-
----
-
-## 2. Amélioration du CMS — Sélecteur de balise HTML + effets de texte
-
-**Problème actuel** : `AdminPageEditor.tsx` a H1/H2/H3 dans la barre d'outils mais pas de sélecteur explicite de balise pour les blocs de texte. Pas d'effet "texte souligné coloré" type mise en avant.
-
-### Ce qu'on ajoute
-- **Sélecteur de balise** dans la toolbar : dropdown `<p>` / `<h1>` / `<h2>` / `<h3>` avec règle visuelle "1 seul H1 par page" (warning si H1 déjà présent)
-- **Effet texte surligné** : bouton "Highlight" dans la toolbar → `<mark>` stylé avec couleur configurable (rose/jaune comme l'image fournie)
-- Les couleurs de highlight configurables via `ColorPickerPopover` déjà existant
-
----
-
-## 3. CV Builder — Nouveaux modèles + personnalisation design
-
-**Actuel** : 4 templates (`classic`, `dark`, `light`, `geo`) avec couleurs configurables. Photo déjà supportée (`photoUrl` dans `CVDesignOptions`).
-
-### Ajouts
-- **2-3 nouveaux templates** inspirés des screenshots fournis :
-  - `modern-two-col` : deux colonnes (sidebar colorée + contenu), avec photo ronde en haut
-  - `minimal-line` : séparateurs de ligne épurés, typographie aérée
-- **Sélecteur de template visuel** : grille de miniatures cliquables (comme le site concurrent montré)
-- **Panneau design** : couleur de fond de section, couleur du texte, couleur d'accent — déjà partiellement présent, à enrichir
-- **Upload photo** : interface d'upload vers Supabase Storage + affichage dans le template
-
----
-
-## 4. SEO global — Optimisations techniques
-
-- Ajout `/score-cv` dans `AdminSEO.tsx` SITE_PAGES
-- `robots.txt` : vérifier que `/score-cv` est indexable (actuellement public/robots.txt)
-- Sitemap XML statique : créer `public/sitemap.xml` avec les URLs principales
-- Structure JSON-LD Schema.org sur `/score-cv` (SoftwareApplication)
-- `useSEO` déjà en place sur Landing — à ajouter sur `/score-cv` et Pricing
-
----
-
-## Fichiers à créer/modifier
-
-| Fichier | Action |
-|---|---|
-| `src/pages/CVScorePage.tsx` | CRÉER — page publique SEO |
-| `src/components/dashboard/CVComparator.tsx` | MODIFIER — prop `isPublic` pour désactiver auth check |
-| `src/components/CVScoreAuthPopup.tsx` | CRÉER — popup post-analyse |
-| `src/pages/Admin/AdminSEO.tsx` | MODIFIER — ajouter `/score-cv` |
-| `src/pages/Admin/AdminPageEditor.tsx` | MODIFIER — sélecteur balise + highlight |
-| `src/lib/cv-templates.ts` | MODIFIER — 2 nouveaux templates |
-| `src/components/cv-builder/CVPreview.tsx` | MODIFIER — render nouveaux templates |
-| `src/components/cv-builder/CVBuilderForm.tsx` | MODIFIER — sélecteur visuel templates |
-| `src/App.tsx` | MODIFIER — route `/score-cv` publique |
-| `public/sitemap.xml` | CRÉER |
-
----
-
-## Ordre d'implémentation recommandé
-
-1. Page `/score-cv` + popup auth (impact SEO + business immédiat)
-2. SEO technique global (sitemap, schema.org)
-3. CMS éditeur amélioré (balises H + highlight)
-4. CV Builder nouveaux templates + sélecteur visuel
+### Réponse sur l'IA + upload CV
+Dans le plan, noter clairement à l'utilisateur : **oui**, quand on importe un PDF/DOCX/TXT dans la sidebar, la fonction edge `parse-cv-document` utilise l'IA (Gemini) pour analyser et structurer automatiquement les données dans tous les champs du formulaire.
