@@ -48,6 +48,12 @@ interface DynamicCVRendererProps {
   config: AnyConfig;
   cvData: CVData;
   scale?: number;
+  /** Photo URL de l'utilisateur (pour les éléments type="image" content="[PHOTO]") */
+  photoUrl?: string;
+  /** Couleur principale (pour les sections canvas-v2) */
+  primaryColor?: string;
+  /** Couleur d'accent (pour les titres de section canvas-v2) */
+  accentColor?: string;
 }
 
 // ─── Type guard ───────────────────────────────────────────────────────────────
@@ -232,7 +238,12 @@ const renderSection = (section: TemplateSection, cvData: CVData, config: Templat
 
 // ─── Canvas element renderer (new v2) ─────────────────────────────────────────
 
-const renderCanvasElementForExport = (el: CanvasElement, cvData: CVData): React.ReactNode => {
+const renderCanvasElementForExport = (
+  el: CanvasElement,
+  cvData: CVData,
+  photoUrl?: string,
+  accentColor?: string,
+): React.ReactNode => {
   if (el.visible === false) return null;
   const style: React.CSSProperties = {
     position: "absolute",
@@ -295,8 +306,35 @@ const renderCanvasElementForExport = (el: CanvasElement, cvData: CVData): React.
     );
   }
 
+  // ── Photo placeholder → rendu de la vraie photo utilisateur ──────────────────
+  if (el.type === "image") {
+    const isPhoto = el.content === "[PHOTO]";
+    if (isPhoto && photoUrl) {
+      return (
+        <div key={el.id} style={{ ...style, borderRadius: el.styles.borderRadius ? `${el.styles.borderRadius}px` : "50%" }}>
+          <img
+            src={photoUrl}
+            alt="Photo profil"
+            style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "inherit", display: "block" }}
+          />
+        </div>
+      );
+    }
+    // Pas de photo : placeholder neutre (transparent, invisible dans le rendu final)
+    return (
+      <div key={el.id} style={{
+        ...style,
+        backgroundColor: "transparent",
+        borderRadius: el.styles.borderRadius ? `${el.styles.borderRadius}px` : "50%",
+      }} />
+    );
+  }
+
   if (el.type === "cv-section" && el.sectionId) {
     const sectionId = el.sectionId as SectionId;
+    // Utiliser accentColor de designOptions si disponible, sinon fallback sur styles de l'élément
+    const resolvedAccent = accentColor ?? el.styles.backgroundColor ?? "#c9a84c";
+
     const sectionStyle: React.CSSProperties = {
       ...style,
       backgroundColor: el.styles.backgroundColor ?? "transparent",
@@ -331,7 +369,7 @@ const renderCanvasElementForExport = (el: CanvasElement, cvData: CVData): React.
       mainBg: "#ffffff",
       fontFamily: el.styles.fontFamily ?? "Helvetica, Arial, sans-serif",
       primaryColor: "#0f1b3d",
-      accentColor: "#c9a84c",
+      accentColor: resolvedAccent,
       textColor: el.styles.color ?? "#1a1a2e",
       sections: [legacySection],
     };
@@ -348,7 +386,9 @@ const renderCanvasElementForExport = (el: CanvasElement, cvData: CVData): React.
 
 // ─── Main renderer ────────────────────────────────────────────────────────────
 
-export const DynamicCVRenderer: React.FC<DynamicCVRendererProps> = ({ config, cvData, scale = 1 }) => {
+export const DynamicCVRenderer: React.FC<DynamicCVRendererProps> = ({
+  config, cvData, scale = 1, photoUrl, primaryColor, accentColor,
+}) => {
 
   // ── New canvas v2 format ──
   if (isCanvasConfig(config)) {
@@ -363,7 +403,7 @@ export const DynamicCVRenderer: React.FC<DynamicCVRendererProps> = ({ config, cv
         transform: scale !== 1 ? `scale(${scale})` : undefined,
         transformOrigin: scale !== 1 ? "top left" : undefined,
       }}>
-        {config.elements.map(el => renderCanvasElementForExport(el, cvData))}
+        {config.elements.map(el => renderCanvasElementForExport(el, cvData, photoUrl, accentColor))}
       </div>
     );
   }
