@@ -885,12 +885,12 @@ export const CVBuilderEditor = ({
 
         {/* Scrollable preview area — large hitbox via ScrollArea */}
         {/* Column inner width = 300px - 24px padding = 276px → scale = 276/794 ≈ 0.348 */}
-        <ScrollArea className="flex-1 bg-slate-100">
-          <div className="px-3 py-4">
+        <ScrollArea className="flex-1 bg-slate-100" style={{ overflowX: "hidden" }}>
+          <div className="px-3 py-4" style={{ overflowX: "hidden" }}>
             <div style={{ width: "276px", height: `${Math.round(1123 * 0.348)}px`, overflow: "hidden", position: "relative", margin: "0 auto", boxShadow: "0 2px 16px 0 rgba(0,0,0,0.10)", borderRadius: "4px", background: "#fff" }}>
               <div
                 ref={cvPreviewRef}
-                style={{ transformOrigin: "top left", transform: "scale(0.348)", width: "794px", minHeight: "1123px", position: "absolute", top: 0, left: 0, pointerEvents: "none" }}
+                style={{ transformOrigin: "top left", transform: "scale(0.348)", width: "794px", height: "1123px", overflow: "hidden", position: "absolute", top: 0, left: 0, pointerEvents: "none" }}
               >
                 <CVPreview cvData={cvData} templateId={templateId} designOptions={designOptions} standalone={false} />
               </div>
