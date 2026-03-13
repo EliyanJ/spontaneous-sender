@@ -1482,16 +1482,29 @@ export const AdminCVTemplateBuilder = () => {
               {config.elements.map(renderCanvasElement)}
 
               {/* Empty state */}
-              {config.elements.length === 0 && !isImporting && (
+              {config.elements.length === 0 && !isImporting && !isImportingHTML && (
                 <div className="absolute inset-0 flex flex-col items-center justify-center text-muted-foreground pointer-events-none">
                   <Plus className="h-12 w-12 mb-3 opacity-40" />
                   <p className="text-sm font-medium opacity-60">Canvas vide</p>
-                  <p className="text-xs opacity-40 mt-1">Ajoutez des éléments via la toolbar ou glissez depuis le panneau gauche</p>
-                  <p className="text-xs opacity-30 mt-2">💡 Ou cliquez sur <strong>Importer PDF IA</strong> pour reproduire un CV existant</p>
+                  <p className="text-xs opacity-40 mt-1">Cliquez sur les boutons de la toolbar pour ajouter des éléments</p>
+                  <p className="text-xs opacity-30 mt-2">💡 Ou importez un CV HTML / PDF pour générer le layout automatiquement</p>
                 </div>
               )}
 
-              {/* AI Import overlay */}
+              {/* HTML Import overlay */}
+              {isImportingHTML && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-background/80 backdrop-blur-sm z-50 pointer-events-none">
+                  <div className="flex flex-col items-center gap-4 bg-card border border-border rounded-xl px-8 py-6 shadow-xl">
+                    <Loader2 className="h-10 w-10 text-primary animate-spin" />
+                    <div className="text-center">
+                      <p className="text-sm font-semibold text-foreground">Import HTML en cours...</p>
+                      <p className="text-xs text-muted-foreground mt-1">Extraction des positions depuis le DOM</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* PDF Import overlay */}
               {isImporting && (
                 <div className="absolute inset-0 flex flex-col items-center justify-center bg-background/80 backdrop-blur-sm z-50 pointer-events-none">
                   <div className="flex flex-col items-center gap-4 bg-card border border-border rounded-xl px-8 py-6 shadow-xl">
