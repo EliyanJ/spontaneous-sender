@@ -48,6 +48,12 @@ interface DynamicCVRendererProps {
   config: AnyConfig;
   cvData: CVData;
   scale?: number;
+  /** Photo URL de l'utilisateur (pour les éléments type="image" content="[PHOTO]") */
+  photoUrl?: string;
+  /** Couleur principale (pour les sections canvas-v2) */
+  primaryColor?: string;
+  /** Couleur d'accent (pour les titres de section canvas-v2) */
+  accentColor?: string;
 }
 
 // ─── Type guard ───────────────────────────────────────────────────────────────
