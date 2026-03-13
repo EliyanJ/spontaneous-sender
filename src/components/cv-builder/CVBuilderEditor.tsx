@@ -11,10 +11,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { CVPreview } from "./CVPreview";
+import { CVExportButtons } from "./CVExportButtons";
 import type { CVData, CVDesignOptions } from "@/lib/cv-templates";
+import { adaptCVDataForTemplate } from "@/lib/cv-templates/adaptCVDataForTemplate";
 import { Logo } from "@/components/Logo";
 import { Link } from "react-router-dom";
 
@@ -543,8 +546,14 @@ const StepSkills = ({ cvData, onChange }: { cvData: CVData; onChange: (d: CVData
 };
 
 // ─── Step: Finalize ───────────────────────────────────────────────────────────
-const StepFinalize = ({ cvData, templateId, designOptions, onSave }: {
-  cvData: CVData; templateId: string; designOptions: CVDesignOptions; onSave: () => void;
+const StepFinalize = ({
+  cvData, templateId, designOptions, templateHtml, templateCvData,
+}: {
+  cvData: CVData;
+  templateId: string;
+  designOptions: CVDesignOptions;
+  templateHtml: string;
+  templateCvData: ReturnType<typeof adaptCVDataForTemplate>;
 }) => (
   <div className="space-y-6">
     <div className="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 rounded-2xl p-6 flex items-start gap-4">
@@ -556,6 +565,13 @@ const StepFinalize = ({ cvData, templateId, designOptions, onSave }: {
         <p className="text-slate-600 text-sm">Téléchargez votre CV en PDF ou Word via les boutons ci-dessous.</p>
       </div>
     </div>
+
+    {/* Boutons d'export visibles dans le corps de l'étape */}
+    <CVExportButtons
+      templateHtml={templateHtml}
+      cvData={templateCvData}
+      userName={[cvData.personalInfo?.firstName, cvData.personalInfo?.lastName].filter(Boolean).join(" ")}
+    />
 
     <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
       <div className="p-4 bg-gray-50 border-b border-gray-100">
@@ -582,6 +598,28 @@ export const CVBuilderEditor = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [savedCVs, setSavedCVs] = useState<any[]>([]);
   const [cvPopoverOpen, setCvPopoverOpen] = useState(false);
+
+  // ── Fetch template HTML for export (only when on finalize step) ──
+  const { data: templateHtml = "" } = useQuery({
+    queryKey: ["cv-template-html", templateId],
+    enabled: !!templateId && /^[0-9a-f-]{36}$/i.test(templateId),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("cv_templates")
+        .select("html_template, css_styles")
+        .eq("id", templateId)
+        .single();
+      if (error || !data) return "";
+      // Merge html_template + css_styles if separate
+      if (data.css_styles && !data.html_template.includes(data.css_styles)) {
+        return data.html_template.replace("</style>", data.css_styles + "</style>") || data.html_template;
+      }
+      return data.html_template || "";
+    },
+  });
+
+  // ── Adapt cvData → TemplateCVData for export ──
+  const templateCvData = adaptCVDataForTemplate(cvData);
 
   const currentIdx = STEP_ORDER.indexOf(currentStep);
   const progress = ((currentIdx + 1) / STEPS.length) * 100;
@@ -617,7 +655,7 @@ export const CVBuilderEditor = ({
       case "experience": return <StepExperience cvData={cvData} onChange={onChange} />;
       case "education":  return <StepEducation cvData={cvData} onChange={onChange} />;
       case "skills":     return <StepSkills cvData={cvData} onChange={onChange} />;
-      case "finalize":   return <StepFinalize cvData={cvData} templateId={templateId} designOptions={designOptions} onSave={onSave} />;
+      case "finalize":   return <StepFinalize cvData={cvData} templateId={templateId} designOptions={designOptions} templateHtml={templateHtml} templateCvData={templateCvData} />;
     }
   };
 
@@ -851,20 +889,12 @@ export const CVBuilderEditor = ({
                 </button>
               </>
             ) : (
-              <div className="w-full flex gap-3">
-                <button
-                  onClick={onSave}
-                  className="flex-1 flex items-center justify-center gap-2 py-4 bg-[hsl(var(--primary))] hover:opacity-90 text-white font-bold rounded-xl transition-all shadow-lg text-sm"
-                >
-                  <Download className="h-4 w-4" /> Télécharger en PDF
-                </button>
-                <button
-                  onClick={onSave}
-                  className="flex-1 flex items-center justify-center gap-2 py-4 border-2 border-[hsl(var(--primary))] text-[hsl(var(--primary))] font-bold rounded-xl transition-all hover:bg-blue-50 text-sm"
-                >
-                  <FileDown className="h-4 w-4" /> Télécharger en Word
-                </button>
-              </div>
+              <CVExportButtons
+                templateHtml={templateHtml}
+                cvData={templateCvData}
+                userName={[cvData.personalInfo?.firstName, cvData.personalInfo?.lastName].filter(Boolean).join(" ")}
+                compact
+              />
             )}
           </div>
         </div>
