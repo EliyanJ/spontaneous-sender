@@ -553,7 +553,7 @@ const StepFinalize = ({ cvData, templateId, designOptions, onSave }: {
       </div>
       <div>
         <h3 className="font-bold text-slate-800 text-lg mb-1">Votre CV est prêt !</h3>
-        <p className="text-slate-600 text-sm">Vous pouvez maintenant sauvegarder votre CV et le télécharger en PDF.</p>
+        <p className="text-slate-600 text-sm">Téléchargez votre CV en PDF ou Word via les boutons ci-dessous.</p>
       </div>
     </div>
 
@@ -567,13 +567,6 @@ const StepFinalize = ({ cvData, templateId, designOptions, onSave }: {
         </div>
       </div>
     </div>
-
-    <button
-      onClick={onSave}
-      className="w-full py-4 bg-[hsl(var(--primary))] hover:opacity-90 text-white font-bold rounded-2xl transition-all shadow-lg flex items-center justify-center gap-3 text-base"
-    >
-      <Save className="h-5 w-5" /> Sauvegarder mon CV
-    </button>
   </div>
 );
 
