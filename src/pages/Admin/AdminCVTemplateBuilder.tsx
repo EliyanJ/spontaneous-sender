@@ -1401,7 +1401,7 @@ export const AdminCVTemplateBuilder = () => {
         <div className="w-48 shrink-0 border-r border-border bg-card/50 flex flex-col overflow-hidden">
           <div className="px-3 py-2 border-b border-border">
             <p className="text-[10px] font-semibold text-foreground uppercase tracking-wide">Sections CV</p>
-            <p className="text-[10px] text-muted-foreground">Clic ou glisser sur le canvas</p>
+            <p className="text-[10px] text-muted-foreground">Clic pour ajouter au canvas</p>
           </div>
           <div className="flex-1 overflow-y-auto p-2 space-y-1">
             {(Object.entries(SECTION_META) as [SectionId, typeof SECTION_META[SectionId]][]).map(([id, meta]) => {
