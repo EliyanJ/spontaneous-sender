@@ -854,37 +854,7 @@ export const AdminCVTemplateBuilder = () => {
     };
   }, [updateElement]);
 
-  // ── Canvas drop ───────────────────────────────────────────────────────────
-
-  const onCanvasDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    const drag = paletteDragRef.current;
-    if (!drag) return;
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const rect = canvas.getBoundingClientRect();
-    const x = clamp(e.clientX - rect.left - 60, 0, CANVAS_W - 120);
-    const y = clamp(e.clientY - rect.top - 20, 0, CANVAS_H - 40);
-    if (drag.type === "section") {
-      const exists = config.elements.some(el => el.type === "cv-section" && el.sectionId === drag.sectionId);
-      if (exists) { toast({ title: "Section déjà présente" }); return; }
-      addElement({
-        type: "cv-section", sectionId: drag.sectionId,
-        x, y, width: 250, height: 140,
-        visible: true, locked: false,
-        styles: { backgroundColor: "transparent", color: "#1a1a2e", fontSize: 10, fontFamily: "Helvetica, Arial, sans-serif", padding: 12 },
-      });
-    } else if (drag.type === "element") {
-      if (drag.elType === "text") {
-        addElement({ type: "text", x, y, width: 200, height: 40, content: "Nouveau texte", visible: true, locked: false, styles: { color: "#1a1a2e", fontSize: 12, backgroundColor: "transparent" } });
-      } else if (drag.elType === "shape") {
-        addElement({ type: "shape", x, y, width: 150, height: 80, visible: true, locked: false, styles: { backgroundColor: "#0f1b3d" } });
-      } else if (drag.elType === "divider") {
-        addElement({ type: "divider", x, y, width: 400, height: 2, visible: true, locked: false, styles: { backgroundColor: "#cccccc" } });
-      }
-    }
-    paletteDragRef.current = null;
-  };
+  // (drag-and-drop removed)
 
   // ─── Render element on canvas ─────────────────────────────────────────────
 
