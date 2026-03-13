@@ -75,7 +75,8 @@ function formatSkillsForTemplate(
     .slice(0, 16) // Max 16 compétences = 4 colonnes × 4 rangées
     .map((skill) => ({
       category: "", // Vide pour tous — le <h2> du template suffit comme titre
-      skill_name: skill,
+      name: skill,       // Compatibilité templates BDD avec data-field="name"
+      skill_name: skill, // Compatibilité templates avec data-field="skill_name"
       // Rétrocompatibilité avec les anciens templates detail_1/2/3
       detail_1: skill,
       detail_2: "",
