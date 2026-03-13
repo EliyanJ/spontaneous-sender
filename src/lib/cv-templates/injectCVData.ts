@@ -94,7 +94,21 @@ export function injectCVData(templateHtml: string, data: TemplateCVData): string
     items.forEach((itemData) => {
       const clone = templateClone.cloneNode(true) as HTMLElement;
 
-      // Remplir les data-field du clone
+      // Cas 1 : l'item template EST lui-même un data-field (ex: <span data-field="skill_name">)
+      if (clone.hasAttribute("data-field")) {
+        const fieldId = clone.getAttribute("data-field")!;
+        const value = itemData[fieldId];
+        if (value !== undefined && value !== null && value !== "") {
+          clone.textContent = String(value);
+          clone.removeAttribute("data-hidden");
+        } else {
+          clone.setAttribute("data-hidden", "true");
+        }
+        container.appendChild(clone);
+        return;
+      }
+
+      // Cas 2 : l'item template contient des data-field enfants (ex: <div class="skill-row">)
       clone.querySelectorAll("[data-field]").forEach((el) => {
         const fieldId = el.getAttribute("data-field")!;
         const value = itemData[fieldId];
