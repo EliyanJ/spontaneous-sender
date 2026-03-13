@@ -52,8 +52,8 @@ const DEFAULT_TEMPLATE_HTML = `<!DOCTYPE html>
     .item-header { display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; }
     ul { margin: 5px 0; padding-left: 20px; font-size: 13px; }
     li { margin-bottom: 4px; }
-    .skills-container { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px 12px; font-size: 12px; }
-    .skill-item { word-break: break-word; padding: 1px 0; }
+    .skills-container { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px 10px; font-size: 11px; }
+    .skill-item { padding: 2px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.2; }
 ...
   <section data-section="skills">
     <h2>Compétences Clés</h2>

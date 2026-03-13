@@ -1,48 +1,96 @@
 
+# Plan SEO — 4 chantiers majeurs
 
-## Problème identifié
+## Vue d'ensemble
+Le message couvre 4 sujets distincts. Je vais les traiter dans l'ordre de priorité SEO/business :
 
-L'image uploadée montre :
-1. **Espacement vertical excessif** entre les lignes de compétences (gap trop grand)
-2. **Wrapping de texte long** comme "Suite Adobe (Photoshop, Première Pro)" qui s'étale sur 2 lignes, créant une "vague" de hauteur inégale
-3. **Lignes vides visuelles** entre chaque rangée de 3 compétences
+---
 
-Le fichier `fonctionnalite.html` fourni par l'utilisateur montre la solution :
-- **4 colonnes** (`grid-template-columns: repeat(4, 1fr)`)
-- `white-space: nowrap` + `text-overflow: ellipsis` pour éviter les retours à la ligne
-- `gap: 4px 10px` (très serré)
-- `font-size: 11px`
-- `overflow: hidden` sur `.skill-item`
+## 1. Page publique `/score-cv` — Landing SEO + Comparateur CV gratuit
 
-## Solution
+**Objectif** : Page publique (sans auth), accessible aux moteurs, avec le comparateur ATS intégré + tunnel d'inscription post-essai.
 
-### 1. `src/pages/Admin/AdminCVTemplateBuilder.tsx` — `DEFAULT_TEMPLATE_HTML`
-Mettre à jour le CSS de la section skills selon le modèle HTML fourni :
-```css
-/* AVANT */
-.skills-container { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px 12px; font-size: 12px; }
-.skill-item { word-break: break-word; padding: 1px 0; }
-
-/* APRÈS */
-.skills-container { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px 10px; font-size: 11px; }
-.skill-item { padding: 2px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.2; }
+### Structure de la page
+```
+/score-cv  (route publique, pas de ProtectedRoute)
+├── Hero section  →  H1 + CTA "Tester gratuitement"
+├── Outil comparateur (CVComparator réutilisé tel quel)
+├── Popup post-analyse  →  "Créez votre compte gratuit pour comparer à l'infini"
+│     └── Formulaire email/password → création de compte Supabase
+└── Section SEO bas de page
+      ├── Texte riche avec mots-clés (H2, paragraphes, gras)
+      └── Accordéons FAQ (ex: "Comment fonctionne l'ATS ?", "Pourquoi optimiser son CV ?")
 ```
 
-### 2. `src/lib/cv-templates/adaptCVDataForTemplate.ts`
-Pas de changement majeur — la logique 1 item = 1 `skill_name` est déjà correcte. Mais ajouter une limite max de **12 compétences techniques** pour éviter que la grille déborde sur 3+ rangées (4 items × 3 rangées = 12 max).
+### Logique d'accès
+- L'outil fonctionne **1 fois sans compte**
+- Après analyse → popup `AuthDialog` personnalisée avec message de valeur
+- Compte créé → redirect `/dashboard?tab=cv`
 
-### 3. `src/components/cv-builder/CVBuilderForm.tsx`
-Ajouter un compteur visuel sur le champ "Techniques" avec un avertissement à partir de 12 compétences : `"X/12 compétences recommandées"` en orange si > 12.
+### SEO technique sur cette page
+- `useSEO("/score-cv")` → meta title/desc configurable depuis le BO
+- Balise H1 unique, H2 dans les sections FAQ
+- Texte ~800 mots minimum en bas de page (géré via CMS ou hardcodé)
+- Canonical URL configurée
+- Ajout de `/score-cv` dans `SITE_PAGES` de `AdminSEO.tsx`
 
-## Résumé des changements
+---
 
-```text
-Fichier                              Changement
-─────────────────────────────────    ─────────────────────────────────────
-AdminCVTemplateBuilder.tsx           3 → 4 colonnes, nowrap, ellipsis, gap serré
-adaptCVDataForTemplate.ts            Limite à 12 skills max (slice)
-CVBuilderForm.tsx                    Compteur visuel X/12 sur le champ techniques
-```
+## 2. Amélioration du CMS — Sélecteur de balise HTML + effets de texte
 
-**Important** : passer à 4 colonnes + `white-space: nowrap` garantit que même "Suite Microsoft 365 (Excel, PowerPoint)" ne s'étale pas sur 2 lignes. Le texte trop long sera tronqué avec `...` — beaucoup plus propre visuellement.
+**Problème actuel** : `AdminPageEditor.tsx` a H1/H2/H3 dans la barre d'outils mais pas de sélecteur explicite de balise pour les blocs de texte. Pas d'effet "texte souligné coloré" type mise en avant.
 
+### Ce qu'on ajoute
+- **Sélecteur de balise** dans la toolbar : dropdown `<p>` / `<h1>` / `<h2>` / `<h3>` avec règle visuelle "1 seul H1 par page" (warning si H1 déjà présent)
+- **Effet texte surligné** : bouton "Highlight" dans la toolbar → `<mark>` stylé avec couleur configurable (rose/jaune comme l'image fournie)
+- Les couleurs de highlight configurables via `ColorPickerPopover` déjà existant
+
+---
+
+## 3. CV Builder — Nouveaux modèles + personnalisation design
+
+**Actuel** : 4 templates (`classic`, `dark`, `light`, `geo`) avec couleurs configurables. Photo déjà supportée (`photoUrl` dans `CVDesignOptions`).
+
+### Ajouts
+- **2-3 nouveaux templates** inspirés des screenshots fournis :
+  - `modern-two-col` : deux colonnes (sidebar colorée + contenu), avec photo ronde en haut
+  - `minimal-line` : séparateurs de ligne épurés, typographie aérée
+- **Sélecteur de template visuel** : grille de miniatures cliquables (comme le site concurrent montré)
+- **Panneau design** : couleur de fond de section, couleur du texte, couleur d'accent — déjà partiellement présent, à enrichir
+- **Upload photo** : interface d'upload vers Supabase Storage + affichage dans le template
+
+---
+
+## 4. SEO global — Optimisations techniques
+
+- Ajout `/score-cv` dans `AdminSEO.tsx` SITE_PAGES
+- `robots.txt` : vérifier que `/score-cv` est indexable (actuellement public/robots.txt)
+- Sitemap XML statique : créer `public/sitemap.xml` avec les URLs principales
+- Structure JSON-LD Schema.org sur `/score-cv` (SoftwareApplication)
+- `useSEO` déjà en place sur Landing — à ajouter sur `/score-cv` et Pricing
+
+---
+
+## Fichiers à créer/modifier
+
+| Fichier | Action |
+|---|---|
+| `src/pages/CVScorePage.tsx` | CRÉER — page publique SEO |
+| `src/components/dashboard/CVComparator.tsx` | MODIFIER — prop `isPublic` pour désactiver auth check |
+| `src/components/CVScoreAuthPopup.tsx` | CRÉER — popup post-analyse |
+| `src/pages/Admin/AdminSEO.tsx` | MODIFIER — ajouter `/score-cv` |
+| `src/pages/Admin/AdminPageEditor.tsx` | MODIFIER — sélecteur balise + highlight |
+| `src/lib/cv-templates.ts` | MODIFIER — 2 nouveaux templates |
+| `src/components/cv-builder/CVPreview.tsx` | MODIFIER — render nouveaux templates |
+| `src/components/cv-builder/CVBuilderForm.tsx` | MODIFIER — sélecteur visuel templates |
+| `src/App.tsx` | MODIFIER — route `/score-cv` publique |
+| `public/sitemap.xml` | CRÉER |
+
+---
+
+## Ordre d'implémentation recommandé
+
+1. Page `/score-cv` + popup auth (impact SEO + business immédiat)
+2. SEO technique global (sitemap, schema.org)
+3. CMS éditeur amélioré (balises H + highlight)
+4. CV Builder nouveaux templates + sélecteur visuel
