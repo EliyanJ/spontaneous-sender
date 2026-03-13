@@ -810,6 +810,31 @@ export const AdminCVTemplateBuilder = () => {
           borderRadius: el.styles.borderRadius ? `${el.styles.borderRadius}px` : 0,
         }} />
       );
+    } else if (el.type === "image") {
+      // Photo placeholder — rendered as a gray block with a user icon and label
+      const isPhotoPlaceholder = el.content === "[PHOTO]";
+      content = (
+        <div style={{
+          width: "100%",
+          height: "100%",
+          backgroundColor: el.styles.backgroundColor ?? "#e0e0e0",
+          borderRadius: el.styles.borderRadius ? `${el.styles.borderRadius}px` : 0,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 4,
+          border: "1.5px dashed #aaa",
+          boxSizing: "border-box",
+        }}>
+          <User style={{ width: 28, height: 28, color: "#888", opacity: 0.7 }} />
+          {isPhotoPlaceholder && (
+            <span style={{ fontSize: 9, color: "#888", fontFamily: "Arial, sans-serif", textAlign: "center", lineHeight: 1.3 }}>
+              Photo<br />profil
+            </span>
+          )}
+        </div>
+      );
     } else if (el.type === "cv-section" && el.sectionId) {
       const Placeholder = SECTION_PLACEHOLDERS[el.sectionId];
       content = (
