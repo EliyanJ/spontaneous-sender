@@ -889,20 +889,12 @@ export const CVBuilderEditor = ({
                 </button>
               </>
             ) : (
-              <div className="w-full flex gap-3">
-                <button
-                  onClick={onSave}
-                  className="flex-1 flex items-center justify-center gap-2 py-4 bg-[hsl(var(--primary))] hover:opacity-90 text-white font-bold rounded-xl transition-all shadow-lg text-sm"
-                >
-                  <Download className="h-4 w-4" /> Télécharger en PDF
-                </button>
-                <button
-                  onClick={onSave}
-                  className="flex-1 flex items-center justify-center gap-2 py-4 border-2 border-[hsl(var(--primary))] text-[hsl(var(--primary))] font-bold rounded-xl transition-all hover:bg-blue-50 text-sm"
-                >
-                  <FileDown className="h-4 w-4" /> Télécharger en Word
-                </button>
-              </div>
+              <CVExportButtons
+                templateHtml={templateHtml}
+                cvData={templateCvData}
+                userName={[cvData.personalInfo?.firstName, cvData.personalInfo?.lastName].filter(Boolean).join(" ")}
+                compact
+              />
             )}
           </div>
         </div>
