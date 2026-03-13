@@ -28,46 +28,54 @@ export async function exportCVToPdf({
   // 1. Injecter les données dans le template
   const finalHtml = injectCVData(templateHtml, cvData);
 
-  // 2. Créer un conteneur hors-écran (PAS display:none → html2canvas ne rend rien si caché)
-  const container = document.createElement("div");
-  container.style.cssText = [
-    "position: fixed",
-    "left: -9999px",
-    "top: 0",
-    "width: 794px",
-    "height: 1123px",
-    "overflow: hidden",
-    "z-index: -9999",
-  ].join("; ");
-  document.body.appendChild(container);
+  // 2. Parser le HTML final pour extraire le <style> et le <body>
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(finalHtml, "text/html");
 
-  // 3. Créer un iframe isolé pour que le CSS du template ne polue pas l'app
-  const iframe = document.createElement("iframe");
-  iframe.style.cssText = "width: 794px; height: 1123px; border: none; display: block;";
-  iframe.setAttribute("sandbox", "allow-same-origin");
-  container.appendChild(iframe);
+  // 3. Créer un conteneur hors-écran visible (PAS display:none → html2canvas vide)
+  const wrapper = document.createElement("div");
+  wrapper.style.cssText = [
+    "position: fixed",
+    "left: -99999px",
+    "top: 0",
+    "width: 794px",     // A4 @ 96dpi
+    "min-height: 1123px",
+    "overflow: visible",
+    "z-index: -9999",
+    "background: white",
+  ].join("; ");
+  document.body.appendChild(wrapper);
+
+  // 4. Créer un shadow root pour isoler les styles du template de l'app
+  const shadow = wrapper.attachShadow({ mode: "open" });
+
+  // 5. Injecter style + contenu dans le shadow DOM
+  //    (le shadow DOM est visible pour html2canvas avec "useCORS: true")
+  const styleEl = doc.querySelector("style");
+  if (styleEl) {
+    const clonedStyle = document.createElement("style");
+    clonedStyle.textContent = styleEl.textContent || "";
+    shadow.appendChild(clonedStyle);
+  }
+
+  // Cloner le contenu body dans le shadow
+  const contentDiv = document.createElement("div");
+  contentDiv.innerHTML = doc.body.innerHTML;
+  // Forcer width A4
+  contentDiv.style.cssText = "width: 794px; min-height: 1123px; background: white;";
+  shadow.appendChild(contentDiv);
 
   try {
-    // 4. Charger le HTML dans l'iframe et attendre rendu complet
-    await new Promise<void>((resolve) => {
-      iframe.onload = () => {
-        // Attendre 500ms supplémentaires pour les polices / images CSS
-        setTimeout(resolve, 500);
-      };
-      iframe.srcdoc = finalHtml;
-    });
-
     onProgress?.("generating");
 
-    // 5. Cibler .cv-page dans l'iframe (fallback sur body)
-    const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
-    if (!iframeDoc) throw new Error("Impossible d'accéder au contenu de l'iframe");
+    // 6. Attendre le paint + polices
+    await new Promise<void>((resolve) => setTimeout(resolve, 600));
 
+    // 7. Cibler .cv-page dans le shadow (fallback sur contentDiv)
     const cvPage =
-      iframeDoc.querySelector<HTMLElement>(".cv-page") ||
-      iframeDoc.body;
+      (shadow.querySelector<HTMLElement>(".cv-page")) || contentDiv;
 
-    // 6. Lancer html2pdf avec les options recommandées
+    // 8. Lancer html2pdf
     await html2pdf()
       .set({
         margin: 0,
@@ -79,6 +87,9 @@ export async function exportCVToPdf({
           letterRendering: true,
           scrollX: 0,
           scrollY: 0,
+          backgroundColor: "#ffffff",
+          // Cibler l'élément directement (pas d'iframe)
+          foreignObjectRendering: false,
         },
         jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
       })
@@ -87,7 +98,7 @@ export async function exportCVToPdf({
 
     onProgress?.("done");
   } finally {
-    // 7. Cleanup DOM
-    document.body.removeChild(container);
+    // 9. Cleanup DOM
+    document.body.removeChild(wrapper);
   }
 }
