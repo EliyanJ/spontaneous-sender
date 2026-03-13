@@ -627,7 +627,7 @@ export const CVPreview = ({ cvData, templateId = "classic", designOptions, stand
   const renderTemplate = () => {
     // UUID → canvas-v2 template from DB
     if (isUUID(templateId)) {
-      return <CanvasTemplateRenderer cvData={cvData} templateId={templateId} />;
+      return <CanvasTemplateRenderer cvData={cvData} templateId={templateId} designOptions={d} />;
     }
     // Legacy hardcoded templates
     switch (templateId) {
