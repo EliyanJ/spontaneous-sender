@@ -567,27 +567,12 @@ const StepFinalize = ({
       </div>
     </div>
 
-    {/* Boutons d'export : utilise previewRef (DOM React) en priorité */}
     <CVExportButtons
       previewRef={previewRef}
       templateHtml={templateHtml}
       cvData={templateCvData}
       userName={[cvData.personalInfo?.firstName, cvData.personalInfo?.lastName].filter(Boolean).join(" ")}
     />
-
-    <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-      <div className="p-4 bg-gray-50 border-b border-gray-100">
-        <h3 className="font-bold text-slate-700">Aperçu de votre CV</h3>
-      </div>
-      <div className="p-4 overflow-auto max-h-[500px]">
-        <div className="scale-75 origin-top-left" style={{ width: "133%" }}>
-          {/* Ce div est la cible de capture pour le PDF sur mobile/tablette */}
-          <div ref={previewRef} style={{ width: "794px", minHeight: "1123px" }}>
-            <CVPreview cvData={cvData} templateId={templateId} designOptions={designOptions} standalone={false} />
-          </div>
-        </div>
-      </div>
-    </div>
   </div>
 );
 
