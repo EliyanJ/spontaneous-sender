@@ -220,7 +220,7 @@ export async function exportCVToDocx({
             {
               type: TabStopType.RIGHT,
               position: convertInchesToTwip(6.5),
-              leader: TabStopLeader.NONE,
+              leader: LeaderType.NONE,
             },
           ],
           spacing: { before: 120, after: 40 },
