@@ -546,8 +546,14 @@ const StepSkills = ({ cvData, onChange }: { cvData: CVData; onChange: (d: CVData
 };
 
 // ─── Step: Finalize ───────────────────────────────────────────────────────────
-const StepFinalize = ({ cvData, templateId, designOptions, onSave }: {
-  cvData: CVData; templateId: string; designOptions: CVDesignOptions; onSave: () => void;
+const StepFinalize = ({
+  cvData, templateId, designOptions, templateHtml, templateCvData,
+}: {
+  cvData: CVData;
+  templateId: string;
+  designOptions: CVDesignOptions;
+  templateHtml: string;
+  templateCvData: ReturnType<typeof adaptCVDataForTemplate>;
 }) => (
   <div className="space-y-6">
     <div className="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 rounded-2xl p-6 flex items-start gap-4">
@@ -559,6 +565,13 @@ const StepFinalize = ({ cvData, templateId, designOptions, onSave }: {
         <p className="text-slate-600 text-sm">Téléchargez votre CV en PDF ou Word via les boutons ci-dessous.</p>
       </div>
     </div>
+
+    {/* Boutons d'export visibles dans le corps de l'étape */}
+    <CVExportButtons
+      templateHtml={templateHtml}
+      cvData={templateCvData}
+      userName={[cvData.personalInfo?.firstName, cvData.personalInfo?.lastName].filter(Boolean).join(" ")}
+    />
 
     <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
       <div className="p-4 bg-gray-50 border-b border-gray-100">
