@@ -531,31 +531,40 @@ export type Database = {
         Row: {
           created_at: string
           css_styles: string
+          has_photo: boolean | null
           html_template: string
           id: string
           is_active: boolean
           name: string
           sector: string
+          template_schema: Json | null
+          template_version: string | null
           thumbnail_url: string | null
         }
         Insert: {
           created_at?: string
           css_styles?: string
+          has_photo?: boolean | null
           html_template?: string
           id?: string
           is_active?: boolean
           name: string
           sector: string
+          template_schema?: Json | null
+          template_version?: string | null
           thumbnail_url?: string | null
         }
         Update: {
           created_at?: string
           css_styles?: string
+          has_photo?: boolean | null
           html_template?: string
           id?: string
           is_active?: boolean
           name?: string
           sector?: string
+          template_schema?: Json | null
+          template_version?: string | null
           thumbnail_url?: string | null
         }
         Relationships: []
