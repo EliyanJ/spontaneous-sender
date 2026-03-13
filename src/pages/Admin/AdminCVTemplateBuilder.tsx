@@ -11,7 +11,7 @@ import {
   Trash2, Copy, AlignLeft, AlignCenter, AlignRight,
   Bold, Italic, ChevronUp, ChevronDown, User, Briefcase,
   GraduationCap, Star, Globe, FileText, Target, Rocket,
-  Plus, Lock, Unlock, Eye, EyeOff, Upload, Loader2,
+  Plus, Lock, Unlock, Eye, EyeOff, Upload, Loader2, Code2, Image,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -306,6 +306,7 @@ export const AdminCVTemplateBuilder = () => {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [editingTextId, setEditingTextId] = useState<string | null>(null);
   const [isImporting, setIsImporting] = useState(false);
+  const [isImportingHTML, setIsImportingHTML] = useState(false);
   const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(null);
   const [isUploadingThumb, setIsUploadingThumb] = useState(false);
   const thumbnailInputRef = useRef<HTMLInputElement>(null);
@@ -313,6 +314,7 @@ export const AdminCVTemplateBuilder = () => {
   // Drag / resize state
   const canvasRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const htmlFileInputRef = useRef<HTMLInputElement>(null);
   const interactionRef = useRef<{
     mode: "move" | "resize";
     startX: number;
@@ -548,6 +550,43 @@ export const AdminCVTemplateBuilder = () => {
     }
   }, []);
 
+  // ── HTML Import ──────────────────────────────────────────────────────────
+
+  const handleImportHTML = useCallback(async (file: File) => {
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+      toast({ title: "Fichier trop lourd", description: "Le fichier HTML doit faire moins de 2 MB.", variant: "destructive" });
+      return;
+    }
+    setIsImportingHTML(true);
+    try {
+      const htmlContent = await file.text();
+
+      const { data: result, error } = await supabase.functions.invoke("html-to-canvas-template", {
+        body: { htmlContent, fileName: file.name },
+      });
+
+      if (error) throw new Error(error.message || "Erreur lors de l'analyse IA.");
+      if (!result?.success) throw new Error(result?.error || "Erreur lors de l'analyse IA.");
+
+      setConfig(result.config);
+      setSelectedId(null);
+      toast({
+        title: `✨ Template généré — ${result.elementCount} éléments`,
+        description: "Design importé depuis le HTML. Ajustez selon vos besoins.",
+      });
+    } catch (err: any) {
+      toast({
+        title: "Erreur d'import HTML",
+        description: err.message || "Impossible d'analyser le HTML.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsImportingHTML(false);
+      if (htmlFileInputRef.current) htmlFileInputRef.current.value = "";
+    }
+  }, []);
+
   // ── Keyboard shortcut ─────────────────────────────────────────────────────
 
   useEffect(() => {
@@ -770,6 +809,31 @@ export const AdminCVTemplateBuilder = () => {
           backgroundColor: el.styles.backgroundColor ?? "#cccccc",
           borderRadius: el.styles.borderRadius ? `${el.styles.borderRadius}px` : 0,
         }} />
+      );
+    } else if (el.type === "image") {
+      // Photo placeholder — rendered as a gray block with a user icon and label
+      const isPhotoPlaceholder = el.content === "[PHOTO]";
+      content = (
+        <div style={{
+          width: "100%",
+          height: "100%",
+          backgroundColor: el.styles.backgroundColor ?? "#e0e0e0",
+          borderRadius: el.styles.borderRadius ? `${el.styles.borderRadius}px` : 0,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 4,
+          border: "1.5px dashed #aaa",
+          boxSizing: "border-box",
+        }}>
+          <User style={{ width: 28, height: 28, color: "#888", opacity: 0.7 }} />
+          {isPhotoPlaceholder && (
+            <span style={{ fontSize: 9, color: "#888", fontFamily: "Arial, sans-serif", textAlign: "center", lineHeight: 1.3 }}>
+              Photo<br />profil
+            </span>
+          )}
+        </div>
       );
     } else if (el.type === "cv-section" && el.sectionId) {
       const Placeholder = SECTION_PLACEHOLDERS[el.sectionId];
@@ -1130,13 +1194,39 @@ export const AdminCVTemplateBuilder = () => {
             size="sm"
             className="h-7 text-xs gap-1.5 border-primary/40 text-primary hover:bg-primary/5"
             onClick={() => fileInputRef.current?.click()}
-            disabled={isImporting}
+            disabled={isImporting || isImportingHTML}
             title="Analyser un CV PDF et reproduire son design"
           >
             {isImporting ? (
               <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Analyse IA...</>
             ) : (
               <><Upload className="h-3.5 w-3.5" /> Importer PDF IA</>
+            )}
+          </Button>
+
+          {/* HTML Import button */}
+          <input
+            ref={htmlFileInputRef}
+            type="file"
+            accept=".html,.htm"
+            className="hidden"
+            onChange={e => {
+              const file = e.target.files?.[0];
+              if (file) handleImportHTML(file);
+            }}
+          />
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-7 text-xs gap-1.5 border-green-500/40 text-green-600 hover:bg-green-500/5"
+            onClick={() => htmlFileInputRef.current?.click()}
+            disabled={isImporting || isImportingHTML}
+            title="Importer un template HTML et convertir en canvas éditable"
+          >
+            {isImportingHTML ? (
+              <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Conversion...</>
+            ) : (
+              <><Code2 className="h-3.5 w-3.5" /> Importer HTML IA</>
             )}
           </Button>
 
