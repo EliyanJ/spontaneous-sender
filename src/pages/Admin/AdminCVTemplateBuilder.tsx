@@ -37,7 +37,7 @@ const DEFAULT_TEMPLATE_HTML = `<!DOCTYPE html>
   <meta charset="UTF-8">
   <style>
     body { font-family: Arial, sans-serif; color: #000; line-height: 1.4; margin: 0; padding: 0; }
-    .cv-page { width: 210mm; min-height: 297mm; background: white; margin: 0 auto; padding: 40px; box-sizing: border-box; }
+    .cv-page { width: 210mm; min-height: 297mm; background: white; margin: 0 auto; padding: 40px; box-sizing: border-box; overflow-x: hidden; max-width: 100%; }
     header { display: flex; margin-bottom: 30px; }
     .photo { width: 120px; height: 120px; background-color: #eee; margin-right: 25px; object-fit: cover; }
     .header-content { flex: 1; }
@@ -46,60 +46,28 @@ const DEFAULT_TEMPLATE_HTML = `<!DOCTYPE html>
     .sub-job { font-size: 13px; margin-bottom: 10px; }
     .contact-info { font-size: 12px; display: flex; gap: 15px; flex-wrap: wrap; }
     .profile-summary { font-size: 13px; margin-bottom: 20px; }
-    section { margin-bottom: 25px; }
-    h2 { font-size: 16px; text-transform: uppercase; border-bottom: 2px solid #000; padding-bottom: 3px; margin-bottom: 15px; }
+    section { margin-bottom: 20px; }
+    h2 { font-size: 16px; text-transform: uppercase; border-bottom: 2px solid #000; padding-bottom: 3px; margin-bottom: 10px; }
     .item { margin-bottom: 15px; }
     .item-header { display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; }
     ul { margin: 5px 0; padding-left: 20px; font-size: 13px; }
     li { margin-bottom: 4px; }
-    .skills-container { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; font-size: 13px; }
-    .skill-column p { margin: 0 0 5px 0; }
+    .skills-container { display: flex; flex-direction: column; gap: 3px; }
+    .skill-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; font-size: 12px; padding: 2px 0; }
+    .skill-row span { word-break: break-word; }
     .edu-item { display: flex; font-size: 13px; margin-bottom: 8px; }
     .edu-date { width: 100px; font-weight: bold; }
     .footer-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 20px; }
     .footer-content { font-size: 13px; }
     [data-hidden="true"] { display: none !important; }
-  </style>
-</head>
-<body>
-<div class="cv-page">
-
-  <header>
-    <img src="https://via.placeholder.com/120" alt="Photo" class="photo" data-field-img="photo">
-    <div class="header-content">
-      <h1 data-field="full_name">Prénom Nom</h1>
-      <div class="job-title" data-field="main_title">TITRE DU POSTE</div>
-      <div class="sub-job" data-field="sub_titles">Sous-titres, variantes de poste...</div>
-      <div class="contact-info">
-        <span data-field="phone">+33 6 00 00 00 00</span>
-        <span data-field="email">email@exemple.com</span>
-        <span data-field="location">Ville, Région</span>
-      </div>
-    </div>
-  </header>
-
-  <div class="profile-summary" data-field="summary">Texte de présentation du candidat...</div>
-
-  <section data-section="experiences">
-    <h2>Expériences Professionnelles</h2>
-    <div data-list="experiences">
-      <div class="item">
-        <div class="item-header">
-          <span data-field="title">Entreprise - Poste</span>
-          <span data-field="date">Période</span>
-        </div>
-        <ul data-bullet-list="bullets"><li>Description de mission</li></ul>
-      </div>
-    </div>
-  </section>
-
+...
   <section data-section="skills">
     <h2>Compétences Clés</h2>
     <div class="skills-container" data-list="skills">
-      <div class="skill-column">
-        <p><strong data-field="category">Catégorie</strong></p>
-        <p data-field="detail_1">Compétence 1</p>
-        <p data-field="detail_2">Compétence 2</p>
+      <div class="skill-row">
+        <span data-field="detail_1">Compétence 1</span>
+        <span data-field="detail_2">Compétence 2</span>
+        <span data-field="detail_3">Compétence 3</span>
       </div>
     </div>
   </section>
