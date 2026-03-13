@@ -880,14 +880,14 @@ export const CVBuilderEditor = ({
         {/* ── Sticky bottom navigation ── */}
         <div className="fixed bottom-0 left-0 right-0 lg:left-[280px] xl:left-[320px] xl:right-[360px] bg-white/95 backdrop-blur-md border-t border-gray-100 px-4 sm:px-8 lg:px-8 py-4 z-20">
           <div className="max-w-2xl mx-auto flex items-center justify-between gap-4">
-            {currentStep !== "finalize" ? (
-              <>
-                <button
-                  onClick={goPrev}
-                  className="flex items-center gap-2 px-5 py-3 rounded-xl border border-gray-200 text-slate-600 hover:border-slate-400 font-medium text-sm transition-all"
-                >
-                  <ArrowLeft className="h-4 w-4" /> Précédent
-                </button>
+            <>
+              <button
+                onClick={goPrev}
+                className="flex items-center gap-2 px-5 py-3 rounded-xl border border-gray-200 text-slate-600 hover:border-slate-400 font-medium text-sm transition-all"
+              >
+                <ArrowLeft className="h-4 w-4" /> Précédent
+              </button>
+              {currentStep !== "finalize" && (
                 <button
                   onClick={goNext}
                   className="flex items-center gap-2 px-8 py-3 bg-[hsl(var(--primary))] hover:opacity-90 text-white font-bold rounded-xl transition-all shadow-lg shadow-[hsl(var(--primary))]/20 text-sm"
@@ -895,16 +895,8 @@ export const CVBuilderEditor = ({
                   Continuer — {STEPS[currentIdx + 1]?.label}
                   <ArrowRight className="h-4 w-4" />
                 </button>
-              </>
-            ) : (
-              <CVExportButtons
-                previewRef={cvPreviewRef}
-                templateHtml={templateHtml}
-                cvData={templateCvData}
-                userName={[cvData.personalInfo?.firstName, cvData.personalInfo?.lastName].filter(Boolean).join(" ")}
-                compact
-              />
-            )}
+              )}
+            </>
           </div>
         </div>
       </main>
