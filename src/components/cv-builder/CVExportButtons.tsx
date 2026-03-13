@@ -98,21 +98,11 @@ export const CVExportButtons: React.FC<CVExportButtonsProps> = ({
 
   if (compact) {
     return (
-      <div className="w-full flex gap-3">
-        <button
-          onClick={handlePdf}
-          disabled={loadingPdf || loadingDocx}
-          className="flex-1 flex items-center justify-center gap-2 py-4 bg-[hsl(var(--primary))] hover:opacity-90 text-white font-bold rounded-xl transition-all shadow-lg text-sm disabled:opacity-50"
-        >
-          {loadingPdf
-            ? <Loader2 className="h-4 w-4 animate-spin" />
-            : <Download className="h-4 w-4" />}
-          {loadingPdf ? "Génération PDF..." : "Télécharger en PDF"}
-        </button>
+      <div className="w-full">
         <button
           onClick={handleDocx}
-          disabled={loadingPdf || loadingDocx}
-          className="flex-1 flex items-center justify-center gap-2 py-4 border-2 border-[hsl(var(--primary))] text-[hsl(var(--primary))] font-bold rounded-xl transition-all hover:bg-blue-50 text-sm disabled:opacity-50"
+          disabled={loadingDocx}
+          className="w-full flex items-center justify-center gap-2 py-4 bg-[hsl(var(--primary))] hover:opacity-90 text-white font-bold rounded-xl transition-all shadow-lg text-sm disabled:opacity-50"
         >
           {loadingDocx
             ? <Loader2 className="h-4 w-4 animate-spin" />
@@ -125,35 +115,20 @@ export const CVExportButtons: React.FC<CVExportButtonsProps> = ({
 
   return (
     <div className="space-y-3">
-      <p className="text-sm text-slate-500 text-center">Choisissez votre format de téléchargement</p>
-      <div className="flex flex-col sm:flex-row gap-3">
-        <button
-          onClick={handlePdf}
-          disabled={loadingPdf || loadingDocx}
-          className="flex-1 flex items-center justify-center gap-3 py-4 px-6 bg-[hsl(var(--primary))] hover:opacity-90 text-white font-bold rounded-2xl transition-all shadow-lg shadow-[hsl(var(--primary))]/20 text-sm disabled:opacity-50"
-        >
-          {loadingPdf
-            ? <Loader2 className="h-5 w-5 animate-spin" />
-            : <Download className="h-5 w-5" />}
-          <div className="text-left">
-            <div>{loadingPdf ? "Génération en cours..." : "Télécharger en PDF"}</div>
-            <div className="text-xs font-normal opacity-80">Pixel-perfect · Non modifiable</div>
-          </div>
-        </button>
-        <button
-          onClick={handleDocx}
-          disabled={loadingPdf || loadingDocx}
-          className="flex-1 flex items-center justify-center gap-3 py-4 px-6 border-2 border-[hsl(var(--primary))] text-[hsl(var(--primary))] font-bold rounded-2xl transition-all hover:bg-blue-50 text-sm disabled:opacity-50"
-        >
-          {loadingDocx
-            ? <Loader2 className="h-5 w-5 animate-spin" />
-            : <FileText className="h-5 w-5" />}
-          <div className="text-left">
-            <div>{loadingDocx ? "Génération en cours..." : "Télécharger en Word"}</div>
-            <div className="text-xs font-normal opacity-70">Éditable dans Word / Google Docs</div>
-          </div>
-        </button>
-      </div>
+      <p className="text-sm text-slate-500 text-center">Téléchargez votre CV au format Word</p>
+      <button
+        onClick={handleDocx}
+        disabled={loadingDocx}
+        className="w-full flex items-center justify-center gap-3 py-4 px-6 bg-[hsl(var(--primary))] hover:opacity-90 text-white font-bold rounded-2xl transition-all shadow-lg shadow-[hsl(var(--primary))]/20 text-sm disabled:opacity-50"
+      >
+        {loadingDocx
+          ? <Loader2 className="h-5 w-5 animate-spin" />
+          : <FileText className="h-5 w-5" />}
+        <div className="text-left">
+          <div>{loadingDocx ? "Génération en cours..." : "Télécharger en Word"}</div>
+          <div className="text-xs font-normal opacity-70">Éditable dans Word / Google Docs</div>
+        </div>
+      </button>
     </div>
   );
 };
