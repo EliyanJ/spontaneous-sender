@@ -116,8 +116,26 @@ export function injectCVData(templateHtml: string, data: TemplateCVData): string
         if (value !== undefined && value !== null && value !== "") {
           el.textContent = String(value);
           el.removeAttribute("data-hidden");
+          // Afficher aussi le parent direct si caché
+          const parent = el.parentElement;
+          if (parent && parent !== clone) parent.removeAttribute("data-hidden");
         } else {
           el.setAttribute("data-hidden", "true");
+          // Masquer le parent direct si TOUS ses enfants data-field sont vides
+          const parent = el.parentElement;
+          if (parent && parent !== clone) {
+            const siblings = Array.from(parent.querySelectorAll("[data-field]"));
+            const allHidden = siblings.every(
+              (s) => !s.getAttribute("data-field") || 
+              !itemData[s.getAttribute("data-field")!]
+            );
+            if (allHidden) {
+              (parent as HTMLElement).style.display = "none";
+              (parent as HTMLElement).style.margin = "0";
+              (parent as HTMLElement).style.padding = "0";
+              (parent as HTMLElement).style.lineHeight = "0";
+            }
+          }
         }
       });
 
