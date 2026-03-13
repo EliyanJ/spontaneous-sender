@@ -11,10 +11,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { CVPreview } from "./CVPreview";
+import { CVExportButtons } from "./CVExportButtons";
 import type { CVData, CVDesignOptions } from "@/lib/cv-templates";
+import { adaptCVDataForTemplate } from "@/lib/cv-templates/adaptCVDataForTemplate";
 import { Logo } from "@/components/Logo";
 import { Link } from "react-router-dom";
 
