@@ -52,23 +52,13 @@ const DEFAULT_TEMPLATE_HTML = `<!DOCTYPE html>
     .item-header { display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; }
     ul { margin: 5px 0; padding-left: 20px; font-size: 13px; }
     li { margin-bottom: 4px; }
-    .skills-container { display: flex; flex-direction: column; gap: 3px; }
-    .skill-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; font-size: 12px; padding: 2px 0; }
-    .skill-row span { word-break: break-word; }
-    .edu-item { display: flex; font-size: 13px; margin-bottom: 8px; }
-    .edu-date { width: 100px; font-weight: bold; }
-    .footer-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 20px; }
-    .footer-content { font-size: 13px; }
-    [data-hidden="true"] { display: none !important; }
+    .skills-container { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px 12px; font-size: 12px; }
+    .skill-item { word-break: break-word; padding: 1px 0; }
 ...
   <section data-section="skills">
     <h2>Compétences Clés</h2>
     <div class="skills-container" data-list="skills">
-      <div class="skill-row">
-        <span data-field="detail_1">Compétence 1</span>
-        <span data-field="detail_2">Compétence 2</span>
-        <span data-field="detail_3">Compétence 3</span>
-      </div>
+      <span class="skill-item" data-field="skill_name">Compétence</span>
     </div>
   </section>
 
