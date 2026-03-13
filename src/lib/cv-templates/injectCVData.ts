@@ -219,21 +219,15 @@ export const MOCK_CV_DATA: TemplateCVData = {
     },
   ],
   skills: [
-    {
-      category: "Marketing Digital",
-      detail_1: "SEO, SEA, Social Ads",
-      detail_2: "Analytics, Tag Manager",
-    },
-    {
-      category: "Gestion de projet",
-      detail_1: "Trello, Notion, Jira",
-      detail_2: "Agile, Scrum",
-    },
-    {
-      category: "Outils",
-      detail_1: "Figma, Adobe Suite",
-      detail_2: "HubSpot, Mailchimp",
-    },
+    { category: "Compétences techniques", skill_name: "SEO / SEA", detail_1: "SEO / SEA", detail_2: "", detail_3: "" },
+    { category: "", skill_name: "Google Ads", detail_1: "Google Ads", detail_2: "", detail_3: "" },
+    { category: "", skill_name: "Analytics", detail_1: "Analytics", detail_2: "", detail_3: "" },
+    { category: "", skill_name: "Tag Manager", detail_1: "Tag Manager", detail_2: "", detail_3: "" },
+    { category: "", skill_name: "Trello / Notion", detail_1: "Trello / Notion", detail_2: "", detail_3: "" },
+    { category: "", skill_name: "Figma", detail_1: "Figma", detail_2: "", detail_3: "" },
+    { category: "", skill_name: "Adobe Suite", detail_1: "Adobe Suite", detail_2: "", detail_3: "" },
+    { category: "", skill_name: "HubSpot", detail_1: "HubSpot", detail_2: "", detail_3: "" },
+    { category: "", skill_name: "Agile / Scrum", detail_1: "Agile / Scrum", detail_2: "", detail_3: "" },
   ],
   education: [
     { date: "2017 - 2020", label: "Master Marketing Digital - Grande École" },
