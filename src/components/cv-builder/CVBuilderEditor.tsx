@@ -898,6 +898,7 @@ export const CVBuilderEditor = ({
               </>
             ) : (
               <CVExportButtons
+                previewRef={cvPreviewRef}
                 templateHtml={templateHtml}
                 cvData={templateCvData}
                 userName={[cvData.personalInfo?.firstName, cvData.personalInfo?.lastName].filter(Boolean).join(" ")}
@@ -924,8 +925,11 @@ export const CVBuilderEditor = ({
         <div className="flex-1 overflow-y-auto bg-slate-100 px-3 py-4">
           {/* Outer wrapper: exact size of the scaled A4 sheet, centered */}
           <div style={{ width: "336px", height: `${Math.round(1123 * 0.423)}px`, overflow: "hidden", position: "relative", margin: "0 auto", boxShadow: "0 2px 16px 0 rgba(0,0,0,0.10)", borderRadius: "4px", background: "#fff" }}>
-            {/* Inner div: full A4 size, scaled down from top-left */}
-            <div style={{ transformOrigin: "top left", transform: "scale(0.423)", width: "794px", minHeight: "1123px", position: "absolute", top: 0, left: 0, pointerEvents: "none" }}>
+            {/* Inner div: full A4 size, scaled down. cvPreviewRef attaché ici pour la capture PDF */}
+            <div
+              ref={cvPreviewRef}
+              style={{ transformOrigin: "top left", transform: "scale(0.423)", width: "794px", minHeight: "1123px", position: "absolute", top: 0, left: 0, pointerEvents: "none" }}
+            >
               <CVPreview cvData={cvData} templateId={templateId} designOptions={designOptions} standalone={false} />
             </div>
           </div>
