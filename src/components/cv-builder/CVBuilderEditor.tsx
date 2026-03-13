@@ -246,13 +246,13 @@ const StepProfile = ({ cvData, onChange }: { cvData: CVData; onChange: (d: CVDat
           <div className="relative">
             <StyledTextarea
               rows={6}
-              maxLength={600}
+              maxLength={400}
               placeholder="Ex: Diplômé d'un Master en Finance de HEC Paris, je dispose de 3 ans d'expérience en analyse financière et gestion d'actifs. Rigoureux et analytique, je recherche un poste de Analyste Senior pour accompagner la croissance d'une structure ambitieuse..."
               value={cvData.summary}
               onChange={e => onChange({ ...cvData, summary: e.target.value })}
             />
-            <div className={`absolute bottom-4 right-4 text-xs font-medium bg-white/80 px-2 py-1 rounded backdrop-blur-sm ${charCount > 550 ? "text-orange-500" : "text-slate-400"}`}>
-              {charCount}/600
+            <div className={`absolute bottom-4 right-4 text-xs font-medium bg-white/80 px-2 py-1 rounded backdrop-blur-sm ${charCount > 350 ? "text-orange-500" : "text-slate-400"}`}>
+              {charCount}/400
             </div>
           </div>
           <div className="mt-4 p-4 bg-blue-50/60 rounded-xl border border-blue-100">
