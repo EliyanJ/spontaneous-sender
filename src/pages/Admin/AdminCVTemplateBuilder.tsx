@@ -549,35 +549,213 @@ export const AdminCVTemplateBuilder = () => {
     }
   }, []);
 
-  // ── HTML Import ──────────────────────────────────────────────────────────
+  // ── HTML Import — client-side iframe DOM parser (no AI needed) ───────────
 
   const handleImportHTML = useCallback(async (file: File) => {
     if (!file) return;
-    if (file.size > 2 * 1024 * 1024) {
-      toast({ title: "Fichier trop lourd", description: "Le fichier HTML doit faire moins de 2 MB.", variant: "destructive" });
-      return;
-    }
     setIsImportingHTML(true);
     try {
       const htmlContent = await file.text();
 
-      const { data: result, error } = await supabase.functions.invoke("html-to-canvas-template", {
-        body: { htmlContent, fileName: file.name },
+      // A4 at 96dpi: 210mm × 297mm = 794px × 1123px
+      const IFRAME_W = 794;
+      const IFRAME_H = 1123;
+      const SCALE_X = CANVAS_W / IFRAME_W; // ≈ 0.749
+      const SCALE_Y = CANVAS_H / IFRAME_H; // ≈ 0.749
+
+      // Create hidden iframe and inject HTML
+      const blob = new Blob([htmlContent], { type: "text/html" });
+      const blobUrl = URL.createObjectURL(blob);
+      const iframe = document.createElement("iframe");
+      iframe.style.cssText = `position:fixed;top:-9999px;left:-9999px;width:${IFRAME_W}px;height:${IFRAME_H}px;border:none;visibility:hidden;`;
+      document.body.appendChild(iframe);
+
+      await new Promise<void>((resolve) => {
+        iframe.onload = () => setTimeout(resolve, 300); // wait for fonts/layout
+        iframe.src = blobUrl;
       });
 
-      if (error) throw new Error(error.message || "Erreur lors de l'analyse IA.");
-      if (!result?.success) throw new Error(result?.error || "Erreur lors de l'analyse IA.");
+      const doc = iframe.contentDocument!;
+      const cvPage = doc.querySelector<HTMLElement>(".cv-page, .cv-wrapper, main, body");
+      const iframeRect = iframe.getBoundingClientRect();
 
-      setConfig(result.config);
+      // Helper: get position relative to iframe viewport
+      const getPos = (el: Element) => {
+        const r = el.getBoundingClientRect();
+        // getBoundingClientRect is relative to viewport, iframe is at top=-9999 / left=-9999
+        return {
+          x: Math.round((r.left - iframeRect.left) * SCALE_X),
+          y: Math.round((r.top - iframeRect.top) * SCALE_Y),
+          w: Math.round(r.width * SCALE_X),
+          h: Math.round(r.height * SCALE_Y),
+        };
+      };
+
+      // Extract canvas background color
+      const bgColor = cvPage
+        ? getComputedStyle(cvPage).backgroundColor
+        : "rgb(255,255,255)";
+      const cssRgbToHex = (rgb: string) => {
+        const m = rgb.match(/\d+/g);
+        if (!m) return "#ffffff";
+        return "#" + m.slice(0, 3).map(n => parseInt(n).toString(16).padStart(2, "0")).join("");
+      };
+      const canvasBg = bgColor === "rgba(0, 0, 0, 0)" || bgColor === "transparent" ? "#ffffff" : cssRgbToHex(bgColor);
+
+      // Extract font family
+      const bodyFont = getComputedStyle(doc.body).fontFamily || "Arial, sans-serif";
+
+      const elements: CanvasElement[] = [];
+      let hasPhoto = false;
+      let photoRight = 0; // right edge of photo element (for contact x offset)
+
+      // 1. Photo placeholder
+      const photoEl = doc.querySelector<HTMLElement>("img.photo, img[alt*='profil'], .profile-photo, img[alt*='profile']");
+      if (photoEl) {
+        hasPhoto = true;
+        const p = getPos(photoEl);
+        photoRight = p.x + p.w;
+        elements.push({
+          id: `el-photo-${Date.now()}`,
+          type: "image",
+          x: p.x, y: p.y, width: p.w, height: p.h,
+          content: "[PHOTO]",
+          visible: true, locked: false,
+          styles: { backgroundColor: "#e0e0e0", borderRadius: 0 },
+        });
+      }
+
+      // 2. Header / Contact block
+      const headerEl = doc.querySelector<HTMLElement>(".header-content, .cv-header, header");
+      if (headerEl) {
+        const p = getPos(headerEl);
+        const cs = getComputedStyle(headerEl);
+        const color = cssRgbToHex(cs.color || "rgb(0,0,0)");
+        // If photo exists, shift x to be after photo
+        const x = hasPhoto ? photoRight + 8 : p.x;
+        const w = CANVAS_W - x - 8;
+        elements.push({
+          id: `el-contact-${Date.now()}`,
+          type: "cv-section",
+          sectionId: "contact",
+          x, y: p.y, width: w, height: p.h,
+          visible: true, locked: false,
+          styles: { backgroundColor: "transparent", color, fontSize: 10, fontFamily: bodyFont, padding: 8 },
+        });
+      }
+
+      // 3. Profile summary (div.profile-summary not inside a section)
+      const summaryDiv = doc.querySelector<HTMLElement>(".profile-summary");
+      if (summaryDiv) {
+        const p = getPos(summaryDiv);
+        const cs = getComputedStyle(summaryDiv);
+        const color = cssRgbToHex(cs.color || "rgb(0,0,0)");
+        elements.push({
+          id: `el-summary-${Date.now()}`,
+          type: "cv-section",
+          sectionId: "summary",
+          x: p.x, y: p.y, width: p.w, height: Math.max(p.h, 40),
+          visible: true, locked: false,
+          styles: { backgroundColor: "transparent", color, fontSize: 10, fontFamily: bodyFont, padding: 8 },
+        });
+      }
+
+      // 4. Sections mapping
+      const sectionMapping: [SectionId, RegExp][] = [
+        ["experiences",      /expériences?|professional\s+exp|work\s+exp/i],
+        ["entrepreneurship", /entrepreneuri|parcours\s+entrepren/i],
+        ["skills",           /compétences?|skills?|outils?/i],
+        ["education",        /formations?|certifications?|education|diplômes?/i],
+        ["target_jobs",      /métiers?|objectifs?\s+pro|postes?\s+visés?/i],
+        ["languages",        /langues?|soft\s+skills?/i],
+      ];
+
+      const seenSectionIds = new Set<string>(
+        summaryDiv ? ["summary"] : [],
+      );
+      if (headerEl) seenSectionIds.add("contact");
+
+      const allSections = Array.from(doc.querySelectorAll<HTMLElement>("section"));
+      for (const sec of allSections) {
+        const h2 = sec.querySelector("h2");
+        const h2Text = h2?.textContent?.trim() || "";
+        let sectionId: SectionId | null = null;
+        for (const [id, regex] of sectionMapping) {
+          if (regex.test(h2Text)) { sectionId = id; break; }
+        }
+        if (!sectionId || seenSectionIds.has(sectionId)) continue;
+        seenSectionIds.add(sectionId);
+
+        const p = getPos(sec);
+        const cs = getComputedStyle(sec);
+        const color = cssRgbToHex(cs.color || "rgb(0,0,0)");
+
+        // Add divider above section (where h2 border-bottom is)
+        if (h2) {
+          const h2Style = getComputedStyle(h2);
+          const hasBorder = h2Style.borderBottomWidth !== "0px" && h2Style.borderBottomStyle !== "none";
+          if (hasBorder) {
+            const h2p = getPos(h2);
+            const borderColor = cssRgbToHex(h2Style.borderBottomColor || "rgb(0,0,0)");
+            elements.push({
+              id: `el-div-${Date.now()}-${Math.random().toString(36).slice(2,5)}`,
+              type: "divider",
+              x: h2p.x, y: h2p.y + h2p.h - 2,
+              width: h2p.w, height: 2,
+              visible: true, locked: false,
+              styles: { backgroundColor: borderColor },
+            });
+          }
+        }
+
+        elements.push({
+          id: `el-${sectionId}-${Date.now()}-${Math.random().toString(36).slice(2,5)}`,
+          type: "cv-section",
+          sectionId,
+          x: p.x, y: p.y, width: p.w, height: Math.max(p.h, 40),
+          visible: true, locked: false,
+          styles: { backgroundColor: "transparent", color, fontSize: 10, fontFamily: bodyFont, padding: 8 },
+        });
+      }
+
+      // 5. Footer grid (langues + intérêts) → map to "languages" if not yet placed
+      const footerGrid = doc.querySelector<HTMLElement>(".footer-grid");
+      if (footerGrid && !seenSectionIds.has("languages")) {
+        const p = getPos(footerGrid);
+        elements.push({
+          id: `el-languages-${Date.now()}`,
+          type: "cv-section",
+          sectionId: "languages",
+          x: p.x, y: p.y, width: p.w, height: Math.max(p.h, 50),
+          visible: true, locked: false,
+          styles: { backgroundColor: "transparent", color: "#000000", fontSize: 10, fontFamily: bodyFont, padding: 8 },
+        });
+      }
+
+      // Cleanup
+      document.body.removeChild(iframe);
+      URL.revokeObjectURL(blobUrl);
+
+      const newConfig: CanvasConfig = {
+        version: "canvas-v2",
+        canvasWidth: CANVAS_W,
+        canvasHeight: CANVAS_H,
+        backgroundColor: canvasBg,
+        fontFamily: bodyFont,
+        has_photo: hasPhoto,
+        elements,
+      };
+
+      setConfig(newConfig);
       setSelectedId(null);
       toast({
-        title: `✨ Template généré — ${result.elementCount} éléments`,
-        description: "Design importé depuis le HTML. Ajustez selon vos besoins.",
+        title: `✨ Template importé — ${elements.length} éléments`,
+        description: "Positions extraites depuis le HTML. Ajustez selon vos besoins.",
       });
     } catch (err: any) {
       toast({
         title: "Erreur d'import HTML",
-        description: err.message || "Impossible d'analyser le HTML.",
+        description: err.message || "Impossible de parser le fichier HTML.",
         variant: "destructive",
       });
     } finally {
