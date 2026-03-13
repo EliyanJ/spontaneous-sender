@@ -560,6 +560,7 @@ export const CVBuilderEditor = ({
 }: CVBuilderEditorProps) => {
   const [currentStep, setCurrentStep] = useState<EditorStep>("contact");
   const [showMobilePreview, setShowMobilePreview] = useState(false);
+  const [fullscreenPreview, setFullscreenPreview] = useState(false);
   const { user } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [savedCVs, setSavedCVs] = useState<any[]>([]);
