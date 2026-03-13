@@ -275,7 +275,7 @@ export const ChatbotWidget = () => {
     }
   };
 
-  if (!user) return null;
+  // Visible pour tous (connectés ou non)
 
   return (
     <>
