@@ -1410,8 +1410,6 @@ export const AdminCVTemplateBuilder = () => {
               return (
                 <div
                   key={id}
-                  draggable
-                  onDragStart={() => { paletteDragRef.current = { type: "section", sectionId: id }; }}
                   onClick={() => addSection(id)}
                   className={cn(
                     "flex items-center gap-2 px-2 py-1.5 rounded-md border cursor-pointer transition-colors group select-none",
