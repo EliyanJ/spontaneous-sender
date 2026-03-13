@@ -1,36 +1,29 @@
 // ══════════════════════════════════════════════════════════
 // CVExportButtons.tsx
-// Boutons "Télécharger en PDF" + "Télécharger en Word"
-// Props: previewRef (DOM React), templateHtml (fallback html-v1), cvData, userName?
+// Bouton "Télécharger en Word"
 // ══════════════════════════════════════════════════════════
 
 import React, { useState } from "react";
-import { Download, FileText, Loader2 } from "lucide-react";
+import { FileText, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import type { TemplateCVData } from "@/lib/cv-templates/injectCVData";
-import { exportCVToPdfFromElement, exportCVToPdf } from "@/lib/cv-export/exportPdf";
 import { exportCVToDocx } from "@/lib/cv-export/exportDocx";
 import { extractStyleFromTemplate } from "@/lib/cv-export/extractStyleFromTemplate";
 
 interface CVExportButtonsProps {
-  /** Ref vers l'élément DOM React déjà rendu (CVPreview 794×1123) */
   previewRef?: React.RefObject<HTMLDivElement>;
-  /** HTML brut du template html-v1 (fallback si pas de previewRef) */
   templateHtml?: string;
   cvData: TemplateCVData;
   userName?: string;
-  /** Affichage en mode "plein" (default) ou "compact" pour le footer */
   compact?: boolean;
 }
 
 export const CVExportButtons: React.FC<CVExportButtonsProps> = ({
-  previewRef,
   templateHtml = "",
   cvData,
   userName,
   compact = false,
 }) => {
-  const [loadingPdf, setLoadingPdf] = useState(false);
   const [loadingDocx, setLoadingDocx] = useState(false);
 
   const baseName = userName
