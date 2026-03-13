@@ -660,7 +660,7 @@ export const CVPreview = ({ cvData, templateId = "classic", designOptions, stand
   // Mode intégré (colonne droite du builder) : contenu brut uniquement, pas de header ni de scale
   if (!standalone) {
     return (
-      <div ref={previewRef} style={{ width: "794px", minHeight: "1123px" }}>
+      <div ref={previewRef} style={{ width: "794px", height: "1123px", overflow: "hidden" }}>
         {renderTemplate()}
       </div>
     );
