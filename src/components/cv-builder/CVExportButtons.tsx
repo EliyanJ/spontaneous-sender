@@ -1,19 +1,22 @@
 // ══════════════════════════════════════════════════════════
 // CVExportButtons.tsx
 // Boutons "Télécharger en PDF" + "Télécharger en Word"
-// Props: templateHtml, cvData (TemplateCVData), userName?
+// Props: previewRef (DOM React), templateHtml (fallback html-v1), cvData, userName?
 // ══════════════════════════════════════════════════════════
 
 import React, { useState } from "react";
 import { Download, FileText, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import type { TemplateCVData } from "@/lib/cv-templates/injectCVData";
-import { exportCVToPdf } from "@/lib/cv-export/exportPdf";
+import { exportCVToPdfFromElement, exportCVToPdf } from "@/lib/cv-export/exportPdf";
 import { exportCVToDocx } from "@/lib/cv-export/exportDocx";
 import { extractStyleFromTemplate } from "@/lib/cv-export/extractStyleFromTemplate";
 
 interface CVExportButtonsProps {
-  templateHtml: string;
+  /** Ref vers l'élément DOM React déjà rendu (CVPreview 794×1123) */
+  previewRef?: React.RefObject<HTMLDivElement>;
+  /** HTML brut du template html-v1 (fallback si pas de previewRef) */
+  templateHtml?: string;
   cvData: TemplateCVData;
   userName?: string;
   /** Affichage en mode "plein" (default) ou "compact" pour le footer */
@@ -21,7 +24,8 @@ interface CVExportButtonsProps {
 }
 
 export const CVExportButtons: React.FC<CVExportButtonsProps> = ({
-  templateHtml,
+  previewRef,
+  templateHtml = "",
   cvData,
   userName,
   compact = false,
@@ -34,23 +38,41 @@ export const CVExportButtons: React.FC<CVExportButtonsProps> = ({
     : "CV";
 
   const handlePdf = async () => {
-    if (!templateHtml) {
-      toast.error("Aucun template sélectionné pour l'export PDF");
-      return;
-    }
     setLoadingPdf(true);
     try {
-      await exportCVToPdf({
-        templateHtml,
-        cvData,
-        fileName: `${baseName}.pdf`,
-        onProgress: (step) => {
-          if (step === "rendering") toast.loading("Génération du PDF en cours...", { id: "pdf-export" });
-          if (step === "done") toast.dismiss("pdf-export");
-        },
-      });
-      toast.success("PDF téléchargé avec succès !");
+      // Mode 1 : capture du DOM React déjà rendu (templates canvas-v2 + legacy)
+      if (previewRef?.current) {
+        await exportCVToPdfFromElement({
+          element: previewRef.current,
+          fileName: `${baseName}.pdf`,
+          onProgress: (step) => {
+            if (step === "rendering") toast.loading("Rendu du CV en cours...", { id: "pdf-export" });
+            if (step === "generating") toast.loading("Génération PDF...", { id: "pdf-export" });
+            if (step === "done") toast.dismiss("pdf-export");
+          },
+        });
+        toast.success("PDF téléchargé avec succès !");
+        return;
+      }
+
+      // Mode 2 : fallback html-v1 (reconstruction HTML)
+      if (templateHtml) {
+        await exportCVToPdf({
+          templateHtml,
+          cvData,
+          fileName: `${baseName}.pdf`,
+          onProgress: (step) => {
+            if (step === "rendering") toast.loading("Génération du PDF en cours...", { id: "pdf-export" });
+            if (step === "done") toast.dismiss("pdf-export");
+          },
+        });
+        toast.success("PDF téléchargé avec succès !");
+        return;
+      }
+
+      toast.error("Aucun aperçu disponible pour l'export PDF. Vérifiez que le template est bien chargé.");
     } catch (err: any) {
+      toast.dismiss("pdf-export");
       toast.error("Erreur lors de l'export PDF : " + (err?.message || "Erreur inconnue"));
     } finally {
       setLoadingPdf(false);
