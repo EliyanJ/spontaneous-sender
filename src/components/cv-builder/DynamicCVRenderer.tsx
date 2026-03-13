@@ -238,7 +238,12 @@ const renderSection = (section: TemplateSection, cvData: CVData, config: Templat
 
 // ─── Canvas element renderer (new v2) ─────────────────────────────────────────
 
-const renderCanvasElementForExport = (el: CanvasElement, cvData: CVData): React.ReactNode => {
+const renderCanvasElementForExport = (
+  el: CanvasElement,
+  cvData: CVData,
+  photoUrl?: string,
+  accentColor?: string,
+): React.ReactNode => {
   if (el.visible === false) return null;
   const style: React.CSSProperties = {
     position: "absolute",
@@ -301,8 +306,35 @@ const renderCanvasElementForExport = (el: CanvasElement, cvData: CVData): React.
     );
   }
 
+  // ── Photo placeholder → rendu de la vraie photo utilisateur ──────────────────
+  if (el.type === "image") {
+    const isPhoto = el.content === "[PHOTO]";
+    if (isPhoto && photoUrl) {
+      return (
+        <div key={el.id} style={{ ...style, borderRadius: el.styles.borderRadius ? `${el.styles.borderRadius}px` : "50%" }}>
+          <img
+            src={photoUrl}
+            alt="Photo profil"
+            style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "inherit", display: "block" }}
+          />
+        </div>
+      );
+    }
+    // Pas de photo : placeholder neutre (transparent, invisible dans le rendu final)
+    return (
+      <div key={el.id} style={{
+        ...style,
+        backgroundColor: "transparent",
+        borderRadius: el.styles.borderRadius ? `${el.styles.borderRadius}px` : "50%",
+      }} />
+    );
+  }
+
   if (el.type === "cv-section" && el.sectionId) {
     const sectionId = el.sectionId as SectionId;
+    // Utiliser accentColor de designOptions si disponible, sinon fallback sur styles de l'élément
+    const resolvedAccent = accentColor ?? el.styles.backgroundColor ?? "#c9a84c";
+
     const sectionStyle: React.CSSProperties = {
       ...style,
       backgroundColor: el.styles.backgroundColor ?? "transparent",
@@ -337,7 +369,7 @@ const renderCanvasElementForExport = (el: CanvasElement, cvData: CVData): React.
       mainBg: "#ffffff",
       fontFamily: el.styles.fontFamily ?? "Helvetica, Arial, sans-serif",
       primaryColor: "#0f1b3d",
-      accentColor: "#c9a84c",
+      accentColor: resolvedAccent,
       textColor: el.styles.color ?? "#1a1a2e",
       sections: [legacySection],
     };
