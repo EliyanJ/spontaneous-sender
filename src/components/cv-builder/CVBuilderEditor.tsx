@@ -3,8 +3,10 @@ import {
   User, AlignLeft, Briefcase, GraduationCap, Star, Check,
   ChevronDown, ChevronUp, Plus, Trash2, Eye, X,
   Camera, Loader2, Sparkles, ArrowLeft, ArrowRight,
-  Upload, FileText, Database, Download, FileDown
+  Upload, FileText, Database, Download, FileDown, Maximize2
 } from "lucide-react";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -558,6 +560,7 @@ export const CVBuilderEditor = ({
 }: CVBuilderEditorProps) => {
   const [currentStep, setCurrentStep] = useState<EditorStep>("contact");
   const [showMobilePreview, setShowMobilePreview] = useState(false);
+  const [fullscreenPreview, setFullscreenPreview] = useState(false);
   const { user } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [savedCVs, setSavedCVs] = useState<any[]>([]);
@@ -861,31 +864,67 @@ export const CVBuilderEditor = ({
       </main>
 
       {/* ── RIGHT PREVIEW PANEL (lg+ screens) ── */}
-      <aside className="hidden lg:flex flex-col w-[300px] shrink-0 bg-[#F8FAFC] border-l border-[#E2E8F0] h-screen sticky top-0 overflow-hidden">
+      <aside className="hidden lg:flex flex-col w-[300px] shrink-0 bg-slate-50 border-l border-border h-screen sticky top-0 overflow-hidden">
         {/* Header */}
-        <div className="px-4 py-3 border-b border-[#E2E8F0] bg-white flex items-center justify-between shrink-0">
+        <div className="px-4 py-3 border-b border-border bg-background flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Aperçu en temps réel</span>
+            <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Aperçu temps réel</span>
           </div>
-          <span className="text-[10px] text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">Format A4</span>
+          <div className="flex items-center gap-1.5">
+            <span className="text-[10px] text-muted-foreground bg-muted px-2 py-0.5 rounded-full">Format A4</span>
+            <button
+              onClick={() => setFullscreenPreview(true)}
+              title="Voir en plein écran"
+              className="p-1 rounded-md hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
+            >
+              <Maximize2 className="h-3.5 w-3.5" />
+            </button>
+          </div>
         </div>
 
-        {/* Scrollable preview area */}
+        {/* Scrollable preview area — large hitbox via ScrollArea */}
         {/* Column inner width = 300px - 24px padding = 276px → scale = 276/794 ≈ 0.348 */}
-        <div className="flex-1 overflow-y-auto bg-slate-100 px-3 py-4">
-          {/* Outer wrapper: exact size of the scaled A4 sheet, centered */}
-          <div style={{ width: "276px", height: `${Math.round(1123 * 0.348)}px`, overflow: "hidden", position: "relative", margin: "0 auto", boxShadow: "0 2px 16px 0 rgba(0,0,0,0.10)", borderRadius: "4px", background: "#fff" }}>
-            {/* Inner div: full A4 size, scaled down. cvPreviewRef attaché ici pour la capture PDF */}
-            <div
-              ref={cvPreviewRef}
-              style={{ transformOrigin: "top left", transform: "scale(0.348)", width: "794px", minHeight: "1123px", position: "absolute", top: 0, left: 0, pointerEvents: "none" }}
-            >
-              <CVPreview cvData={cvData} templateId={templateId} designOptions={designOptions} standalone={false} />
+        <ScrollArea className="flex-1 bg-slate-100">
+          <div className="px-3 py-4">
+            <div style={{ width: "276px", height: `${Math.round(1123 * 0.348)}px`, overflow: "hidden", position: "relative", margin: "0 auto", boxShadow: "0 2px 16px 0 rgba(0,0,0,0.10)", borderRadius: "4px", background: "#fff" }}>
+              <div
+                ref={cvPreviewRef}
+                style={{ transformOrigin: "top left", transform: "scale(0.348)", width: "794px", minHeight: "1123px", position: "absolute", top: 0, left: 0, pointerEvents: "none" }}
+              >
+                <CVPreview cvData={cvData} templateId={templateId} designOptions={designOptions} standalone={false} />
+              </div>
             </div>
           </div>
-        </div>
+        </ScrollArea>
       </aside>
+
+      {/* ── FULLSCREEN PREVIEW MODAL ── */}
+      <Dialog open={fullscreenPreview} onOpenChange={setFullscreenPreview}>
+        <DialogContent className="max-w-none w-screen h-screen p-0 m-0 rounded-none border-0 flex flex-col bg-slate-100">
+          {/* Modal header */}
+          <div className="flex items-center justify-between px-6 py-3 bg-background border-b border-border shrink-0">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+              <span className="text-sm font-bold text-muted-foreground uppercase tracking-wider">Aperçu en plein écran — Format A4</span>
+            </div>
+            <button
+              onClick={() => setFullscreenPreview(false)}
+              className="p-2 rounded-md hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+          {/* Scrollable A4 centered */}
+          <ScrollArea className="flex-1">
+            <div className="flex justify-center py-8 px-4">
+              <div style={{ width: "794px", minHeight: "1123px", background: "#fff", boxShadow: "0 4px 40px rgba(0,0,0,0.18)", borderRadius: "4px" }}>
+                <CVPreview cvData={cvData} templateId={templateId} designOptions={designOptions} standalone={false} />
+              </div>
+            </div>
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
