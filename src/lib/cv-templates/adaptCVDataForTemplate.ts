@@ -72,6 +72,7 @@ function formatSkillsForTemplate(
   // gauche→droite sans trous ni lignes vides.
   return tech
     .filter((s) => s?.trim())
+    .slice(0, 16) // Max 16 compétences = 4 colonnes × 4 rangées
     .map((skill, i) => ({
       category: i === 0 ? "Compétences techniques" : "",
       skill_name: skill,

@@ -404,13 +404,21 @@ export const CVBuilderForm = ({
         <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Compétences</h3>
         <div className="space-y-2">
           <div>
-            <Label className="text-xs">Techniques (séparées par des virgules)</Label>
+            <div className="flex items-center justify-between mb-1">
+              <Label className="text-xs">Techniques (séparées par des virgules)</Label>
+              <span className={`text-xs ${cvData.skills.technical.length > 12 ? "text-orange-500 font-medium" : "text-muted-foreground"}`}>
+                {cvData.skills.technical.length}/16 recommandées
+              </span>
+            </div>
             <Input
               value={cvData.skills.technical.join(", ")}
               onChange={(e) => onChange({ ...cvData, skills: { ...cvData.skills, technical: e.target.value.split(",").map(s => s.trim()).filter(Boolean) } })}
               className="h-8 text-sm"
               placeholder="Excel, Python, SQL..."
             />
+            {cvData.skills.technical.length > 12 && (
+              <p className="text-xs text-orange-500 mt-1">⚠ Au-delà de 16, les compétences seront coupées dans le CV.</p>
+            )}
           </div>
           <div>
             <Label className="text-xs">Soft skills (séparées par des virgules)</Label>
