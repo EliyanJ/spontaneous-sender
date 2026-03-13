@@ -170,7 +170,7 @@ export const AdminATSTraining = () => {
       .select("*")
       .order("analysis_count", { ascending: false })
       .limit(50);
-    if (data) setClusters(data as JobCluster[]);
+    if (data) setClusters((data as unknown) as JobCluster[]);
   };
 
   const updateClusterThreshold = async (newThreshold: number) => {
@@ -189,7 +189,7 @@ export const AdminATSTraining = () => {
     loadClusters();
   };
 
-
+  const loadAnalyses = async () => {
     setLoading(true);
     let query = supabase.from("cv_analyses").select("*").order("created_at", { ascending: false }).limit(100);
     if (filterReviewed === "unreviewed") query = query.eq("admin_reviewed", false);

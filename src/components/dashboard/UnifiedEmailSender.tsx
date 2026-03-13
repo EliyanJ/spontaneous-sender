@@ -811,21 +811,18 @@ export const UnifiedEmailSender = () => {
         totalItems={selectedCompanies.size}
       />
 
-      {/* 2-Column Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-
-        {/* ===== LEFT PANEL (col-span-4) ===== */}
+        {/* LEFT PANEL */}
         <div className="lg:col-span-4 space-y-6">
-
-          {/* Gmail Status Card */}
-          <div className="bg-[#121215]/60 backdrop-blur-xl border border-white/[0.08] rounded-2xl p-5 relative overflow-hidden group">
+          {/* Gmail Status */}
+          <div className="bg-card border border-border rounded-2xl p-5 relative overflow-hidden group">
             <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
-              <Mail className="h-16 w-16 text-white" />
+              <Mail className="h-16 w-16 text-foreground" />
             </div>
             <div className="flex items-center justify-between relative z-10">
               {checkingGmail ? (
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-muted/30 flex items-center justify-center border border-white/10">
+                  <div className="w-10 h-10 rounded-full bg-muted/30 flex items-center justify-center border border-border">
                     <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
                   </div>
                   <span className="text-sm text-muted-foreground">Vérification...</span>
@@ -834,17 +831,17 @@ export const UnifiedEmailSender = () => {
                 <>
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center border border-green-500/30">
-                      <Mail className="h-5 w-5 text-green-400" />
+                      <Mail className="h-5 w-5 text-green-500" />
                     </div>
                     <div>
-                      <h3 className="text-sm font-medium text-gray-200">Compte Gmail</h3>
+                      <h3 className="text-sm font-medium text-foreground">Compte Gmail</h3>
                       <div className="flex items-center gap-1.5 mt-0.5">
                         <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                        <span className="text-xs text-green-400 font-medium">Connecté</span>
+                        <span className="text-xs text-green-500 font-medium">Connecté</span>
                       </div>
                     </div>
                   </div>
-                  <Button variant="ghost" size="icon" onClick={checkGmailConnection} className="text-muted-foreground hover:text-white">
+                  <Button variant="ghost" size="icon" onClick={checkGmailConnection} className="text-muted-foreground hover:text-foreground">
                     <RefreshCw className="h-4 w-4" />
                   </Button>
                 </>
@@ -854,7 +851,486 @@ export const UnifiedEmailSender = () => {
                     <AlertCircle className="h-5 w-5 text-destructive" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="text-sm font-medium text-gray-200">Gmail non connecté</h3>
+                    <h3 className="text-sm font-medium text-foreground">Gmail non connecté</h3>
+                    <Button variant="default" size="sm" className="mt-2" onClick={() => window.location.href = '/connect-gmail?returnTo=' + encodeURIComponent('/dashboard?tab=emails&emailsSection=send')}>
+                      <Mail className="mr-2 h-4 w-4" />Connecter Gmail
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Recipients */}
+          <div className="bg-card border border-border rounded-2xl p-5 flex flex-col">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="font-semibold text-foreground flex items-center gap-2">
+                <Building2 className="h-4 w-4 text-indigo-500" />Destinataires
+              </h3>
+              <div className="text-xs text-muted-foreground bg-muted/50 px-2 py-1 rounded border border-border">
+                <span className="text-indigo-500 font-bold">{selectedCount}</span>/{companies.length} sélectionnée(s)
+                {manualCount > 0 && <span className="ml-1">+ {manualCount} manuel(s)</span>}
+              </div>
+            </div>
+            <div className="mb-3 relative">
+              <Input type="email" value={manualEmail} onChange={(e) => setManualEmail(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleAddManualRecipient(); } }} placeholder="Ajouter un email manuellement..." className="pr-10 text-sm" />
+              <Button variant="ghost" size="icon" className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 text-muted-foreground hover:text-indigo-500" onClick={handleAddManualRecipient}><Plus className="h-4 w-4" /></Button>
+            </div>
+            {manualRecipients.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 mb-3">
+                {manualRecipients.map((email) => (
+                  <Badge key={email} variant="secondary" className="gap-1 text-xs bg-indigo-500/10 border-indigo-500/20 text-indigo-500">
+                    <span className="max-w-[160px] truncate">{email}</span>
+                    <Button variant="ghost" size="icon" className="h-4 w-4 p-0" onClick={() => handleRemoveManualRecipient(email)}><X className="h-3 w-3" /></Button>
+                  </Badge>
+                ))}
+              </div>
+            )}
+            <ScrollArea className="h-[300px] lg:h-[260px] pr-1">
+              {companies.length === 0 ? (
+                <p className="text-muted-foreground text-center py-8 text-sm">Aucune entreprise avec email. Recherchez d'abord des contacts.</p>
+              ) : (
+                <div className="space-y-2">
+                  {companies.map(company => {
+                    const isSelected = selectedCompanies.has(company.id);
+                    return (
+                      <div key={company.id} className={cn("p-3 rounded-xl flex items-start gap-3 cursor-pointer transition-all border", isSelected ? "border-indigo-500/30 bg-indigo-500/10 hover:bg-indigo-500/15" : "border-border bg-muted/20 opacity-70 hover:opacity-100 hover:bg-muted/40")} onClick={() => handleSelectCompany(company.id)}>
+                        <div className="mt-0.5"><Checkbox checked={isSelected} onChange={() => {}} /></div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between">
+                            <span className="font-medium text-sm text-foreground truncate">{company.nom}</span>
+                            {company.libelle_ape && <span className="text-[10px] bg-indigo-500/20 text-indigo-500 px-1.5 py-0.5 rounded border border-indigo-500/20 shrink-0 ml-2">{company.libelle_ape.substring(0, 20)}</span>}
+                          </div>
+                          <div className="text-xs text-muted-foreground truncate mt-0.5">{company.selected_email}</div>
+                          <div className="flex items-center gap-2 mt-1">
+                            {company.website_url && <span className="text-[10px] text-muted-foreground flex items-center gap-1"><Globe className="h-[9px] w-[9px]" />{new URL(company.website_url).hostname}</span>}
+                            {company.ville && <span className="text-[10px] text-muted-foreground flex items-center gap-1">📍 {company.ville}</span>}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </ScrollArea>
+            <div className="mt-4 pt-3 border-t border-border flex justify-between items-center">
+              <button className="text-xs text-indigo-500 hover:text-indigo-400 font-semibold" onClick={handleSelectAll}>{selectedCompanies.size === companies.length ? "Désélectionner tout" : "Tout sélectionner"}</button>
+              <button className="text-xs text-muted-foreground hover:text-foreground" onClick={() => { setSelectedCompanies(new Set()); setManualRecipients([]); }}>Vider la liste</button>
+            </div>
+          </div>
+
+          {/* AI Options */}
+          {isPremium ? (
+            <div className="bg-card border border-border rounded-2xl p-5 relative overflow-hidden">
+              <div className="absolute -top-10 -right-10 w-32 h-32 bg-indigo-600/20 rounded-full blur-3xl pointer-events-none" />
+              <div className="flex justify-between items-center mb-5 relative z-10">
+                <h3 className="font-semibold text-foreground flex items-center gap-2"><Sparkles className="h-4 w-4 text-purple-500" />Options IA</h3>
+                <span className="text-[10px] font-bold bg-gradient-to-r from-amber-200 to-yellow-400 text-black px-2 py-0.5 rounded-full uppercase tracking-wider">Premium</span>
+              </div>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-indigo-500/20 flex items-center justify-center text-indigo-500"><Mail className="h-4 w-4" /></div>
+                    <div>
+                      <div className="text-sm font-semibold text-foreground">Emails personnalisés</div>
+                      <div className="text-xs text-muted-foreground">Génération unique par entreprise</div>
+                    </div>
+                  </div>
+                  <Switch checked={enableAIEmails} onCheckedChange={setEnableAIEmails} />
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center text-purple-500"><FileText className="h-4 w-4" /></div>
+                    <div>
+                      <div className="text-sm font-semibold text-foreground">Lettres de motivation</div>
+                      <div className="text-xs text-muted-foreground">PDF généré et attaché</div>
+                    </div>
+                  </div>
+                  <Switch checked={enableCoverLetter} onCheckedChange={setEnableCoverLetter} />
+                </div>
+                <div className="h-px bg-border my-2" />
+                {enableAIEmails && (
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-tight mb-1.5 block">Approche</Label>
+                      <Select value={selectedSubjectType} onValueChange={setSelectedSubjectType}>
+                        <SelectTrigger className="text-xs"><SelectValue /></SelectTrigger>
+                        <SelectContent>{SUBJECT_TYPES.map(t => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}</SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-tight mb-1.5 block">Ton</Label>
+                      <Select value={selectedTone} onValueChange={setSelectedTone}>
+                        <SelectTrigger className="text-xs"><SelectValue /></SelectTrigger>
+                        <SelectContent>{TONE_OPTIONS.map(t => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}</SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : (
+            <UpgradeBanner variant="compact" title="Personnalisation IA" description="Passez au plan Plus pour générer des emails personnalisés avec l'IA" features={["Emails adaptés à chaque entreprise","Lettres de motivation générées","Scraping du site web pour personnalisation"]} />
+          )}
+
+          {/* Generate Button */}
+          <div className="pt-2">
+            <Button onClick={handleGenerate} disabled={isPrepareDisabled} className="w-full bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-bold py-4 px-6 rounded-xl shadow-lg shadow-indigo-500/20 transition-all transform hover:scale-[1.01] gap-2 group h-auto" size="lg">
+              {isGenerating ? <Loader2 className="h-5 w-5 animate-spin" /> : <Sparkles className="h-5 w-5 group-hover:animate-pulse" />}
+              {isAiMode ? (selectedCount > 0 && manualCount > 0 ? `Générer pour ${selectedCount} entreprise(s) + ${manualCount} email(s)` : selectedCount > 0 ? `Générer pour ${selectedCount} entreprise(s)` : `Générer pour ${manualCount} email(s) manuel(s)`) : `Préparer ${prepareCount} email(s)`}
+            </Button>
+          </div>
+        </div>
+
+        {/* RIGHT PANEL */}
+        <div className="lg:col-span-8 flex flex-col gap-6">
+          {/* Tabs */}
+          <div className="bg-card border border-border rounded-xl p-1 inline-flex self-start">
+            <button onClick={() => setActiveTab("config")} className={cn("px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-all", activeTab === "config" ? "bg-indigo-500/20 text-indigo-500 shadow-sm border border-indigo-500/20" : "text-muted-foreground hover:text-foreground")}>
+              <Edit3 className="h-4 w-4" />Configuration
+            </button>
+            <button onClick={() => setActiveTab("preview")} className={cn("px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-all", activeTab === "preview" ? "bg-indigo-500/20 text-indigo-500 shadow-sm border border-indigo-500/20" : "text-muted-foreground hover:text-foreground")}>
+              <Eye className="h-4 w-4" />Prévisualisation
+              {successfulEmails.length > 0 && <span className="bg-indigo-500 text-white text-[10px] px-1.5 rounded-full ml-1">{successfulEmails.length}</span>}
+            </button>
+          </div>
+
+          {/* CONFIG TAB */}
+          {activeTab === "config" && (
+            <div className="space-y-6">
+              {(enableAIEmails || enableCoverLetter) && (
+                <div className="bg-card border border-border rounded-2xl p-6 space-y-5">
+                  <h3 className="font-semibold text-foreground">Configuration IA</h3>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-sm">Votre CV / Profil</Label>
+                      {savedCvProfiles.length > 0 && (
+                        <Select value={selectedCvProfileId} onValueChange={handleLoadCvProfile}>
+                          <SelectTrigger className="w-[180px] text-xs"><FolderOpen className="h-4 w-4 mr-2" /><SelectValue placeholder="Charger..." /></SelectTrigger>
+                          <SelectContent>{savedCvProfiles.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}</SelectContent>
+                        </Select>
+                      )}
+                    </div>
+                    <div className="flex gap-2">
+                      <Input type="file" accept=".pdf,.docx,.txt" onChange={handleCvUpload} className="hidden" id="cv-upload-unified" disabled={isParsingCv} />
+                      <Button variant="outline" onClick={() => document.getElementById("cv-upload-unified")?.click()} disabled={isParsingCv} className="gap-2">
+                        {isParsingCv ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}Importer CV
+                      </Button>
+                      <Button variant="outline" size="icon" onClick={() => setShowSaveProfileDialog(true)} disabled={!cvContent.trim()}><Save className="h-4 w-4" /></Button>
+                    </div>
+                    <Textarea value={cvContent} onChange={(e) => setCvContent(e.target.value)} placeholder="Collez vos compétences et expériences..." rows={4} />
+                  </div>
+                  {enableAIEmails && (
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-sm">Style d'email souhaité</Label>
+                        {savedTemplates.length > 0 && (
+                          <Select value={selectedTemplateId} onValueChange={handleLoadTemplate}>
+                            <SelectTrigger className="w-[180px] text-xs"><FolderOpen className="h-4 w-4 mr-2" /><SelectValue placeholder="Charger..." /></SelectTrigger>
+                            <SelectContent>{savedTemplates.map(t => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}</SelectContent>
+                          </Select>
+                        )}
+                      </div>
+                      <div className="flex gap-2">
+                        <Textarea value={template} onChange={(e) => setTemplate(e.target.value)} placeholder="Décrivez le style d'email souhaité..." rows={3} className="flex-1" />
+                        <Button variant="outline" size="icon" onClick={() => setShowSaveTemplateDialog(true)} disabled={!template.trim()}><Save className="h-4 w-4" /></Button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+              {!enableAIEmails && (
+                <div className="bg-card border border-border rounded-2xl p-6 space-y-5">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-semibold text-foreground">Contenu de l'email</h3>
+                    <div className="flex gap-2">
+                      {savedTemplates.length > 0 && (
+                        <Select value="" onValueChange={(templateId) => {
+                          const tpl = savedTemplates.find(t => t.id === templateId);
+                          if (tpl) {
+                            const lines = tpl.content.split('\n');
+                            const subjectLine = lines.find(l => l.toLowerCase().startsWith('objet:') || l.toLowerCase().startsWith('subject:'));
+                            if (subjectLine) { setSubject(subjectLine.replace(/^(objet|subject):\s*/i, '').trim()); setBody(lines.filter(l => l !== subjectLine).join('\n').trim()); } else { setBody(tpl.content); }
+                            toast({ title: `Template "${tpl.name}" chargé` });
+                          }
+                        }}>
+                          <SelectTrigger className="w-[180px] text-xs"><FolderOpen className="h-4 w-4 mr-2" /><SelectValue placeholder="Charger un template" /></SelectTrigger>
+                          <SelectContent>{savedTemplates.map(t => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}</SelectContent>
+                        </Select>
+                      )}
+                    </div>
+                  </div>
+                  <div>
+                    <Label className="text-sm text-muted-foreground">Objet</Label>
+                    <Input value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="Candidature spontanée - [Votre profil]" className="mt-1.5" />
+                  </div>
+                  <div>
+                    <Label className="text-sm text-muted-foreground">Message</Label>
+                    <Textarea value={body} onChange={(e) => setBody(e.target.value)} placeholder="Écrivez votre email..." rows={8} className="mt-1.5" />
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {['{entreprise}', '{ville}', '{secteur}'].map(v => (
+                        <Badge key={v} variant="outline" className="text-xs bg-indigo-500/10 text-indigo-500 border-indigo-500/20 cursor-pointer hover:bg-indigo-500/20" onClick={() => setBody(prev => prev + ' ' + v)}>{v}</Badge>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <Label className="text-sm text-muted-foreground">Pièces jointes</Label>
+                    <Input type="file" multiple onChange={handleFileChange} className="hidden" id="attachments-unified" />
+                    <Button variant="outline" onClick={() => document.getElementById("attachments-unified")?.click()} className="w-full mt-1.5 border-dashed">
+                      <Upload className="mr-2 h-4 w-4" />Ajouter des fichiers
+                    </Button>
+                    {attachments.length > 0 && (
+                      <div className="mt-2 space-y-1">
+                        {attachments.map((file, i) => (
+                          <Badge key={i} variant="secondary" className="w-full justify-between">
+                            <span className="truncate">{file.name}</span>
+                            <X className="h-3 w-3 cursor-pointer" onClick={() => setAttachments(attachments.filter((_, idx) => idx !== i))} />
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <Button variant="outline" onClick={() => { if (!subject.trim() && !body.trim()) { toast({ title: "Écrivez d'abord un email", variant: "destructive" }); return; } const templateContent = subject.trim() ? `Objet: ${subject}\n\n${body}` : body; setTemplate(templateContent); setShowSaveTemplateDialog(true); }} disabled={!subject.trim() && !body.trim()} className="w-full gap-2">
+                    <Save className="h-4 w-4" />Sauvegarder comme template
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* PREVIEW TAB */}
+          {activeTab === "preview" && (
+            <div className="flex-1 space-y-4">
+              {generatedEmails.length > 0 && (
+                <div className="flex justify-end">
+                  <Button variant="outline" size="sm" onClick={handleForceRegenerate} className="gap-2"><RefreshCw className="h-4 w-4" />Regénérer tout</Button>
+                </div>
+              )}
+              {generatedEmails.map(email => (
+                <div key={email.company_id} className={cn("bg-card rounded-2xl overflow-hidden border", email.success ? "border-border" : "border-destructive/20")}>
+                  <div className={cn("px-6 py-4 border-b flex justify-between items-center", email.success ? "bg-card border-border/50" : "bg-destructive/5 border-destructive/10")}>
+                    <div className="flex items-center gap-3">
+                      <div className={cn("w-8 h-8 rounded-full flex items-center justify-center border", email.success ? "bg-green-500/20 border-green-500/30 text-green-500" : "bg-destructive/20 border-destructive/30 text-destructive")}>
+                        {email.success ? <CheckCircle className="h-4 w-4" /> : <XCircle className="h-4 w-4" />}
+                      </div>
+                      <div>
+                        <h4 className="font-semibold text-foreground text-sm">{email.company_name}</h4>
+                        {email.success ? <p className="text-xs text-muted-foreground">{email.company_email}</p> : <p className="text-xs text-destructive flex items-center gap-1"><AlertCircle className="h-3 w-3" />{email.error || "Erreur de génération"}</p>}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {email.coverLetter && <Badge variant="outline" className="text-[10px] bg-purple-500/10 text-purple-500 border-purple-500/20 gap-1"><FileText className="h-3 w-3" />Lettre jointe</Badge>}
+                      {email.success ? (
+                        <>
+                          <div className="h-4 w-px bg-border mx-1" />
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => setPreviewEmail(email)}><Eye className="h-4 w-4" /></Button>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-indigo-500" onClick={() => handleEditEmail(email)}><Edit3 className="h-4 w-4" /></Button>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => handleRemoveGeneratedEmail(email.company_id)}><X className="h-4 w-4" /></Button>
+                        </>
+                      ) : (
+                        <Button variant="outline" size="sm" className="text-xs border-destructive/30 text-destructive hover:bg-destructive/10" onClick={() => handleEditEmail({ ...email, success: true, subject: subject || "Candidature spontanée", body: body || "" })}>Corriger manuellement</Button>
+                      )}
+                    </div>
+                  </div>
+                  {email.success && (
+                    <div className="p-6 bg-muted/10">
+                      <div className="mb-3">
+                        <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mr-2">Objet:</span>
+                        <span className="text-sm text-foreground font-medium">{email.subject}</span>
+                      </div>
+                      <div className="text-sm text-muted-foreground leading-relaxed line-clamp-2">{email.body?.substring(0, 200)}...</div>
+                    </div>
+                  )}
+                </div>
+              ))}
+              {generatedEmails.length === 0 && (
+                <div className="bg-card border border-border rounded-2xl p-12 text-center">
+                  <Mail className="h-12 w-12 text-muted-foreground/30 mx-auto mb-4" />
+                  <p className="text-muted-foreground">Aucun email généré. Sélectionnez des destinataires et cliquez sur "Générer".</p>
+                </div>
+              )}
+              {successfulEmails.length > 0 && (
+                <div className="bg-card border border-border rounded-2xl p-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div>
+                      <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2"><Send className="h-4 w-4 text-indigo-500" />Paramètres d'envoi</h3>
+                      <RadioGroup value={sendMode} onValueChange={(v: 'now' | 'scheduled') => setSendMode(v)} className="space-y-3">
+                        <label className="flex items-center p-3 border border-border rounded-xl cursor-pointer hover:bg-muted/20 transition-colors group">
+                          <RadioGroupItem value="now" id="now-radio" />
+                          <div className="ml-3">
+                            <span className="block text-sm font-medium text-foreground">Envoyer maintenant</span>
+                            <span className="block text-xs text-muted-foreground">Les emails partiront immédiatement</span>
+                          </div>
+                        </label>
+                        <label className="flex items-center p-3 border border-border rounded-xl cursor-pointer hover:bg-muted/20 transition-colors group">
+                          <RadioGroupItem value="scheduled" id="scheduled-radio" />
+                          <div className="ml-3">
+                            <span className="block text-sm font-medium text-foreground">Programmer l'envoi</span>
+                            <span className="block text-xs text-muted-foreground">Choisissez la date et l'heure</span>
+                          </div>
+                        </label>
+                      </RadioGroup>
+                      {sendMode === 'scheduled' && (
+                        <div className="mt-4 pl-4 border-l-2 border-indigo-500/20 space-y-4">
+                          <div className="space-y-2">
+                            <Label className="text-sm">Date</Label>
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <Button variant="outline" className={cn("w-full justify-start", !scheduledDate && "text-muted-foreground")}>
+                                  <CalendarIcon className="mr-2 h-4 w-4" />{scheduledDate ? format(scheduledDate, "PPP", { locale: fr }) : "Choisir une date"}
+                                </Button>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-auto p-0 z-[100]" align="start">
+                                <Calendar mode="single" selected={scheduledDate} onSelect={setScheduledDate} disabled={(date) => date < new Date(new Date().setHours(0,0,0,0))} locale={fr} />
+                              </PopoverContent>
+                            </Popover>
+                          </div>
+                          <div className="space-y-2">
+                            <Label className="text-sm">Heure</Label>
+                            <div className="flex items-center gap-2">
+                              <Input type="number" min="0" max="23" value={scheduledHour} onChange={(e) => setScheduledHour(Math.min(23, Math.max(0, parseInt(e.target.value) || 0)).toString().padStart(2, '0'))} className="w-[70px] text-center" />
+                              <span className="text-lg font-medium text-muted-foreground">:</span>
+                              <Input type="number" min="0" max="59" value={scheduledMinute} onChange={(e) => setScheduledMinute(Math.min(59, Math.max(0, parseInt(e.target.value) || 0)).toString().padStart(2, '0'))} className="w-[70px] text-center" />
+                            </div>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <Checkbox id="notify-unified" checked={notifyOnSent} onCheckedChange={(c) => setNotifyOnSent(c as boolean)} />
+                            <Label htmlFor="notify-unified" className="cursor-pointer text-sm">M'envoyer une notification</Label>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex flex-col justify-between">
+                      <div className="flex items-start gap-2 p-4 rounded-xl bg-indigo-500/10 border border-indigo-500/20 mb-4">
+                        <Lightbulb className="h-4 w-4 text-indigo-500 mt-0.5 shrink-0" />
+                        <p className="text-xs text-muted-foreground"><span className="font-medium text-indigo-500">Conseil pro :</span> Les emails envoyés entre 10h et 11h30 obtiennent un taux d'ouverture 23% supérieur.</p>
+                      </div>
+                      <Button onClick={handleSendAll} disabled={isSending || successfulEmails.length === 0 || !gmailConnected} className="w-full bg-primary text-primary-foreground hover:bg-primary/90 font-bold py-4 px-6 rounded-xl transition-all gap-2 h-auto" size="lg">
+                        {isSending ? <Loader2 className="h-5 w-5 animate-spin" /> : sendMode === 'now' ? <Send className="h-5 w-5" /> : <Clock className="h-5 w-5" />}
+                        {sendMode === 'now' ? `Envoyer ${successfulEmails.length} email(s) prêts` : `Programmer ${successfulEmails.length} email(s)`}
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Preview Dialog */}
+      <Dialog open={!!previewEmail} onOpenChange={() => setPreviewEmail(null)}>
+        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader><DialogTitle>Prévisualisation - {previewEmail?.company_name}</DialogTitle></DialogHeader>
+          <div className="space-y-4">
+            <div className="p-4 bg-muted rounded-lg"><p className="text-sm text-muted-foreground mb-1">Objet:</p><p className="font-medium">{previewEmail?.subject}</p></div>
+            <div className="p-4 bg-muted rounded-lg"><p className="text-sm text-muted-foreground mb-1">Message:</p><p className="whitespace-pre-wrap text-sm">{previewEmail?.body}</p></div>
+            {previewEmail?.coverLetter && (
+              <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg">
+                <p className="text-sm text-muted-foreground mb-1 flex items-center gap-2"><FileText className="h-4 w-4" />Lettre de motivation:</p>
+                <p className="whitespace-pre-wrap text-sm">{previewEmail.coverLetter}</p>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Dialog */}
+      <Dialog open={!!editingEmail} onOpenChange={() => setEditingEmail(null)}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader><DialogTitle>Modifier - {editingEmail?.company_name}</DialogTitle></DialogHeader>
+          <div className="space-y-4">
+            <div><Label>Objet</Label><Input value={editedSubject} onChange={(e) => setEditedSubject(e.target.value)} className="mt-1.5" /></div>
+            <div><Label>Message</Label><Textarea value={editedBody} onChange={(e) => setEditedBody(e.target.value)} rows={10} className="mt-1.5" /></div>
+            {editingEmail?.coverLetter && (
+              <div><Label className="flex items-center gap-2"><FileText className="h-4 w-4" />Lettre de motivation</Label><Textarea value={editedCoverLetter} onChange={(e) => setEditedCoverLetter(e.target.value)} rows={12} className="mt-1.5" /></div>
+            )}
+          </div>
+          <div className="flex gap-2 justify-end">
+            <Button variant="outline" onClick={() => setEditingEmail(null)}>Annuler</Button>
+            <Button onClick={handleSaveEdit}>Sauvegarder</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Save Profile Dialog */}
+      <Dialog open={showSaveProfileDialog} onOpenChange={setShowSaveProfileDialog}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Sauvegarder le profil CV</DialogTitle><DialogDescription>Donnez un nom à ce profil pour le réutiliser</DialogDescription></DialogHeader>
+          <Input value={newProfileName} onChange={(e) => setNewProfileName(e.target.value)} placeholder="Ex: Mon CV développeur" />
+          <div className="flex gap-2 justify-end">
+            <Button variant="outline" onClick={() => setShowSaveProfileDialog(false)}>Annuler</Button>
+            <Button onClick={handleSaveCvProfile} disabled={!newProfileName.trim()}>Sauvegarder</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Save Template Dialog */}
+      <Dialog open={showSaveTemplateDialog} onOpenChange={setShowSaveTemplateDialog}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Sauvegarder le template</DialogTitle><DialogDescription>Donnez un nom à ce template pour le réutiliser</DialogDescription></DialogHeader>
+          <Input value={newTemplateName} onChange={(e) => setNewTemplateName(e.target.value)} placeholder="Ex: Email formel développeur" />
+          <div className="flex gap-2 justify-end">
+            <Button variant="outline" onClick={() => setShowSaveTemplateDialog(false)}>Annuler</Button>
+            <Button onClick={handleSaveTemplate} disabled={!newTemplateName.trim()}>Sauvegarder</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+};
+        isOpen={isGenerating}
+        progress={progress}
+        elapsedTime={elapsedTime}
+        currentStep={currentStep}
+        processLogs={processLogs}
+        totalItems={selectedCompanies.size}
+      />
+
+      {/* 2-Column Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+        {/* ===== LEFT PANEL (col-span-4) ===== */}
+        <div className="lg:col-span-4 space-y-6">
+
+          {/* Gmail Status Card */}
+          <div className="bg-card border border-border rounded-2xl p-5 relative overflow-hidden group">
+            <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
+              <Mail className="h-16 w-16 text-foreground" />
+            </div>
+            <div className="flex items-center justify-between relative z-10">
+              {checkingGmail ? (
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-muted/30 flex items-center justify-center border border-border">
+                    <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                  </div>
+                  <span className="text-sm text-muted-foreground">Vérification...</span>
+                </div>
+              ) : gmailConnected ? (
+                <>
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center border border-green-500/30">
+                      <Mail className="h-5 w-5 text-green-500" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-medium text-foreground">Compte Gmail</h3>
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                        <span className="text-xs text-green-500 font-medium">Connecté</span>
+                      </div>
+                    </div>
+                  </div>
+                  <Button variant="ghost" size="icon" onClick={checkGmailConnection} className="text-muted-foreground hover:text-foreground">
+                    <RefreshCw className="h-4 w-4" />
+                  </Button>
+                </>
+              ) : (
+                <div className="flex items-center gap-3 w-full">
+                  <div className="w-10 h-10 rounded-full bg-destructive/20 flex items-center justify-center border border-destructive/30">
+                    <AlertCircle className="h-5 w-5 text-destructive" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-sm font-medium text-foreground">Gmail non connecté</h3>
                     <Button
                       variant="default"
                       size="sm"
@@ -871,14 +1347,14 @@ export const UnifiedEmailSender = () => {
           </div>
 
           {/* Recipients Card */}
-          <div className="bg-[#121215]/60 backdrop-blur-xl border border-white/[0.08] rounded-2xl p-5 flex flex-col">
+          <div className="bg-card border border-border rounded-2xl p-5 flex flex-col">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="font-semibold text-gray-100 flex items-center gap-2">
-                <Building2 className="h-4 w-4 text-indigo-400" />
+              <h3 className="font-semibold text-foreground flex items-center gap-2">
+                <Building2 className="h-4 w-4 text-indigo-500" />
                 Destinataires
               </h3>
-              <div className="text-xs text-muted-foreground bg-white/5 px-2 py-1 rounded border border-white/5">
-                <span className="text-indigo-400 font-bold">{selectedCount}</span>/{companies.length} sélectionnée(s)
+              <div className="text-xs text-muted-foreground bg-muted/50 px-2 py-1 rounded border border-border">
+                <span className="text-indigo-500 font-bold">{selectedCount}</span>/{companies.length} sélectionnée(s)
                 {manualCount > 0 && <span className="ml-1">+ {manualCount} manuel(s)</span>}
               </div>
             </div>
@@ -891,12 +1367,491 @@ export const UnifiedEmailSender = () => {
                 onChange={(e) => setManualEmail(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleAddManualRecipient(); } }}
                 placeholder="Ajouter un email manuellement..."
-                className="bg-[#27272a]/40 border-white/10 pr-10 text-sm"
+                className="pr-10 text-sm"
               />
               <Button
                 variant="ghost"
                 size="icon"
-                className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 text-muted-foreground hover:text-indigo-400"
+                className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 text-muted-foreground hover:text-indigo-500"
+              >
+                <Plus className="h-4 w-4" />
+              </Button>
+            </div>
+
+            {/* Manual recipients badges */}
+            {manualRecipients.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 mb-3">
+                {manualRecipients.map((email) => (
+                  <Badge key={email} variant="secondary" className="gap-1 text-xs bg-indigo-500/10 border-indigo-500/20 text-indigo-500">
+                    <span className="max-w-[160px] truncate">{email}</span>
+                    <Button variant="ghost" size="icon" className="h-4 w-4 p-0" onClick={() => handleRemoveManualRecipient(email)}>
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </Badge>
+                ))}
+              </div>
+            )}
+
+            {/* Companies list */}
+            <ScrollArea className="h-[300px] lg:h-[260px] pr-1">
+              {companies.length === 0 ? (
+                <p className="text-muted-foreground text-center py-8 text-sm">
+                  Aucune entreprise avec email. Recherchez d'abord des contacts.
+                </p>
+              ) : (
+                <div className="space-y-2">
+                  {companies.map(company => {
+                    const isSelected = selectedCompanies.has(company.id);
+                    return (
+                      <div
+                        key={company.id}
+                        className={cn(
+                          "p-3 rounded-xl flex items-start gap-3 cursor-pointer transition-all border",
+                          isSelected
+                            ? "border-indigo-500/30 bg-indigo-500/10 hover:bg-indigo-500/15"
+                            : "border-border bg-muted/20 opacity-70 hover:opacity-100 hover:bg-muted/40"
+                        )}
+                        onClick={() => handleSelectCompany(company.id)}
+                      >
+                        <div className="mt-0.5">
+                          <Checkbox checked={isSelected} onChange={() => {}} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between">
+                            <span className="font-medium text-sm text-foreground truncate">{company.nom}</span>
+                            {company.libelle_ape && (
+                              <span className="text-[10px] bg-indigo-500/20 text-indigo-500 px-1.5 py-0.5 rounded border border-indigo-500/20 shrink-0 ml-2">
+                                {company.libelle_ape.substring(0, 20)}
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-xs text-muted-foreground truncate mt-0.5">{company.selected_email}</div>
+                          <div className="flex items-center gap-2 mt-1">
+                            {company.website_url && (
+                              <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                                <Globe className="h-[9px] w-[9px]" />
+                                {new URL(company.website_url).hostname}
+                              </span>
+                            )}
+                            {company.ville && (
+                              <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                                📍 {company.ville}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </ScrollArea>
+
+            {/* Footer actions */}
+            <div className="mt-4 pt-3 border-t border-border flex justify-between items-center">
+              <button className="text-xs text-indigo-500 hover:text-indigo-400 font-semibold" onClick={handleSelectAll}>
+                {selectedCompanies.size === companies.length ? "Désélectionner tout" : "Tout sélectionner"}
+              </button>
+              <button className="text-xs text-muted-foreground hover:text-foreground" onClick={() => { setSelectedCompanies(new Set()); setManualRecipients([]); }}>
+                Vider la liste
+              </button>
+            </div>
+          </div>
+
+          {/* AI Options Card (Premium) */}
+          {isPremium ? (
+            <div className="bg-card border border-border rounded-2xl p-5 relative overflow-hidden">
+              <div className="absolute -top-10 -right-10 w-32 h-32 bg-indigo-600/20 rounded-full blur-3xl pointer-events-none" />
+              <div className="flex justify-between items-center mb-5 relative z-10">
+                <h3 className="font-semibold text-foreground flex items-center gap-2">
+                  <Sparkles className="h-4 w-4 text-purple-500" />
+                  Options IA
+                </h3>
+                <span className="text-[10px] font-bold bg-gradient-to-r from-amber-200 to-yellow-400 text-black px-2 py-0.5 rounded-full uppercase tracking-wider">Premium</span>
+              </div>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-indigo-500/20 flex items-center justify-center text-indigo-500">
+                      <Mail className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <div className="text-sm font-semibold text-foreground">Emails personnalisés</div>
+                      <div className="text-xs text-muted-foreground">Génération unique par entreprise</div>
+                    </div>
+                  </div>
+                  <Switch checked={enableAIEmails} onCheckedChange={setEnableAIEmails} />
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center text-purple-500">
+                      <FileText className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <div className="text-sm font-semibold text-foreground">Lettres de motivation</div>
+                      <div className="text-xs text-muted-foreground">PDF généré et attaché</div>
+                    </div>
+                  </div>
+                  <Switch checked={enableCoverLetter} onCheckedChange={setEnableCoverLetter} />
+                </div>
+                <div className="h-px bg-border my-2" />
+                {enableAIEmails && (
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-tight mb-1.5 block">Approche</Label>
+                      <Select value={selectedSubjectType} onValueChange={setSelectedSubjectType}>
+                        <SelectTrigger className="text-xs"><SelectValue /></SelectTrigger>
+                        <SelectContent>{SUBJECT_TYPES.map(t => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}</SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-tight mb-1.5 block">Ton</Label>
+                      <Select value={selectedTone} onValueChange={setSelectedTone}>
+                        <SelectTrigger className="text-xs"><SelectValue /></SelectTrigger>
+                        <SelectContent>{TONE_OPTIONS.map(t => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}</SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : (
+            <UpgradeBanner variant="compact" title="Personnalisation IA" description="Passez au plan Plus pour générer des emails personnalisés avec l'IA" features={["Emails adaptés à chaque entreprise","Lettres de motivation générées","Scraping du site web pour personnalisation"]} />
+          )}
+
+          {/* Generate Button */}
+          <div className="pt-2">
+            <Button onClick={handleGenerate} disabled={isPrepareDisabled} className="w-full bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-bold py-4 px-6 rounded-xl shadow-lg shadow-indigo-500/20 transition-all transform hover:scale-[1.01] gap-2 group h-auto" size="lg">
+              {isGenerating ? <Loader2 className="h-5 w-5 animate-spin" /> : <Sparkles className="h-5 w-5 group-hover:animate-pulse" />}
+              {isAiMode ? (selectedCount > 0 && manualCount > 0 ? `Générer pour ${selectedCount} entreprise(s) + ${manualCount} email(s)` : selectedCount > 0 ? `Générer pour ${selectedCount} entreprise(s)` : `Générer pour ${manualCount} email(s) manuel(s)`) : `Préparer ${prepareCount} email(s)`}
+            </Button>
+          </div>
+        </div>
+
+        {/* ===== RIGHT PANEL ===== */}
+        <div className="lg:col-span-8 flex flex-col gap-6">
+          {/* Tabs Navigation */}
+          <div className="bg-card border border-border rounded-xl p-1 inline-flex self-start">
+            <button onClick={() => setActiveTab("config")} className={cn("px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-all", activeTab === "config" ? "bg-indigo-500/20 text-indigo-500 shadow-sm border border-indigo-500/20" : "text-muted-foreground hover:text-foreground")}>
+              <Edit3 className="h-4 w-4" />Configuration
+            </button>
+            <button onClick={() => setActiveTab("preview")} className={cn("px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-all", activeTab === "preview" ? "bg-indigo-500/20 text-indigo-500 shadow-sm border border-indigo-500/20" : "text-muted-foreground hover:text-foreground")}>
+              <Eye className="h-4 w-4" />Prévisualisation
+              {successfulEmails.length > 0 && <span className="bg-indigo-500 text-white text-[10px] px-1.5 rounded-full ml-1">{successfulEmails.length}</span>}
+            </button>
+          </div>
+
+          {/* CONFIG TAB */}
+          {activeTab === "config" && (
+            <div className="space-y-6">
+              {(enableAIEmails || enableCoverLetter) && (
+                <div className="bg-card border border-border rounded-2xl p-6 space-y-5">
+                  <h3 className="font-semibold text-foreground">Configuration IA</h3>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-sm">Votre CV / Profil</Label>
+                      {savedCvProfiles.length > 0 && (
+                        <Select value={selectedCvProfileId} onValueChange={handleLoadCvProfile}>
+                          <SelectTrigger className="w-[180px] text-xs"><FolderOpen className="h-4 w-4 mr-2" /><SelectValue placeholder="Charger..." /></SelectTrigger>
+                          <SelectContent>{savedCvProfiles.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}</SelectContent>
+                        </Select>
+                      )}
+                    </div>
+                    <div className="flex gap-2">
+                      <Input type="file" accept=".pdf,.docx,.txt" onChange={handleCvUpload} className="hidden" id="cv-upload-unified" disabled={isParsingCv} />
+                      <Button variant="outline" onClick={() => document.getElementById("cv-upload-unified")?.click()} disabled={isParsingCv} className="gap-2">
+                        {isParsingCv ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}Importer CV
+                      </Button>
+                      <Button variant="outline" size="icon" onClick={() => setShowSaveProfileDialog(true)} disabled={!cvContent.trim()}><Save className="h-4 w-4" /></Button>
+                    </div>
+                    <Textarea value={cvContent} onChange={(e) => setCvContent(e.target.value)} placeholder="Collez vos compétences et expériences..." rows={4} />
+                  </div>
+                  {enableAIEmails && (
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-sm">Style d'email souhaité</Label>
+                        {savedTemplates.length > 0 && (
+                          <Select value={selectedTemplateId} onValueChange={handleLoadTemplate}>
+                            <SelectTrigger className="w-[180px] text-xs"><FolderOpen className="h-4 w-4 mr-2" /><SelectValue placeholder="Charger..." /></SelectTrigger>
+                            <SelectContent>{savedTemplates.map(t => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}</SelectContent>
+                          </Select>
+                        )}
+                      </div>
+                      <div className="flex gap-2">
+                        <Textarea value={template} onChange={(e) => setTemplate(e.target.value)} placeholder="Décrivez le style d'email souhaité..." rows={3} className="flex-1" />
+                        <Button variant="outline" size="icon" onClick={() => setShowSaveTemplateDialog(true)} disabled={!template.trim()}><Save className="h-4 w-4" /></Button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+              {!enableAIEmails && (
+                <div className="bg-card border border-border rounded-2xl p-6 space-y-5">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-semibold text-foreground">Contenu de l'email</h3>
+                    <div className="flex gap-2">
+                      {savedTemplates.length > 0 && (
+                        <Select value="" onValueChange={(templateId) => {
+                          const tpl = savedTemplates.find(t => t.id === templateId);
+                          if (tpl) {
+                            const lines = tpl.content.split('\n');
+                            const subjectLine = lines.find(l => l.toLowerCase().startsWith('objet:') || l.toLowerCase().startsWith('subject:'));
+                            if (subjectLine) { setSubject(subjectLine.replace(/^(objet|subject):\s*/i, '').trim()); setBody(lines.filter(l => l !== subjectLine).join('\n').trim()); } else { setBody(tpl.content); }
+                            toast({ title: `Template "${tpl.name}" chargé` });
+                          }
+                        }}>
+                          <SelectTrigger className="w-[180px] text-xs"><FolderOpen className="h-4 w-4 mr-2" /><SelectValue placeholder="Charger un template" /></SelectTrigger>
+                          <SelectContent>{savedTemplates.map(t => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}</SelectContent>
+                        </Select>
+                      )}
+                    </div>
+                  </div>
+                  <div>
+                    <Label className="text-sm text-muted-foreground">Objet</Label>
+                    <Input value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="Candidature spontanée - [Votre profil]" className="mt-1.5" />
+                  </div>
+                  <div>
+                    <Label className="text-sm text-muted-foreground">Message</Label>
+                    <Textarea value={body} onChange={(e) => setBody(e.target.value)} placeholder="Écrivez votre email..." rows={8} className="mt-1.5" />
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {['{entreprise}', '{ville}', '{secteur}'].map(v => (
+                        <Badge key={v} variant="outline" className="text-xs bg-indigo-500/10 text-indigo-500 border-indigo-500/20 cursor-pointer hover:bg-indigo-500/20" onClick={() => setBody(prev => prev + ' ' + v)}>{v}</Badge>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <Label className="text-sm text-muted-foreground">Pièces jointes</Label>
+                    <Input type="file" multiple onChange={handleFileChange} className="hidden" id="attachments-unified" />
+                    <Button variant="outline" onClick={() => document.getElementById("attachments-unified")?.click()} className="w-full mt-1.5 border-dashed">
+                      <Upload className="mr-2 h-4 w-4" />Ajouter des fichiers
+                    </Button>
+                    {attachments.length > 0 && (
+                      <div className="mt-2 space-y-1">
+                        {attachments.map((file, i) => (
+                          <Badge key={i} variant="secondary" className="w-full justify-between">
+                            <span className="truncate">{file.name}</span>
+                            <X className="h-3 w-3 cursor-pointer" onClick={() => setAttachments(attachments.filter((_, idx) => idx !== i))} />
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <Button variant="outline" onClick={() => { if (!subject.trim() && !body.trim()) { toast({ title: "Écrivez d'abord un email", variant: "destructive" }); return; } const templateContent = subject.trim() ? `Objet: ${subject}\n\n${body}` : body; setTemplate(templateContent); setShowSaveTemplateDialog(true); }} disabled={!subject.trim() && !body.trim()} className="w-full gap-2">
+                    <Save className="h-4 w-4" />Sauvegarder comme template
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* PREVIEW TAB */}
+          {activeTab === "preview" && (
+            <div className="flex-1 space-y-4">
+              {generatedEmails.length > 0 && (
+                <div className="flex justify-end">
+                  <Button variant="outline" size="sm" onClick={handleForceRegenerate} className="gap-2">
+                    <RefreshCw className="h-4 w-4" />Regénérer tout
+                  </Button>
+                </div>
+              )}
+              {generatedEmails.map(email => (
+                <div key={email.company_id} className={cn("bg-card rounded-2xl overflow-hidden border", email.success ? "border-border" : "border-destructive/20")}>
+                  <div className={cn("px-6 py-4 border-b flex justify-between items-center", email.success ? "bg-card border-border/50" : "bg-destructive/5 border-destructive/10")}>
+                    <div className="flex items-center gap-3">
+                      <div className={cn("w-8 h-8 rounded-full flex items-center justify-center border", email.success ? "bg-green-500/20 border-green-500/30 text-green-500" : "bg-destructive/20 border-destructive/30 text-destructive")}>
+                        {email.success ? <CheckCircle className="h-4 w-4" /> : <XCircle className="h-4 w-4" />}
+                      </div>
+                      <div>
+                        <h4 className="font-semibold text-foreground text-sm">{email.company_name}</h4>
+                        {email.success ? (
+                          <p className="text-xs text-muted-foreground">{email.company_email}</p>
+                        ) : (
+                          <p className="text-xs text-destructive flex items-center gap-1"><AlertCircle className="h-3 w-3" />{email.error || "Erreur de génération"}</p>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {email.coverLetter && <Badge variant="outline" className="text-[10px] bg-purple-500/10 text-purple-500 border-purple-500/20 gap-1"><FileText className="h-3 w-3" />Lettre jointe</Badge>}
+                      {email.success ? (
+                        <>
+                          <div className="h-4 w-px bg-border mx-1" />
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => setPreviewEmail(email)}><Eye className="h-4 w-4" /></Button>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-indigo-500" onClick={() => handleEditEmail(email)}><Edit3 className="h-4 w-4" /></Button>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => handleRemoveGeneratedEmail(email.company_id)}><X className="h-4 w-4" /></Button>
+                        </>
+                      ) : (
+                        <Button variant="outline" size="sm" className="text-xs border-destructive/30 text-destructive hover:bg-destructive/10" onClick={() => handleEditEmail({ ...email, success: true, subject: subject || "Candidature spontanée", body: body || "" })}>Corriger manuellement</Button>
+                      )}
+                    </div>
+                  </div>
+                  {email.success && (
+                    <div className="p-6 bg-muted/10">
+                      <div className="mb-3">
+                        <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mr-2">Objet:</span>
+                        <span className="text-sm text-foreground font-medium">{email.subject}</span>
+                      </div>
+                      <div className="text-sm text-muted-foreground leading-relaxed line-clamp-2">{email.body?.substring(0, 200)}...</div>
+                    </div>
+                  )}
+                </div>
+              ))}
+              {generatedEmails.length === 0 && (
+                <div className="bg-card border border-border rounded-2xl p-12 text-center">
+                  <Mail className="h-12 w-12 text-muted-foreground/30 mx-auto mb-4" />
+                  <p className="text-muted-foreground">Aucun email généré. Sélectionnez des destinataires et cliquez sur "Générer".</p>
+                </div>
+              )}
+              {successfulEmails.length > 0 && (
+                <div className="bg-card border border-border rounded-2xl p-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div>
+                      <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2"><Send className="h-4 w-4 text-indigo-500" />Paramètres d'envoi</h3>
+                      <RadioGroup value={sendMode} onValueChange={(v: 'now' | 'scheduled') => setSendMode(v)} className="space-y-3">
+                        <label className="flex items-center p-3 border border-border rounded-xl cursor-pointer hover:bg-muted/20 transition-colors group">
+                          <RadioGroupItem value="now" id="now-radio" />
+                          <div className="ml-3">
+                            <span className="block text-sm font-medium text-foreground">Envoyer maintenant</span>
+                            <span className="block text-xs text-muted-foreground">Les emails partiront immédiatement</span>
+                          </div>
+                        </label>
+                        <label className="flex items-center p-3 border border-border rounded-xl cursor-pointer hover:bg-muted/20 transition-colors group">
+                          <RadioGroupItem value="scheduled" id="scheduled-radio" />
+                          <div className="ml-3">
+                            <span className="block text-sm font-medium text-foreground">Programmer l'envoi</span>
+                            <span className="block text-xs text-muted-foreground">Choisissez la date et l'heure</span>
+                          </div>
+                        </label>
+                      </RadioGroup>
+                      {sendMode === 'scheduled' && (
+                        <div className="mt-4 pl-4 border-l-2 border-indigo-500/20 space-y-4">
+                          <div className="space-y-2">
+                            <Label className="text-sm">Date</Label>
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <Button variant="outline" className={cn("w-full justify-start", !scheduledDate && "text-muted-foreground")}>
+                                  <CalendarIcon className="mr-2 h-4 w-4" />{scheduledDate ? format(scheduledDate, "PPP", { locale: fr }) : "Choisir une date"}
+                                </Button>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-auto p-0 z-[100]" align="start">
+                                <Calendar mode="single" selected={scheduledDate} onSelect={setScheduledDate} disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))} locale={fr} />
+                              </PopoverContent>
+                            </Popover>
+                          </div>
+                          <div className="space-y-2">
+                            <Label className="text-sm">Heure</Label>
+                            <div className="flex items-center gap-2">
+                              <Input type="number" min="0" max="23" value={scheduledHour} onChange={(e) => setScheduledHour(Math.min(23, Math.max(0, parseInt(e.target.value) || 0)).toString().padStart(2, '0'))} className="w-[70px] text-center" />
+                              <span className="text-lg font-medium text-muted-foreground">:</span>
+                              <Input type="number" min="0" max="59" value={scheduledMinute} onChange={(e) => setScheduledMinute(Math.min(59, Math.max(0, parseInt(e.target.value) || 0)).toString().padStart(2, '0'))} className="w-[70px] text-center" />
+                            </div>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <Checkbox id="notify-unified" checked={notifyOnSent} onCheckedChange={(c) => setNotifyOnSent(c as boolean)} />
+                            <Label htmlFor="notify-unified" className="cursor-pointer text-sm">M'envoyer une notification</Label>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex flex-col justify-between">
+                      <div className="flex items-start gap-2 p-4 rounded-xl bg-indigo-500/10 border border-indigo-500/20 mb-4">
+                        <Lightbulb className="h-4 w-4 text-indigo-500 mt-0.5 shrink-0" />
+                        <p className="text-xs text-muted-foreground">
+                          <span className="font-medium text-indigo-500">Conseil pro :</span> Les emails envoyés entre 10h et 11h30 obtiennent un taux d'ouverture 23% supérieur.
+                        </p>
+                      </div>
+                      <Button onClick={handleSendAll} disabled={isSending || successfulEmails.length === 0 || !gmailConnected} className="w-full bg-primary text-primary-foreground hover:bg-primary/90 font-bold py-4 px-6 rounded-xl transition-all gap-2 h-auto" size="lg">
+                        {isSending ? <Loader2 className="h-5 w-5 animate-spin" /> : sendMode === 'now' ? <Send className="h-5 w-5" /> : <Clock className="h-5 w-5" />}
+                        {sendMode === 'now' ? `Envoyer ${successfulEmails.length} email(s) prêts` : `Programmer ${successfulEmails.length} email(s)`}
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Preview Dialog */}
+      <Dialog open={!!previewEmail} onOpenChange={() => setPreviewEmail(null)}>
+        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Prévisualisation - {previewEmail?.company_name}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="p-4 bg-muted rounded-lg">
+              <p className="text-sm text-muted-foreground mb-1">Objet:</p>
+              <p className="font-medium">{previewEmail?.subject}</p>
+            </div>
+            <div className="p-4 bg-muted rounded-lg">
+              <p className="text-sm text-muted-foreground mb-1">Message:</p>
+              <p className="whitespace-pre-wrap text-sm">{previewEmail?.body}</p>
+            </div>
+            {previewEmail?.coverLetter && (
+              <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg">
+                <p className="text-sm text-muted-foreground mb-1 flex items-center gap-2"><FileText className="h-4 w-4" />Lettre de motivation:</p>
+                <p className="whitespace-pre-wrap text-sm">{previewEmail.coverLetter}</p>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Dialog */}
+      <Dialog open={!!editingEmail} onOpenChange={() => setEditingEmail(null)}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Modifier - {editingEmail?.company_name}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div><Label>Objet</Label><Input value={editedSubject} onChange={(e) => setEditedSubject(e.target.value)} className="mt-1.5" /></div>
+            <div><Label>Message</Label><Textarea value={editedBody} onChange={(e) => setEditedBody(e.target.value)} rows={10} className="mt-1.5" /></div>
+            {editingEmail?.coverLetter && (
+              <div>
+                <Label className="flex items-center gap-2"><FileText className="h-4 w-4" />Lettre de motivation</Label>
+                <Textarea value={editedCoverLetter} onChange={(e) => setEditedCoverLetter(e.target.value)} rows={12} className="mt-1.5" />
+              </div>
+            )}
+          </div>
+          <div className="flex gap-2 justify-end">
+            <Button variant="outline" onClick={() => setEditingEmail(null)}>Annuler</Button>
+            <Button onClick={handleSaveEdit}>Sauvegarder</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Save Profile Dialog */}
+      <Dialog open={showSaveProfileDialog} onOpenChange={setShowSaveProfileDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Sauvegarder le profil CV</DialogTitle>
+            <DialogDescription>Donnez un nom à ce profil pour le réutiliser</DialogDescription>
+          </DialogHeader>
+          <Input value={newProfileName} onChange={(e) => setNewProfileName(e.target.value)} placeholder="Ex: Mon CV développeur" />
+          <div className="flex gap-2 justify-end">
+            <Button variant="outline" onClick={() => setShowSaveProfileDialog(false)}>Annuler</Button>
+            <Button onClick={handleSaveCvProfile} disabled={!newProfileName.trim()}>Sauvegarder</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Save Template Dialog */}
+      <Dialog open={showSaveTemplateDialog} onOpenChange={setShowSaveTemplateDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Sauvegarder le template</DialogTitle>
+            <DialogDescription>Donnez un nom à ce template pour le réutiliser</DialogDescription>
+          </DialogHeader>
+          <Input value={newTemplateName} onChange={(e) => setNewTemplateName(e.target.value)} placeholder="Ex: Email formel développeur" />
+          <div className="flex gap-2 justify-end">
+            <Button variant="outline" onClick={() => setShowSaveTemplateDialog(false)}>Annuler</Button>
+            <Button onClick={handleSaveTemplate} disabled={!newTemplateName.trim()}>Sauvegarder</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+};
                 onClick={handleAddManualRecipient}
               >
                 <Plus className="h-4 w-4" />
