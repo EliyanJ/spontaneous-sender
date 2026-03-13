@@ -424,9 +424,9 @@ export const CampaignsHub = () => {
   const getResponseTag = (category: string | null) => {
     if (!category) return null;
     const map: Record<string, { label: string; className: string }> = {
-      positive: { label: '[Positif]', className: 'text-green-400 font-semibold' },
-      negative: { label: '[Négatif]', className: 'text-red-400 font-semibold' },
-      neutral: { label: '[Info]', className: 'text-blue-400 font-semibold' },
+      positive: { label: '[Positif]', className: 'text-green-500 font-semibold' },
+      negative: { label: '[Négatif]', className: 'text-red-500 font-semibold' },
+      neutral: { label: '[Info]', className: 'text-blue-500 font-semibold' },
     };
     return map[category] || map['neutral'];
   };
@@ -434,7 +434,7 @@ export const CampaignsHub = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-96">
-        <Loader2 className="h-8 w-8 animate-spin text-indigo-400" />
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
@@ -444,30 +444,30 @@ export const CampaignsHub = () => {
       {/* ===== HEADER ===== */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-white">Campagnes</h2>
-          <p className="text-zinc-400 text-sm mt-1">
+          <h2 className="text-2xl font-bold text-foreground">Campagnes</h2>
+          <p className="text-muted-foreground text-sm mt-1">
             Gère tes campagnes, relances et suivi des candidatures
           </p>
         </div>
         <div className="flex items-center gap-2">
           <Popover>
             <PopoverTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-9 w-9 rounded-xl bg-[#27272a]/40 border border-white/[0.05] hover:bg-[#27272a]/60 text-zinc-400 hover:text-white">
+              <Button variant="ghost" size="icon" className="h-9 w-9 rounded-xl bg-muted/40 border border-border hover:bg-muted/60 text-muted-foreground hover:text-foreground">
                 <Settings2 className="h-4 w-4" />
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-64 bg-[#18181b]/90 backdrop-blur-xl border border-white/[0.08] rounded-xl">
+            <PopoverContent className="w-64 rounded-xl">
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label className="text-zinc-300">Délai avant relance</Label>
+                  <Label className="text-foreground/80">Délai avant relance</Label>
                   <Select 
                     value={followUpDelay.toString()} 
                     onValueChange={(v) => updateFollowUpDelay(parseInt(v))}
                   >
-                    <SelectTrigger className="bg-[#18181b]/30 border-white/10">
+                    <SelectTrigger className="bg-muted/30 border-border">
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent className="bg-[#18181b]/90 backdrop-blur-xl border border-white/[0.08]">
+                    <SelectContent>
                       <SelectItem value="7">7 jours</SelectItem>
                       <SelectItem value="10">10 jours</SelectItem>
                       <SelectItem value="14">14 jours</SelectItem>
@@ -491,13 +491,13 @@ export const CampaignsHub = () => {
       </div>
 
       {/* ===== TABS CAMPAGNES / SUIVI ===== */}
-      <div className="inline-flex items-center gap-1 p-1 rounded-xl bg-[#18181b]/60 backdrop-blur-xl border border-white/[0.08]">
+      <div className="inline-flex items-center gap-1 p-1 rounded-xl bg-muted/60 border border-border">
         <button
           onClick={() => setMainTab('campaigns')}
           className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
             mainTab === 'campaigns' 
-              ? 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20' 
-              : 'text-zinc-500 hover:text-white border border-transparent'
+              ? 'bg-indigo-500/10 text-indigo-500 border border-indigo-500/20' 
+              : 'text-muted-foreground hover:text-foreground border border-transparent'
           }`}
         >
           <Send className="h-4 w-4" />
@@ -507,8 +507,8 @@ export const CampaignsHub = () => {
           onClick={() => setMainTab('suivi')}
           className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
             mainTab === 'suivi' 
-              ? 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20' 
-              : 'text-zinc-500 hover:text-white border border-transparent'
+              ? 'bg-indigo-500/10 text-indigo-500 border border-indigo-500/20' 
+              : 'text-muted-foreground hover:text-foreground border border-transparent'
           }`}
         >
           <TrendingUp className="h-4 w-4" />
@@ -521,12 +521,12 @@ export const CampaignsHub = () => {
         <div className="space-y-6">
           {/* Search bar */}
           <div className="relative">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Rechercher par sujet ou email..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-11 bg-[#18181b]/30 border-white/10 rounded-xl focus:ring-indigo-500/50 focus:border-indigo-500/30 text-white placeholder:text-zinc-500"
+              className="pl-11 rounded-xl"
             />
           </div>
 
@@ -534,13 +534,13 @@ export const CampaignsHub = () => {
           {batchesWithPendingRelances.length > 0 && (
             <div className="flex items-center gap-4 p-4 rounded-xl bg-orange-500/10 border border-orange-500/20">
               <div className="flex items-center justify-center w-10 h-10 rounded-full bg-orange-500/20 shrink-0">
-                <AlertCircle className="h-5 w-5 text-orange-400" />
+                <AlertCircle className="h-5 w-5 text-orange-500" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="font-medium text-white">
+                <p className="font-medium text-foreground">
                   {batchesWithPendingRelances.length} batch{batchesWithPendingRelances.length > 1 ? 'es' : ''} ont dépassé le délai de {followUpDelay} jours
                 </p>
-                <p className="text-sm text-zinc-400 mt-0.5">
+                <p className="text-sm text-muted-foreground mt-0.5">
                   Vérifiez que vous n'avez pas reçu de réponses avant de relancer.
                 </p>
               </div>
@@ -550,15 +550,15 @@ export const CampaignsHub = () => {
                     Tout relancer
                   </Button>
                 </AlertDialogTrigger>
-                <AlertDialogContent className="bg-[#18181b]/95 backdrop-blur-xl border border-white/[0.08]">
+                <AlertDialogContent>
                   <AlertDialogHeader>
-                    <AlertDialogTitle className="text-white">Confirmer la relance groupée</AlertDialogTitle>
-                    <AlertDialogDescription className="text-zinc-400">
+                    <AlertDialogTitle>Confirmer la relance groupée</AlertDialogTitle>
+                    <AlertDialogDescription>
                       Vous allez relancer {batchesWithPendingRelances.length} batch(es). Avez-vous vérifié que vous n'avez pas reçu de réponses ?
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
-                    <AlertDialogCancel className="bg-[#27272a] border-white/10 text-white hover:bg-[#3f3f46]">Annuler</AlertDialogCancel>
+                    <AlertDialogCancel>Annuler</AlertDialogCancel>
                     <AlertDialogAction 
                       className="bg-orange-500 text-white hover:bg-orange-600"
                       onClick={() => batchesWithPendingRelances.forEach(b => handleRelanceBatch(b))}
@@ -574,9 +574,9 @@ export const CampaignsHub = () => {
           {/* Scheduled emails section */}
           {scheduledEmails.length > 0 && (
             <div className="space-y-3">
-              <h3 className="text-base font-semibold text-white flex items-center gap-2">
+              <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
                 <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-indigo-500/10">
-                  <Clock className="h-4 w-4 text-indigo-400" />
+                  <Clock className="h-4 w-4 text-indigo-500" />
                 </div>
                 Emails programmés ({scheduledEmails.length})
               </h3>
@@ -584,18 +584,18 @@ export const CampaignsHub = () => {
                 {scheduledEmails.map((email) => (
                   <div 
                     key={email.id} 
-                    className="p-4 rounded-xl bg-[#27272a]/40 backdrop-blur-lg border border-white/[0.05] hover:bg-[#27272a]/60 hover:border-indigo-500/30 transition-all"
+                    className="p-4 rounded-xl bg-card border border-border hover:border-indigo-500/30 transition-all"
                   >
                     <div className="flex items-start justify-between gap-2 mb-3">
                       <div className="flex items-center gap-2">
-                        <Calendar className="h-4 w-4 text-indigo-400 shrink-0" />
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-indigo-500/10 text-indigo-300 border border-indigo-500/20">
+                        <Calendar className="h-4 w-4 text-indigo-500 shrink-0" />
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-indigo-500/10 text-indigo-500 border border-indigo-500/20">
                           {getTimeUntilSend(email.scheduled_for)}
                         </span>
                       </div>
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
-                          <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-red-400 hover:text-red-300 hover:bg-red-500/10" disabled={cancelling === email.id}>
+                          <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-destructive hover:text-destructive hover:bg-destructive/10" disabled={cancelling === email.id}>
                             {cancelling === email.id ? (
                               <Loader2 className="h-3.5 w-3.5 animate-spin" />
                             ) : (
@@ -603,18 +603,18 @@ export const CampaignsHub = () => {
                             )}
                           </Button>
                         </AlertDialogTrigger>
-                        <AlertDialogContent className="bg-[#18181b]/95 backdrop-blur-xl border border-white/[0.08]">
+                        <AlertDialogContent>
                           <AlertDialogHeader>
-                            <AlertDialogTitle className="text-white">Annuler l'email ?</AlertDialogTitle>
-                            <AlertDialogDescription className="text-zinc-400">
+                            <AlertDialogTitle>Annuler l'email ?</AlertDialogTitle>
+                            <AlertDialogDescription>
                               L'email "{email.subject}" ne sera pas envoyé.
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
-                            <AlertDialogCancel className="bg-[#27272a] border-white/10 text-white hover:bg-[#3f3f46]">Retour</AlertDialogCancel>
+                            <AlertDialogCancel>Retour</AlertDialogCancel>
                             <AlertDialogAction
                               onClick={() => handleCancelScheduled(email.id)}
-                              className="bg-red-500 text-white hover:bg-red-600"
+                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                             >
                               Annuler l'envoi
                             </AlertDialogAction>
@@ -622,10 +622,10 @@ export const CampaignsHub = () => {
                         </AlertDialogContent>
                       </AlertDialog>
                     </div>
-                    <p className="text-sm font-medium text-white truncate mb-1">{email.subject}</p>
+                    <p className="text-sm font-medium text-foreground truncate mb-1">{email.subject}</p>
                     <div className="flex flex-wrap gap-1">
                       {email.recipients.map((r, i) => (
-                        <span key={i} className="inline-flex items-center px-2 py-0.5 rounded-md text-xs bg-[#18181b]/50 text-zinc-400 border border-white/[0.05]">
+                        <span key={i} className="inline-flex items-center px-2 py-0.5 rounded-md text-xs bg-muted text-muted-foreground border border-border">
                           {r}
                         </span>
                       ))}
@@ -638,17 +638,17 @@ export const CampaignsHub = () => {
 
           {/* Historique des envois */}
           <div className="space-y-3">
-            <h3 className="text-base font-semibold text-white flex items-center gap-2">
+            <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
               <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-teal-500/10">
-                <Clock className="h-4 w-4 text-teal-400" />
+                <Clock className="h-4 w-4 text-teal-500" />
               </div>
               Historique des envois
             </h3>
 
             {filteredBatches.length === 0 ? (
-              <div className="py-12 text-center rounded-xl bg-[#18181b]/60 backdrop-blur-xl border border-white/[0.08] border-dashed">
-                <Mail className="h-12 w-12 mx-auto mb-4 text-zinc-600" />
-                <p className="text-zinc-500">
+              <div className="py-12 text-center rounded-xl bg-card border border-border border-dashed">
+                <Mail className="h-12 w-12 mx-auto mb-4 text-muted-foreground/40" />
+                <p className="text-muted-foreground">
                   {searchQuery ? "Aucune campagne trouvée" : "Aucune campagne envoyée"}
                 </p>
               </div>
@@ -666,38 +666,38 @@ export const CampaignsHub = () => {
                   return (
                     <div 
                       key={batch.id} 
-                      className={`rounded-xl bg-[#18181b]/60 backdrop-blur-xl border transition-all ${
-                        canRelance ? 'border-orange-500/20' : 'border-white/[0.08]'
+                      className={`rounded-xl bg-card border transition-all ${
+                        canRelance ? 'border-orange-500/20' : 'border-border'
                       }`}
                     >
                       {/* Batch header */}
                       <div 
-                        className="flex items-center justify-between gap-4 p-4 cursor-pointer hover:bg-white/[0.02] rounded-xl transition-colors"
+                        className="flex items-center justify-between gap-4 p-4 cursor-pointer hover:bg-muted/20 rounded-xl transition-colors"
                         onClick={() => setExpandedBatch(isExpanded ? null : batch.id)}
                       >
                         <div className="flex items-center gap-3 min-w-0">
                           <div className={`flex items-center justify-center w-9 h-9 rounded-full shrink-0 ${
                             canRelance ? 'bg-orange-500/20' : 'bg-indigo-500/10'
                           }`}>
-                            <Send className={`h-4 w-4 ${canRelance ? 'text-orange-400' : 'text-indigo-400'}`} />
+                            <Send className={`h-4 w-4 ${canRelance ? 'text-orange-500' : 'text-indigo-500'}`} />
                           </div>
                           <div className="min-w-0">
                             <div className="flex items-center gap-2 flex-wrap">
-                              <span className="font-medium text-white truncate">{batch.subject}</span>
-                              <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs bg-[#27272a]/60 text-zinc-400 border border-white/[0.05]">
+                              <span className="font-medium text-foreground truncate">{batch.subject}</span>
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs bg-muted text-muted-foreground border border-border">
                                 {batch.campaigns.length} email{batch.campaigns.length > 1 ? 's' : ''}
                               </span>
                               {canRelance ? (
-                                <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs bg-orange-500/10 text-orange-400 border border-orange-500/20">
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs bg-orange-500/10 text-orange-500 border border-orange-500/20">
                                   Relance requise
                                 </span>
                               ) : (
-                                <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs bg-green-500/10 text-green-400 border border-green-500/20">
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs bg-green-500/10 text-green-500 border border-green-500/20">
                                   En cours
                                 </span>
                               )}
                             </div>
-                            <p className="text-xs text-zinc-500 mt-0.5">
+                            <p className="text-xs text-muted-foreground mt-0.5">
                               {new Date(batch.timestamp).toLocaleString('fr-FR', {
                                 day: '2-digit', month: '2-digit', year: 'numeric',
                                 hour: '2-digit', minute: '2-digit'
@@ -707,16 +707,16 @@ export const CampaignsHub = () => {
                         </div>
                         <div className="flex items-center gap-2 shrink-0">
                           {isExpanded ? (
-                            <ChevronUp className="h-5 w-5 text-zinc-500" />
+                            <ChevronUp className="h-5 w-5 text-muted-foreground" />
                           ) : (
-                            <ChevronDown className="h-5 w-5 text-zinc-500" />
+                            <ChevronDown className="h-5 w-5 text-muted-foreground" />
                           )}
                         </div>
                       </div>
 
                       {/* Batch expanded content */}
                       {isExpanded && (
-                        <div className="px-4 pb-4 space-y-2 border-t border-white/[0.05]">
+                        <div className="px-4 pb-4 space-y-2 border-t border-border">
                           <div className="pt-3 space-y-2">
                             {batch.campaigns.map((campaign) => {
                               const isExcluded = excludedFromRelance.has(campaign.id);
@@ -728,21 +728,21 @@ export const CampaignsHub = () => {
                                   key={campaign.id} 
                                   className={`p-3 rounded-lg transition-all ${
                                     isExcluded 
-                                      ? 'bg-[#18181b]/20 opacity-50' 
-                                      : 'bg-[#27272a]/30 hover:bg-[#27272a]/50'
-                                  } border border-white/[0.03]`}
+                                      ? 'bg-muted/20 opacity-50' 
+                                      : 'bg-muted/30 hover:bg-muted/50'
+                                  } border border-border/50`}
                                 >
                                   <div className="flex items-start sm:items-center justify-between gap-3 flex-col sm:flex-row">
                                     <div className="flex items-center gap-3 min-w-0">
                                       {/* Avatar initiales */}
-                                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-gray-700 to-gray-800 flex items-center justify-center shrink-0">
-                                        <span className="text-xs font-medium text-white">{getInitials(campaign.recipient)}</span>
+                                      <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center shrink-0">
+                                        <span className="text-xs font-medium text-foreground">{getInitials(campaign.recipient)}</span>
                                       </div>
                                       <div className="min-w-0">
-                                        <span className={`text-sm text-white ${isExcluded ? 'line-through' : ''}`}>
+                                        <span className={`text-sm text-foreground ${isExcluded ? 'line-through' : ''}`}>
                                           {campaign.recipient}
                                         </span>
-                                        <p className="text-xs text-zinc-500">
+                                        <p className="text-xs text-muted-foreground">
                                           Envoyé il y a {getDaysSinceSent(campaign.sent_at)} jours
                                         </p>
                                       </div>
@@ -750,21 +750,21 @@ export const CampaignsHub = () => {
                                     <div className="flex items-center gap-1 shrink-0 flex-wrap">
                                       {/* Status badges */}
                                       {campaign.response_detected_at ? (
-                                        <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs bg-green-500/10 text-green-400 border border-green-500/20">
+                                        <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs bg-green-500/10 text-green-500 border border-green-500/20">
                                           Répondu
                                         </span>
                                       ) : (
-                                        <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs bg-zinc-500/10 text-zinc-400 border border-zinc-500/20">
+                                        <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs bg-muted text-muted-foreground border border-border">
                                           Pas de réponse
                                         </span>
                                       )}
                                       {campaign.follow_up_status === 'sent' && (
-                                        <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs bg-indigo-500/10 text-indigo-300 border border-indigo-500/20">
+                                        <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs bg-indigo-500/10 text-indigo-500 border border-indigo-500/20">
                                           Relancé
                                         </span>
                                       )}
                                       {campaign.subject_type && (
-                                        <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs bg-[#27272a]/60 text-zinc-400 border border-white/[0.05] capitalize">
+                                        <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs bg-muted text-muted-foreground border border-border capitalize">
                                           {campaign.subject_type}
                                         </span>
                                       )}
@@ -773,7 +773,7 @@ export const CampaignsHub = () => {
                                       <Button
                                         variant="ghost"
                                         size="sm"
-                                        className={`h-7 w-7 p-0 rounded-lg ${campaign.user_feedback === 'positive' ? 'bg-green-500/20 text-green-400' : 'text-zinc-500 hover:text-green-400'}`}
+                                        className={`h-7 w-7 p-0 rounded-lg ${campaign.user_feedback === 'positive' ? 'bg-green-500/20 text-green-500' : 'text-muted-foreground hover:text-green-500'}`}
                                         onClick={(e) => { e.stopPropagation(); handleSetFeedback(campaign.id, campaign.user_feedback === 'positive' ? '' : 'positive'); }}
                                         title="Réponse positive"
                                       >
@@ -782,7 +782,7 @@ export const CampaignsHub = () => {
                                       <Button
                                         variant="ghost"
                                         size="sm"
-                                        className={`h-7 w-7 p-0 rounded-lg ${campaign.user_feedback === 'negative' ? 'bg-red-500/20 text-red-400' : 'text-zinc-500 hover:text-red-400'}`}
+                                        className={`h-7 w-7 p-0 rounded-lg ${campaign.user_feedback === 'negative' ? 'bg-red-500/20 text-red-500' : 'text-muted-foreground hover:text-red-500'}`}
                                         onClick={(e) => { e.stopPropagation(); handleSetFeedback(campaign.id, campaign.user_feedback === 'negative' ? '' : 'negative'); }}
                                         title="Réponse négative"
                                       >
@@ -793,7 +793,7 @@ export const CampaignsHub = () => {
                                       <Button
                                         variant="ghost"
                                         size="sm"
-                                        className={`h-7 w-7 p-0 rounded-lg ${campaign.feedback_notes ? 'text-indigo-400' : 'text-zinc-500 hover:text-white'}`}
+                                        className={`h-7 w-7 p-0 rounded-lg ${campaign.feedback_notes ? 'text-indigo-500' : 'text-muted-foreground hover:text-foreground'}`}
                                         onClick={(e) => { 
                                           e.stopPropagation(); 
                                           if (feedbackNoteId === campaign.id) {
@@ -814,12 +814,12 @@ export const CampaignsHub = () => {
                                           variant="ghost"
                                           size="sm"
                                           onClick={(e) => { e.stopPropagation(); toggleExcludeFromRelance(campaign.id); }}
-                                          className="h-7 w-7 p-0 rounded-lg text-zinc-500 hover:text-white"
+                                          className="h-7 w-7 p-0 rounded-lg text-muted-foreground hover:text-foreground"
                                         >
                                           {isExcluded ? (
                                             <RefreshCw className="h-3 w-3" />
                                           ) : (
-                                            <MinusCircle className="h-3.5 w-3.5 text-red-400" />
+                                            <MinusCircle className="h-3.5 w-3.5 text-destructive" />
                                           )}
                                         </Button>
                                       )}
@@ -840,8 +840,8 @@ export const CampaignsHub = () => {
 
                                   {/* AI Response summary */}
                                   {campaign.response_summary && (
-                                    <div className="mt-2 p-2 rounded bg-[#18181b]/30 border border-[#27272a]">
-                                      <p className="text-xs text-zinc-300">
+                                    <div className="mt-2 p-2 rounded bg-muted/30 border border-border">
+                                      <p className="text-xs text-foreground/80">
                                         {responseTag && <span className={responseTag.className}>{responseTag.label} </span>}
                                         {campaign.response_summary}
                                       </p>
@@ -856,7 +856,7 @@ export const CampaignsHub = () => {
                                         onChange={(e) => setFeedbackNoteText(e.target.value)}
                                         placeholder="Pourquoi ça a marché/pas marché..."
                                         rows={2}
-                                        className="text-xs bg-[#18181b]/30 border-white/10 text-white placeholder:text-zinc-600"
+                                        className="text-xs"
                                       />
                                       <Button size="sm" onClick={() => handleSaveFeedbackNote(campaign.id)} className="shrink-0 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg">
                                         OK
@@ -870,11 +870,12 @@ export const CampaignsHub = () => {
 
                           {/* Batch footer - relance button */}
                           {canRelance && (
-                            <div className="pt-3 border-t border-white/[0.05]">
+                            <div className="pt-3 border-t border-border">
                               <AlertDialog>
                                 <AlertDialogTrigger asChild>
                                   <Button 
-                                    className="w-full bg-white text-black hover:bg-gray-200 rounded-lg font-medium"
+                                    className="w-full rounded-lg font-medium"
+                                    variant="outline"
                                     disabled={activeCampaigns.length === 0 || relancingBatch === batch.id}
                                   >
                                     {relancingBatch === batch.id ? (
@@ -885,20 +886,19 @@ export const CampaignsHub = () => {
                                     Relancer tout le batch ({activeCampaigns.length})
                                   </Button>
                                 </AlertDialogTrigger>
-                                <AlertDialogContent className="bg-[#18181b]/95 backdrop-blur-xl border border-white/[0.08]">
+                                <AlertDialogContent>
                                   <AlertDialogHeader>
-                                    <AlertDialogTitle className="text-white">Confirmer la relance</AlertDialogTitle>
-                                    <AlertDialogDescription className="text-zinc-400">
+                                    <AlertDialogTitle>Confirmer la relance</AlertDialogTitle>
+                                    <AlertDialogDescription>
                                       Vous allez envoyer {activeCampaigns.length} relance{activeCampaigns.length > 1 ? 's' : ''}.
                                       <br /><br />
                                       <strong>Important :</strong> Avez-vous vérifié que vous n'avez pas reçu de réponses ?
                                     </AlertDialogDescription>
                                   </AlertDialogHeader>
                                   <AlertDialogFooter>
-                                    <AlertDialogCancel className="bg-[#27272a] border-white/10 text-white hover:bg-[#3f3f46]">Annuler</AlertDialogCancel>
+                                    <AlertDialogCancel>Annuler</AlertDialogCancel>
                                     <AlertDialogAction 
                                       onClick={() => handleRelanceBatch(batch)}
-                                      className="bg-white text-black hover:bg-gray-200"
                                     >
                                       Confirmer et envoyer
                                     </AlertDialogAction>
@@ -923,14 +923,14 @@ export const CampaignsHub = () => {
         <div className="space-y-6">
           {/* Suivi header */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <h3 className="text-xl font-bold text-white">📊 Tracking candidature</h3>
-            <div className="inline-flex items-center gap-1 p-1 rounded-xl bg-[#18181b]/60 backdrop-blur-xl border border-white/[0.08]">
+            <h3 className="text-xl font-bold text-foreground">📊 Tracking candidature</h3>
+            <div className="inline-flex items-center gap-1 p-1 rounded-xl bg-muted/60 border border-border">
               <button
                 onClick={() => setPipelineView('list')}
                 className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-all ${
                   pipelineView === 'list' 
-                    ? 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20' 
-                    : 'text-zinc-500 hover:text-white border border-transparent'
+                    ? 'bg-indigo-500/10 text-indigo-500 border border-indigo-500/20' 
+                    : 'text-muted-foreground hover:text-foreground border border-transparent'
                 }`}
               >
                 <List className="h-4 w-4" />
@@ -940,8 +940,8 @@ export const CampaignsHub = () => {
                 onClick={() => setPipelineView('stats')}
                 className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-all ${
                   pipelineView === 'stats' 
-                    ? 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20' 
-                    : 'text-zinc-500 hover:text-white border border-transparent'
+                    ? 'bg-indigo-500/10 text-indigo-500 border border-indigo-500/20' 
+                    : 'text-muted-foreground hover:text-foreground border border-transparent'
                 }`}
               >
                 <BarChart3 className="h-4 w-4" />
@@ -955,15 +955,15 @@ export const CampaignsHub = () => {
             <div className="space-y-6">
               {/* Search */}
               <div className="relative">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="Rechercher par nom, ville, secteur..."
                   value={pipelineSearch}
                   onChange={(e) => setPipelineSearch(e.target.value)}
-                  className="pl-11 bg-[#18181b]/30 border-white/10 rounded-xl focus:ring-indigo-500/50 focus:border-indigo-500/30 text-white placeholder:text-zinc-500"
+                  className="pl-11 rounded-xl"
                 />
                 {pipelineSearch && (
-                  <p className="text-xs text-zinc-500 mt-2 ml-1">
+                  <p className="text-xs text-muted-foreground mt-2 ml-1">
                     {filteredPipelineCompanies.length} résultat{filteredPipelineCompanies.length > 1 ? 's' : ''} sur {pipelineCompanies.length}
                   </p>
                 )}
@@ -977,15 +977,15 @@ export const CampaignsHub = () => {
                   return (
                     <div key={stage.value}>
                       <div className="flex items-center justify-between mb-3">
-                        <h4 className="font-semibold text-white text-base">{stage.label}</h4>
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs bg-[#27272a]/60 text-zinc-400 border border-white/[0.05]">
+                        <h4 className="font-semibold text-foreground text-base">{stage.label}</h4>
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs bg-muted text-muted-foreground border border-border">
                           {companiesInStage.length}
                         </span>
                       </div>
                       
                       {companiesInStage.length === 0 ? (
-                        <div className="text-center py-4 rounded-xl bg-[#18181b]/30 border border-white/[0.05] border-dashed">
-                          <p className="text-sm text-zinc-600">Aucune entreprise</p>
+                        <div className="text-center py-4 rounded-xl bg-muted/20 border border-border border-dashed">
+                          <p className="text-sm text-muted-foreground">Aucune entreprise</p>
                         </div>
                       ) : (
                         <div className="space-y-2">
@@ -997,14 +997,14 @@ export const CampaignsHub = () => {
                             return (
                               <div 
                                 key={company.id} 
-                                className={`p-3 rounded-xl border-l-4 ${currentStage?.colorClass} bg-[#27272a]/40 backdrop-blur-lg border-t border-r border-b border-white/[0.05] hover:bg-[#27272a]/60 hover:border-indigo-500/30 hover:translate-x-1 transition-all ${
+                                className={`p-3 rounded-xl border-l-4 ${currentStage?.colorClass} bg-card border-t border-r border-b border-border hover:border-indigo-500/30 hover:translate-x-1 transition-all ${
                                   isEntretien ? 'bg-indigo-500/5' : ''
                                 } ${isUpdating ? 'opacity-60' : ''}`}
                               >
                                 <div className="flex items-center justify-between gap-3">
                                   <div className="min-w-0 flex-1">
-                                    <h5 className="font-semibold text-sm text-white">{company.nom}</h5>
-                                    <div className="flex items-center gap-2 mt-0.5 text-xs text-zinc-500">
+                                    <h5 className="font-semibold text-sm text-foreground">{company.nom}</h5>
+                                    <div className="flex items-center gap-2 mt-0.5 text-xs text-muted-foreground">
                                       <span>📍 {company.ville}</span>
                                       {company.selected_email && (
                                         <>
@@ -1015,16 +1015,16 @@ export const CampaignsHub = () => {
                                     </div>
                                   </div>
                                   <div className="flex items-center gap-2 shrink-0">
-                                    {isUpdating && <Loader2 className="h-4 w-4 animate-spin text-indigo-400" />}
+                                    {isUpdating && <Loader2 className="h-4 w-4 animate-spin text-indigo-500" />}
                                     <Select 
                                       value={company.pipeline_stage} 
                                       onValueChange={(value) => moveCompany(company.id, value)}
                                       disabled={isUpdating}
                                     >
-                                      <SelectTrigger className="h-8 text-xs w-[160px] bg-[#18181b]/30 border-white/10 text-zinc-300">
+                                      <SelectTrigger className="h-8 text-xs w-[160px]">
                                         <SelectValue />
                                       </SelectTrigger>
-                                      <SelectContent className="bg-[#18181b]/95 backdrop-blur-xl border border-white/[0.08]">
+                                      <SelectContent>
                                         {PIPELINE_STAGES.map((s) => (
                                           <SelectItem key={s.value} value={s.value}>
                                             {s.label}
@@ -1052,14 +1052,14 @@ export const CampaignsHub = () => {
               {/* KPI cards */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                 {[
-                  { label: 'Total entreprises', value: pipelineStats.total, color: 'border-blue-500', textColor: 'text-blue-400' },
-                  { label: 'Candidatures envoyées', value: pipelineStats.parPhase["candidature_envoyee"] || 0, color: 'border-purple-500', textColor: 'text-purple-400' },
-                  { label: 'Entretiens', value: pipelineStats.parPhase["entretien"] || 0, color: 'border-indigo-500', textColor: 'text-indigo-400' },
-                  { label: 'Acceptés', value: pipelineStats.parPhase["accepte"] || 0, color: 'border-emerald-500', textColor: 'text-emerald-400' },
+                  { label: 'Total entreprises', value: pipelineStats.total, color: 'border-blue-500', textColor: 'text-blue-500' },
+                  { label: 'Candidatures envoyées', value: pipelineStats.parPhase["candidature_envoyee"] || 0, color: 'border-purple-500', textColor: 'text-purple-500' },
+                  { label: 'Entretiens', value: pipelineStats.parPhase["entretien"] || 0, color: 'border-indigo-500', textColor: 'text-indigo-500' },
+                  { label: 'Acceptés', value: pipelineStats.parPhase["accepte"] || 0, color: 'border-emerald-500', textColor: 'text-emerald-500' },
                 ].map((kpi) => (
-                  <div key={kpi.label} className={`p-4 rounded-xl bg-[#18181b]/60 backdrop-blur-xl border border-white/[0.08] border-l-4 ${kpi.color} text-center`}>
+                  <div key={kpi.label} className={`p-4 rounded-xl bg-card border border-border border-l-4 ${kpi.color} text-center`}>
                     <p className={`text-3xl font-bold ${kpi.textColor}`}>{kpi.value}</p>
-                    <p className="text-xs text-zinc-500 mt-1">{kpi.label}</p>
+                    <p className="text-xs text-muted-foreground mt-1">{kpi.label}</p>
                   </div>
                 ))}
               </div>
@@ -1067,8 +1067,8 @@ export const CampaignsHub = () => {
               {/* Charts */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Pie Chart */}
-                <div className="p-6 rounded-xl bg-[#18181b]/60 backdrop-blur-xl border border-white/[0.08]">
-                  <h4 className="text-base font-semibold text-white mb-4">Répartition par phase</h4>
+                <div className="p-6 rounded-xl bg-card border border-border">
+                  <h4 className="text-base font-semibold text-foreground mb-4">Répartition par phase</h4>
                   {pieChartData.length > 0 ? (
                     <ResponsiveContainer width="100%" height={300}>
                       <PieChart>
@@ -1086,24 +1086,24 @@ export const CampaignsHub = () => {
                             <Cell key={`cell-${index}`} fill={entry.color} />
                           ))}
                         </Pie>
-                        <Tooltip contentStyle={{ backgroundColor: '#18181b', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '8px', color: '#fff' }} />
+                        <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px', color: 'hsl(var(--foreground))' }} />
                       </PieChart>
                     </ResponsiveContainer>
                   ) : (
-                    <div className="h-[300px] flex items-center justify-center text-zinc-600">
+                    <div className="h-[300px] flex items-center justify-center text-muted-foreground">
                       Aucune donnée à afficher
                     </div>
                   )}
                 </div>
 
                 {/* Bar Chart */}
-                <div className="p-6 rounded-xl bg-[#18181b]/60 backdrop-blur-xl border border-white/[0.08]">
-                  <h4 className="text-base font-semibold text-white mb-4">Nombre par phase</h4>
+                <div className="p-6 rounded-xl bg-card border border-border">
+                  <h4 className="text-base font-semibold text-foreground mb-4">Nombre par phase</h4>
                   <ResponsiveContainer width="100%" height={300}>
                     <BarChart data={barChartData} layout="vertical">
-                      <XAxis type="number" tick={{ fill: '#71717a', fontSize: 12 }} />
-                      <YAxis type="category" dataKey="name" width={120} tick={{ fill: '#a1a1aa', fontSize: 12 }} />
-                      <Tooltip contentStyle={{ backgroundColor: '#18181b', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '8px', color: '#fff' }} />
+                      <XAxis type="number" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} />
+                      <YAxis type="category" dataKey="name" width={120} tick={{ fill: 'hsl(var(--foreground))', fontSize: 12 }} />
+                      <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px', color: 'hsl(var(--foreground))' }} />
                       <Bar dataKey="count" radius={[0, 4, 4, 0]}>
                         {barChartData.map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={entry.fill} />
@@ -1116,42 +1116,42 @@ export const CampaignsHub = () => {
 
               {/* Conversion rates */}
               {pipelineStats.total > 0 && (
-                <div className="p-6 rounded-xl bg-[#18181b]/60 backdrop-blur-xl border border-white/[0.08]">
-                  <h4 className="text-base font-semibold text-white mb-4">Taux de conversion</h4>
+                <div className="p-6 rounded-xl bg-card border border-border">
+                  <h4 className="text-base font-semibold text-foreground mb-4">Taux de conversion</h4>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-center">
-                    <div className="text-center p-4 rounded-xl bg-[#27272a]/40 border border-white/[0.05]">
-                      <p className="text-2xl font-bold text-blue-400">
+                    <div className="text-center p-4 rounded-xl bg-muted/40 border border-border">
+                      <p className="text-2xl font-bold text-blue-500">
                         {((pipelineStats.parPhase["candidature_envoyee"] || 0) / pipelineStats.total * 100).toFixed(1)}%
                       </p>
-                      <p className="text-xs text-zinc-500 mt-1">Taux d'envoi</p>
+                      <p className="text-xs text-muted-foreground mt-1">Taux d'envoi</p>
                     </div>
                     <div className="hidden sm:flex justify-center">
-                      <ArrowRight className="h-5 w-5 text-zinc-600" />
+                      <ArrowRight className="h-5 w-5 text-muted-foreground" />
                     </div>
-                    <div className="text-center p-4 rounded-xl bg-[#27272a]/40 border border-white/[0.05]">
-                      <p className="text-2xl font-bold text-indigo-400">
+                    <div className="text-center p-4 rounded-xl bg-muted/40 border border-border">
+                      <p className="text-2xl font-bold text-indigo-500">
                         {pipelineStats.parPhase["candidature_envoyee"] 
                           ? ((pipelineStats.parPhase["entretien"] || 0) / pipelineStats.parPhase["candidature_envoyee"] * 100).toFixed(1)
                           : 0}%
                       </p>
-                      <p className="text-xs text-zinc-500 mt-1">Envoi → Entretien</p>
+                      <p className="text-xs text-muted-foreground mt-1">Envoi → Entretien</p>
                     </div>
                   </div>
-                  <div className="mt-4 text-center p-4 rounded-xl bg-[#27272a]/40 border border-white/[0.05]">
-                    <p className="text-2xl font-bold text-emerald-400">
+                  <div className="mt-4 text-center p-4 rounded-xl bg-muted/40 border border-border">
+                    <p className="text-2xl font-bold text-emerald-500">
                       {pipelineStats.parPhase["entretien"]
                         ? ((pipelineStats.parPhase["accepte"] || 0) / pipelineStats.parPhase["entretien"] * 100).toFixed(1)
                         : 0}%
                     </p>
-                    <p className="text-xs text-zinc-500 mt-1">Entretien → Accepté</p>
+                    <p className="text-xs text-muted-foreground mt-1">Entretien → Accepté</p>
                   </div>
                 </div>
               )}
 
               {/* Feedback performance */}
               {campaigns.length > 0 && (
-                <div className="p-6 rounded-xl bg-[#18181b]/60 backdrop-blur-xl border border-white/[0.08]">
-                  <h4 className="text-base font-semibold text-white mb-4">📊 Performance par type d'approche</h4>
+                <div className="p-6 rounded-xl bg-card border border-border">
+                  <h4 className="text-base font-semibold text-foreground mb-4">📊 Performance par type d'approche</h4>
                   {(() => {
                     const withFeedback = campaigns.filter(c => c.user_feedback);
                     const typeLabels: Record<string, string> = { corporate: 'Corporate/RH', value: 'Valeur ajoutée', manager: 'Manager', question: 'Question' };
@@ -1174,7 +1174,7 @@ export const CampaignsHub = () => {
                     const totalNoResponse = withFeedback.filter(c => c.user_feedback === 'no_response').length;
 
                     if (withFeedback.length === 0) {
-                      return <p className="text-sm text-zinc-500 text-center py-4">Ajoutez des feedbacks sur vos emails pour voir les statistiques.</p>;
+                      return <p className="text-sm text-muted-foreground text-center py-4">Ajoutez des feedbacks sur vos emails pour voir les statistiques.</p>;
                     }
 
                     const feedbackPieData = [
@@ -1186,39 +1186,39 @@ export const CampaignsHub = () => {
                     return (
                       <div className="space-y-6">
                         <div className="grid grid-cols-3 gap-4">
-                          <div className="text-center p-3 rounded-xl bg-[#27272a]/40 border border-white/[0.05]">
-                            <p className="text-2xl font-bold text-green-400">{totalPositive}</p>
-                            <p className="text-xs text-zinc-500">Positifs</p>
+                          <div className="text-center p-3 rounded-xl bg-muted/40 border border-border">
+                            <p className="text-2xl font-bold text-green-500">{totalPositive}</p>
+                            <p className="text-xs text-muted-foreground">Positifs</p>
                           </div>
-                          <div className="text-center p-3 rounded-xl bg-[#27272a]/40 border border-white/[0.05]">
-                            <p className="text-2xl font-bold text-red-400">{totalNegative}</p>
-                            <p className="text-xs text-zinc-500">Négatifs</p>
+                          <div className="text-center p-3 rounded-xl bg-muted/40 border border-border">
+                            <p className="text-2xl font-bold text-destructive">{totalNegative}</p>
+                            <p className="text-xs text-muted-foreground">Négatifs</p>
                           </div>
-                          <div className="text-center p-3 rounded-xl bg-[#27272a]/40 border border-white/[0.05]">
-                            <p className="text-2xl font-bold text-zinc-400">{totalNoResponse}</p>
-                            <p className="text-xs text-zinc-500">Sans réponse</p>
+                          <div className="text-center p-3 rounded-xl bg-muted/40 border border-border">
+                            <p className="text-2xl font-bold text-muted-foreground">{totalNoResponse}</p>
+                            <p className="text-xs text-muted-foreground">Sans réponse</p>
                           </div>
                         </div>
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                           <div>
-                            <h5 className="font-medium text-zinc-300 mb-3">Répartition feedbacks</h5>
+                            <h5 className="font-medium text-foreground/80 mb-3">Répartition feedbacks</h5>
                             <ResponsiveContainer width="100%" height={200}>
                               <PieChart>
                                 <Pie data={feedbackPieData} cx="50%" cy="50%" outerRadius={70} innerRadius={40} dataKey="value" label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`} labelLine={false}>
                                   {feedbackPieData.map((entry, i) => <Cell key={i} fill={entry.color} />)}
                                 </Pie>
-                                <Tooltip contentStyle={{ backgroundColor: '#18181b', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '8px', color: '#fff' }} />
+                                <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px', color: 'hsl(var(--foreground))' }} />
                               </PieChart>
                             </ResponsiveContainer>
                           </div>
                           {byType.length > 0 && (
                             <div>
-                              <h5 className="font-medium text-zinc-300 mb-3">Taux positif par type</h5>
+                              <h5 className="font-medium text-foreground/80 mb-3">Taux positif par type</h5>
                               <ResponsiveContainer width="100%" height={200}>
                                 <BarChart data={byType} layout="vertical">
-                                  <XAxis type="number" domain={[0, 100]} tickFormatter={(v) => `${v}%`} tick={{ fill: '#71717a', fontSize: 12 }} />
-                                  <YAxis type="category" dataKey="name" width={100} tick={{ fill: '#a1a1aa', fontSize: 12 }} />
-                                  <Tooltip formatter={(v: number) => `${v}%`} contentStyle={{ backgroundColor: '#18181b', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '8px', color: '#fff' }} />
+                                  <XAxis type="number" domain={[0, 100]} tickFormatter={(v) => `${v}%`} tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} />
+                                  <YAxis type="category" dataKey="name" width={100} tick={{ fill: 'hsl(var(--foreground))', fontSize: 12 }} />
+                                  <Tooltip formatter={(v: number) => `${v}%`} contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px', color: 'hsl(var(--foreground))' }} />
                                   <Bar dataKey="rate" fill="#6366f1" radius={[0, 4, 4, 0]} />
                                 </BarChart>
                               </ResponsiveContainer>
@@ -1227,12 +1227,12 @@ export const CampaignsHub = () => {
                         </div>
                         {byTone.length > 0 && (
                           <div>
-                            <h5 className="font-medium text-zinc-300 mb-3">Taux positif par ton</h5>
+                            <h5 className="font-medium text-foreground/80 mb-3">Taux positif par ton</h5>
                             <ResponsiveContainer width="100%" height={160}>
                               <BarChart data={byTone} layout="vertical">
-                                <XAxis type="number" domain={[0, 100]} tickFormatter={(v) => `${v}%`} tick={{ fill: '#71717a', fontSize: 12 }} />
-                                <YAxis type="category" dataKey="name" width={100} tick={{ fill: '#a1a1aa', fontSize: 12 }} />
-                                <Tooltip formatter={(v: number) => `${v}%`} contentStyle={{ backgroundColor: '#18181b', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '8px', color: '#fff' }} />
+                                <XAxis type="number" domain={[0, 100]} tickFormatter={(v) => `${v}%`} tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} />
+                                <YAxis type="category" dataKey="name" width={100} tick={{ fill: 'hsl(var(--foreground))', fontSize: 12 }} />
+                                <Tooltip formatter={(v: number) => `${v}%`} contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px', color: 'hsl(var(--foreground))' }} />
                                 <Bar dataKey="rate" fill="#6366f1" radius={[0, 4, 4, 0]} />
                               </BarChart>
                             </ResponsiveContainer>
