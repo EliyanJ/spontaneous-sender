@@ -30,7 +30,8 @@ export interface TemplateCVData {
   }>;
   skills?: Array<{
     category: string;
-    detail_1: string;
+    skill_name?: string;  // Nouveau format : 1 skill = 1 item (flux continu grid)
+    detail_1: string;     // Rétrocompatibilité anciens templates
     detail_2: string;
     detail_3?: string;
   }>;
