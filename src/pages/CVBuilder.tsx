@@ -13,6 +13,8 @@ import { Header } from "@/components/Header";
 import { Logo } from "@/components/Logo";
 import { useQuery } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
+import { CVTruncationDialog } from "@/components/cv-builder/CVTruncationDialog";
+import { validateCVData, applyAllCorrections, type CVFieldViolation } from "@/lib/cv-export/cvDataValidator";
 
 // Palettes de couleurs prédéfinies
 const COLOR_PALETTES = [
