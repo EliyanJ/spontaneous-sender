@@ -409,7 +409,7 @@ export const AdminCVTemplateBuilder = () => {
           )}
 
           {/* Éditeur de code HTML */}
-          <div className="flex-1 flex flex-col p-4 gap-2 min-h-0">
+          <div className="flex-1 flex flex-col p-4 gap-2 min-h-0 overflow-hidden">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
                 <FileCode2 className="h-4 w-4 text-primary" />
