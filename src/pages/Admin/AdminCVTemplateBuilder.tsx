@@ -298,7 +298,7 @@ export const AdminCVTemplateBuilder = () => {
       <div className="flex-1 flex overflow-hidden">
 
         {/* ── Panneau gauche : éditeur ── */}
-        <div className="flex flex-col border-r border-border bg-card overflow-y-auto"
+        <div className="flex flex-col border-r border-border bg-card overflow-y-auto min-h-0"
           style={{ width: showPreview ? "480px" : "100%" }}
         >
           {/* Zone upload */}
@@ -409,7 +409,7 @@ export const AdminCVTemplateBuilder = () => {
           )}
 
           {/* Éditeur de code HTML */}
-          <div className="flex-1 flex flex-col p-4 gap-2 min-h-0">
+          <div className="flex-1 flex flex-col p-4 gap-2 min-h-0 overflow-hidden">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
                 <FileCode2 className="h-4 w-4 text-primary" />
@@ -427,7 +427,7 @@ export const AdminCVTemplateBuilder = () => {
             <textarea
               value={htmlContent}
               onChange={(e) => setHtmlContent(e.target.value)}
-              className="flex-1 min-h-[400px] w-full font-mono text-[11px] leading-relaxed p-3 rounded-lg border border-border bg-muted/30 text-foreground resize-none focus:outline-none focus:ring-1 focus:ring-primary"
+              className="flex-1 min-h-[200px] w-full font-mono text-[11px] leading-relaxed p-3 rounded-lg border border-border bg-muted/30 text-foreground resize-none focus:outline-none focus:ring-1 focus:ring-primary"
               spellCheck={false}
               placeholder="Collez votre HTML ici ou uploadez un fichier..."
             />
