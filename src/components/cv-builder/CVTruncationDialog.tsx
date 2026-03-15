@@ -116,8 +116,8 @@ export function CVTruncationDialog({
       <DialogContent className="max-w-2xl w-full">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-lg">
-            <div className="w-8 h-8 rounded-full bg-amber-500/15 flex items-center justify-center">
-              <Scissors className="h-4 w-4 text-amber-500" />
+            <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center">
+              <Scissors className="h-4 w-4 text-foreground" />
             </div>
             Contenu trop long — validation requise
           </DialogTitle>
@@ -131,7 +131,7 @@ export function CVTruncationDialog({
 
         {/* Stats rapides */}
         <div className="flex items-center gap-3 px-1">
-          <Badge variant="outline" className="border-amber-500/40 text-amber-600 bg-amber-500/5 gap-1.5 text-xs">
+          <Badge variant="outline" className="border-border text-muted-foreground gap-1.5 text-xs">
             <AlertTriangle className="h-3 w-3" />
             {violations.length} {violations.length === 1 ? "violation" : "violations"} — {totalExcess} car. excédentaires au total
           </Badge>
@@ -142,7 +142,7 @@ export function CVTruncationDialog({
               className="text-xs h-7 gap-1.5"
               onClick={handleAcceptAll}
             >
-              <CheckCircle2 className="h-3.5 w-3.5 text-green-500" />
+              <CheckCircle2 className="h-3.5 w-3.5 text-primary" />
               Tout accepter
             </Button>
           )}
