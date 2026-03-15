@@ -263,15 +263,50 @@ const CVBuilder = () => {
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
       if (data?.cvData) {
-        const updatedData = { ...data.cvData };
+        const updatedData: CVData = { ...data.cvData };
         if (firstName) updatedData.personalInfo = { ...updatedData.personalInfo, firstName };
         if (lastName) updatedData.personalInfo = { ...updatedData.personalInfo, lastName };
-        setCvData(updatedData);
-        toast.success("CV importé et structuré avec succès !");
+
+        // ── Validation des limites A4 ──
+        const violations = validateCVData(updatedData);
+        if (violations.length > 0) {
+          // Stocker les données en attente + ouvrir la dialog de validation
+          setPendingCvData(updatedData);
+          setPendingViolations(violations);
+          toast.info(`${violations.length} passage${violations.length > 1 ? "s" : ""} trop long${violations.length > 1 ? "s" : ""} — validation requise`);
+        } else {
+          // Aucune violation → appliquer directement
+          setCvData(updatedData);
+          toast.success("CV importé et structuré avec succès !");
+        }
       }
     } catch (err: any) {
       toast.error("Erreur IA: " + (err.message || "Erreur inconnue"));
     } finally { setIsLoading(false); }
+  };
+
+  const handleTruncationConfirm = (resolved: Array<{ id: string; finalValue: string }>) => {
+    if (!pendingCvData) return;
+    const pendingViolationsCopy = pendingViolations;
+    const corrections = resolved.map(r => {
+      const violation = pendingViolationsCopy.find(v => v.id === r.id);
+      return violation ? { path: violation.path, finalValue: r.finalValue } : null;
+    }).filter(Boolean) as Array<{ path: any; finalValue: string }>;
+
+    const correctedData = applyAllCorrections(pendingCvData, corrections);
+    setCvData(correctedData);
+    setPendingViolations([]);
+    setPendingCvData(null);
+    toast.success("CV importé et corrigé avec succès !");
+  };
+
+  const handleTruncationSkip = () => {
+    if (pendingCvData) {
+      setCvData(pendingCvData);
+      toast.success("CV importé (sans corrections).");
+    }
+    setPendingViolations([]);
+    setPendingCvData(null);
   };
 
   const handleLoadFromDB = async (profileContent: string, profileName: string) => {
