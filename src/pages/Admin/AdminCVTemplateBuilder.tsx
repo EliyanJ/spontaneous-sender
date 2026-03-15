@@ -427,7 +427,7 @@ export const AdminCVTemplateBuilder = () => {
             <textarea
               value={htmlContent}
               onChange={(e) => setHtmlContent(e.target.value)}
-              className="flex-1 min-h-[400px] w-full font-mono text-[11px] leading-relaxed p-3 rounded-lg border border-border bg-muted/30 text-foreground resize-none focus:outline-none focus:ring-1 focus:ring-primary"
+              className="flex-1 min-h-[200px] w-full font-mono text-[11px] leading-relaxed p-3 rounded-lg border border-border bg-muted/30 text-foreground resize-none focus:outline-none focus:ring-1 focus:ring-primary"
               spellCheck={false}
               placeholder="Collez votre HTML ici ou uploadez un fichier..."
             />
