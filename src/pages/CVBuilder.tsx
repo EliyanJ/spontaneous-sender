@@ -184,6 +184,8 @@ const CVBuilder = () => {
   const [lastName, setLastName] = useState("");
   const [withPhoto, setWithPhoto] = useState<boolean | null>(null); // null = tous
   const [showAllTemplates, setShowAllTemplates] = useState(false);
+  const [pendingViolations, setPendingViolations] = useState<CVFieldViolation[]>([]);
+  const [pendingCvData, setPendingCvData] = useState<CVData | null>(null);
 
   // ── Charger les templates depuis la BDD ──
   const { data: dbTemplates = [], isLoading: templatesLoading } = useQuery({
