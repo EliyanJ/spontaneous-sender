@@ -13,6 +13,8 @@ import { Header } from "@/components/Header";
 import { Logo } from "@/components/Logo";
 import { useQuery } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
+import { CVTruncationDialog } from "@/components/cv-builder/CVTruncationDialog";
+import { validateCVData, applyAllCorrections, type CVFieldViolation } from "@/lib/cv-export/cvDataValidator";
 
 // Palettes de couleurs prédéfinies
 const COLOR_PALETTES = [
@@ -182,6 +184,8 @@ const CVBuilder = () => {
   const [lastName, setLastName] = useState("");
   const [withPhoto, setWithPhoto] = useState<boolean | null>(null); // null = tous
   const [showAllTemplates, setShowAllTemplates] = useState(false);
+  const [pendingViolations, setPendingViolations] = useState<CVFieldViolation[]>([]);
+  const [pendingCvData, setPendingCvData] = useState<CVData | null>(null);
 
   // ── Charger les templates depuis la BDD ──
   const { data: dbTemplates = [], isLoading: templatesLoading } = useQuery({
@@ -259,15 +263,50 @@ const CVBuilder = () => {
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
       if (data?.cvData) {
-        const updatedData = { ...data.cvData };
+        const updatedData: CVData = { ...data.cvData };
         if (firstName) updatedData.personalInfo = { ...updatedData.personalInfo, firstName };
         if (lastName) updatedData.personalInfo = { ...updatedData.personalInfo, lastName };
-        setCvData(updatedData);
-        toast.success("CV importé et structuré avec succès !");
+
+        // ── Validation des limites A4 ──
+        const violations = validateCVData(updatedData);
+        if (violations.length > 0) {
+          // Stocker les données en attente + ouvrir la dialog de validation
+          setPendingCvData(updatedData);
+          setPendingViolations(violations);
+          toast.info(`${violations.length} passage${violations.length > 1 ? "s" : ""} trop long${violations.length > 1 ? "s" : ""} — validation requise`);
+        } else {
+          // Aucune violation → appliquer directement
+          setCvData(updatedData);
+          toast.success("CV importé et structuré avec succès !");
+        }
       }
     } catch (err: any) {
       toast.error("Erreur IA: " + (err.message || "Erreur inconnue"));
     } finally { setIsLoading(false); }
+  };
+
+  const handleTruncationConfirm = (resolved: Array<{ id: string; finalValue: string }>) => {
+    if (!pendingCvData) return;
+    const pendingViolationsCopy = pendingViolations;
+    const corrections = resolved.map(r => {
+      const violation = pendingViolationsCopy.find(v => v.id === r.id);
+      return violation ? { path: violation.path, finalValue: r.finalValue } : null;
+    }).filter(Boolean) as Array<{ path: any; finalValue: string }>;
+
+    const correctedData = applyAllCorrections(pendingCvData, corrections);
+    setCvData(correctedData);
+    setPendingViolations([]);
+    setPendingCvData(null);
+    toast.success("CV importé et corrigé avec succès !");
+  };
+
+  const handleTruncationSkip = () => {
+    if (pendingCvData) {
+      setCvData(pendingCvData);
+      toast.success("CV importé (sans corrections).");
+    }
+    setPendingViolations([]);
+    setPendingCvData(null);
   };
 
   const handleLoadFromDB = async (profileContent: string, profileName: string) => {
@@ -320,6 +359,14 @@ const CVBuilder = () => {
       <div className="min-h-screen bg-background flex flex-col">
         <Header />
 
+        {/* Dialog de validation des textes trop longs */}
+        <CVTruncationDialog
+          open={pendingViolations.length > 0}
+          violations={pendingViolations}
+          onConfirm={handleTruncationConfirm}
+          onSkip={handleTruncationSkip}
+        />
+
         {/* ── Hero banner ── */}
         <div className="mt-[72px] bg-gradient-to-br from-primary to-primary/80 text-primary-foreground py-10 px-4">
           <div className="max-w-7xl mx-auto">
@@ -369,9 +416,9 @@ const CVBuilder = () => {
         <main className="max-w-7xl mx-auto px-4 md:px-8 py-12 flex-1 w-full">
 
           {/* Badge validé recruteurs */}
-          <div className="bg-gradient-to-r from-green-500/10 to-green-500/5 border border-green-500/20 rounded-xl p-4 mb-10 flex items-center gap-3">
-            <div className="w-9 h-9 bg-green-500 rounded-full flex items-center justify-center shrink-0">
-              <Check className="h-4 w-4 text-white" />
+          <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 mb-10 flex items-center gap-3">
+            <div className="w-9 h-9 bg-primary rounded-full flex items-center justify-center shrink-0">
+              <Check className="h-4 w-4 text-primary-foreground" />
             </div>
             <div>
               <p className="font-semibold text-foreground text-sm">Templates validés par des recruteurs professionnels</p>
@@ -503,20 +550,29 @@ const CVBuilder = () => {
 
   // ── STEP 2: Editor ─────────────────────────────────────────────────────────
   return (
-    <CVBuilderEditor
-      cvData={cvData}
-      onChange={setCvData}
-      onFileParsed={handleFileParsed}
-      onLoadFromDB={handleLoadFromDB}
-      isLoading={isLoading}
-      importedFileName={importedFileName}
-      onClearImport={() => setImportedFileName(null)}
-      designOptions={designOptions}
-      onDesignChange={setDesignOptions}
-      templateId={templateId}
-      onSave={handleSaveCV}
-      onBack={() => setStep("select")}
-    />
+    <>
+      {/* Dialog de validation des textes trop longs (visible aussi depuis l'éditeur) */}
+      <CVTruncationDialog
+        open={pendingViolations.length > 0}
+        violations={pendingViolations}
+        onConfirm={handleTruncationConfirm}
+        onSkip={handleTruncationSkip}
+      />
+      <CVBuilderEditor
+        cvData={cvData}
+        onChange={setCvData}
+        onFileParsed={handleFileParsed}
+        onLoadFromDB={handleLoadFromDB}
+        isLoading={isLoading}
+        importedFileName={importedFileName}
+        onClearImport={() => setImportedFileName(null)}
+        designOptions={designOptions}
+        onDesignChange={setDesignOptions}
+        templateId={templateId}
+        onSave={handleSaveCV}
+        onBack={() => setStep("select")}
+      />
+    </>
   );
 };
 
