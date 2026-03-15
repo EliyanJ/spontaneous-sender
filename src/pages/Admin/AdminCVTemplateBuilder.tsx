@@ -298,7 +298,7 @@ export const AdminCVTemplateBuilder = () => {
       <div className="flex-1 flex overflow-hidden">
 
         {/* ── Panneau gauche : éditeur ── */}
-        <div className="flex flex-col border-r border-border bg-card overflow-y-auto"
+        <div className="flex flex-col border-r border-border bg-card overflow-y-auto min-h-0"
           style={{ width: showPreview ? "480px" : "100%" }}
         >
           {/* Zone upload */}
