@@ -176,14 +176,14 @@ export function CVTruncationDialog({
                         </span>
                         <Badge
                           variant="outline"
-                          className="text-[10px] h-4 px-1.5 border-amber-500/40 text-amber-600"
+                          className="text-[10px] h-4 px-1.5 border-border text-muted-foreground"
                         >
                           {v.originalLength} → {v.limit} car.
                         </Badge>
                         {s.mode === "accepted" && (
                           <Badge
                             variant="outline"
-                            className="text-[10px] h-4 px-1.5 border-green-500/40 text-green-600 bg-green-500/5"
+                            className="text-[10px] h-4 px-1.5 border-primary/30 text-primary bg-primary/5"
                           >
                             <CheckCircle2 className="h-2.5 w-2.5 mr-1" />
                             IA acceptée
