@@ -359,6 +359,14 @@ const CVBuilder = () => {
       <div className="min-h-screen bg-background flex flex-col">
         <Header />
 
+        {/* Dialog de validation des textes trop longs */}
+        <CVTruncationDialog
+          open={pendingViolations.length > 0}
+          violations={pendingViolations}
+          onConfirm={handleTruncationConfirm}
+          onSkip={handleTruncationSkip}
+        />
+
         {/* ── Hero banner ── */}
         <div className="mt-[72px] bg-gradient-to-br from-primary to-primary/80 text-primary-foreground py-10 px-4">
           <div className="max-w-7xl mx-auto">
