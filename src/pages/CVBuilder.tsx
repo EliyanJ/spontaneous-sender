@@ -550,20 +550,29 @@ const CVBuilder = () => {
 
   // ── STEP 2: Editor ─────────────────────────────────────────────────────────
   return (
-    <CVBuilderEditor
-      cvData={cvData}
-      onChange={setCvData}
-      onFileParsed={handleFileParsed}
-      onLoadFromDB={handleLoadFromDB}
-      isLoading={isLoading}
-      importedFileName={importedFileName}
-      onClearImport={() => setImportedFileName(null)}
-      designOptions={designOptions}
-      onDesignChange={setDesignOptions}
-      templateId={templateId}
-      onSave={handleSaveCV}
-      onBack={() => setStep("select")}
-    />
+    <>
+      {/* Dialog de validation des textes trop longs (visible aussi depuis l'éditeur) */}
+      <CVTruncationDialog
+        open={pendingViolations.length > 0}
+        violations={pendingViolations}
+        onConfirm={handleTruncationConfirm}
+        onSkip={handleTruncationSkip}
+      />
+      <CVBuilderEditor
+        cvData={cvData}
+        onChange={setCvData}
+        onFileParsed={handleFileParsed}
+        onLoadFromDB={handleLoadFromDB}
+        isLoading={isLoading}
+        importedFileName={importedFileName}
+        onClearImport={() => setImportedFileName(null)}
+        designOptions={designOptions}
+        onDesignChange={setDesignOptions}
+        templateId={templateId}
+        onSave={handleSaveCV}
+        onBack={() => setStep("select")}
+      />
+    </>
   );
 };
 
