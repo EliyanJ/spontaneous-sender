@@ -224,7 +224,7 @@ export function CVTruncationDialog({
                   {s.expanded && (
                     <div className="px-4 pb-4 space-y-3 border-t border-border/50 pt-3">
 
-                      {/* Texte original */}
+                        {/* Texte original */}
                       <div>
                         <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1">
                           Texte original ({v.originalLength} car.)
@@ -244,7 +244,7 @@ export function CVTruncationDialog({
                             onClick={() => setMode(v.id, "accepted")}
                             className={`text-[10px] font-medium px-2 py-0.5 rounded-md transition-colors ${
                               s.mode === "accepted"
-                                ? "bg-green-500/15 text-green-600 border border-green-500/30"
+                                ? "bg-secondary text-secondary-foreground border border-border"
                                 : "text-muted-foreground hover:text-foreground hover:bg-muted"
                             }`}
                           >
