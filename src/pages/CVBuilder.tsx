@@ -408,9 +408,9 @@ const CVBuilder = () => {
         <main className="max-w-7xl mx-auto px-4 md:px-8 py-12 flex-1 w-full">
 
           {/* Badge validé recruteurs */}
-          <div className="bg-gradient-to-r from-green-500/10 to-green-500/5 border border-green-500/20 rounded-xl p-4 mb-10 flex items-center gap-3">
-            <div className="w-9 h-9 bg-green-500 rounded-full flex items-center justify-center shrink-0">
-              <Check className="h-4 w-4 text-white" />
+          <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 mb-10 flex items-center gap-3">
+            <div className="w-9 h-9 bg-primary rounded-full flex items-center justify-center shrink-0">
+              <Check className="h-4 w-4 text-primary-foreground" />
             </div>
             <div>
               <p className="font-semibold text-foreground text-sm">Templates validés par des recruteurs professionnels</p>
