@@ -328,7 +328,7 @@ export const AdminCVTemplateBuilder = () => {
   const mockData = useMockPhoto ? MOCK_DATA_WITH_PHOTO : MOCK_CV_DATA;
 
   return (
-    <div className="h-screen flex flex-col bg-background overflow-hidden">
+    <div className="flex flex-col bg-background overflow-hidden" style={{ height: "calc(100vh - 64px)" }}>
       {/* ── Toolbar ── */}
       <div className="h-14 border-b border-border bg-card flex items-center px-4 gap-3 shrink-0">
         <Button variant="ghost" size="sm" onClick={() => navigate("/admin/cv-templates")} className="gap-1.5">
@@ -588,19 +588,30 @@ export const AdminCVTemplateBuilder = () => {
             </div>
 
             {/* ── Aperçu ── */}
-            <TabsContent value="preview" className="flex-1 overflow-auto m-0 p-6 flex items-start justify-center">
+            <TabsContent value="preview" className="flex-1 m-0 overflow-hidden flex flex-col">
               {htmlContent.trim() ? (
-                <div style={{ transform: "scale(0.72)", transformOrigin: "top center", marginBottom: "-250px" }}>
-                  <HTMLCVRenderer
-                    templateHtml={htmlContent}
-                    cvData={mockData}
-                    scale={1}
-                  />
+                <div className="flex-1 overflow-auto flex items-start justify-center p-4">
+                  <div style={{
+                    transform: "scale(0.62)",
+                    transformOrigin: "top center",
+                    width: "210mm",
+                    height: "297mm",
+                    flexShrink: 0,
+                    marginBottom: "calc((297mm * 0.62) - 297mm)",
+                  }}>
+                    <HTMLCVRenderer
+                      templateHtml={htmlContent}
+                      cvData={mockData}
+                      scale={1}
+                    />
+                  </div>
                 </div>
               ) : (
-                <div className="text-center text-muted-foreground py-20">
-                  <FileCode2 className="h-12 w-12 mx-auto mb-4 opacity-30" />
-                  <p className="text-sm">Uploadez ou collez du HTML pour voir l'aperçu</p>
+                <div className="flex-1 flex items-center justify-center text-center text-muted-foreground">
+                  <div>
+                    <FileCode2 className="h-12 w-12 mx-auto mb-4 opacity-30" />
+                    <p className="text-sm">Uploadez ou collez du HTML pour voir l'aperçu</p>
+                  </div>
                 </div>
               )}
             </TabsContent>

@@ -1,5 +1,5 @@
 import React from "react";
-import { Outlet, NavLink, useNavigate } from "react-router-dom";
+import { Outlet, NavLink, useNavigate, useMatch } from "react-router-dom";
 import { 
   LayoutDashboard, 
   Users, 
@@ -35,9 +35,10 @@ const adminNavItems = [
 
 export const AdminLayout = () => {
   const navigate = useNavigate();
+  const isTemplateBuilder = useMatch("/admin/cv-templates/:id");
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className={cn("bg-background flex flex-col", isTemplateBuilder ? "h-screen overflow-hidden" : "min-h-screen")}>
       {/* Header */}
       <header className="sticky top-0 z-50 w-full border-b border-border/50 bg-background/80 backdrop-blur-xl">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
@@ -85,7 +86,12 @@ export const AdminLayout = () => {
       </header>
 
       {/* Main Content */}
-      <main className="container mx-auto px-4 py-6 flex-1">
+      <main className={cn(
+        "flex-1",
+        isTemplateBuilder
+          ? "overflow-hidden flex flex-col min-h-0"
+          : "container mx-auto px-4 py-6"
+      )}>
         <Outlet />
       </main>
     </div>

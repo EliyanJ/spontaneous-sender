@@ -1,76 +1,96 @@
 
-## Problème identifié
+# Plan SEO — 4 chantiers majeurs
 
-Le `AdminLayout` enveloppe toutes les pages admin dans :
-```html
-<main className="container mx-auto px-4 py-6 flex-1">
-  <Outlet />  ← AdminCVTemplateBuilder est ici
-</main>
+## Vue d'ensemble
+Le message couvre 4 sujets distincts. Je vais les traiter dans l'ordre de priorité SEO/business :
+
+---
+
+## 1. Page publique `/score-cv` — Landing SEO + Comparateur CV gratuit
+
+**Objectif** : Page publique (sans auth), accessible aux moteurs, avec le comparateur ATS intégré + tunnel d'inscription post-essai.
+
+### Structure de la page
+```
+/score-cv  (route publique, pas de ProtectedRoute)
+├── Hero section  →  H1 + CTA "Tester gratuitement"
+├── Outil comparateur (CVComparator réutilisé tel quel)
+├── Popup post-analyse  →  "Créez votre compte gratuit pour comparer à l'infini"
+│     └── Formulaire email/password → création de compte Supabase
+└── Section SEO bas de page
+      ├── Texte riche avec mots-clés (H2, paragraphes, gras)
+      └── Accordéons FAQ (ex: "Comment fonctionne l'ATS ?", "Pourquoi optimiser son CV ?")
 ```
 
-Cela crée 3 problèmes :
-1. **`container mx-auto`** → limite la largeur max et centre avec des marges latérales → les onglets de droite sont coupés
-2. **`px-4 py-6`** → padding qui réduit l'espace disponible
-3. **Le layout parent est `min-h-screen flex flex-col`** sans overflow hidden → le `h-screen` du builder dépasse et crée des scroll/coupures
+### Logique d'accès
+- L'outil fonctionne **1 fois sans compte**
+- Après analyse → popup `AuthDialog` personnalisée avec message de valeur
+- Compte créé → redirect `/dashboard?tab=cv`
 
-Le builder utilise `h-screen flex flex-col overflow-hidden` mais est contraint par ces classes parentes.
+### SEO technique sur cette page
+- `useSEO("/score-cv")` → meta title/desc configurable depuis le BO
+- Balise H1 unique, H2 dans les sections FAQ
+- Texte ~800 mots minimum en bas de page (géré via CMS ou hardcodé)
+- Canonical URL configurée
+- Ajout de `/score-cv` dans `SITE_PAGES` de `AdminSEO.tsx`
 
-## Solution
+---
 
-**2 modifications seulement :**
+## 2. Amélioration du CMS — Sélecteur de balise HTML + effets de texte
 
-### 1. `AdminLayout.tsx` — Permettre aux pages "plein écran" de bypasser le container
+**Problème actuel** : `AdminPageEditor.tsx` a H1/H2/H3 dans la barre d'outils mais pas de sélecteur explicite de balise pour les blocs de texte. Pas d'effet "texte souligné coloré" type mise en avant.
 
-Ajouter une détection de la route active pour appliquer `p-0 max-w-none overflow-hidden` quand on est sur `/admin/cv-templates/:id`. Cela passe le contenu du builder en plein écran sans affecter les autres pages admin.
+### Ce qu'on ajoute
+- **Sélecteur de balise** dans la toolbar : dropdown `<p>` / `<h1>` / `<h2>` / `<h3>` avec règle visuelle "1 seul H1 par page" (warning si H1 déjà présent)
+- **Effet texte surligné** : bouton "Highlight" dans la toolbar → `<mark>` stylé avec couleur configurable (rose/jaune comme l'image fournie)
+- Les couleurs de highlight configurables via `ColorPickerPopover` déjà existant
 
-```tsx
-// AdminLayout.tsx
-import { useMatch } from "react-router-dom";
+---
 
-const isTemplateBuilder = useMatch("/admin/cv-templates/:id");
+## 3. CV Builder — Nouveaux modèles + personnalisation design
 
-<main className={cn(
-  "flex-1",
-  isTemplateBuilder 
-    ? "overflow-hidden flex flex-col"           // plein écran pour le builder
-    : "container mx-auto px-4 py-6"             // normal pour les autres pages
-)}>
-  <Outlet />
-</main>
-```
+**Actuel** : 4 templates (`classic`, `dark`, `light`, `geo`) avec couleurs configurables. Photo déjà supportée (`photoUrl` dans `CVDesignOptions`).
 
-Et l'élément racine passe de `min-h-screen flex flex-col` à `h-screen flex flex-col overflow-hidden` quand on est sur la route builder.
+### Ajouts
+- **2-3 nouveaux templates** inspirés des screenshots fournis :
+  - `modern-two-col` : deux colonnes (sidebar colorée + contenu), avec photo ronde en haut
+  - `minimal-line` : séparateurs de ligne épurés, typographie aérée
+- **Sélecteur de template visuel** : grille de miniatures cliquables (comme le site concurrent montré)
+- **Panneau design** : couleur de fond de section, couleur du texte, couleur d'accent — déjà partiellement présent, à enrichir
+- **Upload photo** : interface d'upload vers Supabase Storage + affichage dans le template
 
-### 2. `AdminCVTemplateBuilder.tsx` — Ajuster le scale de la preview
+---
 
-Le scale actuel `0.72` avec `marginBottom: "-250px"` est approximatif et crée un débordement visuel. 
+## 4. SEO global — Optimisations techniques
 
-Le panneau droit a une largeur variable (flex-1 dans ~620px restants après le panneau gauche de 480px). Le CV A4 fait 794px de large. À 72% il fait 572px, ce qui dépasse le container.
+- Ajout `/score-cv` dans `AdminSEO.tsx` SITE_PAGES
+- `robots.txt` : vérifier que `/score-cv` est indexable (actuellement public/robots.txt)
+- Sitemap XML statique : créer `public/sitemap.xml` avec les URLs principales
+- Structure JSON-LD Schema.org sur `/score-cv` (SoftwareApplication)
+- `useSEO` déjà en place sur Landing — à ajouter sur `/score-cv` et Pricing
 
-Changer le scale à `0.65` (794 × 0.65 = 516px) avec `transformOrigin: "top center"` et utiliser `overflow: hidden` sur le container parent de la preview pour que ça reste dans les bounds.
+---
 
-La TabsContent "preview" doit avoir `overflow: hidden` au lieu de `overflow-auto` pour que le scaling fonctionne correctement, et le container de scale doit avoir une hauteur calculée.
+## Fichiers à créer/modifier
 
-```tsx
-// Preview tab — layout correct
-<TabsContent value="preview" className="flex-1 m-0 overflow-hidden">
-  <div className="w-full h-full overflow-auto flex items-start justify-center p-4">
-    <div style={{ 
-      transform: "scale(0.65)", 
-      transformOrigin: "top center",
-      width: "210mm",
-      height: "297mm",
-      flexShrink: 0
-    }}>
-      <HTMLCVRenderer templateHtml={htmlContent} cvData={mockData} scale={1} />
-    </div>
-  </div>
-</TabsContent>
-```
-
-## Fichiers à modifier
-
-| Fichier | Changement |
+| Fichier | Action |
 |---|---|
-| `src/pages/Admin/AdminLayout.tsx` | Détecter la route template builder → supprimer container/padding sur le `<main>` |
-| `src/pages/Admin/AdminCVTemplateBuilder.tsx` | Corriger le scale et l'overflow de la preview tab |
+| `src/pages/CVScorePage.tsx` | CRÉER — page publique SEO |
+| `src/components/dashboard/CVComparator.tsx` | MODIFIER — prop `isPublic` pour désactiver auth check |
+| `src/components/CVScoreAuthPopup.tsx` | CRÉER — popup post-analyse |
+| `src/pages/Admin/AdminSEO.tsx` | MODIFIER — ajouter `/score-cv` |
+| `src/pages/Admin/AdminPageEditor.tsx` | MODIFIER — sélecteur balise + highlight |
+| `src/lib/cv-templates.ts` | MODIFIER — 2 nouveaux templates |
+| `src/components/cv-builder/CVPreview.tsx` | MODIFIER — render nouveaux templates |
+| `src/components/cv-builder/CVBuilderForm.tsx` | MODIFIER — sélecteur visuel templates |
+| `src/App.tsx` | MODIFIER — route `/score-cv` publique |
+| `public/sitemap.xml` | CRÉER |
+
+---
+
+## Ordre d'implémentation recommandé
+
+1. Page `/score-cv` + popup auth (impact SEO + business immédiat)
+2. SEO technique global (sitemap, schema.org)
+3. CMS éditeur amélioré (balises H + highlight)
+4. CV Builder nouveaux templates + sélecteur visuel
