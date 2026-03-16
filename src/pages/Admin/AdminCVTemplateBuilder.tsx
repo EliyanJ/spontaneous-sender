@@ -7,9 +7,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  Save, ArrowLeft, Upload, Loader2, Image, Eye, EyeOff,
+  Save, ArrowLeft, Upload, Loader2, Image, Eye,
   CheckCircle2, AlertTriangle, Info, FileCode2, RefreshCw,
+  Sliders, Palette, Bot,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { HTMLCVRenderer } from "@/components/cv-builder/HTMLCVRenderer";
@@ -19,18 +21,24 @@ import {
   type TemplateSchema,
 } from "@/lib/cv-templates/extractSchema";
 import { MOCK_CV_DATA } from "@/lib/cv-templates/injectCVData";
+import {
+  injectCSSVariables,
+  extractDesignVars,
+  DEFAULT_DESIGN_VARS,
+  type DesignVars,
+} from "@/lib/cv-templates/injectCSSVariables";
+import { ConstraintsPanel, type ConstraintsMap } from "@/components/admin/template-builder/ConstraintsPanel";
+import { DesignPanel } from "@/components/admin/template-builder/DesignPanel";
+import { AIDesignChat } from "@/components/admin/template-builder/AIDesignChat";
+import type { AIPatch } from "@/components/admin/template-builder/AIDesignChat";
 
-// ─── Types réexportés pour compat backwards ───────────────────────────────────
-// (les anciens canvas-v2 types ne sont plus utilisés dans ce builder
-//  mais peuvent être importés depuis l'ancien fichier si besoin)
-
-// ─── Données ficives enrichies avec photo placeholder ────────────────────────
+// ─── Mock data ────────────────────────────────────────────────────────────────
 const MOCK_DATA_WITH_PHOTO = {
   ...MOCK_CV_DATA,
   photo: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&h=200&fit=crop&face",
 };
 
-// ─── Template HTML exemple fourni par défaut ──────────────────────────────────
+// ─── Default template ─────────────────────────────────────────────────────────
 const DEFAULT_TEMPLATE_HTML = `<!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -54,7 +62,40 @@ const DEFAULT_TEMPLATE_HTML = `<!DOCTYPE html>
     li { margin-bottom: 4px; }
     .skills-container { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px 10px; font-size: 11px; }
     .skill-item { padding: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.3; }
-...
+    [data-hidden="true"] { display: none !important; }
+  </style>
+</head>
+<body>
+<div class="cv-page">
+  <header>
+    <img class="photo" data-field-img="photo" src="" alt="Photo" />
+    <div class="header-content">
+      <h1 data-field="full_name">Prénom NOM</h1>
+      <p class="job-title" data-field="main_title">Titre du poste</p>
+      <div class="contact-info">
+        <span data-field="phone">📞 Téléphone</span>
+        <span data-field="email">✉ Email</span>
+        <span data-field="location">📍 Ville</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="profile-summary" data-field="summary">Résumé professionnel...</div>
+
+  <section data-section="experiences">
+    <h2>Expériences Professionnelles</h2>
+    <div data-list="experiences">
+      <div class="item">
+        <div class="item-header">
+          <span data-field="title">Poste</span>
+          <span data-field="date">2020 - 2024</span>
+        </div>
+        <div data-field="company">Entreprise</div>
+        <ul data-bullet-list="bullets"></ul>
+      </div>
+    </div>
+  </section>
+
   <section data-section="skills">
     <h2>Compétences Clés</h2>
     <div class="skills-container" data-list="skills">
@@ -66,21 +107,20 @@ const DEFAULT_TEMPLATE_HTML = `<!DOCTYPE html>
     <h2>Formations et Certifications</h2>
     <div data-list="education">
       <div class="edu-item">
-        <div class="edu-date" data-field="date">2023 - 2026</div>
+        <div data-field="date">2023 - 2026</div>
         <div data-field="label">Formation - École</div>
       </div>
     </div>
   </section>
 
-  <div class="footer-grid">
-    <div data-section="languages">
-      <p><strong>Langues &amp; Soft Skills</strong></p>
-      <div class="footer-content" data-field="languages_content">Anglais: Professionnel / Français: Natif</div>
-    </div>
-    <div data-section="interests">
-      <p><strong>Centres d'intérêt</strong></p>
-      <div class="footer-content" data-field="interests_content">Sport, Hobbies, Passions...</div>
-    </div>
+  <div data-section="languages">
+    <p><strong>Langues &amp; Soft Skills</strong></p>
+    <div data-field="languages_content">Anglais: Professionnel / Français: Natif</div>
+  </div>
+
+  <div data-section="interests">
+    <p><strong>Centres d'intérêt</strong></p>
+    <div data-field="interests_content">Sport, Hobbies, Passions...</div>
   </div>
 
 </div>
@@ -100,9 +140,13 @@ export const AdminCVTemplateBuilder = () => {
   const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(null);
   const [isUploadingThumb, setIsUploadingThumb] = useState(false);
   const [schema, setSchema] = useState<TemplateSchema | null>(null);
-  const [showPreview, setShowPreview] = useState(true);
   const [useMockPhoto, setUseMockPhoto] = useState(true);
   const [isDragging, setIsDragging] = useState(false);
+
+  // ── New state for the 4-tab panel ──────────────────────────────────────────
+  const [constraints, setConstraints] = useState<ConstraintsMap>({});
+  const [designVars, setDesignVars] = useState<DesignVars>({ ...DEFAULT_DESIGN_VARS });
+  const [rightTab, setRightTab] = useState("preview");
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const thumbnailInputRef = useRef<HTMLInputElement>(null);
@@ -133,26 +177,31 @@ export const AdminCVTemplateBuilder = () => {
         setIsActive(data.is_active);
         setThumbnailUrl(data.thumbnail_url ?? null);
 
-        // Si html-v1 : charger le HTML directement
         const version = (data as any).template_version;
         if (version === "html-v1" || version === null || version === undefined) {
-          // Tester si c'est du JSON canvas-v2 ou du vrai HTML
           try {
             const parsed = JSON.parse(data.html_template);
             if (parsed.version === "canvas-v2") {
-              // Ancien template canvas : afficher un message
               toast({
                 title: "Template canvas-v2 détecté",
-                description: "Ce template utilise l'ancien système. Uploadez un nouveau fichier HTML pour migrer vers le nouveau système.",
+                description: "Uploadez un nouveau fichier HTML pour migrer vers le nouveau système.",
               });
-              // Garder le template HTML par défaut dans l'éditeur
             }
           } catch {
-            // C'est du vrai HTML
             setHtmlContent(data.html_template || DEFAULT_TEMPLATE_HTML);
+            // Extract design vars & constraints from template_schema
+            const ts = (data as any).template_schema as any;
+            if (ts) {
+              if (ts.designVars) setDesignVars({ ...DEFAULT_DESIGN_VARS, ...ts.designVars });
+              if (ts.constraints) setConstraints(ts.constraints);
+            }
+            // Also extract CSS vars already embedded in HTML
+            const embedded = extractDesignVars(data.html_template || "");
+            if (embedded["--color-primary"] !== DEFAULT_DESIGN_VARS["--color-primary"] || embedded["--font-main"] !== DEFAULT_DESIGN_VARS["--font-main"]) {
+              setDesignVars(embedded);
+            }
           }
         } else {
-          // Vrai HTML
           setHtmlContent(data.html_template || DEFAULT_TEMPLATE_HTML);
         }
       }
@@ -160,7 +209,45 @@ export const AdminCVTemplateBuilder = () => {
     },
   });
 
-  // ── Upload fichier HTML ─────────────────────────────────────────────────────
+  // ── Design vars change → inject in HTML ──────────────────────────────────
+  const handleDesignVarsChange = useCallback((vars: DesignVars) => {
+    setDesignVars(vars);
+    setHtmlContent(prev => injectCSSVariables(prev, vars));
+  }, []);
+
+  // ── Apply AI patch ────────────────────────────────────────────────────────
+  const handleApplyAIPatch = useCallback((patch: AIPatch) => {
+    setHtmlContent(prev => {
+      if (patch.type === "css_patch") {
+        // Inject the CSS patch inside the first <style> tag, before </style>
+        if (prev.includes("</style>")) {
+          return prev.replace("</style>", `  /* AI patch */\n  ${patch.patch}\n</style>`);
+        }
+        return `<style>${patch.patch}</style>\n${prev}`;
+      }
+      if (patch.type === "html_patch") {
+        // Format: "REMPLACER: <old> PAR: <new>"
+        const replaceMatch = patch.patch.match(/REMPLACER:\s*([\s\S]*?)\s*PAR:\s*([\s\S]*)/i);
+        if (replaceMatch) {
+          return prev.replace(replaceMatch[1].trim(), replaceMatch[2].trim());
+        }
+        return prev;
+      }
+      if (patch.type === "design_vars") {
+        try {
+          const vars = JSON.parse(patch.patch);
+          const newVars = { ...designVars, ...vars };
+          setDesignVars(newVars);
+          return injectCSSVariables(prev, newVars);
+        } catch {
+          return prev;
+        }
+      }
+      return prev;
+    });
+  }, [designVars]);
+
+  // ── Upload HTML ───────────────────────────────────────────────────────────
   const handleHTMLFile = useCallback(async (file: File) => {
     if (!file.name.endsWith(".html") && file.type !== "text/html") {
       toast({ title: "Fichier invalide", description: "Veuillez sélectionner un fichier .html", variant: "destructive" });
@@ -168,10 +255,12 @@ export const AdminCVTemplateBuilder = () => {
     }
     const text = await file.text();
     setHtmlContent(text);
+    // Try to extract existing design vars from the HTML
+    const embedded = extractDesignVars(text);
+    setDesignVars(embedded);
     toast({ title: "Template chargé ✓", description: `Fichier "${file.name}" importé avec succès.` });
   }, []);
 
-  // Drag & drop zone
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
@@ -179,7 +268,7 @@ export const AdminCVTemplateBuilder = () => {
     if (file) handleHTMLFile(file);
   }, [handleHTMLFile]);
 
-  // ── Upload thumbnail ────────────────────────────────────────────────────────
+  // ── Upload thumbnail ──────────────────────────────────────────────────────
   const handleThumbnailUpload = async (file: File) => {
     if (!file.type.startsWith("image/")) {
       toast({ title: "Fichier invalide", description: "Image uniquement (PNG, JPG, WebP)", variant: "destructive" });
@@ -201,10 +290,13 @@ export const AdminCVTemplateBuilder = () => {
     }
   };
 
-  // ── Sauvegarde ──────────────────────────────────────────────────────────────
+  // ── Sauvegarde ────────────────────────────────────────────────────────────
   const saveMutation = useMutation({
     mutationFn: async () => {
-      const schemaToSave = schema ? JSON.stringify(schema) : null;
+      const schemaToSave = schema
+        ? { ...schema, constraints, designVars }
+        : { constraints, designVars };
+
       const payload = {
         name: templateName,
         html_template: htmlContent,
@@ -213,7 +305,7 @@ export const AdminCVTemplateBuilder = () => {
         is_active: isActive,
         thumbnail_url: thumbnailUrl ?? null,
         template_version: "html-v1",
-        template_schema: schemaToSave ? JSON.parse(schemaToSave) : null,
+        template_schema: JSON.parse(JSON.stringify(schemaToSave)),
         has_photo: schema?.hasPhoto ?? false,
       };
       if (templateId) {
@@ -269,12 +361,6 @@ export const AdminCVTemplateBuilder = () => {
           {useMockPhoto ? "Avec photo" : "Sans photo"}
         </button>
 
-        {/* Toggle preview */}
-        <Button variant="outline" size="sm" onClick={() => setShowPreview((v) => !v)} className="gap-1.5">
-          {showPreview ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
-          {showPreview ? "Masquer" : "Afficher"} aperçu
-        </Button>
-
         {/* Toggle actif */}
         <button
           onClick={() => setIsActive((v) => !v)}
@@ -298,8 +384,9 @@ export const AdminCVTemplateBuilder = () => {
       <div className="flex-1 flex overflow-hidden">
 
         {/* ── Panneau gauche : éditeur ── */}
-        <div className="flex flex-col border-r border-border bg-card overflow-y-auto min-h-0"
-          style={{ width: showPreview ? "480px" : "100%" }}
+        <div
+          className="flex flex-col border-r border-border bg-card overflow-y-auto min-h-0"
+          style={{ width: "480px", minWidth: "380px" }}
         >
           {/* Zone upload */}
           <div className="p-4 border-b border-border space-y-3">
@@ -308,7 +395,6 @@ export const AdminCVTemplateBuilder = () => {
               Fichier template HTML
             </h3>
 
-            {/* Drop zone */}
             <div
               className={cn(
                 "relative border-2 border-dashed rounded-lg p-5 text-center cursor-pointer transition-colors",
@@ -408,7 +494,7 @@ export const AdminCVTemplateBuilder = () => {
             </div>
           )}
 
-          {/* Éditeur de code HTML */}
+          {/* Éditeur HTML */}
           <div className="flex-1 flex flex-col p-4 gap-2 min-h-0 overflow-hidden">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
@@ -417,7 +503,11 @@ export const AdminCVTemplateBuilder = () => {
               </h3>
               <Button
                 variant="ghost" size="sm"
-                onClick={() => setHtmlContent(DEFAULT_TEMPLATE_HTML)}
+                onClick={() => {
+                  setHtmlContent(DEFAULT_TEMPLATE_HTML);
+                  setDesignVars({ ...DEFAULT_DESIGN_VARS });
+                  setConstraints({});
+                }}
                 className="text-xs h-6 gap-1 text-muted-foreground"
               >
                 <RefreshCw className="h-3 w-3" />
@@ -453,25 +543,52 @@ export const AdminCVTemplateBuilder = () => {
                   </div>
                 ))}
                 <div className="mt-2 text-muted-foreground">
-                  CSS utilitaire requis : <code className="text-primary">[data-hidden="true"] {"{"} display: none !important {"}"}</code>
+                  CSS requis : <code className="text-primary">[data-hidden="true"] {"{"} display: none !important {"}"}</code>
                 </div>
               </div>
             </details>
           </div>
         </div>
 
-        {/* ── Panneau droit : preview ── */}
-        {showPreview && (
-          <div className="flex-1 bg-muted/20 overflow-auto flex flex-col">
-            <div className="p-4 border-b border-border bg-card flex items-center gap-3">
-              <Eye className="h-4 w-4 text-primary" />
-              <span className="text-sm font-medium text-foreground">Aperçu A4 — données fictives</span>
-              <Badge variant="outline" className="text-xs ml-auto">
-                html-v1
-              </Badge>
+        {/* ── Panneau droit : 4 onglets ── */}
+        <div className="flex-1 flex flex-col overflow-hidden bg-muted/10">
+          <Tabs value={rightTab} onValueChange={setRightTab} className="flex-1 flex flex-col overflow-hidden">
+            {/* Tab bar */}
+            <div className="border-b border-border bg-card px-4 pt-2 shrink-0">
+              <TabsList className="h-9 bg-transparent p-0 gap-1">
+                <TabsTrigger
+                  value="preview"
+                  className="h-8 px-3 text-xs gap-1.5 data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-sm"
+                >
+                  <Eye className="h-3.5 w-3.5" />
+                  Aperçu
+                </TabsTrigger>
+                <TabsTrigger
+                  value="constraints"
+                  className="h-8 px-3 text-xs gap-1.5 data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-sm"
+                >
+                  <Sliders className="h-3.5 w-3.5" />
+                  Contraintes
+                </TabsTrigger>
+                <TabsTrigger
+                  value="design"
+                  className="h-8 px-3 text-xs gap-1.5 data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-sm"
+                >
+                  <Palette className="h-3.5 w-3.5" />
+                  Design
+                </TabsTrigger>
+                <TabsTrigger
+                  value="ai"
+                  className="h-8 px-3 text-xs gap-1.5 data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-sm"
+                >
+                  <Bot className="h-3.5 w-3.5" />
+                  IA Designer
+                </TabsTrigger>
+              </TabsList>
             </div>
 
-            <div className="flex-1 overflow-auto p-6 flex items-start justify-center">
+            {/* ── Aperçu ── */}
+            <TabsContent value="preview" className="flex-1 overflow-auto m-0 p-6 flex items-start justify-center">
               {htmlContent.trim() ? (
                 <div style={{ transform: "scale(0.72)", transformOrigin: "top center", marginBottom: "-250px" }}>
                   <HTMLCVRenderer
@@ -486,13 +603,41 @@ export const AdminCVTemplateBuilder = () => {
                   <p className="text-sm">Uploadez ou collez du HTML pour voir l'aperçu</p>
                 </div>
               )}
-            </div>
-          </div>
-        )}
+            </TabsContent>
+
+            {/* ── Contraintes ── */}
+            <TabsContent value="constraints" className="flex-1 overflow-hidden m-0 flex flex-col">
+              <ConstraintsPanel
+                schema={schema}
+                constraints={constraints}
+                onChange={setConstraints}
+              />
+            </TabsContent>
+
+            {/* ── Design ── */}
+            <TabsContent value="design" className="flex-1 overflow-hidden m-0 flex flex-col">
+              <DesignPanel
+                vars={designVars}
+                onChange={handleDesignVarsChange}
+              />
+            </TabsContent>
+
+            {/* ── IA Designer ── */}
+            <TabsContent value="ai" className="flex-1 overflow-hidden m-0 flex flex-col">
+              <AIDesignChat
+                templateHtml={htmlContent}
+                templateSchema={schema}
+                designVars={designVars}
+                constraints={constraints}
+                onApplyPatch={handleApplyAIPatch}
+              />
+            </TabsContent>
+          </Tabs>
+        </div>
       </div>
     </div>
   );
 };
 
-// ─── Compat export (canvas-v2 types) ─────────────────────────────────────────
+// ─── Compat export ────────────────────────────────────────────────────────────
 export type { TemplateSchema };
