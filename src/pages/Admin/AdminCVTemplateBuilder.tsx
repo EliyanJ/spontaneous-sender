@@ -590,20 +590,28 @@ export const AdminCVTemplateBuilder = () => {
             {/* ── Aperçu ── */}
             <TabsContent value="preview" className="flex-1 m-0 overflow-hidden flex flex-col">
               {htmlContent.trim() ? (
-                <div className="flex-1 overflow-auto flex items-start justify-center p-4">
+                <div className="flex-1 overflow-auto">
                   <div style={{
-                    transform: "scale(0.62)",
-                    transformOrigin: "top center",
-                    width: "210mm",
-                    height: "297mm",
-                    flexShrink: 0,
-                    marginBottom: "calc((297mm * 0.62) - 297mm)",
+                    width: "100%",
+                    minHeight: `${Math.round(1122 * 0.62) + 32}px`,
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "flex-start",
+                    padding: "16px",
                   }}>
-                    <HTMLCVRenderer
-                      templateHtml={htmlContent}
-                      cvData={mockData}
-                      scale={1}
-                    />
+                    <div style={{
+                      transform: "scale(0.62)",
+                      transformOrigin: "top center",
+                      width: "210mm",
+                      height: "297mm",
+                      flexShrink: 0,
+                    }}>
+                      <HTMLCVRenderer
+                        templateHtml={htmlContent}
+                        cvData={mockData}
+                        scale={1}
+                      />
+                    </div>
                   </div>
                 </div>
               ) : (

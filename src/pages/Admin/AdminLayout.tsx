@@ -38,7 +38,10 @@ export const AdminLayout = () => {
   const isTemplateBuilder = useMatch("/admin/cv-templates/:id");
 
   return (
-    <div className={cn("bg-background flex flex-col", isTemplateBuilder ? "h-screen overflow-hidden" : "min-h-screen")}>
+    <div className={cn(
+      "bg-background flex flex-col",
+      isTemplateBuilder ? "h-screen overflow-hidden" : "min-h-screen"
+    )}>
       {/* Header */}
       <header className="sticky top-0 z-50 w-full border-b border-border/50 bg-background/80 backdrop-blur-xl">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
