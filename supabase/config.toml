@@ -92,3 +92,15 @@ verify_jwt = true
 
 [functions.html-to-canvas-template]
 verify_jwt = true
+
+[functions.ai-template-designer]
+verify_jwt = true
+
+[functions.chatbot-assistant]
+verify_jwt = false
+
+[functions.admin-get-users]
+verify_jwt = false
+
+[functions.admin-manage-promos]
+verify_jwt = false
