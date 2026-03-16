@@ -328,7 +328,7 @@ export const AdminCVTemplateBuilder = () => {
   const mockData = useMockPhoto ? MOCK_DATA_WITH_PHOTO : MOCK_CV_DATA;
 
   return (
-    <div className="h-screen flex flex-col bg-background overflow-hidden">
+    <div className="flex flex-col bg-background overflow-hidden" style={{ height: "calc(100vh - 64px)" }}>
       {/* ── Toolbar ── */}
       <div className="h-14 border-b border-border bg-card flex items-center px-4 gap-3 shrink-0">
         <Button variant="ghost" size="sm" onClick={() => navigate("/admin/cv-templates")} className="gap-1.5">
