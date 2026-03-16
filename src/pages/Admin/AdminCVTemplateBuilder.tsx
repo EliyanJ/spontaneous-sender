@@ -305,7 +305,7 @@ export const AdminCVTemplateBuilder = () => {
         is_active: isActive,
         thumbnail_url: thumbnailUrl ?? null,
         template_version: "html-v1",
-        template_schema: schemaToSave,
+        template_schema: JSON.parse(JSON.stringify(schemaToSave)),
         has_photo: schema?.hasPhoto ?? false,
       };
       if (templateId) {
