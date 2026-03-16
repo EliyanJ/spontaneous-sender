@@ -86,7 +86,12 @@ export const AdminLayout = () => {
       </header>
 
       {/* Main Content */}
-      <main className="container mx-auto px-4 py-6 flex-1">
+      <main className={cn(
+        "flex-1",
+        isTemplateBuilder
+          ? "overflow-hidden flex flex-col min-h-0"
+          : "container mx-auto px-4 py-6"
+      )}>
         <Outlet />
       </main>
     </div>
