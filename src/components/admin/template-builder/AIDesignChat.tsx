@@ -1,13 +1,4 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Bot, Send, Loader2, CheckCircle2, XCircle, ChevronDown, ChevronUp, Sparkles } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { toast } from "@/hooks/use-toast";
-import type { TemplateSchema } from "@/lib/cv-templates/extractSchema";
-import type { DesignVars } from "@/lib/cv-templates/injectCSSVariables";
-import type { ConstraintsMap } from "./ConstraintsPanel";
-
-import React, { useState, useRef, useEffect } from "react";
 import { Bot, Send, Loader2, CheckCircle2, ChevronDown, ChevronUp, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -41,10 +32,6 @@ interface Props {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-/**
- * Try to extract a JSON patch block from the AI response.
- * Format: ```json\n{ "type": ..., "description": ..., "patch": ... }\n```
- */
 function extractPatch(content: string): { textContent: string; patch: AIPatch | null } {
   const regex = /```json\s*(\{[\s\S]*?"type"\s*:[\s\S]*?\})\s*```/;
   const m = content.match(regex);
@@ -73,29 +60,23 @@ function PatchCard({ patch, onApply, applied }: { patch: AIPatch; onApply: () =>
     design_vars: "Variables de design",
   };
 
-  const typeColor: Record<AIPatch["type"], string> = {
-    css_patch: "bg-blue-50 border-blue-200 text-blue-700 dark:bg-blue-900/20 dark:border-blue-800 dark:text-blue-300",
-    html_patch: "bg-amber-50 border-amber-200 text-amber-700 dark:bg-amber-900/20 dark:border-amber-800 dark:text-amber-300",
-    design_vars: "bg-purple-50 border-purple-200 text-purple-700 dark:bg-purple-900/20 dark:border-purple-800 dark:text-purple-300",
-  };
-
   return (
-    <div className={`rounded-lg border p-3 space-y-2 text-xs ${typeColor[patch.type]}`}>
+    <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 space-y-2 text-xs">
       <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1.5 text-primary">
           <span className="font-semibold">{typeLabel[patch.type]}</span>
-          <span className="opacity-75">— {patch.description}</span>
+          <span className="opacity-75 text-foreground">— {patch.description}</span>
         </div>
         <button
           onClick={() => setExpanded(v => !v)}
-          className="opacity-60 hover:opacity-100 shrink-0"
+          className="opacity-60 hover:opacity-100 shrink-0 text-muted-foreground"
         >
           {expanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
         </button>
       </div>
 
       {expanded && (
-        <pre className="font-mono text-[10px] bg-black/10 dark:bg-white/5 rounded p-2 overflow-x-auto whitespace-pre-wrap">
+        <pre className="font-mono text-[10px] bg-muted rounded p-2 overflow-x-auto whitespace-pre-wrap text-foreground">
           {patch.patch}
         </pre>
       )}
@@ -106,16 +87,10 @@ function PatchCard({ patch, onApply, applied }: { patch: AIPatch; onApply: () =>
           Appliqué
         </div>
       ) : (
-        <div className="flex gap-2">
-          <Button
-            size="sm"
-            className="h-6 text-xs gap-1"
-            onClick={onApply}
-          >
-            <CheckCircle2 className="h-3 w-3" />
-            Appliquer
-          </Button>
-        </div>
+        <Button size="sm" className="h-6 text-xs gap-1" onClick={onApply}>
+          <CheckCircle2 className="h-3 w-3" />
+          Appliquer
+        </Button>
       )}
     </div>
   );
@@ -138,7 +113,6 @@ export const AIDesignChat: React.FC<Props> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [started, setStarted] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -186,14 +160,12 @@ export const AIDesignChat: React.FC<Props> = ({
         return;
       }
 
-      // Stream reading
       const reader = resp.body.getReader();
       const decoder = new TextDecoder();
       let textBuffer = "";
       let accumulated = "";
       let streamDone = false;
 
-      // Add empty assistant message
       setMessages(prev => [...prev, { role: "assistant", content: "" }]);
 
       while (!streamDone) {
@@ -231,7 +203,6 @@ export const AIDesignChat: React.FC<Props> = ({
         }
       }
 
-      // Parse patch from final accumulated content
       const { textContent, patch } = extractPatch(accumulated);
       setMessages(prev => {
         const updated = [...prev];
@@ -334,7 +305,6 @@ export const AIDesignChat: React.FC<Props> = ({
       {/* Input */}
       <div className="border-t border-border p-3 flex gap-2">
         <Textarea
-          ref={textareaRef}
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
