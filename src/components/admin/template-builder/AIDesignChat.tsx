@@ -7,9 +7,18 @@ import type { TemplateSchema } from "@/lib/cv-templates/extractSchema";
 import type { DesignVars } from "@/lib/cv-templates/injectCSSVariables";
 import type { ConstraintsMap } from "./ConstraintsPanel";
 
+import React, { useState, useRef, useEffect } from "react";
+import { Bot, Send, Loader2, CheckCircle2, ChevronDown, ChevronUp, Sparkles } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { toast } from "@/hooks/use-toast";
+import type { TemplateSchema } from "@/lib/cv-templates/extractSchema";
+import type { DesignVars } from "@/lib/cv-templates/injectCSSVariables";
+import type { ConstraintsMap } from "./ConstraintsPanel";
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-interface AIPatch {
+export interface AIPatch {
   type: "css_patch" | "html_patch" | "design_vars";
   description: string;
   patch: string;
