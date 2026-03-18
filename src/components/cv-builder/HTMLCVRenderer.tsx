@@ -44,11 +44,11 @@ export function HTMLCVRenderer({
       style={{
         width: `${A4_WIDTH_MM}mm`,
         height: `${A4_HEIGHT_MM}mm`,
-        transform: `scale(${scale})`,
-        transformOrigin: "top left",
-        boxShadow: "0 2px 12px rgba(0,0,0,0.15)",
+        transform: scale !== 1 ? `scale(${scale})` : undefined,
+        transformOrigin: scale !== 1 ? "top left" : undefined,
+        boxShadow: "0 2px 24px rgba(0,0,0,0.12)",
         flexShrink: 0,
-        overflow: "hidden",
+        overflow: "visible",
         background: "#fff",
       }}
     >
