@@ -129,11 +129,15 @@ export const ChatbotWidget = () => {
         (m) => m.content !== "👋 Bonjour ! Je suis l'assistant Cronos. Comment puis-je vous aider aujourd'hui ?"
       );
 
+      // HIGH-01: prefer user session token; fall back to anon key for public chatbot
+      const { data: { session: currentSession } } = await supabase.auth.getSession();
+      const authToken = currentSession?.access_token ?? import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+
       const resp = await fetch(CHAT_URL, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          Authorization: `Bearer ${authToken}`,
         },
         body: JSON.stringify({ messages: allMessages.slice(-20) }),
         signal: controller.signal,
