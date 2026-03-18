@@ -399,7 +399,7 @@ export const AdminPageEditor = () => {
                       contentEditable
                       className="min-h-[400px] prose prose-lg max-w-none dark:prose-invert focus:outline-none prose-headings:text-foreground prose-p:text-muted-foreground prose-a:text-primary"
                       onInput={syncHtmlFromEditor}
-                      dangerouslySetInnerHTML={{ __html: htmlContent }}
+                      dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(htmlContent) }}
                       suppressContentEditableWarning
                     />
                   ) : (

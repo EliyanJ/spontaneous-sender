@@ -223,7 +223,7 @@ export const AdminBlockEditor = () => {
             <p className="text-xs font-medium text-muted-foreground">Aperçu en temps réel</p>
           </div>
           <div className="bg-background rounded-xl border border-border/40 p-6 min-h-[300px]">
-            <div dangerouslySetInnerHTML={{ __html: getPreviewHtml() }} />
+            <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(getPreviewHtml()) }} />
           </div>
         </div>
       </div>
