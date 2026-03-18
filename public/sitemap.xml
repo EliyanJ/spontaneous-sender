@@ -1,62 +1,65 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <!-- Pages principales -->
   <url>
-    <loc>https://spontaneous-sender.lovable.app/</loc>
+    <loc>https://getcronos.fr/</loc>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://spontaneous-sender.lovable.app/score-cv</loc>
+    <loc>https://getcronos.fr/score-cv</loc>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://spontaneous-sender.lovable.app/offres-emploi</loc>
+    <loc>https://getcronos.fr/createur-de-cv</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://getcronos.fr/offres-emploi</loc>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://spontaneous-sender.lovable.app/cv-builder</loc>
+    <loc>https://getcronos.fr/prix</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://spontaneous-sender.lovable.app/pricing</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://spontaneous-sender.lovable.app/blog</loc>
+    <loc>https://getcronos.fr/blog</loc>
     <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://spontaneous-sender.lovable.app/help</loc>
+    <loc>https://getcronos.fr/help</loc>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
+  <!-- Pages auth -->
   <url>
-    <loc>https://spontaneous-sender.lovable.app/register</loc>
+    <loc>https://getcronos.fr/register</loc>
     <changefreq>yearly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://spontaneous-sender.lovable.app/login</loc>
+    <loc>https://getcronos.fr/login</loc>
     <changefreq>yearly</changefreq>
     <priority>0.4</priority>
   </url>
+  <!-- Pages légales -->
   <url>
-    <loc>https://spontaneous-sender.lovable.app/privacy-policy</loc>
+    <loc>https://getcronos.fr/privacy-policy</loc>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
-    <loc>https://spontaneous-sender.lovable.app/terms-of-service</loc>
+    <loc>https://getcronos.fr/terms-of-service</loc>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
-    <loc>https://spontaneous-sender.lovable.app/mentions-legales</loc>
+    <loc>https://getcronos.fr/mentions-legales</loc>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
