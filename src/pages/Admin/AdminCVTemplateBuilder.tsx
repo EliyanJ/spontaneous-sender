@@ -551,8 +551,8 @@ export const AdminCVTemplateBuilder = () => {
         </div>
 
         {/* ── Panneau droit : 4 onglets ── */}
-        <div className="flex-1 flex flex-col overflow-hidden bg-muted/10">
-          <Tabs value={rightTab} onValueChange={setRightTab} className="flex-1 flex flex-col overflow-hidden">
+        <div className="flex-1 flex flex-col overflow-hidden bg-muted/10 min-h-0">
+          <Tabs value={rightTab} onValueChange={setRightTab} className="flex-1 flex flex-col overflow-hidden min-h-0">
             {/* Tab bar */}
             <div className="border-b border-border bg-card px-4 pt-2 shrink-0">
               <TabsList className="h-9 bg-transparent p-0 gap-1">
@@ -588,9 +588,9 @@ export const AdminCVTemplateBuilder = () => {
             </div>
 
             {/* ── Aperçu ── */}
-            <TabsContent value="preview" className="flex-1 m-0 overflow-hidden flex flex-col">
+            <TabsContent value="preview" className="flex-1 m-0 overflow-hidden flex flex-col min-h-0">
               {htmlContent.trim() ? (
-                <div className="flex-1 overflow-auto">
+                <div className="flex-1 overflow-auto min-h-0">
                   <div style={{
                     width: "100%",
                     minHeight: `${Math.round(1122 * 0.62) + 32}px`,
@@ -625,7 +625,7 @@ export const AdminCVTemplateBuilder = () => {
             </TabsContent>
 
             {/* ── Contraintes ── */}
-            <TabsContent value="constraints" className="flex-1 overflow-hidden m-0 flex flex-col">
+            <TabsContent value="constraints" className="flex-1 overflow-hidden m-0 flex flex-col min-h-0">
               <ConstraintsPanel
                 schema={schema}
                 constraints={constraints}
@@ -634,7 +634,7 @@ export const AdminCVTemplateBuilder = () => {
             </TabsContent>
 
             {/* ── Design ── */}
-            <TabsContent value="design" className="flex-1 overflow-hidden m-0 flex flex-col">
+            <TabsContent value="design" className="flex-1 overflow-hidden m-0 flex flex-col min-h-0">
               <DesignPanel
                 vars={designVars}
                 onChange={handleDesignVarsChange}
@@ -642,7 +642,7 @@ export const AdminCVTemplateBuilder = () => {
             </TabsContent>
 
             {/* ── IA Designer ── */}
-            <TabsContent value="ai" className="flex-1 overflow-hidden m-0 flex flex-col">
+            <TabsContent value="ai" className="flex-1 overflow-hidden m-0 flex flex-col min-h-0">
               <AIDesignChat
                 templateHtml={htmlContent}
                 templateSchema={schema}
