@@ -1,10 +1,11 @@
-import React from "react";
+import React, { Suspense, lazy } from "react";
 import { ThemeProvider } from "next-themes";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { GlobalErrorBoundary, ErrorBoundary } from "@/components/ErrorBoundary";
 import Index from "./pages/Index";
 import Landing from "./pages/Landing";
 import NotFound from "./pages/NotFound";
@@ -53,9 +54,18 @@ import { CVScorePage } from "./pages/CVScorePage";
 import JobOffersPublic from "./pages/JobOffersPublic";
 import Blog from "./pages/Blog";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5, // 5 min
+      retry: 1,
+      gcTime: 1000 * 60 * 10, // 10 min
+    },
+  },
+});
 
 const App = () => (
+  <GlobalErrorBoundary>
   <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false} storageKey="cronos-theme-v2">
   <QueryClientProvider client={queryClient}>
     <BrowserRouter>
@@ -78,20 +88,18 @@ const App = () => (
           <Route path="/terms-of-service-en" element={<TermsOfServiceEn />} />
           <Route path="/mentions-legales" element={<LegalNotice />} />
           <Route path="/legal-notice" element={<LegalNoticeEn />} />
-          {/* French URLs (canonical) */}
           <Route path="/prix" element={<Pricing />} />
-          <Route path="/createur-de-cv" element={<CVBuilder />} />
-          {/* Redirects from old English URLs */}
+          <Route path="/createur-de-cv" element={<ErrorBoundary context="CV Builder"><CVBuilder /></ErrorBoundary>} />
           <Route path="/pricing" element={<Navigate to="/prix" replace />} />
           <Route path="/cv-builder" element={<Navigate to="/createur-de-cv" replace />} />
           <Route path="/score-cv" element={<CVScorePage />} />
           <Route path="/offres-emploi" element={<JobOffersPublic />} />
           <Route path="/blog" element={<Blog />} />
           <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
-          <Route path="/dashboard" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+          <Route path="/dashboard" element={<ProtectedRoute><ErrorBoundary context="Dashboard"><Index /></ErrorBoundary></ProtectedRoute>} />
           
           {/* Admin Routes */}
-          <Route path="/admin" element={<AdminRoute><AdminLayout /></AdminRoute>}>
+          <Route path="/admin" element={<AdminRoute><ErrorBoundary context="Administration"><AdminLayout /></ErrorBoundary></AdminRoute>}>
             <Route index element={<AdminDashboard />} />
             <Route path="users" element={<AdminUsers />} />
             <Route path="users/:userId" element={<AdminUserDetail />} />
@@ -116,7 +124,6 @@ const App = () => (
           <Route path="/blog/:slug" element={<BlogPost />} />
           <Route path="/p/:slug" element={<BlogPost />} />
           
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
         <ChatbotWidget />
@@ -125,6 +132,8 @@ const App = () => (
     </BrowserRouter>
   </QueryClientProvider>
   </ThemeProvider>
+  </GlobalErrorBoundary>
 );
 
 export default App;
+
