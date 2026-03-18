@@ -42,7 +42,10 @@
     "@radix-ui/react-tooltip": "^1.2.7",
     "@supabase/supabase-js": "^2.74.0",
     "@tanstack/react-query": "^5.83.0",
+    "@testing-library/jest-dom": "^6.6.0",
+    "@testing-library/react": "^16.0.0",
     "@types/file-saver": "2.0.7",
+    "@vitest/coverage-v8": "^3.2.4",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
@@ -53,6 +56,7 @@
     "html2canvas": "1.4.1",
     "html2pdf.js": "0.10.2",
     "input-otp": "^1.4.2",
+    "jsdom": "^20.0.3",
     "jspdf": "2.5.2",
     "lucide-react": "^0.462.0",
     "next-themes": "^0.3.0",
@@ -68,6 +72,7 @@
     "tailwind-merge": "^2.6.0",
     "tailwindcss-animate": "^1.0.7",
     "vaul": "^0.9.9",
+    "vitest": "^3.2.4",
     "zod": "^3.25.76"
   },
   "devDependencies": {
