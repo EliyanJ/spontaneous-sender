@@ -329,6 +329,47 @@ export default function Pricing() {
           </div>
         </div>
       </main>
+
+      {/* Cross-links to other tools */}
+      <section className="border-t border-border/30 bg-muted/10 py-10 px-4">
+        <div className="max-w-5xl mx-auto">
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-4">Explorez aussi</p>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <Link to="/score-cv" className="flex items-center gap-3 p-4 rounded-xl border border-border/50 bg-card/40 hover:bg-card/70 hover:border-primary/30 transition-all group">
+              <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                <FileText className="h-4 w-4 text-primary" />
+              </div>
+              <div>
+                <p className="font-semibold text-foreground text-sm">Score CV ATS</p>
+                <p className="text-xs text-muted-foreground">Analysez votre CV</p>
+              </div>
+              <ArrowRight className="h-4 w-4 text-muted-foreground ml-auto group-hover:text-primary transition-colors" />
+            </Link>
+            <Link to="/createur-de-cv" className="flex items-center gap-3 p-4 rounded-xl border border-border/50 bg-card/40 hover:bg-card/70 hover:border-primary/30 transition-all group">
+              <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                <Target className="h-4 w-4 text-primary" />
+              </div>
+              <div>
+                <p className="font-semibold text-foreground text-sm">Créateur de CV</p>
+                <p className="text-xs text-muted-foreground">CV professionnel en ligne</p>
+              </div>
+              <ArrowRight className="h-4 w-4 text-muted-foreground ml-auto group-hover:text-primary transition-colors" />
+            </Link>
+            <Link to="/register" className="flex items-center gap-3 p-4 rounded-xl border border-primary/30 bg-primary/5 hover:bg-primary/10 transition-all group">
+              <div className="w-9 h-9 rounded-lg bg-primary/20 flex items-center justify-center shrink-0">
+                <ArrowRight className="h-4 w-4 text-primary" />
+              </div>
+              <div>
+                <p className="font-semibold text-primary text-sm">Commencer gratuitement</p>
+                <p className="text-xs text-muted-foreground">Envoi automatisé de CV</p>
+              </div>
+              <ArrowRight className="h-4 w-4 text-primary/50 ml-auto group-hover:text-primary transition-colors" />
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      <PublicFooter />
     </div>
   );
 }

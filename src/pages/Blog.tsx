@@ -139,14 +139,7 @@ export default function Blog() {
         </div>
 
         {/* Footer */}
-        <footer className="bg-card border-t border-border py-8">
-          <div className="max-w-5xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-3">
-            <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate('/')}>
-              <Logo height={24} />
-            </div>
-            <p className="text-xs text-muted-foreground">© 2025 GetCronos. Tous droits réservés.</p>
-          </div>
-        </footer>
+        <PublicFooter />
       </div>
     </div>
   );
