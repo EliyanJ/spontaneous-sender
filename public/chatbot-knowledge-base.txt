@@ -1,6 +1,6 @@
 ========================================
 CRONOS — BASE DE CONNAISSANCES CHATBOT
-Version : Mars 2026
+Version : Mars 2026 — v2.0
 ========================================
 
 Ce document est la source de vérité pour l'assistant IA Cronos.
@@ -30,7 +30,7 @@ Public cible :
 - Recherche automatique d'entreprises (par département uniquement)
 - Template d'email générique (pas d'IA)
 - Accès Score CV ATS
-- Accès CV Builder
+- Accès CV Builder (Créateur de CV)
 - Pas d'accès aux offres d'emploi
 - Pas de génération IA d'emails
 - Pas de recherche manuelle ni IA
@@ -43,7 +43,7 @@ Public cible :
 - Suivi des réponses
 - Support par email
 - Accès Score CV ATS
-- Accès CV Builder
+- Accès CV Builder (Créateur de CV)
 - Pas d'accès aux offres d'emploi
 - Pas de génération IA d'emails
 - Pas de recherche manuelle ni IA
@@ -160,14 +160,25 @@ Principe : uploader son CV (PDF) + coller une fiche de poste → obtenir un scor
 Accessible sur /createur-de-cv — Gratuit pour tous les plans.
 
 Fonctionnement :
-1. Choisir un template parmi ceux disponibles (créés par les admins)
+1. Choisir un template parmi ceux disponibles (9 templates sectoriels disponibles)
 2. Remplir le formulaire : infos personnelles, expériences, formations, compétences, langues
 3. Prévisualisation en temps réel pendant la saisie
-4. L'IA peut générer le contenu (descriptions de postes, résumé)
-5. Export HTML → impression en PDF via le navigateur
-6. Sauvegarde en base de données (les CVs sont conservés)
+4. L'IA peut générer le contenu (descriptions de postes, résumé de profil)
+5. Export en PDF ou DOCX depuis le bouton "Exporter"
+6. Sauvegarde automatique en base de données (les CVs sont conservés)
 
-Option : importer un CV existant en PDF ou DOCX pour pré-remplir automatiquement le formulaire.
+Templates disponibles :
+- Classic Elite — Style classique élégant
+- Modern Pro — Design moderne épuré
+- Creative Plus — Créatif et coloré
+- Tech Pro — Orienté métiers techniques
+- Executive — Profil cadre dirigeant
+- Business — Style professionnel sobre
+- Designer — Portfolio créatif
+- Student — Adapté aux étudiants et jeunes diplômés
+- Minimal — Minimaliste et efficace
+
+Option : importer un CV existant en PDF ou DOCX pour pré-remplir automatiquement le formulaire (analyse IA du document).
 
 ---
 
@@ -198,14 +209,15 @@ nouveau → contacté → en attente → réponse positive → réponse négativ
 - Générée par l'IA à partir du profil utilisateur et de la fiche de poste
 - Accessible depuis le dashboard
 - Personnalisée pour chaque candidature
+- 1 token consommé par génération
 
 ---
 
-### 8. OFFRES D'EMPLOI (Premium)
+### 8. OFFRES D'EMPLOI
 
 - Offres provenant de l'API France Travail (Pôle Emploi)
 - Filtres : secteur, type de contrat (CDI/CDD/Stage), localisation
-- Accessible sans compte sur /offres-emploi pour tout le monde
+- Accessible sans compte sur /offres-emploi pour tout le monde (consultation limitée)
 - Accès complet dans le dashboard uniquement avec le plan Premium
 
 ---
@@ -220,23 +232,39 @@ Pour envoyer des emails, l'utilisateur doit connecter son compte Gmail :
 5. Peut être déconnectée à tout moment
 
 IMPORTANT : Les emails sont envoyés depuis votre vraie adresse Gmail, pas depuis une adresse Cronos.
+IMPORTANT : Cronos fonctionne UNIQUEMENT avec Gmail. Outlook, Yahoo, et autres messageries ne sont pas supportés.
+
+---
+
+### 10. BLOG ET RESSOURCES
+
+Cronos propose un blog de conseils carrière accessible sur /blog.
+- Articles sur la recherche d'emploi, la rédaction de CV, la candidature spontanée
+- Accès gratuit, sans compte nécessaire
+- Nouveau contenu ajouté régulièrement
 
 ---
 
 ## PAGES PUBLIQUES DU SITE
 
+URLs correctes (à utiliser pour orienter les utilisateurs) :
 - / → Page d'accueil (landing page)
-- /pricing → Tarifs et comparatif des plans
+- /prix → Tarifs et comparatif des plans
 - /score-cv → Analyseur CV ATS (gratuit)
 - /createur-de-cv → Créateur de CV (gratuit)
 - /offres-emploi → Offres d'emploi publiques
-- /blog → Conseils carrière
+- /blog → Conseils carrière et articles
+- /blog/:slug → Article de blog individuel
 - /login → Connexion
 - /register → Inscription
 - /forgot-password → Mot de passe oublié
-- /mentions-legales → Mentions légales
-- /politique-confidentialite → Politique de confidentialité
-- /conditions-utilisation → Conditions générales d'utilisation
+- /help → Centre d'aide
+- /mentions-legales → Mentions légales (FR)
+- /privacy-policy → Politique de confidentialité (FR)
+- /terms-of-service → Conditions générales d'utilisation (FR)
+- /privacy-policy-en → Privacy Policy (EN)
+- /terms-of-service-en → Terms of Service (EN)
+- /legal-notice → Legal Notice (EN)
 
 ---
 
@@ -257,7 +285,7 @@ IMPORTANT : Les emails sont envoyés depuis votre vraie adresse Gmail, pas depui
 → Page /forgot-password → entrer son email → recevoir un lien de réinitialisation → /reset-password
 
 ### Suppression de compte
-Contacter le support via le widget de chat ou depuis les paramètres.
+Contacter le support via le widget de chat ou depuis le tableau de bord section "Support".
 
 ---
 
@@ -266,13 +294,17 @@ Contacter le support via le widget de chat ou depuis les paramètres.
 Après connexion, l'utilisateur accède à son dashboard personnel avec :
 
 - Vue d'ensemble : KPIs (emails envoyés, entreprises trouvées, crédits restants)
-- Recherche : lancer une recherche d'entreprises
+- Recherche : lancer une recherche d'entreprises (3 modes)
 - Mes entreprises : CRM avec toutes les entreprises trouvées
 - Emails : composer et envoyer des emails
 - Campagnes : gérer les campagnes d'envoi groupées
 - Emails planifiés : programmer des envois futurs
-- Score CV : analyser son CV
-- CV Builder : créer son CV
+- Score CV : analyser son CV (ATS)
+- CV Builder : créer son CV avec des templates
+- Offres d'emploi : consulter les offres France Travail (Premium)
+- Pipeline : suivre l'avancement des candidatures
+- Statistiques : voir ses performances globales
+- Notifications : alertes et rappels
 - Paramètres : profil, abonnement, Gmail, notifications
 
 ---
@@ -289,10 +321,10 @@ Q : Mes données sont-elles sécurisées ?
 R : Oui. Les tokens Gmail sont chiffrés en AES-256. Cronos ne stocke pas vos emails ou leur contenu en dehors des brouillons Gmail.
 
 Q : Comment annuler mon abonnement ?
-R : Dans Paramètres > Abonnement, cliquer sur "Gérer mon abonnement" qui ouvre le portail Stripe pour annuler.
+R : Dans Paramètres > Abonnement, cliquer sur "Gérer mon abonnement" qui ouvre le portail de paiement pour annuler.
 
 Q : Puis-je changer de plan en cours de mois ?
-R : Oui, le changement est géré par Stripe et prend effet immédiatement ou en fin de période selon le cas.
+R : Oui, le changement prend effet immédiatement ou en fin de période selon le cas.
 
 Q : Combien coûtent les tokens IA ?
 R : Pack 50 tokens = 5€. Pack 100 tokens = 9€. 1 action IA = 1 token (génération email, lettre de motivation, score CV).
@@ -316,13 +348,31 @@ Q : Puis-je utiliser Cronos sans Gmail ?
 R : Non, la connexion Gmail est nécessaire pour envoyer les emails. Cronos utilise exclusivement l'API Gmail pour les envois.
 
 Q : Le CV Builder est-il inclus dans tous les plans ?
-R : Oui, le CV Builder est accessible gratuitement sur tous les plans.
+R : Oui, le CV Builder est accessible gratuitement sur tous les plans, à l'adresse /createur-de-cv.
+
+Q : Combien de templates de CV sont disponibles ?
+R : 9 templates sont disponibles : Classic Elite, Modern Pro, Creative Plus, Tech Pro, Executive, Business, Designer, Student et Minimal.
+
+Q : Puis-je exporter mon CV en PDF ?
+R : Oui, le CV Builder permet l'export en PDF et en DOCX directement depuis l'interface.
+
+Q : Puis-je importer un CV existant ?
+R : Oui, vous pouvez importer un fichier PDF ou DOCX existant. L'IA extrait automatiquement les informations pour pré-remplir le formulaire.
 
 Q : Comment fonctionne la recherche automatique ?
 R : Cronos utilise les secteurs que vous avez définis dans votre profil lors de l'onboarding pour lancer automatiquement une recherche d'entreprises. Les résultats proviennent de la base INSEE/Sirene.
 
+Q : Quelle est l'URL pour accéder aux tarifs ?
+R : Les tarifs sont disponibles sur /prix (et non /pricing).
+
 Q : Comment contacter le support ?
-R : Via le widget de chat en bas à droite (onglet "Signaler un problème"), ou depuis le tableau de bord section "Support".
+R : Via le widget de chat en bas à droite (onglet "Signaler un problème"), ou depuis le tableau de bord section "Support", ou par email via le formulaire de contact.
+
+Q : Cronos propose-t-il un blog ?
+R : Oui, le blog est accessible sur /blog. Il contient des conseils sur la recherche d'emploi, la rédaction de CV et les candidatures spontanées.
+
+Q : Comment fonctionne le pipeline de candidatures ?
+R : Chaque entreprise que vous contactez passe par des statuts : nouveau → contacté → en attente → réponse positive → réponse négative → entretien. Le statut se met à jour automatiquement quand une réponse est détectée.
 
 ---
 
@@ -330,7 +380,7 @@ R : Via le widget de chat en bas à droite (onglet "Signaler un problème"), ou 
 
 Si un utilisateur demande :
 - Le statut de son abonnement → dire de vérifier dans Paramètres > Abonnement
-- Des infos sur sa commande Stripe → dire de vérifier dans Paramètres > Abonnement > Gérer mon abonnement
+- Des infos sur sa commande → dire de vérifier dans Paramètres > Abonnement > Gérer mon abonnement
 - Des infos sur son compte spécifique → dire de contacter le support
 - Des fonctionnalités non listées ici → dire "Cette fonctionnalité n'est pas disponible actuellement"
 - Le nombre d'entreprises dans sa base → dire de consulter "Mes entreprises" dans le dashboard
@@ -346,8 +396,9 @@ Si un utilisateur demande :
 - Cronos ne propose pas de coaching carrière humain
 - Cronos ne fonctionne qu'avec Gmail (pas Outlook, Yahoo, etc.)
 - Les offres d'emploi viennent de France Travail, Cronos ne les crée pas
+- Cronos ne fait pas de candidatures automatiques sur des sites d'emploi tiers
 
 ---
 
 FIN DU DOCUMENT
-Dernière mise à jour : Mars 2026
+Dernière mise à jour : Mars 2026 — v2.0
