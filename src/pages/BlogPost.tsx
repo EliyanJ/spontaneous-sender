@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { ArrowLeft, Moon, Sun, Clock, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/Logo";
+import { PublicFooter } from "@/components/PublicFooter";
 
 const BlogPost = () => {
   const { slug } = useParams();
