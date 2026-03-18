@@ -113,7 +113,7 @@ const BlogPost = () => {
               {[
                 { label: "Accueil", href: "/" },
                 { label: "Aide", href: "/help" },
-                { label: "Tarifs", href: "/pricing" },
+                { label: "Tarifs", href: "/prix" },
               ].map((link) => (
                 <a 
                   key={link.href}

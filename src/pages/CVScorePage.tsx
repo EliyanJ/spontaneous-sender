@@ -218,7 +218,7 @@ export const CVScorePage = () => {
             <Link to="/privacy-policy" className="hover:text-foreground transition-colors">Confidentialité</Link>
             <Link to="/terms-of-service" className="hover:text-foreground transition-colors">CGU</Link>
             <Link to="/mentions-legales" className="hover:text-foreground transition-colors">Mentions légales</Link>
-            <Link to="/pricing" className="hover:text-foreground transition-colors">Tarifs</Link>
+            <Link to="/prix" className="hover:text-foreground transition-colors">Tarifs</Link>
           </div>
         </div>
       </footer>

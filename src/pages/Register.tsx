@@ -395,7 +395,7 @@ const Register = () => {
                   className={`text-sm leading-snug cursor-pointer ${errors.termsAccepted ? "text-red-500" : "text-gray-600"}`}
                 >
                   J'accepte les{" "}
-                  <Link to="/terms" className="text-violet-600 hover:underline font-medium" target="_blank">
+                  <Link to="/terms-of-service" className="text-violet-600 hover:underline font-medium" target="_blank">
                     conditions générales d'utilisation
                   </Link>{" "}
                   et la{" "}
