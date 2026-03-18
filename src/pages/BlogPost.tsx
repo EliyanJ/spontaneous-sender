@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import DOMPurify from "dompurify";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -191,7 +192,7 @@ const BlogPost = () => {
                 prose-code:text-primary prose-code:bg-muted/40 prose-code:rounded-md prose-code:px-1.5 prose-code:py-0.5 prose-code:text-sm
                 prose-pre:rounded-xl prose-pre:bg-card prose-pre:border prose-pre:border-border/50
                 prose-li:text-muted-foreground"
-              dangerouslySetInnerHTML={{ __html: page.content }}
+              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(page.content ?? "") }}
             />
           </div>
         </main>

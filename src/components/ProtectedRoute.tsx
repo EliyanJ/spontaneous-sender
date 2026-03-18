@@ -4,6 +4,21 @@ import { Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
+/**
+ * LOW-03: Validate the `next` redirect param to prevent open-redirect attacks.
+ * Only allow relative paths starting with "/" and reject paths beginning with "//"
+ * (which browsers interpret as protocol-relative URLs pointing to external hosts).
+ */
+function isSafeRedirect(url: string): boolean {
+  if (!url) return false;
+  if (!url.startsWith("/")) return false;
+  if (url.startsWith("//")) return false;
+  // Reject anything containing a protocol (e.g. %2F%2F, http:)
+  const decoded = decodeURIComponent(url);
+  if (/^\/\/|https?:/i.test(decoded)) return false;
+  return true;
+}
+
 export const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
   const location = useLocation();
@@ -45,8 +60,11 @@ export const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   }
 
   if (!user) {
-    const redirectTo = location.pathname + location.search;
-    return <Navigate to={`/auth?next=${encodeURIComponent(redirectTo)}`} replace />;
+    const rawRedirect = location.pathname + location.search;
+    // LOW-03: only encode & use the redirect if it's a safe internal path
+    const safeNext = isSafeRedirect(rawRedirect) ? encodeURIComponent(rawRedirect) : "";
+    const authUrl = safeNext ? `/auth?next=${safeNext}` : "/auth";
+    return <Navigate to={authUrl} replace />;
   }
 
   // Redirect to onboarding if not completed (but not if already on /onboarding)

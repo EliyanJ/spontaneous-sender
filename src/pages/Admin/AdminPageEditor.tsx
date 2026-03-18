@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import DOMPurify from "dompurify";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -398,7 +399,7 @@ export const AdminPageEditor = () => {
                       contentEditable
                       className="min-h-[400px] prose prose-lg max-w-none dark:prose-invert focus:outline-none prose-headings:text-foreground prose-p:text-muted-foreground prose-a:text-primary"
                       onInput={syncHtmlFromEditor}
-                      dangerouslySetInnerHTML={{ __html: htmlContent }}
+                      dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(htmlContent) }}
                       suppressContentEditableWarning
                     />
                   ) : (

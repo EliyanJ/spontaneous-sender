@@ -9,6 +9,8 @@ export const useAuth = () => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const lastUserIdRef = useRef<string | null>(null);
+  // MED-03: flag to prevent race condition where cleanup fires after re-login
+  const cleanupInProgressRef = useRef(false);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -20,15 +22,25 @@ export const useAuth = () => {
         // Invalidate Gmail tokens on logout to prevent automatic reconnection
         if (event === 'SIGNED_OUT' && lastUserIdRef.current) {
           const userIdToCleanup = lastUserIdRef.current;
-          // Use setTimeout to avoid Supabase deadlock
-          setTimeout(async () => {
-            try {
-              await supabase.from('gmail_tokens').delete().eq('user_id', userIdToCleanup);
-              console.log('Gmail tokens invalidated on logout');
-            } catch (error) {
-              console.error('Error invalidating Gmail tokens:', error);
-            }
-          }, 0);
+          // Guard: don't clean up if a new session already started
+          if (!cleanupInProgressRef.current) {
+            cleanupInProgressRef.current = true;
+            // Use a microtask instead of setTimeout(0) to avoid the Supabase
+            // re-entrant call while keeping the async cleanup outside the listener
+            Promise.resolve().then(async () => {
+              try {
+                // Double-check: abort if user re-logged in before we ran
+                const { data: { session: activeSession } } = await supabase.auth.getSession();
+                if (!activeSession) {
+                  await supabase.from('gmail_tokens').delete().eq('user_id', userIdToCleanup);
+                }
+              } catch (error) {
+                if (import.meta.env.DEV) console.error('Error invalidating Gmail tokens:', error);
+              } finally {
+                cleanupInProgressRef.current = false;
+              }
+            });
+          }
         }
 
         // Track current user ID for cleanup on logout

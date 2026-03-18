@@ -116,12 +116,13 @@ export const JobOffers = () => {
       }
       if (searchParams.typeContrat !== 'all') params.typeContrat = searchParams.typeContrat;
 
+      // HIGH-04: use VITE_SUPABASE_PUBLISHABLE_KEY (the correct anon key variable)
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/france-travail?${new URLSearchParams(params)}`,
         {
           headers: {
             'Authorization': `Bearer ${session.access_token}`,
-            'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+            'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
           },
         }
       );
@@ -155,7 +156,7 @@ export const JobOffers = () => {
         {
           headers: {
             'Authorization': `Bearer ${session.access_token}`,
-            'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+            'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
           },
         }
       );
