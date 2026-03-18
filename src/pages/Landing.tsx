@@ -16,10 +16,11 @@ import {
   Play,
   Flag
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Header } from "@/components/Header";
 import { Logo } from "@/components/Logo";
+import { PublicFooter } from "@/components/PublicFooter";
 
 const Landing = () => {
   const navigate = useNavigate();
@@ -481,6 +482,48 @@ const Landing = () => {
             </div>
           </section>
 
+          {/* Tools section */}
+          <section className="py-16 relative">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="text-center mb-10">
+                <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-3 font-display">Tous nos outils gratuits</h2>
+                <p className="text-muted-foreground">Optimisez chaque étape de votre recherche d'emploi</p>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-5xl mx-auto">
+                <Link to="/score-cv" className="group p-6 bg-card/40 border border-border/40 rounded-2xl hover:bg-card/70 hover:border-primary/30 hover:shadow-md transition-all">
+                  <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
+                    <Search className="h-6 w-6 text-primary" />
+                  </div>
+                  <h3 className="font-bold text-foreground mb-2">Score CV ATS</h3>
+                  <p className="text-sm text-muted-foreground mb-3">Comparez votre CV à une offre et obtenez un score sur 100 points.</p>
+                  <span className="text-sm font-medium text-primary flex items-center gap-1 group-hover:gap-2 transition-all">
+                    Tester mon CV <ArrowRight className="h-3.5 w-3.5" />
+                  </span>
+                </Link>
+                <Link to="/createur-de-cv" className="group p-6 bg-card/40 border border-border/40 rounded-2xl hover:bg-card/70 hover:border-primary/30 hover:shadow-md transition-all">
+                  <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
+                    <Zap className="h-6 w-6 text-primary" />
+                  </div>
+                  <h3 className="font-bold text-foreground mb-2">Créateur de CV</h3>
+                  <p className="text-sm text-muted-foreground mb-3">Créez un CV professionnel optimisé pour les ATS en quelques minutes.</p>
+                  <span className="text-sm font-medium text-primary flex items-center gap-1 group-hover:gap-2 transition-all">
+                    Créer mon CV <ArrowRight className="h-3.5 w-3.5" />
+                  </span>
+                </Link>
+                <Link to="/offres-emploi" className="group p-6 bg-card/40 border border-border/40 rounded-2xl hover:bg-card/70 hover:border-primary/30 hover:shadow-md transition-all">
+                  <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
+                    <Briefcase className="h-6 w-6 text-primary" />
+                  </div>
+                  <h3 className="font-bold text-foreground mb-2">Offres d'emploi</h3>
+                  <p className="text-sm text-muted-foreground mb-3">Parcourez des milliers d'offres en France et postulez via l'IA.</p>
+                  <span className="text-sm font-medium text-primary flex items-center gap-1 group-hover:gap-2 transition-all">
+                    Voir les offres <ArrowRight className="h-3.5 w-3.5" />
+                  </span>
+                </Link>
+              </div>
+            </div>
+          </section>
+
           {/* Pricing */}
           <section id="pricing" className="py-24 relative overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-b from-background to-primary/5 pointer-events-none" />
@@ -597,25 +640,7 @@ const Landing = () => {
         </main>
 
         {/* Footer */}
-        <footer className="bg-card/50 border-t border-border/30 pt-16 pb-8">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex flex-col md:flex-row justify-between items-center mb-12">
-              <div className="flex items-center gap-3 mb-6 md:mb-0">
-                <Logo height={32} />
-                <span className="text-xl font-bold text-foreground font-display">Cronos</span>
-              </div>
-              <div className="flex gap-8">
-                <a href="/help" className="text-muted-foreground hover:text-foreground transition-colors text-sm">Aide</a>
-                <a href="/privacy-policy" className="text-muted-foreground hover:text-foreground transition-colors text-sm">Confidentialité</a>
-                <a href="/terms-of-service" className="text-muted-foreground hover:text-foreground transition-colors text-sm">Conditions</a>
-                <a href="/mentions-legales" className="text-muted-foreground hover:text-foreground transition-colors text-sm">Mentions légales</a>
-              </div>
-            </div>
-            <div className="text-center text-muted-foreground text-xs">
-              © 2025 Cronos. Tous droits réservés.
-            </div>
-          </div>
-        </footer>
+        <PublicFooter />
       </div>
     </div>
   );

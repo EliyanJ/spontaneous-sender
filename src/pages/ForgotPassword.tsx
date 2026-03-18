@@ -136,9 +136,9 @@ export const ForgotPassword = () => {
           {/* Footer légal */}
           <div className="flex flex-wrap justify-center gap-4 text-xs text-muted-foreground">
             <Link to="/mentions-legales" className="hover:text-foreground transition-colors">Mentions légales</Link>
-            <Link to="/politique-confidentialite" className="hover:text-foreground transition-colors">Confidentialité</Link>
-            <Link to="/conditions-utilisation" className="hover:text-foreground transition-colors">CGU</Link>
-            <Link to="/pricing" className="hover:text-foreground transition-colors">Tarifs</Link>
+            <Link to="/privacy-policy" className="hover:text-foreground transition-colors">Confidentialité</Link>
+            <Link to="/terms-of-service" className="hover:text-foreground transition-colors">CGU</Link>
+            <Link to="/prix" className="hover:text-foreground transition-colors">Tarifs</Link>
           </div>
         </div>
       </div>

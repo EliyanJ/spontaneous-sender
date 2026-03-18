@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { ArrowLeft, Moon, Sun, Clock, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/Logo";
+import { PublicFooter } from "@/components/PublicFooter";
 
 const BlogPost = () => {
   const { slug } = useParams();
@@ -113,7 +114,7 @@ const BlogPost = () => {
               {[
                 { label: "Accueil", href: "/" },
                 { label: "Aide", href: "/help" },
-                { label: "Tarifs", href: "/pricing" },
+                { label: "Tarifs", href: "/prix" },
               ].map((link) => (
                 <a 
                   key={link.href}
@@ -198,23 +199,7 @@ const BlogPost = () => {
         </main>
 
         {/* Footer */}
-        <footer className="border-t border-border/30 bg-card/20 backdrop-blur-sm">
-          <div className="container mx-auto px-6 py-10">
-            <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-              <a href="/" className="flex items-center gap-2 group">
-                <Logo height={20} className="transition-transform group-hover:scale-105" />
-                <span className="font-display font-semibold text-foreground">Cronos</span>
-              </a>
-              <div className="flex flex-wrap justify-center gap-4 md:gap-6 text-sm text-muted-foreground">
-                <a href="/help" className="hover:text-primary transition-colors duration-300">Aide</a>
-                <a href="/privacy-policy" className="hover:text-primary transition-colors duration-300">Confidentialité</a>
-                <a href="/terms-of-service" className="hover:text-primary transition-colors duration-300">Conditions</a>
-                <a href="/mentions-legales" className="hover:text-primary transition-colors duration-300">Mentions légales</a>
-              </div>
-              <p className="text-sm text-muted-foreground/60">© 2026 Cronos</p>
-            </div>
-          </div>
-        </footer>
+        <PublicFooter />
       </div>
     </div>
   );

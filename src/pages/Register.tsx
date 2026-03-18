@@ -177,7 +177,7 @@ const Register = () => {
         {/* Footer links */}
         <div className="relative z-10 flex gap-6 text-sm text-gray-400">
           <Link to="/privacy-policy" className="hover:text-white transition-colors">Politique de confidentialité</Link>
-          <Link to="/legal" className="hover:text-white transition-colors">Mentions légales</Link>
+          <Link to="/mentions-legales" className="hover:text-white transition-colors">Mentions légales</Link>
         </div>
       </div>
 
@@ -395,7 +395,7 @@ const Register = () => {
                   className={`text-sm leading-snug cursor-pointer ${errors.termsAccepted ? "text-red-500" : "text-gray-600"}`}
                 >
                   J'accepte les{" "}
-                  <Link to="/terms" className="text-violet-600 hover:underline font-medium" target="_blank">
+                  <Link to="/terms-of-service" className="text-violet-600 hover:underline font-medium" target="_blank">
                     conditions générales d'utilisation
                   </Link>{" "}
                   et la{" "}
