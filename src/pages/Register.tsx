@@ -177,7 +177,7 @@ const Register = () => {
         {/* Footer links */}
         <div className="relative z-10 flex gap-6 text-sm text-gray-400">
           <Link to="/privacy-policy" className="hover:text-white transition-colors">Politique de confidentialité</Link>
-          <Link to="/legal" className="hover:text-white transition-colors">Mentions légales</Link>
+          <Link to="/mentions-legales" className="hover:text-white transition-colors">Mentions légales</Link>
         </div>
       </div>
 
