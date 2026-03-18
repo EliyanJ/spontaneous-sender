@@ -37,23 +37,23 @@ const ConnectGmail    = lazy(() => import("./pages/ConnectGmail"));
 const ConnectGmailCallback = lazy(() => import("./pages/ConnectGmailCallback"));
 
 // Admin (rarely visited — largest savings)
-const AdminLayout            = lazy(() => import("./pages/Admin/AdminLayout"));
-const AdminDashboard         = lazy(() => import("./pages/Admin/AdminDashboard"));
-const AdminUsers             = lazy(() => import("./pages/Admin/AdminUsers"));
-const AdminUserDetail        = lazy(() => import("./pages/Admin/AdminUserDetail"));
-const AdminTeam              = lazy(() => import("./pages/Admin/AdminTeam"));
+const AdminLayout            = lazy(() => import("./pages/Admin/AdminLayout").then(m => ({ default: m.AdminLayout })));
+const AdminDashboard         = lazy(() => import("./pages/Admin/AdminDashboard").then(m => ({ default: m.AdminDashboard })));
+const AdminUsers             = lazy(() => import("./pages/Admin/AdminUsers").then(m => ({ default: m.AdminUsers })));
+const AdminUserDetail        = lazy(() => import("./pages/Admin/AdminUserDetail").then(m => ({ default: m.AdminUserDetail })));
+const AdminTeam              = lazy(() => import("./pages/Admin/AdminTeam").then(m => ({ default: m.AdminTeam })));
 const AdminTickets           = lazy(() => import("./pages/Admin/AdminTickets"));
 const AdminTicketDetail      = lazy(() => import("./pages/Admin/AdminTicketDetail"));
-const AdminDataCenter        = lazy(() => import("./pages/Admin/AdminDataCenter"));
-const AdminCMS               = lazy(() => import("./pages/Admin/AdminCMS"));
-const AdminPageEditor        = lazy(() => import("./pages/Admin/AdminPageEditor"));
-const AdminBlockEditor       = lazy(() => import("./pages/Admin/AdminBlockEditor"));
-const AdminSEO               = lazy(() => import("./pages/Admin/AdminSEO"));
-const AdminPromos            = lazy(() => import("./pages/Admin/AdminPromos"));
-const AdminATSTraining       = lazy(() => import("./pages/Admin/AdminATSTraining"));
-const AdminChatbot           = lazy(() => import("./pages/Admin/AdminChatbot"));
-const AdminCVTemplates       = lazy(() => import("./pages/Admin/AdminCVTemplates"));
-const AdminCVTemplateBuilder = lazy(() => import("./pages/Admin/AdminCVTemplateBuilder"));
+const AdminDataCenter        = lazy(() => import("./pages/Admin/AdminDataCenter").then(m => ({ default: m.AdminDataCenter })));
+const AdminCMS               = lazy(() => import("./pages/Admin/AdminCMS").then(m => ({ default: m.AdminCMS })));
+const AdminPageEditor        = lazy(() => import("./pages/Admin/AdminPageEditor").then(m => ({ default: m.AdminPageEditor })));
+const AdminBlockEditor       = lazy(() => import("./pages/Admin/AdminBlockEditor").then(m => ({ default: m.AdminBlockEditor })));
+const AdminSEO               = lazy(() => import("./pages/Admin/AdminSEO").then(m => ({ default: m.AdminSEO })));
+const AdminPromos            = lazy(() => import("./pages/Admin/AdminPromos").then(m => ({ default: m.AdminPromos })));
+const AdminATSTraining       = lazy(() => import("./pages/Admin/AdminATSTraining").then(m => ({ default: m.AdminATSTraining })));
+const AdminChatbot           = lazy(() => import("./pages/Admin/AdminChatbot").then(m => ({ default: m.AdminChatbot })));
+const AdminCVTemplates       = lazy(() => import("./pages/Admin/AdminCVTemplates").then(m => ({ default: m.AdminCVTemplates })));
+const AdminCVTemplateBuilder = lazy(() => import("./pages/Admin/AdminCVTemplateBuilder").then(m => ({ default: m.AdminCVTemplateBuilder })));
 
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { AdminRoute } from "./components/AdminRoute";
