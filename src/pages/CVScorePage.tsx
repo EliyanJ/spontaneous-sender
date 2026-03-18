@@ -194,6 +194,35 @@ export const CVScorePage = () => {
         </div>
       </section>
 
+      {/* Cross-links to other tools */}
+      <section className="py-10 px-4 border-t border-border/30 bg-muted/10">
+        <div className="max-w-4xl mx-auto">
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-4">Aller plus loin</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Link to="/createur-de-cv" className="flex items-center gap-3 p-4 rounded-xl border border-border/50 bg-card/40 hover:bg-card/70 hover:border-primary/30 transition-all group">
+              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 group-hover:bg-primary/20 transition-colors">
+                <FileText className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <p className="font-semibold text-foreground text-sm">Créer un CV optimisé</p>
+                <p className="text-xs text-muted-foreground">Générez un CV ATS-ready depuis zéro</p>
+              </div>
+              <ArrowRight className="h-4 w-4 text-muted-foreground ml-auto group-hover:text-primary transition-colors" />
+            </Link>
+            <Link to="/offres-emploi" className="flex items-center gap-3 p-4 rounded-xl border border-border/50 bg-card/40 hover:bg-card/70 hover:border-primary/30 transition-all group">
+              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 group-hover:bg-primary/20 transition-colors">
+                <Briefcase className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <p className="font-semibold text-foreground text-sm">Trouver des offres d'emploi</p>
+                <p className="text-xs text-muted-foreground">Parcourez des milliers d'offres en France</p>
+              </div>
+              <ArrowRight className="h-4 w-4 text-muted-foreground ml-auto group-hover:text-primary transition-colors" />
+            </Link>
+          </div>
+        </div>
+      </section>
+
       {/* CTA bottom */}
       <section className="py-16 px-4 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border-t border-border/30">
         <div className="max-w-2xl mx-auto text-center">
@@ -208,21 +237,7 @@ export const CVScorePage = () => {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="border-t border-border/30 bg-card/30 py-8 px-4">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <Logo height={24} className="opacity-70" />
-            <span className="text-sm text-muted-foreground">© 2026 Cronos</span>
-          </div>
-          <div className="flex gap-5 text-sm text-muted-foreground">
-            <Link to="/privacy-policy" className="hover:text-foreground transition-colors">Confidentialité</Link>
-            <Link to="/terms-of-service" className="hover:text-foreground transition-colors">CGU</Link>
-            <Link to="/mentions-legales" className="hover:text-foreground transition-colors">Mentions légales</Link>
-            <Link to="/prix" className="hover:text-foreground transition-colors">Tarifs</Link>
-          </div>
-        </div>
-      </footer>
+      <PublicFooter />
 
       {/* Auth popup */}
       <CVScoreAuthPopup open={showAuthPopup} onOpenChange={setShowAuthPopup} />
