@@ -4,6 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Header } from "@/components/Header";
 import { Logo } from "@/components/Logo";
+import { PublicFooter } from "@/components/PublicFooter";
 
 const ARTICLES = [
   {

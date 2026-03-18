@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { Check, Zap, Crown, Sparkles, ArrowLeft, Loader2, X } from "lucide-react";
+import { useNavigate, Link } from "react-router-dom";
+import { Check, Zap, Crown, Sparkles, ArrowLeft, ArrowRight, Loader2, X, FileText, Target } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { STRIPE_PRODUCTS, FREE_PLAN, PriceType } from "@/lib/stripe-config";
 import { Header } from "@/components/Header";
+import { PublicFooter } from "@/components/PublicFooter";
 
 // Features comparison for highlighting differences
 const FEATURE_COMPARISON = {
