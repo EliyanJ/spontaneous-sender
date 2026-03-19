@@ -107,6 +107,37 @@ serve(async (req) => {
       }
     }
 
+    // --- Récupération du template de lettre ---
+    let templateBlock = '';
+    try {
+      const { data: templates } = await supabaseClient
+        .from('cover_letter_templates')
+        .select('id, name, content, usage_count')
+        .eq('is_active', true)
+        .order('usage_count', { ascending: false })
+        .limit(3);
+
+      let bestTemplate = null;
+      if (templates && templates.length > 0) {
+        bestTemplate = templates[0];
+      }
+
+      if (bestTemplate) {
+        templateBlock = `\nMODÈLE DE RÉFÉRENCE — Voici un modèle de lettre de motivation validé. Utilise-le comme structure et inspiration, en adaptant le contenu au profil du candidat et à l'entreprise ciblée :\n\n${bestTemplate.content}\n`;
+        console.log(`Template LM: "${bestTemplate.name}" utilisé`);
+
+        // Incrémenter le compteur d'utilisation
+        await supabaseClient
+          .from('cover_letter_templates')
+          .update({ usage_count: (bestTemplate as any).usage_count + 1 })
+          .eq('id', bestTemplate.id);
+      } else {
+        console.log('Template LM: aucun template actif trouvé');
+      }
+    } catch (err) {
+      console.error('Erreur récupération template LM:', err);
+    }
+
     const systemPrompt = `Tu es un expert en rédaction de lettres de motivation pour candidatures spontanées en français.
 
 STRUCTURE OBLIGATOIRE — 3 PARAGRAPHES (pas plus, pas moins) :
@@ -126,7 +157,7 @@ PARAGRAPHE 3 — Apport :
 - Ce que je peux apporter CONCRÈTEMENT
 - Appui / renfort / regard neuf
 - Ouverture à l'échange
-
+${templateBlock}
 RÈGLES STRICTES :
 - Maximum 1 page (~350 mots)
 - Ton professionnel, fluide, PAS familier
