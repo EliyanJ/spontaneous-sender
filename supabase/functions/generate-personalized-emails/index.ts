@@ -221,7 +221,7 @@ RÈGLES STRICTES :
 ${subjectTypeInstruction}
 
 ${toneInstruction}
-
+${examplesBlock}
 FORMAT DE SORTIE :
 Sujet: [objet selon le type choisi]
 
