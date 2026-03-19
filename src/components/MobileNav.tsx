@@ -1,7 +1,7 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { 
-  LayoutDashboard, Search, Send, Activity, RefreshCw, 
+  LayoutDashboard, Search, Mail, Send, Activity, RefreshCw, 
   GitCompare, FileText, Settings, Shield, Menu
 } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";

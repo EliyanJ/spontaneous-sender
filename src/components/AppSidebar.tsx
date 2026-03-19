@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
   Search,
+  Mail,
   Send,
   Activity,
   RefreshCw,
