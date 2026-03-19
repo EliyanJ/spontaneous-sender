@@ -138,8 +138,10 @@ const App = () => (
               <Route path="cms" element={<AdminCMS />} />
               <Route path="seo" element={<AdminSEO />} />
               <Route path="chatbot" element={<AdminChatbot />} />
-              <Route path="cv-templates" element={<AdminCVTemplates />} />
+              <Route path="ai-generation" element={<AdminAIGeneration />} />
               <Route path="email-quality" element={<AdminEmailQuality />} />
+              <Route path="sector-insights" element={<AdminSectorInsights />} />
+              <Route path="cv-templates" element={<AdminCVTemplates />} />
               <Route path="cover-letter-templates" element={<AdminCoverLetterTemplates />} />
             </Route>
 
