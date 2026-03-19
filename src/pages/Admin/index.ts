@@ -14,3 +14,4 @@ export { AdminATSTraining } from './AdminATSTraining';
 export { AdminChatbot } from './AdminChatbot';
 export { AdminCVTemplates } from './AdminCVTemplates';
 export { AdminCVTemplateBuilder } from './AdminCVTemplateBuilder';
+export { AdminEmailQuality } from './AdminEmailQuality';
