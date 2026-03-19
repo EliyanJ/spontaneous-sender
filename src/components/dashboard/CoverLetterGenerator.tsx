@@ -71,6 +71,9 @@ interface UserProfile {
   education: string | null;
   linkedinUrl: string | null;
   cvContent: string | null;
+  targetSectors: string[] | null;
+  targetJobs: string | null;
+  professionalInterests: string[] | null;
 }
 
 interface ProcessLog {
@@ -188,7 +191,7 @@ const CoverLetterGenerator = () => {
 
     const { data } = await supabase
       .from("profiles")
-      .select("full_name, education, linkedin_url, cv_content")
+      .select("full_name, education, linkedin_url, cv_content, target_sectors, target_jobs, professional_interests")
       .eq("id", user.id)
       .maybeSingle();
 
@@ -197,12 +200,16 @@ const CoverLetterGenerator = () => {
         fullName: data.full_name,
         education: data.education,
         linkedinUrl: data.linkedin_url,
-        cvContent: data.cv_content
+        cvContent: data.cv_content,
+        targetSectors: (data.target_sectors as string[]) || null,
+        targetJobs: data.target_jobs || null,
+        professionalInterests: (data.professional_interests as string[]) || null,
       });
       if (data.cv_content) {
         setCvContent(data.cv_content);
       }
     }
+
   };
 
   const handleSelectAll = () => {

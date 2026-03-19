@@ -138,6 +138,46 @@ serve(async (req) => {
       console.error('Erreur récupération template LM:', err);
     }
 
+    // --- Contexte sectoriel depuis la base ATS ---
+    let sectorContext = '';
+    try {
+      const { data: professions } = await supabaseClient
+        .from('ats_professions')
+        .select('name, primary_keywords, secondary_keywords, soft_skills, category')
+        .eq('profession_status', 'active');
+
+      if (professions && professions.length > 0) {
+        const searchTerms = [
+          company?.libelle_ape?.toLowerCase() || '',
+          (userProfile as any)?.targetJobs?.toLowerCase() || '',
+          ...((userProfile as any)?.targetSectors || []).map((s: string) => s.toLowerCase()),
+        ].filter(Boolean);
+
+        const matched = professions.filter((prof: any) => {
+          const profName = prof.name?.toLowerCase() || '';
+          const profCategory = prof.category?.toLowerCase() || '';
+          return searchTerms.some((term: string) =>
+            profName.includes(term) || term.includes(profName) ||
+            profCategory.includes(term) || term.includes(profCategory)
+          );
+        });
+
+        if (matched.length > 0) {
+          const top = matched.slice(0, 2);
+          const contextParts = top.map((p: any) => {
+            const primary = (p.primary_keywords || []).slice(0, 10).join(', ');
+            const secondary = (p.secondary_keywords || []).slice(0, 6).join(', ');
+            const soft = (p.soft_skills || []).slice(0, 5).join(', ');
+            return `Métier identifié : ${p.name}\nCompétences techniques courantes : ${primary}\nCompétences complémentaires : ${secondary}\nQualités valorisées : ${soft}`;
+          });
+          sectorContext = `\nCONTEXTE SECTORIEL (données de référence) :\n${contextParts.join('\n\n')}\n\nCes informations te donnent une compréhension du secteur du candidat. Utilise ce contexte pour écrire une lettre pertinente qui montre une compréhension du métier. Ne liste pas ces compétences, elles servent juste à comprendre l'univers professionnel.\n`;
+          console.log(`ATS context: ${top.map((p: any) => p.name).join(', ')}`);
+        }
+      }
+    } catch (err) {
+      console.error('Erreur ATS context:', err);
+    }
+
     const systemPrompt = `Tu es un expert en rédaction de lettres de motivation pour candidatures spontanées en français.
 
 STRUCTURE OBLIGATOIRE — 3 PARAGRAPHES (pas plus, pas moins) :
@@ -157,7 +197,7 @@ PARAGRAPHE 3 — Apport :
 - Ce que je peux apporter CONCRÈTEMENT
 - Appui / renfort / regard neuf
 - Ouverture à l'échange
-${templateBlock}
+${templateBlock}${sectorContext}
 RÈGLES STRICTES :
 - Maximum 1 page (~350 mots)
 - Ton professionnel, fluide, PAS familier
@@ -194,9 +234,9 @@ ${cvContent ? `CV / PROFIL DU CANDIDAT:
 ${cvContent}` : ''}
 
 ${userProfile ? `INFORMATIONS CANDIDAT:
-- Nom complet: ${userProfile.fullName || 'Non spécifié'}
-- Formation: ${userProfile.education || 'Non spécifiée'}
-- LinkedIn: ${userProfile.linkedinUrl || 'Non spécifié'}
+- Nom complet: ${(userProfile as any).fullName || 'Non spécifié'}
+- Formation: ${(userProfile as any).education || 'Non spécifiée'}
+- LinkedIn: ${(userProfile as any).linkedinUrl || 'Non spécifié'}
 ` : ''}
 
 Génère une lettre de motivation PERSONNALISÉE pour cette entreprise en respectant STRICTEMENT la structure 3 paragraphes et les règles ci-dessus.`;

@@ -160,30 +160,69 @@ serve(async (req) => {
 
     console.log(`Generating personalized emails for ${companies.length} companies (type: ${selectedSubjectType}, tone: ${selectedTone})`);
 
-    // --- Récupération des exemples validés (RAG SQL simple) ---
+    // --- Récupération des exemples validés (RAG - filtre côté code) ---
     let examplesBlock = '';
     try {
       const { data: examples } = await supabaseClient
         .from('email_subject_examples')
         .select('subject_text, admin_score, context_data')
-        .eq('context_data->>type_objet', selectedSubjectType)
-        .eq('context_data->>ton', selectedTone)
         .gte('admin_score', 4)
         .order('admin_score', { ascending: false })
         .limit(5);
 
       if (examples && examples.length > 0) {
-        const examplesList = examples
-          .map(e => `- "${e.subject_text}" (score: ${e.admin_score}/5)`)
-          .join('\n');
-        examplesBlock = `\nEXEMPLES D'OBJETS VALIDÉS — Inspire-toi du style et de la formulation de ces objets validés, tout en adaptant au contexte actuel :\n${examplesList}\n`;
-        console.log(`Exemples RAG: ${examples.length} trouvés pour type=${selectedSubjectType}, ton=${selectedTone}`);
+        const filtered = examples.filter((e: any) =>
+          e.context_data?.type_objet === selectedSubjectType &&
+          e.context_data?.ton === selectedTone
+        );
+        const toUse = filtered.length > 0 ? filtered.slice(0, 3) : examples.slice(0, 3);
+        const list = toUse.map((e: any) => `- "${e.subject_text}"`).join('\n');
+        examplesBlock = `\nEXEMPLES DE RÉFÉRENCE :\n${list}\nCes exemples ont été validés comme efficaces. Inspire-toi de leur approche.\n`;
+        console.log(`Exemples RAG: ${toUse.length} utilisés (${filtered.length} matchés sur type+ton)`);
       } else {
-        console.log(`Exemples RAG: 0 trouvé pour type=${selectedSubjectType}, ton=${selectedTone}`);
+        console.log(`Exemples RAG: aucun exemple disponible`);
       }
     } catch (err) {
-      console.error('Erreur récupération exemples:', err);
-      // Non bloquant — on continue sans exemples
+      console.error('Erreur exemples:', err);
+    }
+
+    // --- Contexte sectoriel depuis la base ATS ---
+    let sectorContext = '';
+    try {
+      const { data: professions } = await supabaseClient
+        .from('ats_professions')
+        .select('name, primary_keywords, secondary_keywords, soft_skills, category')
+        .eq('profession_status', 'active');
+
+      if (professions && professions.length > 0) {
+        const searchTerms = [
+          (userProfile as any)?.targetJobs?.toLowerCase() || '',
+          ...((userProfile as any)?.targetSectors || []).map((s: string) => s.toLowerCase()),
+        ].filter(Boolean);
+
+        const matched = professions.filter((prof: any) => {
+          const profName = prof.name?.toLowerCase() || '';
+          const profCategory = prof.category?.toLowerCase() || '';
+          return searchTerms.some((term: string) =>
+            profName.includes(term) || term.includes(profName) ||
+            profCategory.includes(term) || term.includes(profCategory)
+          );
+        });
+
+        if (matched.length > 0) {
+          const top = matched.slice(0, 2);
+          const contextParts = top.map((p: any) => {
+            const primary = (p.primary_keywords || []).slice(0, 10).join(', ');
+            const secondary = (p.secondary_keywords || []).slice(0, 6).join(', ');
+            const soft = (p.soft_skills || []).slice(0, 5).join(', ');
+            return `Métier identifié : ${p.name}\nCompétences techniques courantes : ${primary}\nCompétences complémentaires : ${secondary}\nQualités valorisées : ${soft}`;
+          });
+          sectorContext = `\nCONTEXTE SECTORIEL (données de référence) :\n${contextParts.join('\n\n')}\n\nCes informations te donnent une vision du secteur et du métier. Utilise-les comme contexte pour mieux comprendre l'environnement professionnel, PAS comme une liste de mots à placer. L'email doit rester naturel et personnalisé.\n`;
+          console.log(`ATS context: ${top.map((p: any) => p.name).join(', ')}`);
+        }
+      }
+    } catch (err) {
+      console.error('Erreur ATS context:', err);
     }
 
     const results = [];
@@ -221,7 +260,7 @@ RÈGLES STRICTES :
 ${subjectTypeInstruction}
 
 ${toneInstruction}
-${examplesBlock}
+${examplesBlock}${sectorContext}
 FORMAT DE SORTIE :
 Sujet: [objet selon le type choisi]
 
