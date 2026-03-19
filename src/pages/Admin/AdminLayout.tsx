@@ -12,8 +12,7 @@ import {
   Search,
   Tag,
   Bot,
-  LayoutTemplate,
-  Star
+  LayoutTemplate
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Logo } from "@/components/Logo";
@@ -27,7 +26,6 @@ const adminNavItems = [
   { title: "Tickets", icon: MessageSquare, path: "/admin/tickets" },
   { title: "Promos", icon: Tag, path: "/admin/promos" },
   { title: "ATS", icon: Shield, path: "/admin/ats" },
-  { title: "Qualité emails", icon: Star, path: "/admin/email-quality" },
   { title: "Équipe", icon: UserCog, path: "/admin/team" },
   { title: "CMS", icon: FileText, path: "/admin/cms" },
   { title: "SEO", icon: Search, path: "/admin/seo" },

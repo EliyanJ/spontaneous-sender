@@ -571,8 +571,6 @@ export type Database = {
       }
       email_campaigns: {
         Row: {
-          admin_notes: string | null
-          admin_score: number | null
           attachments: Json | null
           body: string
           company_id: string | null
@@ -599,8 +597,6 @@ export type Database = {
           user_id: string
         }
         Insert: {
-          admin_notes?: string | null
-          admin_score?: number | null
           attachments?: Json | null
           body: string
           company_id?: string | null
@@ -627,8 +623,6 @@ export type Database = {
           user_id: string
         }
         Update: {
-          admin_notes?: string | null
-          admin_score?: number | null
           attachments?: Json | null
           body?: string
           company_id?: string | null
@@ -770,44 +764,6 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "email_responses_campaign_id_fkey"
-            columns: ["campaign_id"]
-            isOneToOne: false
-            referencedRelation: "email_campaigns"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      email_subject_examples: {
-        Row: {
-          admin_score: number
-          campaign_id: string | null
-          context_data: Json | null
-          created_at: string | null
-          embedding: string | null
-          id: string
-          subject_text: string
-        }
-        Insert: {
-          admin_score: number
-          campaign_id?: string | null
-          context_data?: Json | null
-          created_at?: string | null
-          embedding?: string | null
-          id?: string
-          subject_text: string
-        }
-        Update: {
-          admin_score?: number
-          campaign_id?: string | null
-          context_data?: Json | null
-          created_at?: string | null
-          embedding?: string | null
-          id?: string
-          subject_text?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "email_subject_examples_campaign_id_fkey"
             columns: ["campaign_id"]
             isOneToOne: false
             referencedRelation: "email_campaigns"
