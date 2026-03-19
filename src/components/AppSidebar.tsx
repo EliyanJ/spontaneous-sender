@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
   Search,
+  Mail,
   Send,
   Activity,
   RefreshCw,
@@ -33,6 +34,7 @@ import { cn } from "@/lib/utils";
 const menuItems = [
   { title: "Dashboard",      icon: LayoutDashboard, value: "overview" },
   { title: "Recherche",      icon: Search,          value: "search" },
+  { title: "Emails",         icon: Mail,            value: "emails" },
   { title: "Campagnes",      icon: Send,            value: "campaigns" },
   { title: "Suivi",          icon: Activity,        value: "suivi" },
   { title: "Relance",        icon: RefreshCw,       value: "relance" },

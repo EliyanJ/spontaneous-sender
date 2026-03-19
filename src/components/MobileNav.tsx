@@ -1,7 +1,7 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { 
-  LayoutDashboard, Search, Send, Activity, RefreshCw, 
+import {
+  LayoutDashboard, Search, Mail, Send, Activity, RefreshCw,
   GitCompare, FileText, Settings, Shield, Menu
 } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/button";
 const menuItems = [
   { title: "Dashboard",      icon: LayoutDashboard, value: "overview" },
   { title: "Recherche",      icon: Search,          value: "search" },
+  { title: "Emails",         icon: Mail,            value: "emails" },
   { title: "Campagnes",      icon: Send,            value: "campaigns" },
   { title: "Suivi",          icon: Activity,        value: "suivi" },
   { title: "Relance",        icon: RefreshCw,       value: "relance" },

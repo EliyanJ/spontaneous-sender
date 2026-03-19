@@ -56,6 +56,8 @@ const Index = () => {
         return <DashboardOverview onNavigateToTab={handleTabChange} />;
       case "search":
         return <SearchCompanies onNavigateToTab={handleTabChange} />;
+      case "emails":
+        return <UnifiedEmailSender />;
       case "campaigns":
         return <CampaignsHub defaultTab="campaigns" />;
       case "suivi":
