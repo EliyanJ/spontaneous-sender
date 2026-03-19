@@ -696,7 +696,7 @@ export const AdminEmailQuality = () => {
                     <td className="px-4 py-3">
                       {(row.admin_score ?? 0) >= 4 ? (
                         row.is_referenced ? (
-                          <span className="inline-flex items-center gap-1 text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">
+                           <span className="inline-flex items-center gap-1 text-[10px] text-primary font-medium">
                             <BookmarkCheck className="h-3.5 w-3.5" />
                             Référencé
                           </span>
