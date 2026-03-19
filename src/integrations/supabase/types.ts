@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_generation_config: {
+        Row: {
+          admin_notes: string | null
+          config_type: string
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          system_prompt: string
+          tone_guidelines: string | null
+          updated_at: string | null
+          updated_by: string | null
+        }
+        Insert: {
+          admin_notes?: string | null
+          config_type: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          system_prompt: string
+          tone_guidelines?: string | null
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Update: {
+          admin_notes?: string | null
+          config_type?: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          system_prompt?: string
+          tone_guidelines?: string | null
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       ats_keyword_feedback: {
         Row: {
           admin_notes: string | null
@@ -71,7 +107,9 @@ export type Database = {
           parent_theme_id: string | null
           primary_keywords: Json
           profession_status: string
+          recruiter_expectations: string | null
           secondary_keywords: Json
+          sector_description: string | null
           soft_skills: Json
           training_count: number | null
         }
@@ -87,7 +125,9 @@ export type Database = {
           parent_theme_id?: string | null
           primary_keywords?: Json
           profession_status?: string
+          recruiter_expectations?: string | null
           secondary_keywords?: Json
+          sector_description?: string | null
           soft_skills?: Json
           training_count?: number | null
         }
@@ -103,7 +143,9 @@ export type Database = {
           parent_theme_id?: string | null
           primary_keywords?: Json
           profession_status?: string
+          recruiter_expectations?: string | null
           secondary_keywords?: Json
+          sector_description?: string | null
           soft_skills?: Json
           training_count?: number | null
         }
