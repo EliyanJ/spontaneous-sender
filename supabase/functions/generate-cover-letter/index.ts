@@ -112,7 +112,7 @@ serve(async (req) => {
     try {
       const { data: templates } = await supabaseClient
         .from('cover_letter_templates')
-        .select('id, name, content')
+        .select('id, name, content, usage_count')
         .eq('is_active', true)
         .order('usage_count', { ascending: false })
         .limit(3);
