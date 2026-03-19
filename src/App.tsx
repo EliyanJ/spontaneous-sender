@@ -54,6 +54,7 @@ const AdminATSTraining       = lazy(() => import("./pages/Admin/AdminATSTraining
 const AdminChatbot           = lazy(() => import("./pages/Admin/AdminChatbot").then(m => ({ default: m.AdminChatbot })));
 const AdminCVTemplates       = lazy(() => import("./pages/Admin/AdminCVTemplates").then(m => ({ default: m.AdminCVTemplates })));
 const AdminCVTemplateBuilder = lazy(() => import("./pages/Admin/AdminCVTemplateBuilder").then(m => ({ default: m.AdminCVTemplateBuilder })));
+const AdminEmailQuality      = lazy(() => import("./pages/Admin/AdminEmailQuality").then(m => ({ default: m.AdminEmailQuality })));
 
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { AdminRoute } from "./components/AdminRoute";
