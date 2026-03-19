@@ -12,5 +12,9 @@ export { AdminBlockEditor } from './AdminBlockEditor';
 export { AdminPromos } from './AdminPromos';
 export { AdminATSTraining } from './AdminATSTraining';
 export { AdminChatbot } from './AdminChatbot';
+export { AdminAIGeneration } from './AdminAIGeneration';
 export { AdminCVTemplates } from './AdminCVTemplates';
 export { AdminCVTemplateBuilder } from './AdminCVTemplateBuilder';
+export { AdminEmailQuality } from './AdminEmailQuality';
+export { AdminSectorInsights } from './AdminSectorInsights';
+

@@ -52,10 +52,12 @@ const AdminSEO               = lazy(() => import("./pages/Admin/AdminSEO").then(
 const AdminPromos            = lazy(() => import("./pages/Admin/AdminPromos").then(m => ({ default: m.AdminPromos })));
 const AdminATSTraining       = lazy(() => import("./pages/Admin/AdminATSTraining").then(m => ({ default: m.AdminATSTraining })));
 const AdminChatbot           = lazy(() => import("./pages/Admin/AdminChatbot").then(m => ({ default: m.AdminChatbot })));
-const AdminCVTemplates       = lazy(() => import("./pages/Admin/AdminCVTemplates").then(m => ({ default: m.AdminCVTemplates })));
-const AdminCVTemplateBuilder = lazy(() => import("./pages/Admin/AdminCVTemplateBuilder").then(m => ({ default: m.AdminCVTemplateBuilder })));
-const AdminEmailQuality      = lazy(() => import("./pages/Admin/AdminEmailQuality").then(m => ({ default: m.AdminEmailQuality })));
+const AdminCVTemplates          = lazy(() => import("./pages/Admin/AdminCVTemplates").then(m => ({ default: m.AdminCVTemplates })));
+const AdminCVTemplateBuilder    = lazy(() => import("./pages/Admin/AdminCVTemplateBuilder").then(m => ({ default: m.AdminCVTemplateBuilder })));
+const AdminEmailQuality         = lazy(() => import("./pages/Admin/AdminEmailQuality").then(m => ({ default: m.AdminEmailQuality })));
 const AdminCoverLetterTemplates = lazy(() => import("./pages/Admin/AdminCoverLetterTemplates").then(m => ({ default: m.AdminCoverLetterTemplates })));
+const AdminAIGeneration         = lazy(() => import("./pages/Admin/AdminAIGeneration").then(m => ({ default: m.AdminAIGeneration })));
+const AdminSectorInsights       = lazy(() => import("./pages/Admin/AdminSectorInsights").then(m => ({ default: m.AdminSectorInsights })));
 
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { AdminRoute } from "./components/AdminRoute";
@@ -136,8 +138,10 @@ const App = () => (
               <Route path="cms" element={<AdminCMS />} />
               <Route path="seo" element={<AdminSEO />} />
               <Route path="chatbot" element={<AdminChatbot />} />
-              <Route path="cv-templates" element={<AdminCVTemplates />} />
+              <Route path="ai-generation" element={<AdminAIGeneration />} />
               <Route path="email-quality" element={<AdminEmailQuality />} />
+              <Route path="sector-insights" element={<AdminSectorInsights />} />
+              <Route path="cv-templates" element={<AdminCVTemplates />} />
               <Route path="cover-letter-templates" element={<AdminCoverLetterTemplates />} />
             </Route>
 

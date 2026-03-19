@@ -14,7 +14,9 @@ import {
   Bot,
   LayoutTemplate,
   Star,
-  ScrollText
+  ScrollText,
+  Mail,
+  Lightbulb
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Logo } from "@/components/Logo";
@@ -32,8 +34,10 @@ const adminNavItems = [
   { title: "CMS", icon: FileText, path: "/admin/cms" },
   { title: "SEO", icon: Search, path: "/admin/seo" },
   { title: "Chatbot", icon: Bot, path: "/admin/chatbot" },
+  { title: "Prompts IA", icon: Bot, path: "/admin/ai-generation" },
+  { title: "Qualité Emails", icon: Mail, path: "/admin/email-quality" },
+  { title: "Secteurs IA", icon: Lightbulb, path: "/admin/sector-insights" },
   { title: "Templates CV", icon: LayoutTemplate, path: "/admin/cv-templates" },
-  { title: "Qualité Emails", icon: Star, path: "/admin/email-quality" },
   { title: "Templates LM", icon: ScrollText, path: "/admin/cover-letter-templates" },
 ];
 
