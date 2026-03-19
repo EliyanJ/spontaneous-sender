@@ -56,7 +56,7 @@ const ConfigEditor = ({
     if (error) {
       toast.error("Erreur chargement config");
     } else if (data) {
-      const c = data as AIConfig;
+      const c = data as unknown as AIConfig;
       setConfig(c);
       setSystemPrompt(c.system_prompt || "");
       setToneGuidelines(c.tone_guidelines || "");
