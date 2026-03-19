@@ -260,7 +260,7 @@ RÈGLES STRICTES :
 ${subjectTypeInstruction}
 
 ${toneInstruction}
-${examplesBlock}
+${examplesBlock}${sectorContext}
 FORMAT DE SORTIE :
 Sujet: [objet selon le type choisi]
 
