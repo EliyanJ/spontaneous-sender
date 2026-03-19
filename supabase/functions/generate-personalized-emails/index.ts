@@ -160,6 +160,32 @@ serve(async (req) => {
 
     console.log(`Generating personalized emails for ${companies.length} companies (type: ${selectedSubjectType}, tone: ${selectedTone})`);
 
+    // --- Récupération des exemples validés (RAG SQL simple) ---
+    let examplesBlock = '';
+    try {
+      const { data: examples } = await supabaseClient
+        .from('email_subject_examples')
+        .select('subject_text, admin_score, context_data')
+        .eq('context_data->>type_objet', selectedSubjectType)
+        .eq('context_data->>ton', selectedTone)
+        .gte('admin_score', 4)
+        .order('admin_score', { ascending: false })
+        .limit(5);
+
+      if (examples && examples.length > 0) {
+        const examplesList = examples
+          .map(e => `- "${e.subject_text}" (score: ${e.admin_score}/5)`)
+          .join('\n');
+        examplesBlock = `\nEXEMPLES D'OBJETS VALIDÉS — Inspire-toi du style et de la formulation de ces objets validés, tout en adaptant au contexte actuel :\n${examplesList}\n`;
+        console.log(`Exemples RAG: ${examples.length} trouvés pour type=${selectedSubjectType}, ton=${selectedTone}`);
+      } else {
+        console.log(`Exemples RAG: 0 trouvé pour type=${selectedSubjectType}, ton=${selectedTone}`);
+      }
+    } catch (err) {
+      console.error('Erreur récupération exemples:', err);
+      // Non bloquant — on continue sans exemples
+    }
+
     const results = [];
 
     for (const company of companies) {
