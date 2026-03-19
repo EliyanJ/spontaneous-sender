@@ -86,6 +86,9 @@ interface UserProfile {
   education: string | null;
   linkedinUrl: string | null;
   cvContent: string | null;
+  targetSectors: string[] | null;
+  targetJobs: string | null;
+  professionalInterests: string[] | null;
 }
 
 interface ProcessLog {
