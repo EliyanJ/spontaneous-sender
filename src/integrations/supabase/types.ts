@@ -441,6 +441,45 @@ export type Database = {
         }
         Relationships: []
       }
+      cover_letter_templates: {
+        Row: {
+          admin_notes: string | null
+          content: string
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          sector_tags: string[] | null
+          tone: string | null
+          updated_at: string
+          usage_count: number
+        }
+        Insert: {
+          admin_notes?: string | null
+          content: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          sector_tags?: string[] | null
+          tone?: string | null
+          updated_at?: string
+          usage_count?: number
+        }
+        Update: {
+          admin_notes?: string | null
+          content?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          sector_tags?: string[] | null
+          tone?: string | null
+          updated_at?: string
+          usage_count?: number
+        }
+        Relationships: []
+      }
       cv_analyses: {
         Row: {
           admin_feedback: Json | null
