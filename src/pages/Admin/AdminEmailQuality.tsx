@@ -90,7 +90,7 @@ const StarRating = ({
             className={cn(
               "h-4 w-4 transition-colors",
               star <= display
-                ? "fill-amber-400 text-amber-400"
+                ? "fill-primary text-primary"
                 : "fill-none text-muted-foreground/40"
             )}
           />
