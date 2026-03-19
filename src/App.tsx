@@ -136,6 +136,7 @@ const App = () => (
               <Route path="seo" element={<AdminSEO />} />
               <Route path="chatbot" element={<AdminChatbot />} />
               <Route path="cv-templates" element={<AdminCVTemplates />} />
+              <Route path="email-quality" element={<AdminEmailQuality />} />
             </Route>
 
             {/* CMS / CV-builder editors — fullscreen, outside AdminLayout */}
