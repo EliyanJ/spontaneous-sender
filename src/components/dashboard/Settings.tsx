@@ -618,9 +618,25 @@ export const Settings = () => {
                     </p>
                   </div>
 
-                  {/* CV content */}
+                  {/* CV content — read-only preview + editable */}
+                  {candidate.cv_content && (
+                    <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 space-y-3">
+                      <div className="flex items-center gap-2">
+                        <FileText className="h-4 w-4 text-primary" />
+                        <p className="text-sm font-medium text-foreground">Ce que l'IA a extrait de votre CV</p>
+                      </div>
+                      <div className="max-h-48 overflow-y-auto bg-background rounded-md border border-border p-3 text-xs text-muted-foreground leading-relaxed whitespace-pre-wrap font-mono">
+                        {candidate.cv_content}
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        👆 C'est exactement ce que l'IA lit pour personnaliser vos candidatures. Si quelque chose est incorrect, corrigez-le ci-dessous.
+                      </p>
+                    </div>
+                  )}
                   <div>
-                    <Label htmlFor="cv_content" className="text-muted-foreground">Contenu CV extrait</Label>
+                    <Label htmlFor="cv_content" className="text-muted-foreground">
+                      {candidate.cv_content ? "Modifier le contenu extrait" : "Contenu CV extrait"}
+                    </Label>
                     <Textarea
                       id="cv_content"
                       value={candidate.cv_content}
