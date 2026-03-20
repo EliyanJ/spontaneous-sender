@@ -279,7 +279,7 @@ export const PersonalizedEmailsSection = () => {
 
     const { data } = await supabase
       .from("companies")
-      .select("id, nom, selected_email, website_url, ville, libelle_ape")
+      .select("id, nom, selected_email, website_url, ville, libelle_ape, company_insights")
       .not("selected_email", "is", null)
       .neq("selected_email", "NOT_FOUND");
 

@@ -261,7 +261,7 @@ Bien cordialement,
 - Site web: ${company.website_url || 'Non disponible'}
 
 INFORMATIONS SCRAPÉES DU SITE WEB:
-${companyInfo || 'Aucune information disponible - base-toi sur le nom et le secteur'}
+${companyInfo || 'Aucune information scrapée disponible. NE PAS inventer d informations sur cette entreprise. Utilise uniquement le nom, la ville et le secteur APE fournis ci-dessus.'}
 
 ${cvContent ? `CV / PROFIL DU CANDIDAT:
 ${cvContent}` : ''}
