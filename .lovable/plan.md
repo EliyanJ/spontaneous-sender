@@ -1,77 +1,88 @@
 
-## Plan — Sidebar verticale gauche sur le Dashboard
+## Full Analysis of Problems
 
-### Objectif
-Remplacer la navigation horizontale dans le header du dashboard par une sidebar verticale collapsible sur la gauche. Les pages publiques (Landing, /prix, /score-cv, etc.) ne sont pas touchées.
+### Problem 1: Job descriptions NOT stored per-analysis
+The `cv_analyses` table stores `job_description` (line 743 in analyze-cv-ats) but the `CvAnalysis` interface in `AdminATSTraining.tsx` (lines 37-49) does NOT include `job_description`. So when the bulk AI review sends `{ analysis }` to `ats-ai-review`, the job description is **never included**. The AI reviews keywords without the job posting context — it can't find new keywords from it.
 
-### Nouvelle structure du menu (7 items)
+### Problem 2: Bulk AI review is disconnected from job description
+In `ats-ai-review/index.ts` (lines 263-292), the default review mode only looks at `analysis.analysis_result` keywords to validate/recategorize them. It never extracts **new** keywords from the job description. The bulk review is therefore only a keyword cleanup tool, not an enrichment tool.
+
+### Problem 3: Score does NOT update after bulk review
+The bulk review modifies `ats_professions` keywords for future analyses, but it does **not** re-run `analyze-cv-ats` for already-saved analyses. So past scores are frozen. Users re-analyzing after training would see improvements, but existing saved results do not.
+
+### Problem 4: Soft skills overweighted vs hard skills
+Looking at `analyze-cv-ats/index.ts`:
+- Hard skills (primary): **30 pts** (10 keywords × 3pts) + bonuses
+- Secondary keywords: **15 pts** (5 keywords × 3pts) + bonuses  
+- Soft skills: **10 pts** (dynamic, split across all matches)
+
+The soft skills section alone equals 20% of all scoring. The user wants this reduced in favor of hard skills.
+
+---
+
+## Plan
+
+### Step 1 — Add `job_description` to `CvAnalysis` interface and bulk review
+**File: `src/pages/Admin/AdminATSTraining.tsx`**
+
+Add `job_description: string | null` to the `CvAnalysis` interface so the field is passed through when sending to the AI review Edge Function.
+
+### Step 2 — Add new AI mode `extract_new_keywords` to `ats-ai-review`
+**File: `supabase/functions/ats-ai-review/index.ts`**
+
+Add a new mode block `extract_new_keywords` that:
+1. Takes the job description from the analysis
+2. Compares it against existing profession keywords
+3. Returns new keywords found in the job posting that are not already in the DB
+
+This is a distinct operation from the existing `review_analysis` mode (which validates/recategorizes).
+
+### Step 3 — Fix bulk AI review to do 2 things per analysis
+**File: `src/pages/Admin/AdminATSTraining.tsx`** — `runBulkAiReview` function
+
+For each analysis, run **two sequential AI calls**:
+1. Existing call: validate/recategorize existing keywords (already works)
+2. NEW call: extract new keywords from the stored `job_description` that aren't yet in the profession — merge results into `primary_keywords` / `secondary_keywords`
+
+Also add the `job_description` field to the existing `ats-ai-review` default mode context so the AI has better context for validation.
+
+### Step 4 — Re-score analyses after bulk training
+**File: `src/pages/Admin/AdminATSTraining.tsx`** — `runBulkAiReview` function
+
+After updating a profession's keywords, for any analyses linked to that profession, trigger a re-score by calling `analyze-cv-ats` with the stored `cv_text` and `job_description`. Update `total_score` and `analysis_result` in `cv_analyses`. This is what makes the user's score actually change.
+
+To avoid infinite loops, mark each re-scored analysis as `admin_reviewed: true`.
+
+### Step 5 — Rebalance scoring weights in `analyze-cv-ats`
+**File: `supabase/functions/analyze-cv-ats/index.ts`**
+
+Reduce soft skills from **10 pts → 6 pts**, and redistribute to hard skills:
+- Primary keywords: **30 pts → 34 pts** (keep 10 keywords × 3.4 pts)  
+- Secondary keywords: **15 pts → 15 pts** (unchanged)
+- Soft skills: **10 pts → 6 pts** (capped at 6)
+
+Total remains ~100. This change affects all future analyses.
+
+---
+
+## Summary of Changes
+
+| File | Change |
+|---|---|
+| `AdminATSTraining.tsx` | Add `job_description` to `CvAnalysis` interface |
+| `AdminATSTraining.tsx` | Bulk review: call AI twice (validate + extract new keywords) |
+| `AdminATSTraining.tsx` | Bulk review: re-score all analyses after profession update |
+| `ats-ai-review/index.ts` | New `extract_new_keywords` mode using job description |
+| `analyze-cv-ats/index.ts` | Hard skills: 34pts, soft skills: 6pts (rebalanced) |
+
+```text
+BULK REVIEW FLOW (fixed):
+
+For each unreviewed analysis:
+  1. AI validates existing keywords → clean bad ones
+  2. AI extracts NEW keywords from job_description → add to profession
+  3. Re-run scoring with updated profession → update stored score
+  4. Mark as admin_reviewed
 ```
-- Dashboard        (overview)
-- Recherche        (search)
-- Campagnes        (emails → send)
-- Suivi            (campaigns → onglet suivi interne)
-- Relance          (campaigns → onglet relance)
-- Comparateur CV   (cv-comparator)
-- Créateur CV      (navigate → /createur-de-cv)
-```
 
-**Supprimés :** "Entreprises trouvées", "Recherche de contact", "Offres d'emploi" (reste accessible depuis la Landing/Header public), l'onglet Emails séparé.
-
-**Réorganisation de CampaignsHub :** Le composant existant a déjà 2 onglets internes (`campaigns` et `suivi`). On va exposer ces 2 onglets comme items de sidebar distincts — en passant une prop `defaultTab` pour forcer l'onglet actif. On renomme "Campagnes" → "Relance" pour l'onglet historiques/relances, et "Suivi" reste tel quel.
-
-### Fichiers à modifier
-
-**1. `src/pages/Index.tsx`**
-- Passer de `flex flex-col` à `flex flex-row` avec `SidebarProvider`
-- Supprimer `HorizontalNav` du header
-- Simplifier le header : Logo + CreditsDisplay + ProfileDropdown + ThemeToggle seulement
-- Ajouter `<AppSidebar>` sur la gauche
-- Adapter `renderContent()` pour les nouveaux tabs : `overview`, `search`, `campaigns` (avec prop `defaultTab="campaigns"`), `suivi` (avec prop `defaultTab="suivi"`), `relance`, `cv-comparator`, `cv-builder`
-- Ajouter `cv-comparator` → rendu de `<CVComparator />`
-- `tabOrder` mis à jour
-
-**2. `src/components/AppSidebar.tsx`**
-- Refonte complète avec les 7 items + icônes adaptées
-- Logo Cronos + nom en haut de la sidebar (zone header)
-- Collapsible avec `collapsible="icon"` (mini mode avec icônes seules)
-- Bouton Admin visible pour les admins en bas
-- ThemeToggle en bas
-- Section utilisateur (crédits, avatar) en bas
-
-**3. `src/components/dashboard/CampaignsHub.tsx`**
-- Ajouter une prop `defaultTab?: 'campaigns' | 'suivi'` pour permettre d'ouvrir directement le bon onglet depuis la sidebar
-- Renommer l'onglet `campaigns` en "Relance" dans l'affichage (les 2 items sidebar "Campagnes" et "Relance" pointent vers CampaignsHub avec des tabs différents)
-
-**4. `src/components/HorizontalNav.tsx`**
-- Non supprimé (pages publiques ne l'utilisent pas, mais Index.tsx ne l'importera plus)
-
-**5. `src/components/MobileNav.tsx`**
-- Mise à jour du menu mobile avec les 7 nouveaux items simplifiés
-
-### Layout cible
-```
-┌─────────────────────────────────────────────┐
-│  HEADER (Logo + Credits + Avatar + Theme)   │ ← 64px, sans nav
-├──────────┬──────────────────────────────────┤
-│          │                                  │
-│ SIDEBAR  │   CONTENU PRINCIPAL              │
-│ (200px   │   (flex-1, scrollable)           │
-│  ou 56px │                                  │
-│  mini)   │                                  │
-│          │                                  │
-│ [icons]  │                                  │
-│          │                                  │
-└──────────┴──────────────────────────────────┘
-```
-
-### Détails UX
-- La sidebar est expanded par défaut sur desktop, collapsée sur mobile
-- Chaque item actif : fond violet clair + texte violet (comme le style existant `bg-primary/10 text-primary`)
-- Trigger de collapse intégré dans le header de la sidebar (bouton flèche)
-- Le footer du dashboard (mentions légales) reste en bas du contenu principal
-
-### Ordre d'implémentation
-1. Modifier `AppSidebar.tsx` avec les 7 nouveaux items + layout (logo, user section, theme toggle)
-2. Modifier `Index.tsx` pour intégrer la sidebar et adapter le layout + renderContent
-3. Ajouter la prop `defaultTab` dans `CampaignsHub.tsx`
-4. Mettre à jour `MobileNav.tsx`
+No database schema changes needed — `job_description` is already stored in `cv_analyses`.
