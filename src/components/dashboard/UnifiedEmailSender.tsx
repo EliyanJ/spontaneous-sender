@@ -663,7 +663,11 @@ export const UnifiedEmailSender = () => {
 
           try {
             const { data, error } = await supabase.functions.invoke("generate-cover-letter", {
-              body: { company, cvContent: cvContent || null },
+              body: {
+                company,
+                cvContent: profileData?.cv_content || cvContent || null,
+                userProfile,
+              },
               headers: { Authorization: `Bearer ${session.access_token}` }
             });
 
