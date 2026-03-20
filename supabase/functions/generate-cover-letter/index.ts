@@ -87,11 +87,21 @@ serve(async (req) => {
 
     console.log(`Generating cover letter for: ${company.nom}`);
 
-    // Scrape company website if available
+    // Scrape company website — use cache if recent (< 7 days)
     let companyInfo = '';
-    if (company.website_url) {
+    const existingInsights = company.company_insights;
+    if (existingInsights?.full_content && existingInsights?.scraped_at) {
+      const scrapedDate = new Date(existingInsights.scraped_at);
+      const daysSince = (Date.now() - scrapedDate.getTime()) / (1000 * 60 * 60 * 24);
+      if (daysSince < 7) {
+        companyInfo = existingInsights.full_content;
+        console.log(`Scraping cache hit: ${company.nom} (scrapé il y a ${Math.round(daysSince)} jours)`);
+      }
+    }
+
+    if (!companyInfo && company.website_url) {
       companyInfo = await scrapeWebsite(company.website_url);
-      
+
       // Try additional pages
       const additionalPages = ['/about', '/a-propos', '/entreprise', '/company', '/rse', '/valeurs'];
       for (const page of additionalPages.slice(0, 2)) {
@@ -104,6 +114,21 @@ serve(async (req) => {
         } catch {
           // Ignore errors
         }
+      }
+
+      // Save for future use
+      if (companyInfo) {
+        const supabaseForUpdate = createClient(
+          Deno.env.get('SUPABASE_URL') ?? '',
+          Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+        );
+        await supabaseForUpdate.from('companies').update({
+          company_insights: {
+            scraped_at: new Date().toISOString(),
+            content_preview: companyInfo.slice(0, 1000),
+            full_content: companyInfo
+          }
+        }).eq('id', company.id);
       }
     }
 
