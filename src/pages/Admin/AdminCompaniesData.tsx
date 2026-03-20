@@ -191,6 +191,141 @@ const CompanySheet = ({
   );
 };
 
+// ─── Scraping Prompt Editor ────────────────────────────────────────────────────
+const ScrapingPromptEditor = () => {
+  const { toast } = useToast();
+  const [open, setOpen] = useState(false);
+  const [systemPrompt, setSystemPrompt] = useState("");
+  const [toneGuidelines, setToneGuidelines] = useState("");
+  const [adminNotes, setAdminNotes] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [configId, setConfigId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    supabase
+      .from("ai_generation_config")
+      .select("id, system_prompt, tone_guidelines, admin_notes")
+      .eq("config_type", "scraping_system_prompt")
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data) {
+          setConfigId(data.id);
+          setSystemPrompt(data.system_prompt || "");
+          setToneGuidelines(data.tone_guidelines || "");
+          setAdminNotes(data.admin_notes || "");
+        }
+      });
+  }, [open]);
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      const payload = {
+        system_prompt: systemPrompt,
+        tone_guidelines: toneGuidelines,
+        admin_notes: adminNotes,
+        updated_at: new Date().toISOString(),
+      };
+      if (configId) {
+        const { error } = await supabase
+          .from("ai_generation_config")
+          .update(payload)
+          .eq("id", configId);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from("ai_generation_config")
+          .insert({ ...payload, config_type: "scraping_system_prompt" });
+        if (error) throw error;
+      }
+      toast({ title: "Prompt sauvegardé ✓" });
+    } catch (err) {
+      console.error(err);
+      toast({ title: "Erreur", description: "Impossible de sauvegarder", variant: "destructive" });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Card className="border-border/50">
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className="w-full px-5 py-4 flex items-center justify-between text-left hover:bg-muted/30 transition-colors rounded-xl"
+      >
+        <div className="flex items-center gap-3">
+          <div className="p-2 rounded-lg bg-primary/10">
+            <Bot className="h-4 w-4 text-primary" />
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-foreground">System prompt — Scraping IA</p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Instructions données à l'IA pour analyser le contenu des sites entreprises
+            </p>
+          </div>
+        </div>
+        {open ? (
+          <ChevronUp className="h-4 w-4 text-muted-foreground shrink-0" />
+        ) : (
+          <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />
+        )}
+      </button>
+
+      {open && (
+        <CardContent className="pt-0 pb-5 px-5 space-y-4 border-t border-border/40">
+          <div className="pt-4 space-y-1">
+            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+              System Prompt
+            </label>
+            <p className="text-xs text-muted-foreground/70 mb-2">
+              Ce prompt est envoyé à l'IA lors de l'analyse du contenu scrappé. Il définit ce que l'IA doit extraire et comment.
+            </p>
+            <Textarea
+              value={systemPrompt}
+              onChange={(e) => setSystemPrompt(e.target.value)}
+              className="font-mono text-xs leading-relaxed resize-y"
+              style={{ minHeight: "280px" }}
+              placeholder="Entrez le system prompt..."
+            />
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+              Consignes de ton
+            </label>
+            <Textarea
+              value={toneGuidelines}
+              onChange={(e) => setToneGuidelines(e.target.value)}
+              className="text-sm resize-y"
+              rows={2}
+              placeholder="Ex: Ton neutre et factuel. Aucune interprétation."
+            />
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+              Notes admin
+            </label>
+            <Textarea
+              value={adminNotes}
+              onChange={(e) => setAdminNotes(e.target.value)}
+              className="text-sm resize-y"
+              rows={2}
+              placeholder="Notes internes sur ce prompt..."
+            />
+          </div>
+
+          <Button onClick={handleSave} disabled={saving} className="gap-2">
+            <Save className="h-4 w-4" />
+            {saving ? "Sauvegarde..." : "Sauvegarder le prompt"}
+          </Button>
+        </CardContent>
+      )}
+    </Card>
+  );
+};
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export const AdminCompaniesData = () => {
   const [search, setSearch] = useState("");
