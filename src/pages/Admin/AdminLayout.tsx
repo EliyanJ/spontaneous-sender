@@ -16,7 +16,8 @@ import {
   Star,
   ScrollText,
   Mail,
-  Lightbulb
+  Lightbulb,
+  Building2
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Logo } from "@/components/Logo";
