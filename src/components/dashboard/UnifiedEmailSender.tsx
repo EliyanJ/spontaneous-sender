@@ -75,6 +75,7 @@ interface Company {
   ville: string | null;
   libelle_ape: string | null;
   siren: string;
+  company_insights?: Record<string, unknown> | null;
 }
 
 interface GeneratedEmail {
