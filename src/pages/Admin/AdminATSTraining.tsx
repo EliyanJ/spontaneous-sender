@@ -143,6 +143,13 @@ export const AdminATSTraining = () => {
   const [clusterThreshold, setClusterThreshold] = useState(3);
   const [showClusterSettings, setShowClusterSettings] = useState(false);
 
+  // ===== FICHE DE POSTE ANALYZER STATE =====
+  const [ficheText, setFicheText] = useState("");
+  const [ficheTargetProfId, setFicheTargetProfId] = useState<string>("");
+  const [ficheAnalyzing, setFicheAnalyzing] = useState(false);
+  const [ficheSuggestedKeywords, setFicheSuggestedKeywords] = useState<SuggestedKeyword[]>([]);
+  const [ficheSaving, setFicheSaving] = useState(false);
+
 
 
   useEffect(() => {
