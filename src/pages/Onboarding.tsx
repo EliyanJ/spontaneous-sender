@@ -6,13 +6,14 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "@/hooks/use-toast";
 import { ArrowLeft, ArrowRight, Check, Loader2 } from "lucide-react";
+import { StepIdentity } from "@/components/onboarding/StepIdentity";
 import { StepObjectives } from "@/components/onboarding/StepObjectives";
 import { StepSectors } from "@/components/onboarding/StepSectors";
 import { StepInterests } from "@/components/onboarding/StepInterests";
 import { StepCV } from "@/components/onboarding/StepCV";
 import { Logo } from "@/components/Logo";
 
-const STEPS = ["Objectifs", "Secteurs", "Intérêts", "CV"];
+const STEPS = ["Identité", "Objectifs", "Secteurs", "Intérêts", "CV"];
 
 const Onboarding = () => {
   const { user } = useAuth();
@@ -20,20 +21,35 @@ const Onboarding = () => {
   const [step, setStep] = useState(0);
   const [saving, setSaving] = useState(false);
 
+  // Step 0 — Identity
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [specialty, setSpecialty] = useState("");
+  const [experienceLevel, setExperienceLevel] = useState("");
+
+  // Step 1 — Objectives
   const [objectives, setObjectives] = useState<string[]>([]);
+
+  // Step 2 — Sectors
   const [sectors, setSectors] = useState<string[]>([]);
   const [targetJobs, setTargetJobs] = useState("");
+
+  // Step 3 — Interests
   const [interests, setInterests] = useState<string[]>([]);
+
+  // Step 4 — CV
   const [cvContent, setCvContent] = useState("");
   const [cvFileUrl, setCvFileUrl] = useState("");
+  const [profileSummary, setProfileSummary] = useState("");
 
   const progress = ((step + 1) / STEPS.length) * 100;
   const isLastStep = step === STEPS.length - 1;
 
   const canProceed = () => {
-    if (step === 0) return objectives.length > 0;
-    if (step === 1) return sectors.length > 0;
-    if (step === 2) return interests.length > 0;
+    if (step === 0) return firstName.trim().length > 0 && lastName.trim().length > 0 && specialty.trim().length > 0 && experienceLevel.length > 0;
+    if (step === 1) return objectives.length > 0;
+    if (step === 2) return sectors.length > 0;
+    if (step === 3) return interests.length > 0;
     return true;
   };
 
@@ -41,15 +57,24 @@ const Onboarding = () => {
     if (!user) return;
     setSaving(true);
     try {
+      const fullName = `${firstName.trim()} ${lastName.trim()}`.trim();
+      // Use specialty as targetJobs fallback if not filled
+      const finalTargetJobs = targetJobs.trim() || specialty.trim() || null;
+
       const { error } = await supabase
         .from("profiles")
         .update({
+          first_name: firstName.trim(),
+          last_name: lastName.trim(),
+          full_name: fullName,
+          experience_level: experienceLevel || null,
           objective: objectives.join(","),
           target_sectors: sectors,
-          target_jobs: targetJobs || null,
+          target_jobs: finalTargetJobs,
           professional_interests: interests,
           cv_file_url: cvFileUrl || null,
           cv_content: cvContent || null,
+          profile_summary: profileSummary.trim() || null,
           onboarding_completed: true,
           updated_at: new Date().toISOString(),
         })
@@ -118,9 +143,21 @@ const Onboarding = () => {
         <div className="w-full max-w-2xl animate-in fade-in slide-in-from-bottom-4 duration-300" key={step}>
           <div className="bg-card/60 backdrop-blur-sm border border-border rounded-2xl p-8 shadow-lg">
             {step === 0 && (
-              <StepObjectives selected={objectives} onChange={setObjectives} />
+              <StepIdentity
+                firstName={firstName}
+                lastName={lastName}
+                specialty={specialty}
+                experienceLevel={experienceLevel}
+                onFirstNameChange={setFirstName}
+                onLastNameChange={setLastName}
+                onSpecialtyChange={setSpecialty}
+                onExperienceLevelChange={setExperienceLevel}
+              />
             )}
             {step === 1 && (
+              <StepObjectives selected={objectives} onChange={setObjectives} />
+            )}
+            {step === 2 && (
               <StepSectors
                 selectedSectors={sectors}
                 targetJobs={targetJobs}
@@ -128,16 +165,18 @@ const Onboarding = () => {
                 onTargetJobsChange={setTargetJobs}
               />
             )}
-            {step === 2 && (
+            {step === 3 && (
               <StepInterests selected={interests} onChange={setInterests} />
             )}
-            {step === 3 && user && (
+            {step === 4 && user && (
               <StepCV
                 userId={user.id}
                 cvContent={cvContent}
                 cvFileUrl={cvFileUrl}
+                profileSummary={profileSummary}
                 onCvContentChange={setCvContent}
                 onCvFileUrlChange={setCvFileUrl}
+                onProfileSummaryChange={setProfileSummary}
               />
             )}
           </div>
