@@ -140,6 +140,10 @@ serve(async (req) => {
       ? `\nATTENTION : très peu d'informations ont été trouvées sur le site de cette entreprise. Ne comble PAS ce manque par des suppositions. Base le paragraphe VOUS uniquement sur le secteur d'activité (libellé APE fourni) et la localisation. Mieux vaut 2 phrases factuelles que 5 phrases de remplissage.\n`
       : '';
 
+    // Truncate inputs to avoid flooding the model
+    const truncatedCv = cvContent ? cvContent.slice(0, 4000) : '';
+    const truncatedCompanyInfo = companyInfo ? companyInfo.slice(0, 6000) : '';
+
     // --- Récupération du template de lettre ---
     let templateBlock = '';
     try {
@@ -215,16 +219,16 @@ serve(async (req) => {
 
 RÈGLES ANTI-HALLUCINATION (CRITIQUES) :
 - Utilise EXCLUSIVEMENT les compétences et l'expérience mentionnées dans le CV du candidat. Si le CV parle de marketing et communication, la lettre DOIT parler de marketing et communication, PAS de développement web ou d'autre chose.
-- Ne JAMAIS interpréter le nom de l'entreprise. Si tu n'as pas d'informations concrètes sur l'entreprise, écris un paragraphe court et honnête sur le secteur d'activité (libellé APE) plutôt qu'un paragraphe de suppositions.
-- Si les informations scrapées sont absentes : base le paragraphe VOUS sur le secteur d'activité (libellé APE) et la localisation. PAS sur des interprétations du nom.
+- Ne JAMAIS interpréter le nom de l'entreprise.
+- Ne JAMAIS avouer un manque d'information sur l'entreprise. Écris TOUJOURS comme si tu connaissais l'entreprise.
 - Le nom complet du candidat est fourni. Utilise-le EXACTEMENT. Ne JAMAIS laisser de placeholder [Nom], [Prénom], [Nom du candidat]. Si le nom n'est pas fourni, utilise simplement "Bien cordialement" sans nom plutôt qu'un placeholder.
-- Si une donnée est "Non spécifié" ou absente, ne la mentionne simplement pas.
+- Si une donnée est absente, ne la mentionne simplement pas.
 ${lowContentWarning}
 APPRENTISSAGE PAR L'EXEMPLE — Étudie cet exemple pour comprendre ce qui fait une bonne lettre :
 
 EXEMPLE DE BONNE LETTRE (entreprise : Bergamotte, fleuriste en ligne, candidat en marketing digital) :
 
-"Bonjour l'équipe,
+"Bonjour,
 
 Issu d'un parcours en communication RH et corporate en agence, je me spécialise aujourd'hui en marketing digital avec une appétence forte pour la gestion de projet web, le référencement et l'automatisation.
 
@@ -244,44 +248,46 @@ POURQUOI CET EXEMPLE EST BON — Applique ces principes à chaque lettre :
 
 3. Le paragraphe NOUS fait un LIEN CONCRET entre une compétence du candidat (SEO, pilotage digital) et un besoin réel de l'entreprise (visibilité en ligne, temps forts commerciaux d'un e-commerce). Ce n'est pas "je suis convaincu de pouvoir apporter une contribution significative" — ça aussi ça ne veut rien dire.
 
-4. La lettre fait ~150 mots, pas 300. Un recruteur lit 50 candidatures par jour.
+4. La lettre fait ~150-200 mots, pas 300. Un recruteur lit 50 candidatures par jour.
 
-5. Aucune information n'est inventée. Si les données scrapées ne donnent pas assez d'infos concrètes sur l'entreprise, mieux vaut un paragraphe VOUS court et honnête basé sur le secteur APE que 5 lignes de suppositions.
+5. Aucune information n'est inventée. Si les données scrapées ne donnent pas assez d'infos concrètes sur l'entreprise, déduis un angle pertinent à partir du secteur d'activité (code APE), de la ville, et du nom — ne dis JAMAIS que tu manques d'infos.
 
 CE QU'IL NE FAUT JAMAIS FAIRE :
 - Lister plus de 3-4 compétences ou outils dans le JE
 - Écrire "votre positionnement unique", "votre approche innovante", "j'ai été particulièrement intéressé par" sans info concrète derrière
-- Deviner ce que fait l'entreprise à partir de son nom
-- Écrire plus de 200 mots
+- Deviner ce que fait l'entreprise uniquement à partir de son nom
+- Écrire plus de 300 mots
 - Répéter ses qualités dans le paragraphe NOUS au lieu de faire un lien avec l'entreprise
 - Laisser des placeholders [Nom], [Prénom], [Votre Nom]
+- Écrire "malgré les informations limitées", "bien que n'ayant pas de détails", "je n'ai pas d'informations"
 ${templateBlock}${sectorContext}
 STRUCTURE OBLIGATOIRE — 3 PARAGRAPHES (pas plus, pas moins) :
 
-PARAGRAPHE 1 [JE] — Présentation :
+PARAGRAPHE 1 [JE] — Présentation (2 phrases max) :
 - Qui je suis (statut actuel), spécialisation/domaine, compétences principales
-- Maximum 2 phrases. Ne pas lister tous les outils.
+- Ne pas lister tous les outils.
 
-PARAGRAPHE 2 [VOUS] — Entreprise :
-- Citer AU MOINS 1 élément CONCRET issu des données scrapées (si disponibles)
-- Si pas de scraping : basé honnêtement sur le secteur APE et la ville
-- INTERDICTION : "votre approche innovante", "votre positionnement unique", interprétations du nom
+PARAGRAPHE 2 [VOUS] — Entreprise (3-4 phrases) :
+- Ce qui attire chez cette entreprise
+- Si des infos scrapées sont disponibles : citer un projet, une valeur, un positionnement PRÉCIS
+- Si AUCUNE info scrapée n'est disponible : déduire un angle pertinent à partir du secteur d'activité (code APE), de la ville, et du nom de l'entreprise. Par exemple, parler des enjeux typiques du secteur, de la dynamique économique locale, ou du type de projets courants dans ce domaine.
+- INTERDIT : écrire "je n'ai pas d'informations", "malgré les informations limitées", "bien que n'ayant pas de détails" ou toute formulation similaire. Écris TOUJOURS comme si tu connaissais l'entreprise.
 
-PARAGRAPHE 3 [NOUS] — Apport :
+PARAGRAPHE 3 [NOUS] — Apport (2-3 phrases) :
 - Lien CONCRET entre une compétence du candidat et un besoin de l'entreprise
 - Ouverture à l'échange + mention CV en pièce jointe
 - INTERDICTION : "je suis convaincu de pouvoir apporter une contribution significative"
 
 RÈGLES STRICTES :
-- Maximum 200 mots — un recruteur lit 50 candidatures par jour
+- Entre ~150 et ~300 mots — un recruteur lit 50 candidatures par jour
 - Ton professionnel, fluide, PAS familier
 - Ne JAMAIS mentionner le type de contrat
 - Ne laisser AUCUN placeholder [XXX]
-- Commencer par "Bonjour [Prénom si trouvé, sinon 'l'équipe'],"
+- Commencer directement par "Bonjour,"
 - Terminer par "Bien cordialement," suivi du nom complet du candidat
 
 FORMAT :
-Bonjour [destinataire],
+Bonjour,
 
 [Paragraphe 1 - JE]
 
@@ -298,30 +304,26 @@ Bien cordialement,
 
     const userPrompt = `ENTREPRISE CIBLE:
 - Nom: ${company.nom}
-- Ville: ${company.ville || 'Non spécifiée'}
-- Secteur: ${company.libelle_ape || 'Non spécifié'}
-- Site web: ${company.website_url || 'Non disponible'}
+- Ville: ${company.ville || ''}
+- Secteur: ${company.libelle_ape || ''}
+${company.website_url ? `- Site web: ${company.website_url}` : ''}
 
 INFORMATIONS SCRAPÉES DU SITE WEB:
-${companyInfo || 'Aucune information scrapée disponible. NE PAS inventer d informations sur cette entreprise. Utilise uniquement le nom, la ville et le secteur APE fournis ci-dessus.'}
+${truncatedCompanyInfo || `Aucune info scrapée. Déduis le contexte à partir du nom "${company.nom}", du secteur "${company.libelle_ape || ''}" et de la ville "${company.ville || ''}". NE MENTIONNE JAMAIS que tu n'as pas d'informations.`}
 
 ${up?.profileSummary ? `RÉSUMÉ DU PROFIL (rédigé par le candidat — lire EN PREMIER pour comprendre son parcours) :
 ${up.profileSummary}
 
-` : ''}${cvContent ? `CONTENU CV DU CANDIDAT:
-${cvContent}` : ''}
+` : ''}${truncatedCv ? `CONTENU CV DU CANDIDAT:
+${truncatedCv}` : ''}
 
 ${userProfile ? `INFORMATIONS CANDIDAT:
 - Nom complet: ${candidatName || ''}
 - Prénom: ${up?.firstName || ''}
-- Nom: ${up?.lastName || ''}
-- Niveau d'expérience: ${up?.experienceLevel || 'Non spécifié'}
-- Spécialité / métier visé: ${candidatSpecialty || 'Non spécifié'}
-- Formation: ${up?.education || 'Non spécifiée'}
-- LinkedIn: ${up?.linkedinUrl || 'Non spécifié'}
+- Nom: ${up?.lastName || ''}${up?.experienceLevel ? `\n- Niveau d'expérience: ${up.experienceLevel}` : ''}${candidatSpecialty ? `\n- Spécialité / métier visé: ${candidatSpecialty}` : ''}${up?.targetJobs ? `\n- Postes recherchés: ${up.targetJobs}` : ''}${up?.education ? `\n- Formation: ${up.education}` : ''}${up?.linkedinUrl ? `\n- LinkedIn: ${up.linkedinUrl}` : ''}${(up?.targetSectors || []).length ? `\n- Secteurs cibles: ${(up.targetSectors || []).join(', ')}` : ''}
 ` : ''}
 
-RÈGLE SIGNATURE: La lettre doit se terminer par "Bien cordialement," suivi de "${candidatName || 'Bien cordialement,'}" EXACTEMENT.
+RÈGLE SIGNATURE: La lettre doit se terminer par "Bien cordialement," suivi de "${candidatName || ''}" EXACTEMENT.
 Si le nom est vide, terminer par "Bien cordialement," sans nom, JAMAIS par un placeholder.
 
 Génère une lettre de motivation PERSONNALISÉE pour cette entreprise en respectant STRICTEMENT la structure 3 paragraphes et les règles ci-dessus.`;
