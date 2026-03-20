@@ -282,7 +282,10 @@ const StepProfile = ({ cvData, onChange, maxSummaryChars = 400 }: {
 };
 
 // ─── Step: Experience ─────────────────────────────────────────────────────────
-const StepExperience = ({ cvData, onChange }: { cvData: CVData; onChange: (d: CVData) => void }) => {
+const StepExperience = ({ cvData, onChange, maxItems, maxBullets, maxBulletChars }: {
+  cvData: CVData; onChange: (d: CVData) => void;
+  maxItems?: number; maxBullets?: number; maxBulletChars?: number;
+}) => {
   const updateExp = (idx: number, field: string, val: any) => {
     const exps = [...cvData.experiences];
     exps[idx] = { ...exps[idx], [field]: val };
@@ -291,14 +294,102 @@ const StepExperience = ({ cvData, onChange }: { cvData: CVData; onChange: (d: CV
   const updateBullet = (ei: number, bi: number, val: string) => {
     const exps = [...cvData.experiences];
     const bullets = [...exps[ei].bullets];
-    bullets[bi] = val;
+    bullets[bi] = maxBulletChars ? val.slice(0, maxBulletChars) : val;
     exps[ei] = { ...exps[ei], bullets };
     onChange({ ...cvData, experiences: exps });
   };
-  const addExp = () => onChange({ ...cvData, experiences: [...cvData.experiences, { company: "", role: "", dates: "", bullets: [""] }] });
+  const addExp = () => {
+    if (maxItems && cvData.experiences.length >= maxItems) return;
+    onChange({ ...cvData, experiences: [...cvData.experiences, { company: "", role: "", dates: "", bullets: [""] }] });
+  };
   const removeExp = (i: number) => onChange({ ...cvData, experiences: cvData.experiences.filter((_, j) => j !== i) });
-  const addBullet = (i: number) => { const exps = [...cvData.experiences]; exps[i] = { ...exps[i], bullets: [...exps[i].bullets, ""] }; onChange({ ...cvData, experiences: exps }); };
+  const addBullet = (i: number) => {
+    const exp = cvData.experiences[i];
+    if (maxBullets && exp.bullets.length >= maxBullets) return;
+    const exps = [...cvData.experiences];
+    exps[i] = { ...exps[i], bullets: [...exps[i].bullets, ""] };
+    onChange({ ...cvData, experiences: exps });
+  };
   const removeBullet = (ei: number, bi: number) => { const exps = [...cvData.experiences]; exps[ei] = { ...exps[ei], bullets: exps[ei].bullets.filter((_, j) => j !== bi) }; onChange({ ...cvData, experiences: exps }); };
+
+  return (
+    <div className="space-y-6">
+      {maxItems && (
+        <p className="text-xs text-amber-600 font-medium flex items-center gap-1">
+          Limite template : {cvData.experiences.length}/{maxItems} expériences
+        </p>
+      )}
+      {cvData.experiences.map((exp, i) => (
+        <AccordionSection key={i} title={exp.role || `Expérience ${i + 1}`} number={i + 1}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <div className="col-span-1 sm:col-span-2 flex flex-col gap-2">
+              <label className="text-sm font-bold text-slate-700">Intitulé du poste <span className="text-red-500">*</span></label>
+              <div className="relative">
+                <Briefcase className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                <StyledInput className="pl-11" placeholder="Ex: Chef de Projet Senior" value={exp.role} onChange={e => updateExp(i, "role", e.target.value)} />
+              </div>
+            </div>
+            <div className="flex flex-col gap-2">
+              <label className="text-sm font-bold text-slate-700">Entreprise <span className="text-red-500">*</span></label>
+              <StyledInput placeholder="Ex: Google Inc." value={exp.company} onChange={e => updateExp(i, "company", e.target.value)} />
+            </div>
+            <div className="flex flex-col gap-2">
+              <label className="text-sm font-bold text-slate-700">Dates</label>
+              <StyledInput placeholder="Jan 2022 – Présent" value={exp.dates} onChange={e => updateExp(i, "dates", e.target.value)} />
+            </div>
+            <div className="col-span-1 sm:col-span-2">
+              <label className="text-sm font-bold text-slate-700 block mb-3">
+                Réalisations / Missions
+                {maxBullets && <span className="text-xs font-normal text-slate-400 ml-2">({exp.bullets.length}/{maxBullets} max{maxBulletChars ? `, ${maxBulletChars} car.` : ""})</span>}
+              </label>
+              <div className="space-y-2">
+                {exp.bullets.map((bullet, bi) => (
+                  <div key={bi} className="flex items-center gap-2">
+                    <span className="text-slate-300 font-bold text-base shrink-0">•</span>
+                    <StyledInput
+                      placeholder="Ex: Réduction des coûts de 20% en 6 mois"
+                      value={bullet}
+                      maxLength={maxBulletChars}
+                      onChange={e => updateBullet(i, bi, e.target.value)}
+                    />
+                    {exp.bullets.length > 1 && (
+                      <button onClick={() => removeBullet(i, bi)} className="shrink-0 w-8 h-8 rounded-full hover:bg-red-50 flex items-center justify-center text-red-400 transition-colors">
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+              {(!maxBullets || exp.bullets.length < maxBullets) && (
+                <button
+                  onClick={() => addBullet(i)}
+                  className="mt-3 flex items-center gap-2 text-sm text-[hsl(var(--primary))] hover:underline font-medium"
+                >
+                  <Plus className="h-3.5 w-3.5" /> Ajouter une réalisation
+                </button>
+              )}
+            </div>
+          </div>
+          {cvData.experiences.length > 1 && (
+            <div className="flex justify-end mt-4 pt-4 border-t border-gray-100">
+              <button onClick={() => removeExp(i)} className="flex items-center gap-1.5 text-xs text-red-500 hover:text-red-700 font-medium">
+                <Trash2 className="h-3.5 w-3.5" /> Supprimer cette expérience
+              </button>
+            </div>
+          )}
+        </AccordionSection>
+      ))}
+      {(!maxItems || cvData.experiences.length < maxItems) && (
+        <button
+          onClick={addExp}
+          className="w-full py-4 border-2 border-dashed border-gray-300 rounded-2xl text-slate-500 hover:border-[hsl(var(--primary))] hover:text-[hsl(var(--primary))] transition-all font-medium flex items-center justify-center gap-2"
+        >
+          <Plus className="h-5 w-5" /> Ajouter une expérience
+        </button>
+      )}
+    </div>
+  );
+};
 
   return (
     <div className="space-y-6">
