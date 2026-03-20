@@ -276,7 +276,10 @@ Les mots-clés moyenne fréquence (40-70%) vont en secondary_keywords.`;
 
 Contexte: Analyse d'un CV pour le poste "${analysis.job_title}" (thématique: ${analysis.profession_name || 'non identifiée'}).
 
-Voici les mots-clés identifiés par notre algorithme de scoring ATS. Pour chaque mot-clé, indique:
+${analysis.job_description ? `Fiche de poste (extrait):
+${analysis.job_description.substring(0, 2000)}
+
+` : ''}Voici les mots-clés identifiés par notre algorithme de scoring ATS. Pour chaque mot-clé, indique:
 1. Si c'est une VRAIE compétence/soft skill pertinente pour ce poste (is_valid: true/false)
 2. Si la catégorie est correcte :
    - primary : compétence technique principale (outil, logiciel, technologie, certification)

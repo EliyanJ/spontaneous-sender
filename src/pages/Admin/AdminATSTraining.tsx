@@ -46,6 +46,8 @@ interface CvAnalysis {
   admin_feedback: any;
   created_at: string;
   needs_profession_suggestion?: boolean;
+  job_description: string | null;
+  cv_text: string | null;
 }
 
 interface KeywordFeedback {
@@ -588,23 +590,24 @@ export const AdminATSTraining = () => {
     const { data: { session } } = await supabase.auth.getSession();
     let successCount = 0;
     let errorCount = 0;
+    let newKwCount = 0;
+    let rescoredCount = 0;
+
+    // Track which professions were updated to re-score their analyses
+    const updatedProfessions = new Map<string, { newPrimaryKw: string[]; newSecondaryKw: string[]; newSoftSkillsKw: string[]; newExcluded: string[] }>();
 
     for (let i = 0; i < unreviewed.length; i++) {
       const analysis = unreviewed[i] as CvAnalysis;
       setBulkProgress(p => ({ ...p, current: i + 1 }));
       try {
+        // ── STEP 1: Validate/recategorize existing keywords ──
         const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ats-ai-review`, {
           method: "POST",
           headers: { "Content-Type": "application/json", Authorization: `Bearer ${session?.access_token}` },
           body: JSON.stringify({ analysis }),
         });
-        if (!res.ok) throw new Error("Erreur IA");
+        if (!res.ok) throw new Error("Erreur IA revue");
         const result = await res.json();
-        if (!result.suggestions || result.suggestions.length === 0) {
-          await supabase.from("cv_analyses").update({ admin_reviewed: true, admin_feedback: { notes: "Revue IA auto — aucune correction", corrections_count: 0 } }).eq("id", analysis.id);
-          successCount++;
-          continue;
-        }
 
         const profId = analysis.profession_id!;
         const prof = professions.find(p => p.id === profId);
@@ -616,32 +619,76 @@ export const AdminATSTraining = () => {
         const newSoftSkillsKw = [...prof.soft_skills];
         const feedbackInserts: any[] = [];
 
-        for (const s of result.suggestions) {
-          feedbackInserts.push({
-            profession_id: profId, keyword: s.keyword, original_category: s.original_category,
-            corrected_category: s.corrected_category, is_valid: s.is_valid, admin_notes: s.reason || "Revue IA auto", source: "ai_bulk",
-          });
-          if (!s.is_valid || s.corrected_category === "common_word" || s.corrected_category === "excluded") {
-            if (!newExcluded.includes(s.keyword)) newExcluded.push(s.keyword);
-            [newPrimaryKw, newSecondaryKw, newSoftSkillsKw].forEach(arr => { const idx = arr.indexOf(s.keyword); if (idx > -1) arr.splice(idx, 1); });
-          } else if (s.corrected_category !== s.original_category) {
-            [newPrimaryKw, newSecondaryKw, newSoftSkillsKw].forEach(arr => { const idx = arr.indexOf(s.keyword); if (idx > -1) arr.splice(idx, 1); });
-            if (s.corrected_category === "primary") newPrimaryKw.push(s.keyword);
-            else if (s.corrected_category === "secondary") newSecondaryKw.push(s.keyword);
-            else if (s.corrected_category === "soft_skill") newSoftSkillsKw.push(s.keyword);
+        if (result.suggestions && result.suggestions.length > 0) {
+          for (const s of result.suggestions) {
+            feedbackInserts.push({
+              profession_id: profId, keyword: s.keyword, original_category: s.original_category,
+              corrected_category: s.corrected_category, is_valid: s.is_valid, admin_notes: s.reason || "Revue IA auto", source: "ai_bulk",
+            });
+            if (!s.is_valid || s.corrected_category === "common_word" || s.corrected_category === "excluded") {
+              if (!newExcluded.includes(s.keyword)) newExcluded.push(s.keyword);
+              [newPrimaryKw, newSecondaryKw, newSoftSkillsKw].forEach(arr => { const idx = arr.indexOf(s.keyword); if (idx > -1) arr.splice(idx, 1); });
+            } else if (s.corrected_category !== s.original_category) {
+              [newPrimaryKw, newSecondaryKw, newSoftSkillsKw].forEach(arr => { const idx = arr.indexOf(s.keyword); if (idx > -1) arr.splice(idx, 1); });
+              if (s.corrected_category === "primary") newPrimaryKw.push(s.keyword);
+              else if (s.corrected_category === "secondary") newSecondaryKw.push(s.keyword);
+              else if (s.corrected_category === "soft_skill") newSoftSkillsKw.push(s.keyword);
+            }
           }
         }
 
+        // ── STEP 2: Extract NEW keywords from job_description ──
+        if (analysis.job_description && analysis.job_description.trim().length > 100) {
+          const extractRes = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ats-ai-review`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${session?.access_token}` },
+            body: JSON.stringify({
+              mode: "extract_keywords",
+              text: analysis.job_description,
+              profession_name: analysis.profession_name || prof.name,
+              existing_primary: newPrimaryKw,
+              existing_secondary: newSecondaryKw,
+              existing_soft_skills: newSoftSkillsKw,
+            }),
+          });
+          if (extractRes.ok) {
+            const extractResult = await extractRes.json();
+            if (extractResult.keywords && extractResult.keywords.length > 0) {
+              for (const k of extractResult.keywords) {
+                const kw = k.keyword?.trim().toLowerCase();
+                if (!kw || newExcluded.includes(kw)) continue;
+                if (k.category === "primary" && !newPrimaryKw.includes(kw)) {
+                  newPrimaryKw.push(kw);
+                  newKwCount++;
+                  feedbackInserts.push({ profession_id: profId, keyword: kw, original_category: "none", corrected_category: "primary", is_valid: true, admin_notes: "Extrait fiche de poste", source: "ai_bulk_jd" });
+                } else if (k.category === "secondary" && !newSecondaryKw.includes(kw)) {
+                  newSecondaryKw.push(kw);
+                  newKwCount++;
+                  feedbackInserts.push({ profession_id: profId, keyword: kw, original_category: "none", corrected_category: "secondary", is_valid: true, admin_notes: "Extrait fiche de poste", source: "ai_bulk_jd" });
+                } else if (k.category === "soft_skill" && !newSoftSkillsKw.includes(kw)) {
+                  newSoftSkillsKw.push(kw);
+                  newKwCount++;
+                }
+              }
+            }
+          }
+        }
+
+        // ── STEP 3: Persist updates ──
         if (feedbackInserts.length > 0) await supabase.from("ats_keyword_feedback").insert(feedbackInserts);
         await supabase.from("ats_professions").update({
           excluded_words: newExcluded, primary_keywords: newPrimaryKw, secondary_keywords: newSecondaryKw, soft_skills: newSoftSkillsKw,
-          last_trained_at: new Date().toISOString(), training_count: (prof.training_count || 0) + result.suggestions.length,
+          last_trained_at: new Date().toISOString(), training_count: (prof.training_count || 0) + feedbackInserts.length,
         }).eq("id", profId);
+
+        // Track profession update for later re-scoring
+        updatedProfessions.set(profId, { newPrimaryKw, newSecondaryKw, newSoftSkillsKw, newExcluded });
+
         await supabase.from("cv_analyses").update({
-          admin_reviewed: true, admin_feedback: { notes: "Revue IA automatique", corrections_count: result.suggestions.length },
+          admin_reviewed: true, admin_feedback: { notes: "Revue IA automatique + extraction fiche de poste", corrections_count: feedbackInserts.length },
         }).eq("id", analysis.id);
 
-        const updatedProf = { ...prof, excluded_words: newExcluded, primary_keywords: newPrimaryKw, secondary_keywords: newSecondaryKw, soft_skills: newSoftSkillsKw, training_count: (prof.training_count || 0) + result.suggestions.length };
+        const updatedProf = { ...prof, excluded_words: newExcluded, primary_keywords: newPrimaryKw, secondary_keywords: newSecondaryKw, soft_skills: newSoftSkillsKw, training_count: (prof.training_count || 0) + feedbackInserts.length };
         setProfessions(prev => prev.map(p => p.id === profId ? updatedProf : p));
         successCount++;
       } catch {
@@ -649,9 +696,51 @@ export const AdminATSTraining = () => {
       }
     }
 
+    // ── STEP 4: Re-score all analyses that have a cv_text and belong to updated professions ──
+    if (updatedProfessions.size > 0) {
+      setBulkProgress(p => ({ ...p, current: p.current, total: p.total }));
+      const profIds = [...updatedProfessions.keys()];
+      const { data: toRescore } = await supabase
+        .from("cv_analyses")
+        .select("id, cv_text, job_description, profession_id, job_title")
+        .in("profession_id", profIds)
+        .not("cv_text", "is", null)
+        .limit(100);
+
+      if (toRescore && toRescore.length > 0) {
+        const { data: { session: freshSession } } = await supabase.auth.getSession();
+        for (const item of toRescore) {
+          if (!item.cv_text || !item.job_description) continue;
+          try {
+            const scoreRes = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/analyze-cv-ats`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json", Authorization: `Bearer ${freshSession?.access_token}` },
+              body: JSON.stringify({ cv_text: item.cv_text, job_title: item.job_title, job_description: item.job_description, skip_save: true }),
+            });
+            if (scoreRes.ok) {
+              const scoreResult = await scoreRes.json();
+              if (scoreResult.totalScore !== undefined) {
+                await supabase.from("cv_analyses").update({
+                  total_score: scoreResult.totalScore,
+                  analysis_result: scoreResult,
+                  admin_reviewed: true,
+                  admin_feedback: { notes: "Re-scoré après entraînement IA", rescored_at: new Date().toISOString() },
+                }).eq("id", item.id);
+                rescoredCount++;
+              }
+            }
+          } catch { /* non-bloquant */ }
+        }
+      }
+    }
+
     setBulkProgress(p => ({ ...p, done: true }));
     setBulkReviewing(false);
-    toast.success(`Revue IA terminée : ${successCount} analyses traitées${errorCount > 0 ? `, ${errorCount} erreurs` : ""}`);
+    const parts = [`${successCount} analyses traitées`];
+    if (newKwCount > 0) parts.push(`${newKwCount} nouveaux mots-clés ajoutés`);
+    if (rescoredCount > 0) parts.push(`${rescoredCount} scores mis à jour`);
+    if (errorCount > 0) parts.push(`${errorCount} erreurs`);
+    toast.success(`Revue IA terminée : ${parts.join(', ')}`);
     loadProfessions();
     loadAnalyses();
   };
