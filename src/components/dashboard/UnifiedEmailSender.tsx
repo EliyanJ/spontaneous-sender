@@ -779,20 +779,33 @@ export const UnifiedEmailSender = () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error("Session expirée");
 
+      // Get user first name for PDF filename
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      let userFirstName = 'Candidat';
+      if (currentUser) {
+        const { data: profileForName } = await supabase
+          .from('profiles')
+          .select('first_name, full_name')
+          .eq('id', currentUser.id)
+          .maybeSingle();
+        userFirstName = profileForName?.first_name || profileForName?.full_name?.split(' ')[0] || 'Candidat';
+      }
+
       const uploadedAttachments = await uploadAttachments();
 
       for (const email of validEmails) {
         try {
-          // Build email body (clean, no cover letter pasted in body)
+          // Build email body — clean, no cover letter pasted in body
           const finalBody = email.body || "";
 
-          // Generate cover letter PDF if available
+          // Generate cover letter PDF if available and attach it
           const emailAttachments = [...uploadedAttachments];
           if (email.coverLetter) {
-            const coverLetterPdfBase64 = await generateCoverLetterPdf(email.coverLetter, email.company_name);
+            const coverLetterPdfBase64 = await generateCoverLetterPdf(email.coverLetter, userFirstName);
             if (coverLetterPdfBase64) {
+              const safeName = userFirstName.replace(/[^a-zA-ZÀ-ÿ0-9]/g, '_');
               emailAttachments.push({
-                filename: `Lettre_de_motivation_${email.company_name.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`,
+                filename: `lettre_motivation_${safeName}.pdf`,
                 contentType: 'application/pdf',
                 data: coverLetterPdfBase64,
               });
