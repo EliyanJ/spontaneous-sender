@@ -766,7 +766,12 @@ export const AdminEmailQuality = () => {
                       <span className="flex items-center gap-1.5">
                         {row.company_name ?? <span className="text-muted-foreground/50">—</span>}
                         {row.company_insights?.full_content && (
-                          <Globe className="h-3 w-3 text-primary/60 shrink-0" title="Scraping disponible" />
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Globe className="h-3 w-3 text-primary/60 shrink-0 cursor-default" />
+                            </TooltipTrigger>
+                            <TooltipContent side="top">Scraping disponible</TooltipContent>
+                          </Tooltip>
                         )}
                       </span>
                     </td>
