@@ -68,7 +68,7 @@ const TemplateCard = ({
       }`}
     >
       {/* Template preview area */}
-      <div className="relative h-64 overflow-hidden">
+      <div className="relative h-96 overflow-hidden">
         {tpl.thumbnail_url ? (
           <img
             src={tpl.thumbnail_url}
