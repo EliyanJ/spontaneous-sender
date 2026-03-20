@@ -295,6 +295,11 @@ Sujet: [objet selon le type choisi]
 [corps de l'email - 4 lignes max]`;
 
         const candidatName = userProfile?.fullName || '';
+        const candidatSpecialty = userProfile?.targetJobs || userProfile?.specialty || '';
+        const subjectFallback = candidatSpecialty
+          ? `Candidature spontanée – ${candidatSpecialty}`
+          : 'Candidature spontanée';
+
         const userPrompt = `ENTREPRISE CIBLE:
 - Nom: ${company.nom}
 - Ville: ${company.ville || 'Non spécifiée'}
@@ -307,16 +312,27 @@ ${companyInfo || 'Aucune information scrapée disponible. NE PAS inventer d info
 ${template ? `STYLE DE RÉFÉRENCE (à adapter, pas copier):
 ${template}` : ''}
 
-${cvContent ? `PROFIL DU CANDIDAT:
+${userProfile?.profileSummary ? `RÉSUMÉ DU PROFIL (rédigé par le candidat lui-même — priorité absolue pour le comprendre) :
+${userProfile.profileSummary}
+
+` : ''}${cvContent ? `CONTENU CV DU CANDIDAT:
 ${cvContent}` : ''}
 
 ${userProfile ? `INFORMATIONS CANDIDAT:
-- Nom: ${userProfile.fullName || 'Non spécifié'}
+- Nom complet: ${userProfile.fullName || ''}
+- Prénom: ${userProfile.firstName || ''}
+- Nom: ${userProfile.lastName || ''}
+- Niveau d'expérience: ${userProfile.experienceLevel || 'Non spécifié'}
 - Formation: ${userProfile.education || 'Non spécifiée'}
+- Spécialité / métier visé: ${userProfile.targetJobs || candidatSpecialty || 'Non spécifié'}
 - LinkedIn: ${userProfile.linkedinUrl || 'Non spécifié'}
 ` : ''}
 
-NOM DU CANDIDAT POUR L'OBJET: ${candidatName || 'Non spécifié'}
+NOM DU CANDIDAT POUR L'OBJET: ${candidatName || ''}
+SPÉCIALITÉ POUR L'OBJET: ${candidatSpecialty || ''}
+FALLBACK OBJET SI NOM VIDE: ${subjectFallback}
+
+RÈGLE CRITIQUE OBJET: Si le nom du candidat est vide ou absent, l'objet doit être "${subjectFallback}" SANS aucun placeholder [XXX].
 
 Génère un email de candidature spontanée PERSONNALISÉ pour cette entreprise en respectant strictement les règles ci-dessus.`;
 

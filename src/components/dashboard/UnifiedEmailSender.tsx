@@ -546,23 +546,27 @@ export const UnifiedEmailSender = () => {
 
       // Fetch full user profile once for all AI calls
       const { data: { user } } = await supabase.auth.getUser();
-      let profileData = null;
+      let profileData: any = null;
       if (user) {
         const { data: pd } = await supabase
           .from("profiles")
-          .select("full_name, education, linkedin_url, cv_content, target_sectors, target_jobs, professional_interests")
+          .select("full_name, first_name, last_name, education, linkedin_url, cv_content, target_sectors, target_jobs, professional_interests, experience_level, profile_summary")
           .eq("id", user.id)
           .maybeSingle();
         profileData = pd;
       }
       const userProfile = {
         fullName: profileData?.full_name || null,
+        firstName: profileData?.first_name || null,
+        lastName: profileData?.last_name || null,
         education: profileData?.education || null,
         linkedinUrl: profileData?.linkedin_url || null,
         cvContent: profileData?.cv_content || null,
         targetSectors: profileData?.target_sectors || null,
         targetJobs: profileData?.target_jobs || null,
         professionalInterests: profileData?.professional_interests || null,
+        experienceLevel: (profileData as any)?.experience_level || null,
+        profileSummary: (profileData as any)?.profile_summary || null,
       };
 
       const allResults: GeneratedEmail[] = [];

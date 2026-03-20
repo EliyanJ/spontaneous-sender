@@ -254,6 +254,10 @@ Bonjour [destinataire],
 Bien cordialement,
 [Nom complet du candidat]`;
 
+    const up = userProfile as any;
+    const candidatName = up?.fullName || '';
+    const candidatSpecialty = up?.targetJobs || up?.specialty || '';
+
     const userPrompt = `ENTREPRISE CIBLE:
 - Nom: ${company.nom}
 - Ville: ${company.ville || 'Non spécifiée'}
@@ -263,14 +267,24 @@ Bien cordialement,
 INFORMATIONS SCRAPÉES DU SITE WEB:
 ${companyInfo || 'Aucune information scrapée disponible. NE PAS inventer d informations sur cette entreprise. Utilise uniquement le nom, la ville et le secteur APE fournis ci-dessus.'}
 
-${cvContent ? `CV / PROFIL DU CANDIDAT:
+${up?.profileSummary ? `RÉSUMÉ DU PROFIL (rédigé par le candidat — lire EN PREMIER pour comprendre son parcours) :
+${up.profileSummary}
+
+` : ''}${cvContent ? `CONTENU CV DU CANDIDAT:
 ${cvContent}` : ''}
 
 ${userProfile ? `INFORMATIONS CANDIDAT:
-- Nom complet: ${(userProfile as any).fullName || 'Non spécifié'}
-- Formation: ${(userProfile as any).education || 'Non spécifiée'}
-- LinkedIn: ${(userProfile as any).linkedinUrl || 'Non spécifié'}
+- Nom complet: ${candidatName || ''}
+- Prénom: ${up?.firstName || ''}
+- Nom: ${up?.lastName || ''}
+- Niveau d'expérience: ${up?.experienceLevel || 'Non spécifié'}
+- Spécialité / métier visé: ${candidatSpecialty || 'Non spécifié'}
+- Formation: ${up?.education || 'Non spécifiée'}
+- LinkedIn: ${up?.linkedinUrl || 'Non spécifié'}
 ` : ''}
+
+RÈGLE SIGNATURE: La lettre doit se terminer par "Bien cordialement," suivi de "${candidatName || 'Bien cordialement,'}" EXACTEMENT.
+Si le nom est vide, terminer par "Bien cordialement," sans nom, JAMAIS par un placeholder.
 
 Génère une lettre de motivation PERSONNALISÉE pour cette entreprise en respectant STRICTEMENT la structure 3 paragraphes et les règles ci-dessus.`;
 

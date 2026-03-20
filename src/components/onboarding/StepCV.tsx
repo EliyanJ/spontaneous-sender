@@ -10,16 +10,20 @@ interface StepCVProps {
   userId: string;
   cvContent: string;
   cvFileUrl: string;
+  profileSummary: string;
   onCvContentChange: (content: string) => void;
   onCvFileUrlChange: (url: string) => void;
+  onProfileSummaryChange: (summary: string) => void;
 }
 
 export const StepCV = ({
   userId,
   cvContent,
   cvFileUrl,
+  profileSummary,
   onCvContentChange,
   onCvFileUrlChange,
+  onProfileSummaryChange,
 }: StepCVProps) => {
   const [uploading, setUploading] = useState(false);
   const [parsing, setParsing] = useState(false);
@@ -46,7 +50,6 @@ export const StepCV = ({
       setFileName(file.name);
 
       try {
-        // Upload to storage
         const filePath = `${userId}/${Date.now()}_${file.name}`;
         const { error: uploadError } = await supabase.storage
           .from("user-cvs")
@@ -54,23 +57,15 @@ export const StepCV = ({
 
         if (uploadError) throw uploadError;
 
-        const { data: urlData } = supabase.storage
-          .from("user-cvs")
-          .getPublicUrl(filePath);
-
-        // Store the path (not public url since bucket is private)
         onCvFileUrlChange(filePath);
 
-        // Parse CV via edge function
         setParsing(true);
         setUploading(false);
 
-        // Convert file to base64 for the edge function
         const reader = new FileReader();
         const base64 = await new Promise<string>((resolve, reject) => {
           reader.onload = () => {
             const result = reader.result as string;
-            // Remove data URL prefix (e.g. "data:application/pdf;base64,")
             const base64Data = result.split(",")[1];
             resolve(base64Data);
           };
@@ -84,7 +79,6 @@ export const StepCV = ({
         );
 
         if (parseError) {
-          console.error("CV parse error:", parseError);
           toast({ title: "Parsing en cours...", description: "La synthèse n'a pas pu être générée automatiquement. Vous pouvez la saisir manuellement." });
         } else if (parseResult?.text) {
           onCvContentChange(parseResult.text);
@@ -185,11 +179,11 @@ export const StepCV = ({
         </div>
       )}
 
-      {/* CV Summary */}
+      {/* CV extracted content */}
       {(cvContent || parsing) && (
         <div className="space-y-2">
           <Label className="text-sm font-medium text-foreground">
-            Synthèse de votre CV
+            Synthèse extraite de votre CV
           </Label>
           {parsing ? (
             <div className="flex items-center justify-center py-8">
@@ -200,15 +194,33 @@ export const StepCV = ({
             <Textarea
               value={cvContent}
               onChange={(e) => onCvContentChange(e.target.value)}
-              className="bg-background resize-none min-h-[200px]"
+              className="bg-background resize-none min-h-[160px]"
               placeholder="La synthèse de votre CV apparaîtra ici..."
             />
           )}
         </div>
       )}
 
+      {/* Profile summary — optional */}
+      <div className="space-y-2">
+        <Label htmlFor="profile-summary" className="text-sm font-medium text-foreground">
+          Décrivez votre profil en quelques lignes{" "}
+          <span className="text-muted-foreground font-normal">(optionnel)</span>
+        </Label>
+        <Textarea
+          id="profile-summary"
+          value={profileSummary}
+          onChange={(e) => onProfileSummaryChange(e.target.value)}
+          className="bg-background resize-none min-h-[100px]"
+          placeholder="Ex : Diplômée d'un Master en Marketing digital, 3 ans d'expérience en stratégie de contenu et SEO. Je recherche un poste où je pourrai combiner créativité et data..."
+        />
+        <p className="text-xs text-muted-foreground">
+          💡 Ce résumé aide l'IA à vous présenter avec vos propres mots dans les emails et lettres de motivation.
+        </p>
+      </div>
+
       <p className="text-xs text-muted-foreground text-center">
-        💡 Cette étape est optionnelle. Vous pourrez ajouter votre CV plus tard depuis les Paramètres.
+        Cette étape est optionnelle. Vous pourrez tout modifier depuis les Paramètres.
       </p>
     </div>
   );
