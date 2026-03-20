@@ -68,7 +68,7 @@ const TemplateCard = ({
       }`}
     >
       {/* Template preview area */}
-      <div className="relative h-64 overflow-hidden">
+      <div className="relative h-96 overflow-hidden">
         {tpl.thumbnail_url ? (
           <img
             src={tpl.thumbnail_url}
@@ -157,7 +157,7 @@ const TemplateCard = ({
 // ─── Skeleton card ─────────────────────────────────────────────────────────────
 const TemplateCardSkeleton = () => (
   <div className="rounded-2xl border-2 border-border overflow-hidden">
-    <Skeleton className="h-64 w-full rounded-none" />
+    <Skeleton className="h-96 w-full rounded-none" />
     <div className="px-4 py-3 bg-card">
       <Skeleton className="h-4 w-32 mb-2" />
       <Skeleton className="h-3 w-24" />
