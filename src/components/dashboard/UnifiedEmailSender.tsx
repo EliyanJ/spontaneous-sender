@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { jsPDF } from "jspdf";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
@@ -127,6 +128,39 @@ interface SavedTemplate {
   name: string;
   content: string;
 }
+
+// Generate a PDF from cover letter text and return base64 data
+const generateCoverLetterPdf = async (coverLetterText: string, companyName: string): Promise<string | null> => {
+  try {
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const margin = 20;
+    const maxWidth = pageWidth - margin * 2;
+    
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(11);
+    
+    const lines = doc.splitTextToSize(coverLetterText, maxWidth);
+    let y = margin + 10;
+    
+    for (const line of lines) {
+      if (y > pageHeight - margin) {
+        doc.addPage();
+        y = margin + 10;
+      }
+      doc.text(line, margin, y);
+      y += 6;
+    }
+    
+    // Return as base64 without the data URL prefix
+    const pdfBase64 = doc.output('datauristring').split(',')[1];
+    return pdfBase64;
+  } catch (err) {
+    console.error('Error generating cover letter PDF:', err);
+    return null;
+  }
+};
 
 export const UnifiedEmailSender = () => {
   // Plan features
@@ -726,10 +760,20 @@ export const UnifiedEmailSender = () => {
 
       for (const email of validEmails) {
         try {
-          // Build email body with cover letter if available
-          let finalBody = email.body || "";
+          // Build email body (clean, no cover letter pasted in body)
+          const finalBody = email.body || "";
+
+          // Generate cover letter PDF if available
+          const emailAttachments = [...uploadedAttachments];
           if (email.coverLetter) {
-            finalBody += `\n\n---\nLettre de motivation en pièce jointe disponible sur demande.\n\n${email.coverLetter}`;
+            const coverLetterPdfBase64 = await generateCoverLetterPdf(email.coverLetter, email.company_name);
+            if (coverLetterPdfBase64) {
+              emailAttachments.push({
+                filename: `Lettre_de_motivation_${email.company_name.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`,
+                contentType: 'application/pdf',
+                data: coverLetterPdfBase64,
+              });
+            }
           }
 
           if (sendMode === 'scheduled') {
@@ -748,7 +792,7 @@ export const UnifiedEmailSender = () => {
                 body: finalBody,
                 scheduledFor: scheduledDateTime.toISOString(),
                 notifyOnSent,
-                attachments: uploadedAttachments
+                attachments: emailAttachments
               }
             });
           } else {
@@ -757,7 +801,7 @@ export const UnifiedEmailSender = () => {
                 recipients: [email.company_email],
                 subject: email.subject,
                 body: finalBody,
-                attachments: uploadedAttachments,
+                attachments: emailAttachments,
                 subject_type: email.subject_type || selectedSubjectType,
                 tone: email.tone || selectedTone,
               },
