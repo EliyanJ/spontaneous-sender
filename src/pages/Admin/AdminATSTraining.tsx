@@ -1500,6 +1500,216 @@ export const AdminATSTraining = () => {
           )}
         </TabsContent>
 
+        {/* ===== TAB: FICHES DE POSTE ===== */}
+        <TabsContent value="fiches">
+          <div className="space-y-6">
+            {/* Explication logique de scoring */}
+            <Card className="bg-primary/5 border-primary/20">
+              <CardContent className="pt-4 pb-3">
+                <div className="flex gap-3">
+                  <TrendingUp className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                  <div className="space-y-2 text-sm">
+                    <p className="font-semibold text-foreground">Comment fonctionne le scoring ATS</p>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs text-muted-foreground">
+                      <div className="p-2 rounded bg-blue-500/10 border border-blue-500/20">
+                        <span className="text-blue-400 font-semibold block mb-1">🔵 Hard Skills (34 pts)</span>
+                        Les mots-clés de la base (thématique + métier) ont un <strong className="text-foreground">double poids</strong> vs les mots bruts extraits de la fiche. Ce sont eux qui s'affichent en frontend.
+                      </div>
+                      <div className="p-2 rounded bg-muted/50 border border-border/30">
+                        <span className="text-muted-foreground font-semibold block mb-1">🌐 Thématique (base commune)</span>
+                        Les mots-clés de la thématique parente sont <strong className="text-foreground">hérités</strong> par tous ses métiers enfants — scoring global de couverture.
+                      </div>
+                      <div className="p-2 rounded bg-green-500/10 border border-green-500/20">
+                        <span className="text-green-400 font-semibold block mb-1">🟢 Soft Skills (6 pts max)</span>
+                        Réduit intentionnellement. Plus vous ajoutez de fiches de poste ici, plus la base hard skills s'enrichit et le scoring devient précis.
+                      </div>
+                    </div>
+                    <p className="text-xs text-muted-foreground">💡 <strong className="text-foreground">Conseil :</strong> Collez plusieurs fiches de poste pour le même métier. L'IA extrait uniquement les mots-clés absents de la base.</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Input section */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <Card className="bg-card border-border/50">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-sm flex items-center gap-2">
+                      <FileText className="h-4 w-4 text-primary" />
+                      Coller une fiche de poste
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                      <label className="text-xs font-medium text-muted-foreground">Métier / Thématique cible</label>
+                      <Select value={ficheTargetProfId} onValueChange={setFicheTargetProfId}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Choisir un métier ou une thématique..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="" disabled>── Thématiques ──</SelectItem>
+                          {themes.map(t => (
+                            <SelectItem key={t.id} value={t.id}>📂 {t.name}</SelectItem>
+                          ))}
+                          <SelectItem value="" disabled>── Métiers spécifiques ──</SelectItem>
+                          {professions.filter(p => !p.is_theme).map(p => (
+                            <SelectItem key={p.id} value={p.id}>
+                              💼 {p.name} {professions.find(t => t.id === p.parent_theme_id) ? `(${professions.find(t => t.id === p.parent_theme_id)?.name})` : ""}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-xs font-medium text-muted-foreground">
+                        Fiche de poste complète{ficheText.length > 0 && <span className="ml-2 text-primary">{ficheText.length} caractères</span>}
+                      </label>
+                      <Textarea
+                        value={ficheText}
+                        onChange={e => setFicheText(e.target.value)}
+                        placeholder="Collez ici le texte complet de la fiche de poste (titre, missions, profil recherché, compétences requises...)&#10;&#10;Plus la fiche est complète, meilleure sera l'extraction des mots-clés."
+                        rows={14}
+                        className="text-sm font-mono resize-none"
+                      />
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <Button
+                        variant="ghost" size="sm"
+                        onClick={() => { setFicheText(""); setFicheSuggestedKeywords([]); }}
+                        disabled={!ficheText}
+                        className="text-muted-foreground"
+                      >
+                        <X className="h-3 w-3 mr-1" /> Effacer
+                      </Button>
+                      <Button
+                        onClick={analyzeFicheDePoste}
+                        disabled={ficheAnalyzing || !ficheText.trim() || !ficheTargetProfId}
+                        className="bg-primary hover:bg-primary/90"
+                      >
+                        {ficheAnalyzing ? (
+                          <><Loader2 className="h-4 w-4 mr-1 animate-spin" /> Analyse IA en cours...</>
+                        ) : (
+                          <><Brain className="h-4 w-4 mr-1" /> Analyser avec l'IA</>
+                        )}
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Stats du métier sélectionné */}
+                {ficheTargetProfId && (() => {
+                  const tp = professions.find(p => p.id === ficheTargetProfId);
+                  if (!tp) return null;
+                  const parent = tp.parent_theme_id ? professions.find(p => p.id === tp.parent_theme_id) : null;
+                  return (
+                    <Card className="bg-card border-border/50">
+                      <CardContent className="pt-4 space-y-3">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-semibold">{tp.is_theme ? "📂" : "💼"} {tp.name}</span>
+                          {parent && <span className="text-xs text-muted-foreground">← {parent.name}</span>}
+                        </div>
+                        <div className="grid grid-cols-3 gap-2 text-center">
+                          <div className="p-2 rounded bg-blue-500/10 border border-blue-500/20">
+                            <div className="text-lg font-bold text-blue-400">{tp.primary_keywords.length}</div>
+                            <div className="text-xs text-muted-foreground">Hard Skills</div>
+                          </div>
+                          <div className="p-2 rounded bg-purple-500/10 border border-purple-500/20">
+                            <div className="text-lg font-bold text-purple-400">{tp.secondary_keywords.length}</div>
+                            <div className="text-xs text-muted-foreground">Secondaires</div>
+                          </div>
+                          <div className="p-2 rounded bg-green-500/10 border border-green-500/20">
+                            <div className="text-lg font-bold text-green-400">{tp.soft_skills.length}</div>
+                            <div className="text-xs text-muted-foreground">Soft Skills</div>
+                          </div>
+                        </div>
+                        {tp.last_trained_at && (
+                          <p className="text-xs text-muted-foreground">Dernier entraînement : {new Date(tp.last_trained_at).toLocaleDateString("fr-FR")}</p>
+                        )}
+                      </CardContent>
+                    </Card>
+                  );
+                })()}
+              </div>
+
+              {/* Results panel */}
+              <div className="space-y-4">
+                {ficheSuggestedKeywords.length === 0 && !ficheAnalyzing && (
+                  <div className="flex flex-col items-center justify-center h-64 text-center text-muted-foreground rounded-lg border-2 border-dashed border-border/40 p-8">
+                    <Brain className="h-10 w-10 mb-3 opacity-30" />
+                    <p className="text-sm font-medium">Résultats de l'analyse IA</p>
+                    <p className="text-xs mt-1 opacity-70">Collez une fiche de poste et lancez l'analyse pour voir les mots-clés détectés</p>
+                  </div>
+                )}
+
+                {ficheAnalyzing && (
+                  <div className="flex flex-col items-center justify-center h-64 text-center text-muted-foreground rounded-lg border border-border/40 p-8">
+                    <Sparkles className="h-10 w-10 mb-3 text-primary animate-pulse" />
+                    <p className="text-sm font-medium">Analyse en cours...</p>
+                    <p className="text-xs mt-1 opacity-70">L'IA extrait les nouveaux mots-clés de la fiche</p>
+                  </div>
+                )}
+
+                {ficheSuggestedKeywords.length > 0 && (
+                  <Card className="bg-card border-primary/30">
+                    <CardHeader className="pb-3">
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="text-sm flex items-center gap-2">
+                          <Sparkles className="h-4 w-4 text-primary" />
+                          {ficheSuggestedKeywords.length} mots-clés extraits
+                          <span className="text-xs text-muted-foreground font-normal">
+                            ({ficheSuggestedKeywords.filter(k => k.accepted === true).length} acceptés)
+                          </span>
+                        </CardTitle>
+                        <Button size="sm" variant="outline" onClick={acceptAllFicheKeywords} className="text-xs h-7">
+                          <CheckCircle className="h-3 w-3 mr-1" /> Tout accepter
+                        </Button>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-2 max-h-96 overflow-y-auto">
+                      {ficheSuggestedKeywords.map((kw, i) => (
+                        <div key={i} className={`flex items-center gap-2 p-2 rounded transition-colors ${
+                          kw.accepted === true ? "bg-green-500/10 border border-green-500/20" :
+                          kw.accepted === false ? "bg-red-500/10 border border-red-500/20 opacity-50" :
+                          "bg-muted/30 border border-border/30"
+                        }`}>
+                          <Badge className={`${categoryColor(kw.category)} text-xs shrink-0`}>{kw.keyword}</Badge>
+                          <span className="text-xs text-muted-foreground">{categoryLabel(kw.category)}</span>
+                          {kw.accepted === null && (
+                            <div className="flex gap-1 ml-auto">
+                              <Button size="sm" variant="outline" className="h-6 w-6 p-0" onClick={() => acceptFicheKeyword(i)}>
+                                <CheckCircle className="h-3 w-3 text-green-400" />
+                              </Button>
+                              <Button size="sm" variant="outline" className="h-6 w-6 p-0" onClick={() => rejectFicheKeyword(i)}>
+                                <XCircle className="h-3 w-3 text-red-400" />
+                              </Button>
+                            </div>
+                          )}
+                          {kw.accepted === true && <span className="ml-auto text-xs text-green-400">✓</span>}
+                          {kw.accepted === false && <span className="ml-auto text-xs text-red-400">✗</span>}
+                        </div>
+                      ))}
+                    </CardContent>
+                    <div className="p-4 border-t border-border/30 flex justify-between items-center">
+                      <span className="text-xs text-muted-foreground">
+                        {ficheSuggestedKeywords.filter(k => k.accepted === true).length} / {ficheSuggestedKeywords.length} mots-clés sélectionnés
+                      </span>
+                      <Button
+                        onClick={saveFicheKeywords}
+                        disabled={ficheSaving || ficheSuggestedKeywords.filter(k => k.accepted === true).length === 0}
+                        size="sm"
+                      >
+                        {ficheSaving ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <Save className="h-3 w-3 mr-1" />}
+                        Enregistrer dans la base
+                      </Button>
+                    </div>
+                  </Card>
+                )}
+              </div>
+            </div>
+          </div>
+        </TabsContent>
+
         {/* ===== TAB: ANALYSES ===== */}
         <TabsContent value="analyses">
           <div className="space-y-4">
