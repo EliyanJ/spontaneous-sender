@@ -244,7 +244,7 @@ export const UnifiedEmailSender = () => {
 
     const { data } = await supabase
       .from("companies")
-      .select("id, nom, selected_email, website_url, ville, libelle_ape, siren")
+      .select("id, nom, selected_email, website_url, ville, libelle_ape, siren, company_insights")
       .not("selected_email", "is", null)
       .neq("selected_email", "NOT_FOUND");
 
