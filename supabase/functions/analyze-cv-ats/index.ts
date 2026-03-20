@@ -309,7 +309,10 @@ serve(async (req) => {
     }
     // If token === anonKey, proceed as unauthenticated (public access)
 
-    const { cvText, jobDescription, jobTitle } = await req.json();
+    const { cvText: cvTextRaw, cv_text, jobDescription: jobDescRaw, job_description, jobTitle: jobTitleRaw, job_title, skip_save } = await req.json();
+    const cvText = cvTextRaw || cv_text;
+    const jobDescription = jobDescRaw || job_description;
+    const jobTitle = jobTitleRaw || job_title;
 
     if (!cvText || !jobDescription || !jobTitle) {
       return new Response(JSON.stringify({ error: 'Missing required fields: cvText, jobDescription, jobTitle' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
