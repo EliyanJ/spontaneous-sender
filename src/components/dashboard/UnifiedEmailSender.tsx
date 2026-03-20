@@ -726,10 +726,20 @@ export const UnifiedEmailSender = () => {
 
       for (const email of validEmails) {
         try {
-          // Build email body with cover letter if available
-          let finalBody = email.body || "";
+          // Build email body (clean, no cover letter pasted in body)
+          const finalBody = email.body || "";
+
+          // Generate cover letter PDF if available
+          const emailAttachments = [...uploadedAttachments];
           if (email.coverLetter) {
-            finalBody += `\n\n---\nLettre de motivation en pièce jointe disponible sur demande.\n\n${email.coverLetter}`;
+            const coverLetterPdfBase64 = await generateCoverLetterPdf(email.coverLetter, email.company_name);
+            if (coverLetterPdfBase64) {
+              emailAttachments.push({
+                filename: `Lettre_de_motivation_${email.company_name.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`,
+                contentType: 'application/pdf',
+                data: coverLetterPdfBase64,
+              });
+            }
           }
 
           if (sendMode === 'scheduled') {
@@ -748,7 +758,7 @@ export const UnifiedEmailSender = () => {
                 body: finalBody,
                 scheduledFor: scheduledDateTime.toISOString(),
                 notifyOnSent,
-                attachments: uploadedAttachments
+                attachments: emailAttachments
               }
             });
           } else {
@@ -757,7 +767,7 @@ export const UnifiedEmailSender = () => {
                 recipients: [email.company_email],
                 subject: email.subject,
                 body: finalBody,
-                attachments: uploadedAttachments,
+                attachments: emailAttachments,
                 subject_type: email.subject_type || selectedSubjectType,
                 tone: email.tone || selectedTone,
               },
