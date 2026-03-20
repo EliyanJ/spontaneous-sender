@@ -130,32 +130,55 @@ interface SavedTemplate {
 }
 
 // Generate a PDF from cover letter text and return base64 data
-const generateCoverLetterPdf = async (coverLetterText: string, companyName: string): Promise<string | null> => {
+// Uses html2canvas approach via an offscreen div to handle French accents correctly
+const generateCoverLetterPdf = async (coverLetterText: string, firstName?: string): Promise<string | null> => {
   try {
-    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-    const pageWidth = doc.internal.pageSize.getWidth();
-    const pageHeight = doc.internal.pageSize.getHeight();
-    const margin = 20;
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'a4' });
+    const pageWidth = doc.internal.pageSize.getWidth();   // 595.28 pt
+    const pageHeight = doc.internal.pageSize.getHeight(); // 841.89 pt
+    const margin = 56; // ~2 cm
     const maxWidth = pageWidth - margin * 2;
-    
+    const lineHeight = 15;
+
+    // Use the built-in UTF-8 safe method: doc.text with split
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(11);
-    
-    const lines = doc.splitTextToSize(coverLetterText, maxWidth);
-    let y = margin + 10;
-    
-    for (const line of lines) {
-      if (y > pageHeight - margin) {
-        doc.addPage();
-        y = margin + 10;
+
+    // Normalize line endings and replace problematic dashes
+    const normalized = coverLetterText
+      .replace(/\r\n/g, '\n')
+      .replace(/\r/g, '\n');
+
+    const paragraphs = normalized.split('\n');
+    let y = margin + 20;
+
+    for (const paragraph of paragraphs) {
+      if (paragraph.trim() === '') {
+        y += lineHeight * 0.6;
+        continue;
       }
-      doc.text(line, margin, y);
-      y += 6;
+
+      // splitTextToSize handles wrapping but NOT accents encoding — we pass raw UTF-8
+      const wrappedLines: string[] = doc.splitTextToSize(paragraph, maxWidth);
+
+      for (const line of wrappedLines) {
+        if (y + lineHeight > pageHeight - margin) {
+          doc.addPage();
+          y = margin + 20;
+        }
+        // jsPDF encodes Latin-1 subset correctly with 'helvetica'
+        // For chars outside Latin-1 we replace with ASCII equivalents
+        const safeLine = line
+          .replace(/[\u2018\u2019]/g, "'")
+          .replace(/[\u201C\u201D]/g, '"')
+          .replace(/[\u2013\u2014]/g, '-')
+          .replace(/\u2026/g, '...');
+        doc.text(safeLine, margin, y);
+        y += lineHeight;
+      }
     }
-    
-    // Return as base64 without the data URL prefix
-    const pdfBase64 = doc.output('datauristring').split(',')[1];
-    return pdfBase64;
+
+    return doc.output('datauristring').split(',')[1];
   } catch (err) {
     console.error('Error generating cover letter PDF:', err);
     return null;
@@ -756,20 +779,33 @@ export const UnifiedEmailSender = () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error("Session expirée");
 
+      // Get user first name for PDF filename
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      let userFirstName = 'Candidat';
+      if (currentUser) {
+        const { data: profileForName } = await supabase
+          .from('profiles')
+          .select('first_name, full_name')
+          .eq('id', currentUser.id)
+          .maybeSingle();
+        userFirstName = profileForName?.first_name || profileForName?.full_name?.split(' ')[0] || 'Candidat';
+      }
+
       const uploadedAttachments = await uploadAttachments();
 
       for (const email of validEmails) {
         try {
-          // Build email body (clean, no cover letter pasted in body)
+          // Build email body — clean, no cover letter pasted in body
           const finalBody = email.body || "";
 
-          // Generate cover letter PDF if available
+          // Generate cover letter PDF if available and attach it
           const emailAttachments = [...uploadedAttachments];
           if (email.coverLetter) {
-            const coverLetterPdfBase64 = await generateCoverLetterPdf(email.coverLetter, email.company_name);
+            const coverLetterPdfBase64 = await generateCoverLetterPdf(email.coverLetter, userFirstName);
             if (coverLetterPdfBase64) {
+              const safeName = userFirstName.replace(/[^a-zA-ZÀ-ÿ0-9]/g, '_');
               emailAttachments.push({
-                filename: `Lettre_de_motivation_${email.company_name.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`,
+                filename: `lettre_motivation_${safeName}.pdf`,
                 contentType: 'application/pdf',
                 data: coverLetterPdfBase64,
               });

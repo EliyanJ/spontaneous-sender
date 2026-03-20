@@ -185,7 +185,16 @@ async function sendEmailViaGmail(supabase: any, emailData: any): Promise<{ succe
       }
     }
 
-    const encodedSubject = `=?UTF-8?B?${btoa(unescape(encodeURIComponent(emailData.subject)))}?=`;
+    // Robust UTF-8 subject encoding (handles em-dashes, accents, tirets)
+    const subjectBytes = new TextEncoder().encode(emailData.subject);
+    let encodedSubject = '';
+    const chunkSize = 45;
+    for (let i = 0; i < subjectBytes.length; i += chunkSize) {
+      const chunk = subjectBytes.slice(i, i + chunkSize);
+      const binary = Array.from(chunk).map((b: number) => String.fromCharCode(b)).join('');
+      encodedSubject += `=?UTF-8?B?${btoa(binary)}?= `;
+    }
+    encodedSubject = encodedSubject.trim();
     
     const attachments = emailData.attachments || [];
     let emailContent: string;

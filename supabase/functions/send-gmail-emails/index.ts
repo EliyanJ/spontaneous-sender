@@ -225,7 +225,17 @@ serve(async (req) => {
 
       for (const recipient of recipients) {
         try {
-          const encodedSubject = `=?UTF-8?B?${btoa(unescape(encodeURIComponent(subject)))}?=`;
+          // Robust UTF-8 subject encoding using TextEncoder (handles em-dashes, accents, etc.)
+          const subjectBytes = new TextEncoder().encode(subject);
+          let subjectB64 = '';
+          const chunkSize = 45; // max ~60 chars per encoded word
+          for (let i = 0; i < subjectBytes.length; i += chunkSize) {
+            const chunk = subjectBytes.slice(i, i + chunkSize);
+            const binary = Array.from(chunk).map(b => String.fromCharCode(b)).join('');
+            subjectB64 += `=?UTF-8?B?${btoa(binary)}?= `;
+          }
+          const encodedSubject = subjectB64.trim();
+
           let emailContent = [
             `To: ${recipient}`,
             `Subject: ${encodedSubject}`,
