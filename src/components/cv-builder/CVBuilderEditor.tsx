@@ -589,6 +589,9 @@ export const CVBuilderEditor = ({
     },
   });
 
+  // ── Charger les contraintes définies par l'admin pour ce template ──
+  const constraints = useTemplateConstraints(templateId);
+
   // ── Adapt cvData → TemplateCVData for export ──
   const templateCvData = adaptCVDataForTemplate(cvData);
 
