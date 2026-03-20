@@ -5,6 +5,7 @@ import {
   Camera, Loader2, Sparkles, ArrowLeft, ArrowRight,
   Upload, FileText, Database, Download, FileDown, Maximize2
 } from "lucide-react";
+import { useTemplateConstraints } from "@/hooks/useTemplateConstraints";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
