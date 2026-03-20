@@ -244,18 +244,19 @@ serve(async (req) => {
 
 RÈGLES STRICTES :
 1. Écris UNIQUEMENT l'email, sans introduction ni explication
-2. Le corps du mail fait MAXIMUM 4 LIGNES (4 phrases courtes)
+2. Le corps du mail fait entre 4 et 6 PHRASES (pas de lignes vides entre les phrases). Chaque phrase doit être substantielle et apporter de la valeur — jamais de phrase creuse ou de remplissage.
 3. Structure obligatoire du corps :
-   - Ligne 1 : Qui je suis (statut volontairement flou, spécialisation)
-   - Ligne 2 : Pourquoi cette entreprise (élément spécifique si possible)
-   - Ligne 3 : Ce que je peux apporter (appui / renfort / contribution)
-   - Ligne 4 : Ouverture + mention PJ ("Vous trouverez en pièces jointes mon CV et ma lettre de motivation.")
+   - Phrase 1 : Qui je suis — spécialisation, domaine d'expertise (statut volontairement flou, NE PAS dire "étudiant" ou "junior")
+   - Phrase 2-3 : Pourquoi cette entreprise — un élément CONCRET et SPÉCIFIQUE (projet, produit, valeur, positionnement). Si aucune info n'est disponible sur l'entreprise, déduis quelque chose d'intelligent à partir du secteur d'activité et de la ville — NE JAMAIS écrire "je n'ai pas d'informations" ou "malgré les informations limitées" ou toute phrase similaire avouant un manque d'info.
+   - Phrase 4-5 : Ce que je peux apporter concrètement (appui / renfort / contribution) en lien avec mes compétences
+   - Phrase finale : Ouverture + mention PJ ("Vous trouverez en pièces jointes mon CV et ma lettre de motivation.")
 4. Ne JAMAIS mentionner le type de contrat (CDI, CDD, stage, alternance...)
 5. Toujours mentionner CV + lettre de motivation en pièces jointes
 6. AUCUN vocabulaire de prospection commerciale (pas de "collaboration", "enjeux", "échange" isolé)
 7. Ton professionnel, humain, non-commercial
 8. Ne laisser AUCUN placeholder [XXX] - personnaliser tout
 9. L'objet doit TOUJOURS contenir "Candidature spontanée"
+10. Ne JAMAIS mentionner ou sous-entendre que tu manques d'informations sur l'entreprise. Écris toujours comme si tu connaissais l'entreprise.
 
 ${subjectTypeInstruction}
 
@@ -264,31 +265,28 @@ ${examplesBlock}${sectorContext}
 FORMAT DE SORTIE :
 Sujet: [objet selon le type choisi]
 
-[corps de l'email - 4 lignes max]`;
+[corps de l'email - 4 à 6 phrases]`;
 
         const candidatName = userProfile?.fullName || '';
+        // Truncate CV content to avoid overwhelming the model
+        const truncatedCv = cvContent ? cvContent.slice(0, 3000) : '';
+
         const userPrompt = `ENTREPRISE CIBLE:
 - Nom: ${company.nom}
 - Ville: ${company.ville || 'Non spécifiée'}
-- Secteur: ${company.libelle_ape || 'Non spécifié'}
-- Site web: ${company.website_url || 'Non disponible'}
+- Secteur (code APE): ${company.libelle_ape || 'Non spécifié'}
+${company.website_url ? `- Site web: ${company.website_url}` : ''}
 
-INFORMATIONS SCRAPÉES DU SITE:
-${companyInfo || 'Aucune information disponible - base-toi sur le nom et le secteur'}
+${companyInfo ? `INFORMATIONS TROUVÉES SUR L'ENTREPRISE:\n${companyInfo}` : `Aucune info scrapée disponible. Utilise le nom "${company.nom}", le secteur "${company.libelle_ape || ''}" et la ville "${company.ville || ''}" pour déduire le contexte de l'entreprise. Ne mentionne JAMAIS que tu n'as pas d'informations.`}
 
-${template ? `STYLE DE RÉFÉRENCE (à adapter, pas copier):
-${template}` : ''}
+${template ? `STYLE DE RÉFÉRENCE (à adapter, pas copier):\n${template}` : ''}
 
-${cvContent ? `PROFIL DU CANDIDAT:
-${cvContent}` : ''}
+${truncatedCv ? `PROFIL DU CANDIDAT (extrait du CV):\n${truncatedCv}` : ''}
 
-${userProfile ? `INFORMATIONS CANDIDAT:
-- Nom: ${userProfile.fullName || 'Non spécifié'}
-- Formation: ${userProfile.education || 'Non spécifiée'}
-- LinkedIn: ${userProfile.linkedinUrl || 'Non spécifié'}
-` : ''}
-
-NOM DU CANDIDAT POUR L'OBJET: ${candidatName || 'Non spécifié'}
+INFORMATIONS CANDIDAT:
+- Nom complet: ${candidatName || 'Non spécifié'}
+${userProfile?.education ? `- Formation: ${userProfile.education}` : ''}
+${(userProfile as any)?.targetJobs ? `- Postes recherchés: ${(userProfile as any).targetJobs}` : ''}
 
 Génère un email de candidature spontanée PERSONNALISÉ pour cette entreprise en respectant strictement les règles ci-dessus.`;
 

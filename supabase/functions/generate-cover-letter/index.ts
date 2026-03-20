@@ -182,35 +182,35 @@ serve(async (req) => {
 
 STRUCTURE OBLIGATOIRE — 3 PARAGRAPHES (pas plus, pas moins) :
 
-PARAGRAPHE 1 — Présentation :
-- Qui je suis (statut actuel)
-- Spécialisation / domaine
+PARAGRAPHE 1 — Présentation (3-4 phrases) :
+- Qui je suis : domaine d'expertise et spécialisation (NE PAS dire "étudiant" ou "junior", rester volontairement flou sur le statut)
 - Compétences principales + outils maîtrisés
-- Formation (optionnel, si pertinent)
+- Formation si pertinente
 
-PARAGRAPHE 2 — Entreprise :
-- Ce qui attire chez cette entreprise SPÉCIFIQUEMENT
-- Un projet, une valeur, un positionnement PRÉCIS (issu du scraping si disponible)
-- Alignement personnel avec l'entreprise
+PARAGRAPHE 2 — Entreprise (3-4 phrases) :
+- Ce qui attire chez cette entreprise
+- Si des infos scrapées sont disponibles : citer un projet, une valeur, un positionnement PRÉCIS
+- Si AUCUNE info scrapée n'est disponible : déduire un angle pertinent à partir du secteur d'activité (code APE), de la ville, et du nom de l'entreprise. Par exemple, parler des enjeux typiques du secteur, de la dynamique économique locale, ou du type de projets courants dans ce domaine.
+- INTERDIT : écrire "je n'ai pas d'informations", "malgré les informations limitées", "bien que n'ayant pas de détails" ou toute formulation similaire. Écris TOUJOURS comme si tu connaissais l'entreprise.
 
-PARAGRAPHE 3 — Apport :
-- Ce que je peux apporter CONCRÈTEMENT
+PARAGRAPHE 3 — Apport (2-3 phrases) :
+- Ce que je peux apporter CONCRÈTEMENT en lien avec mes compétences du CV
 - Appui / renfort / regard neuf
-- Ouverture à l'échange
+- Ouverture à l'échange + mention CV en pièce jointe
 ${templateBlock}${sectorContext}
 RÈGLES STRICTES :
-- Maximum 1 page (~350 mots)
+- Maximum 1 page (~300 mots)
 - Ton professionnel, fluide, PAS familier
 - Pas de langage commercial ou de prospection
 - Ne JAMAIS mentionner le type de contrat (CDI, CDD, stage, alternance...)
-- Personnalisation RÉELLE de l'entreprise (au moins 1 élément concret du scraping)
 - Ne laisser AUCUN placeholder [XXX]
+- Ne JAMAIS avouer un manque d'information sur l'entreprise
 - PAS de format lettre classique (pas de lieu/date/objet en en-tête)
-- Commencer directement par "Bonjour [Prénom si trouvé, sinon 'l'équipe'],"
-- Terminer par "Bien cordialement," suivi du nom
+- Commencer directement par "Bonjour,"
+- Terminer par "Bien cordialement," suivi du nom complet du candidat
 
 FORMAT :
-Bonjour [destinataire],
+Bonjour,
 
 [Paragraphe 1 - Présentation]
 
@@ -221,23 +221,23 @@ Bonjour [destinataire],
 Bien cordialement,
 [Nom du candidat]`;
 
+    // Truncate CV to avoid overwhelming the model
+    const truncatedCv = cvContent ? cvContent.slice(0, 4000) : '';
+
     const userPrompt = `ENTREPRISE CIBLE:
 - Nom: ${company.nom}
 - Ville: ${company.ville || 'Non spécifiée'}
-- Secteur: ${company.libelle_ape || 'Non spécifié'}
-- Site web: ${company.website_url || 'Non disponible'}
+- Secteur (code APE): ${company.libelle_ape || 'Non spécifié'}
+${company.website_url ? `- Site web: ${company.website_url}` : ''}
 
-INFORMATIONS SCRAPÉES DU SITE WEB:
-${companyInfo || 'Aucune information disponible - base-toi sur le nom et le secteur'}
+${companyInfo ? `INFORMATIONS TROUVÉES SUR L'ENTREPRISE:\n${companyInfo.slice(0, 6000)}` : `Aucune info scrapée. Déduis le contexte à partir du nom "${company.nom}", du secteur "${company.libelle_ape || ''}" et de la ville "${company.ville || ''}". NE MENTIONNE JAMAIS que tu n'as pas d'informations.`}
 
-${cvContent ? `CV / PROFIL DU CANDIDAT:
-${cvContent}` : ''}
+${truncatedCv ? `CV / PROFIL DU CANDIDAT:\n${truncatedCv}` : ''}
 
-${userProfile ? `INFORMATIONS CANDIDAT:
-- Nom complet: ${(userProfile as any).fullName || 'Non spécifié'}
-- Formation: ${(userProfile as any).education || 'Non spécifiée'}
-- LinkedIn: ${(userProfile as any).linkedinUrl || 'Non spécifié'}
-` : ''}
+INFORMATIONS CANDIDAT:
+- Nom complet: ${(userProfile as any)?.fullName || 'Non spécifié'}
+${(userProfile as any)?.education ? `- Formation: ${(userProfile as any).education}` : ''}
+${(userProfile as any)?.targetJobs ? `- Postes recherchés: ${(userProfile as any).targetJobs}` : ''}
 
 Génère une lettre de motivation PERSONNALISÉE pour cette entreprise en respectant STRICTEMENT la structure 3 paragraphes et les règles ci-dessus.`;
 
