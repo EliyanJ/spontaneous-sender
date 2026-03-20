@@ -260,6 +260,14 @@ serve(async (req) => {
           }
         }
 
+        // MODIFICATION 3 — Log scraping result
+        console.log(`Scraping ${company.nom}: ${companyInfo ? companyInfo.length + ' chars trouvés' : 'RIEN TROUVÉ'}`);
+
+        // Low-content warning injected in prompt if scraping returned little data
+        const lowContentWarning = (!companyInfo || companyInfo.length < 200)
+          ? `\nATTENTION : très peu d'informations ont été trouvées sur le site de cette entreprise. Ne comble PAS ce manque par des suppositions. Base la ligne 2 du corps uniquement sur le secteur d'activité (libellé APE fourni) et la localisation. Mieux vaut 1 phrase factuelle que 3 phrases de remplissage.\n`
+          : '';
+
         // Step 2: Generate personalized email using AI
         const systemPrompt = `Tu es un expert en rédaction d'emails de candidature spontanée. Tu appliques une stratégie précise pour maximiser le taux d'ouverture et de réponse.
 
@@ -288,6 +296,27 @@ RÈGLES ANTI-HALLUCINATION (CRITIQUES) :
 - Si les informations scrapées sont absentes ou insuffisantes, reste FACTUEL : mentionne uniquement le nom, la ville et le secteur APE. Ne comble PAS le manque d'information par des suppositions ou des formulations vagues type "votre approche innovante".
 - Le nom du candidat est fourni dans les données. Utilise-le TEL QUEL. Ne JAMAIS écrire "[Votre Nom]", "[Nom]", "[Nom du candidat]" ou tout autre placeholder.
 - Si une donnée est marquée "Non spécifié", ne la mentionne pas du tout plutôt que d'écrire "Non spécifié" dans l'email.
+${lowContentWarning}
+APPRENTISSAGE PAR L'EXEMPLE — Étudie ces exemples pour comprendre le niveau de personnalisation attendu :
+
+BON EXEMPLE D'EMAIL (entreprise e-commerce, candidat marketing digital) :
+Sujet: Candidature spontanée – Marketing digital – Eliyan Jacquet
+
+Spécialisé en marketing digital et SEO, je suis à la recherche d'un poste pour mettre mes compétences au service d'un e-commerçant qui croît vite.
+J'ai découvert votre logique de collections saisonnières renouvelées chaque semaine — c'est exactement le type d'environnement où l'optimisation du trafic organique et les campagnes ciblées font une vraie différence.
+Mon expérience en pilotage de projets digitaux pourrait contribuer à renforcer votre visibilité et accompagner vos temps forts commerciaux.
+Vous trouverez en pièces jointes mon CV et ma lettre de motivation.
+
+POURQUOI C'EST BON :
+- Ligne 2 cite un fait réel (collections saisonnières), pas "votre approche innovante"
+- Ligne 3 fait un lien concret compétence/besoin (SEO → trafic pour e-commerçant)
+- Aucune compétence inventée, aucun placeholder, 4 lignes exactement
+
+CE QU'IL NE FAUT JAMAIS ÉCRIRE :
+- "votre approche innovante" / "votre positionnement unique" — formules vides
+- "je serais ravi de contribuer à vos enjeux" — langue de prospection
+- "[Nom]", "[Entreprise]", "[Secteur]" — placeholders interdits
+- Plus de 4 lignes dans le corps
 
 FORMAT DE SORTIE :
 Sujet: [objet selon le type choisi]

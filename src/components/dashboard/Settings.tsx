@@ -393,7 +393,7 @@ export const Settings = () => {
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between mb-2">
                     <p className="text-sm font-medium text-foreground">Complétude du profil</p>
-                    <span className={`text-sm font-bold ${completeness >= 80 ? 'text-green-500' : completeness >= 50 ? 'text-yellow-500' : 'text-destructive'}`}>
+                    <span className={`text-sm font-bold ${completeness >= 80 ? 'text-primary' : completeness >= 50 ? 'text-yellow-500' : 'text-destructive'}`}>
                       {completeness}%
                     </span>
                   </div>
@@ -404,7 +404,7 @@ export const Settings = () => {
                     </p>
                   )}
                   {completeness >= 80 && (
-                    <p className="text-xs text-green-600 dark:text-green-400 mt-2">
+                    <p className="text-xs text-primary mt-2">
                       ✓ Excellent ! L'IA dispose de tout ce qu'il faut pour personnaliser vos candidatures.
                     </p>
                   )}
@@ -618,9 +618,25 @@ export const Settings = () => {
                     </p>
                   </div>
 
-                  {/* CV content */}
+                  {/* CV content — read-only preview + editable */}
+                  {candidate.cv_content && (
+                    <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 space-y-3">
+                      <div className="flex items-center gap-2">
+                        <FileText className="h-4 w-4 text-primary" />
+                        <p className="text-sm font-medium text-foreground">Ce que l'IA a extrait de votre CV</p>
+                      </div>
+                      <div className="max-h-48 overflow-y-auto bg-background rounded-md border border-border p-3 text-xs text-muted-foreground leading-relaxed whitespace-pre-wrap font-mono">
+                        {candidate.cv_content}
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        👆 C'est exactement ce que l'IA lit pour personnaliser vos candidatures. Si quelque chose est incorrect, corrigez-le ci-dessous.
+                      </p>
+                    </div>
+                  )}
                   <div>
-                    <Label htmlFor="cv_content" className="text-muted-foreground">Contenu CV extrait</Label>
+                    <Label htmlFor="cv_content" className="text-muted-foreground">
+                      {candidate.cv_content ? "Modifier le contenu extrait" : "Contenu CV extrait"}
+                    </Label>
                     <Textarea
                       id="cv_content"
                       value={candidate.cv_content}
@@ -655,7 +671,7 @@ export const Settings = () => {
                 <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
                   <div className="flex items-center gap-3">
                     {subscription.plan_type === 'plus' ? (
-                      <Crown className="h-6 w-6 text-yellow-500" />
+                      <Crown className="h-6 w-6 text-primary" />
                     ) : subscription.plan_type === 'simple' ? (
                       <Zap className="h-6 w-6 text-primary" />
                     ) : (

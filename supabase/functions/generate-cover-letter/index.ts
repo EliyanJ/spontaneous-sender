@@ -132,6 +132,14 @@ serve(async (req) => {
       }
     }
 
+    // MODIFICATION 3 — Log scraping result
+    console.log(`Scraping ${company.nom}: ${companyInfo ? companyInfo.length + ' chars trouvés' : 'RIEN TROUVÉ'}`);
+
+    // Low-content warning for the prompt
+    const lowContentWarning = (!companyInfo || companyInfo.length < 200)
+      ? `\nATTENTION : très peu d'informations ont été trouvées sur le site de cette entreprise. Ne comble PAS ce manque par des suppositions. Base le paragraphe VOUS uniquement sur le secteur d'activité (libellé APE fourni) et la localisation. Mieux vaut 2 phrases factuelles que 5 phrases de remplissage.\n`
+      : '';
+
     // --- Récupération du template de lettre ---
     let templateBlock = '';
     try {
@@ -211,45 +219,75 @@ RÈGLES ANTI-HALLUCINATION (CRITIQUES) :
 - Si les informations scrapées sont absentes : base le paragraphe VOUS sur le secteur d'activité (libellé APE) et la localisation. PAS sur des interprétations du nom.
 - Le nom complet du candidat est fourni. Utilise-le EXACTEMENT. Ne JAMAIS laisser de placeholder [Nom], [Prénom], [Nom du candidat]. Si le nom n'est pas fourni, utilise simplement "Bien cordialement" sans nom plutôt qu'un placeholder.
 - Si une donnée est "Non spécifié" ou absente, ne la mentionne simplement pas.
+${lowContentWarning}
+APPRENTISSAGE PAR L'EXEMPLE — Étudie cet exemple pour comprendre ce qui fait une bonne lettre :
 
+EXEMPLE DE BONNE LETTRE (entreprise : Bergamotte, fleuriste en ligne, candidat en marketing digital) :
+
+"Bonjour l'équipe,
+
+Issu d'un parcours en communication RH et corporate en agence, je me spécialise aujourd'hui en marketing digital avec une appétence forte pour la gestion de projet web, le référencement et l'automatisation.
+
+En découvrant Bergamotte, j'ai été marqué par votre capacité à conjuguer e-commerce et engagement responsable — notamment votre certification B Corp et le choix de travailler en circuit court avec des producteurs certifiés MPS. Votre logique de collections saisonnières renouvelées chaque semaine demande une communication digitale réactive et créative, c'est exactement ce type de défi qui me motive.
+
+Mon expérience en pilotage de projets digitaux et en optimisation SEO pourrait contribuer à renforcer votre visibilité en ligne et accompagner vos temps forts commerciaux. Je serais ravi d'en échanger avec vous. Mon CV est en pièce jointe.
+
+Bien cordialement,
+
+Eliyan Jacquet"
+
+POURQUOI CET EXEMPLE EST BON — Applique ces principes à chaque lettre :
+
+1. Le paragraphe JE est court (2 phrases). Il dit l'essentiel sans lister tous les outils. Une lettre n'est pas un CV, elle donne envie de lire le CV.
+
+2. Le paragraphe VOUS cite des FAITS RÉELS trouvés dans les informations scrapées : la certification B Corp, le circuit court, les producteurs MPS, les collections saisonnières. Il ne dit JAMAIS "votre positionnement dans le secteur" ou "votre approche innovante" — ces phrases ne veulent rien dire et montrent qu'on n'a pas fait de recherche.
+
+3. Le paragraphe NOUS fait un LIEN CONCRET entre une compétence du candidat (SEO, pilotage digital) et un besoin réel de l'entreprise (visibilité en ligne, temps forts commerciaux d'un e-commerce). Ce n'est pas "je suis convaincu de pouvoir apporter une contribution significative" — ça aussi ça ne veut rien dire.
+
+4. La lettre fait ~150 mots, pas 300. Un recruteur lit 50 candidatures par jour.
+
+5. Aucune information n'est inventée. Si les données scrapées ne donnent pas assez d'infos concrètes sur l'entreprise, mieux vaut un paragraphe VOUS court et honnête basé sur le secteur APE que 5 lignes de suppositions.
+
+CE QU'IL NE FAUT JAMAIS FAIRE :
+- Lister plus de 3-4 compétences ou outils dans le JE
+- Écrire "votre positionnement unique", "votre approche innovante", "j'ai été particulièrement intéressé par" sans info concrète derrière
+- Deviner ce que fait l'entreprise à partir de son nom
+- Écrire plus de 200 mots
+- Répéter ses qualités dans le paragraphe NOUS au lieu de faire un lien avec l'entreprise
+- Laisser des placeholders [Nom], [Prénom], [Votre Nom]
+${templateBlock}${sectorContext}
 STRUCTURE OBLIGATOIRE — 3 PARAGRAPHES (pas plus, pas moins) :
 
-PARAGRAPHE 1 — Présentation :
-- Qui je suis (statut actuel)
-- Spécialisation / domaine
-- Compétences principales + outils maîtrisés
-- Formation (optionnel, si pertinent)
+PARAGRAPHE 1 [JE] — Présentation :
+- Qui je suis (statut actuel), spécialisation/domaine, compétences principales
+- Maximum 2 phrases. Ne pas lister tous les outils.
 
-PARAGRAPHE 2 — Entreprise :
-- Ce qui attire chez cette entreprise SPÉCIFIQUEMENT
-- Un projet, une valeur, un positionnement PRÉCIS (issu du scraping si disponible)
+PARAGRAPHE 2 [VOUS] — Entreprise :
+- Citer AU MOINS 1 élément CONCRET issu des données scrapées (si disponibles)
 - Si pas de scraping : basé honnêtement sur le secteur APE et la ville
-- Alignement personnel avec l'entreprise
+- INTERDICTION : "votre approche innovante", "votre positionnement unique", interprétations du nom
 
-PARAGRAPHE 3 — Apport :
-- Ce que je peux apporter CONCRÈTEMENT (compétences issues du CV uniquement)
-- Appui / renfort / regard neuf
-- Ouverture à l'échange
-${templateBlock}${sectorContext}
+PARAGRAPHE 3 [NOUS] — Apport :
+- Lien CONCRET entre une compétence du candidat et un besoin de l'entreprise
+- Ouverture à l'échange + mention CV en pièce jointe
+- INTERDICTION : "je suis convaincu de pouvoir apporter une contribution significative"
+
 RÈGLES STRICTES :
-- Maximum 1 page (~350 mots)
+- Maximum 200 mots — un recruteur lit 50 candidatures par jour
 - Ton professionnel, fluide, PAS familier
-- Pas de langage commercial ou de prospection
-- Ne JAMAIS mentionner le type de contrat (CDI, CDD, stage, alternance...)
-- Personnalisation RÉELLE de l'entreprise (au moins 1 élément concret du scraping, ou secteur APE si pas de scraping)
+- Ne JAMAIS mentionner le type de contrat
 - Ne laisser AUCUN placeholder [XXX]
-- PAS de format lettre classique (pas de lieu/date/objet en en-tête)
-- Commencer directement par "Bonjour [Prénom si trouvé, sinon 'l'équipe'],"
+- Commencer par "Bonjour [Prénom si trouvé, sinon 'l'équipe'],"
 - Terminer par "Bien cordialement," suivi du nom complet du candidat
 
 FORMAT :
 Bonjour [destinataire],
 
-[Paragraphe 1 - Présentation]
+[Paragraphe 1 - JE]
 
-[Paragraphe 2 - Entreprise]
+[Paragraphe 2 - VOUS]
 
-[Paragraphe 3 - Apport]
+[Paragraphe 3 - NOUS]
 
 Bien cordialement,
 [Nom complet du candidat]`;
