@@ -372,13 +372,9 @@ Génère un email de candidature spontanée PERSONNALISÉ pour cette entreprise 
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            model: 'google/gemini-2.5-flash',
+            model: 'google/gemini-2.5-pro',
             messages: [
               { role: 'system', content: systemPrompt },
-              { role: 'user', content: userPrompt }
-            ],
-            temperature: 0.7,
-            max_tokens: 1500,
           }),
         });
 
