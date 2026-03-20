@@ -1044,59 +1044,39 @@ export const UnifiedEmailSender = () => {
             </div>
           </div>
 
-          {/* AI Options */}
-          {isPremium ? (
-            <div className="bg-card border border-border rounded-2xl p-5 relative overflow-hidden">
-              <div className="absolute -top-10 -right-10 w-32 h-32 bg-indigo-600/20 rounded-full blur-3xl pointer-events-none" />
-              <div className="flex justify-between items-center mb-5 relative z-10">
-                <h3 className="font-semibold text-foreground flex items-center gap-2"><Sparkles className="h-4 w-4 text-purple-500" />Options IA</h3>
-                <span className="text-[10px] font-bold bg-gradient-to-r from-amber-200 to-yellow-400 text-black px-2 py-0.5 rounded-full uppercase tracking-wider">Premium</span>
+          {/* AI Options — Désactivé temporairement, refonte en cours */}
+          <div className="bg-muted/30 border border-dashed border-muted-foreground/20 rounded-2xl p-5 relative overflow-hidden opacity-60 pointer-events-none select-none">
+            <div className="flex justify-between items-center mb-5">
+              <h3 className="font-semibold text-muted-foreground flex items-center gap-2">
+                <Sparkles className="h-4 w-4" />Options IA
+              </h3>
+              <span className="text-[10px] font-bold bg-muted text-muted-foreground border border-border px-2 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-1">
+                <Clock className="h-2.5 w-2.5" />Bientôt disponible
+              </span>
+            </div>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center text-muted-foreground"><Mail className="h-4 w-4" /></div>
+                  <div>
+                    <div className="text-sm font-semibold text-muted-foreground">Emails personnalisés</div>
+                    <div className="text-xs text-muted-foreground/60">En cours de refonte</div>
+                  </div>
+                </div>
+                <Switch checked={false} disabled />
               </div>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-indigo-500/20 flex items-center justify-center text-indigo-500"><Mail className="h-4 w-4" /></div>
-                    <div>
-                      <div className="text-sm font-semibold text-foreground">Emails personnalisés</div>
-                      <div className="text-xs text-muted-foreground">Génération unique par entreprise</div>
-                    </div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center text-muted-foreground"><FileText className="h-4 w-4" /></div>
+                  <div>
+                    <div className="text-sm font-semibold text-muted-foreground">Lettres de motivation</div>
+                    <div className="text-xs text-muted-foreground/60">En cours de refonte</div>
                   </div>
-                  <Switch checked={enableAIEmails} onCheckedChange={setEnableAIEmails} />
                 </div>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center text-purple-500"><FileText className="h-4 w-4" /></div>
-                    <div>
-                      <div className="text-sm font-semibold text-foreground">Lettres de motivation</div>
-                      <div className="text-xs text-muted-foreground">PDF généré et attaché</div>
-                    </div>
-                  </div>
-                  <Switch checked={enableCoverLetter} onCheckedChange={setEnableCoverLetter} />
-                </div>
-                <div className="h-px bg-border my-2" />
-                {enableAIEmails && (
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-tight mb-1.5 block">Approche</Label>
-                      <Select value={selectedSubjectType} onValueChange={setSelectedSubjectType}>
-                        <SelectTrigger className="text-xs"><SelectValue /></SelectTrigger>
-                        <SelectContent>{SUBJECT_TYPES.map(t => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}</SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-tight mb-1.5 block">Ton</Label>
-                      <Select value={selectedTone} onValueChange={setSelectedTone}>
-                        <SelectTrigger className="text-xs"><SelectValue /></SelectTrigger>
-                        <SelectContent>{TONE_OPTIONS.map(t => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}</SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                )}
+                <Switch checked={false} disabled />
               </div>
             </div>
-          ) : (
-            <UpgradeBanner variant="compact" title="Personnalisation IA" description="Passez au plan Plus pour générer des emails personnalisés avec l'IA" features={["Emails adaptés à chaque entreprise","Lettres de motivation générées","Scraping du site web pour personnalisation"]} />
-          )}
+          </div>
 
           {/* Generate Button */}
           <div className="pt-2">
