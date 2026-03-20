@@ -738,7 +738,7 @@ serve(async (req) => {
     };
 
     // ===== SAVE ANALYSIS TO cv_analyses for admin review =====
-    if (userId) {
+    if (userId && !skip_save) {
       try {
         const { data: savedAnalysis } = await supabase.from('cv_analyses').insert({
           user_id: userId,
