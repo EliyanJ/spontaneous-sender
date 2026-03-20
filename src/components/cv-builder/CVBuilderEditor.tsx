@@ -391,70 +391,10 @@ const StepExperience = ({ cvData, onChange, maxItems, maxBullets, maxBulletChars
   );
 };
 
-  return (
-    <div className="space-y-6">
-      {cvData.experiences.map((exp, i) => (
-        <AccordionSection key={i} title={exp.role || `Expérience ${i + 1}`} number={i + 1}>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-            <div className="col-span-1 sm:col-span-2 flex flex-col gap-2">
-              <label className="text-sm font-bold text-slate-700">Intitulé du poste <span className="text-red-500">*</span></label>
-              <div className="relative">
-                <Briefcase className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                <StyledInput className="pl-11" placeholder="Ex: Chef de Projet Senior" value={exp.role} onChange={e => updateExp(i, "role", e.target.value)} />
-              </div>
-            </div>
-            <div className="flex flex-col gap-2">
-              <label className="text-sm font-bold text-slate-700">Entreprise <span className="text-red-500">*</span></label>
-              <StyledInput placeholder="Ex: Google Inc." value={exp.company} onChange={e => updateExp(i, "company", e.target.value)} />
-            </div>
-            <div className="flex flex-col gap-2">
-              <label className="text-sm font-bold text-slate-700">Dates</label>
-              <StyledInput placeholder="Jan 2022 – Présent" value={exp.dates} onChange={e => updateExp(i, "dates", e.target.value)} />
-            </div>
-            <div className="col-span-1 sm:col-span-2">
-              <label className="text-sm font-bold text-slate-700 block mb-3">Réalisations / Missions</label>
-              <div className="space-y-2">
-                {exp.bullets.map((bullet, bi) => (
-                  <div key={bi} className="flex items-center gap-2">
-                    <span className="text-slate-300 font-bold text-base shrink-0">•</span>
-                    <StyledInput placeholder="Ex: Réduction des coûts de 20% en 6 mois" value={bullet} onChange={e => updateBullet(i, bi, e.target.value)} />
-                    {exp.bullets.length > 1 && (
-                      <button onClick={() => removeBullet(i, bi)} className="shrink-0 w-8 h-8 rounded-full hover:bg-red-50 flex items-center justify-center text-red-400 transition-colors">
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
-                    )}
-                  </div>
-                ))}
-              </div>
-              <button
-                onClick={() => addBullet(i)}
-                className="mt-3 flex items-center gap-2 text-sm text-[hsl(var(--primary))] hover:underline font-medium"
-              >
-                <Plus className="h-3.5 w-3.5" /> Ajouter une réalisation
-              </button>
-            </div>
-          </div>
-          {cvData.experiences.length > 1 && (
-            <div className="flex justify-end mt-4 pt-4 border-t border-gray-100">
-              <button onClick={() => removeExp(i)} className="flex items-center gap-1.5 text-xs text-red-500 hover:text-red-700 font-medium">
-                <Trash2 className="h-3.5 w-3.5" /> Supprimer cette expérience
-              </button>
-            </div>
-          )}
-        </AccordionSection>
-      ))}
-      <button
-        onClick={addExp}
-        className="w-full py-4 border-2 border-dashed border-gray-300 rounded-2xl text-slate-500 hover:border-[hsl(var(--primary))] hover:text-[hsl(var(--primary))] transition-all font-medium flex items-center justify-center gap-2"
-      >
-        <Plus className="h-5 w-5" /> Ajouter une expérience
-      </button>
-    </div>
-  );
-};
-
 // ─── Step: Education ──────────────────────────────────────────────────────────
-const StepEducation = ({ cvData, onChange }: { cvData: CVData; onChange: (d: CVData) => void }) => {
+const StepEducation = ({ cvData, onChange, maxItems }: {
+  cvData: CVData; onChange: (d: CVData) => void; maxItems?: number;
+}) => {
   const updateEdu = (i: number, field: string, val: string) => {
     const edus = [...cvData.education];
     edus[i] = { ...edus[i], [field]: val };
