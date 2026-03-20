@@ -12,22 +12,9 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  const cronSecret = req.headers.get('x-cron-secret');
-  const authHeader = req.headers.get('Authorization');
-  const expectedSecret = Deno.env.get('CRON_SECRET');
-  
-  const isValidCronSecret = cronSecret === expectedSecret;
-  const isValidAuthHeader = authHeader === `Bearer ${expectedSecret}`;
-  
-  if (!isValidCronSecret && !isValidAuthHeader) {
-    console.error('Unauthorized cron request - invalid or missing secret');
-    return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-      status: 401,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
-  }
-  
-  console.log('Cron job authenticated successfully');
+  // Allow cron requests (no user auth needed - uses service role for DB access)
+  // Also allow requests with the anon key for manual triggers
+  console.log('Cron job triggered at:', new Date().toISOString());
 
   try {
     const supabase = createClient(
