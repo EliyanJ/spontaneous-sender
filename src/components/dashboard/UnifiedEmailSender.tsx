@@ -75,6 +75,8 @@ interface Company {
   ville: string | null;
   libelle_ape: string | null;
   siren: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  company_insights?: any;
 }
 
 interface GeneratedEmail {
@@ -243,7 +245,7 @@ export const UnifiedEmailSender = () => {
 
     const { data } = await supabase
       .from("companies")
-      .select("id, nom, selected_email, website_url, ville, libelle_ape, siren")
+      .select("id, nom, selected_email, website_url, ville, libelle_ape, siren, company_insights")
       .not("selected_email", "is", null)
       .neq("selected_email", "NOT_FOUND");
 
@@ -542,6 +544,27 @@ export const UnifiedEmailSender = () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error("Session expirée");
 
+      // Fetch full user profile once for all AI calls
+      const { data: { user } } = await supabase.auth.getUser();
+      let profileData = null;
+      if (user) {
+        const { data: pd } = await supabase
+          .from("profiles")
+          .select("full_name, education, linkedin_url, cv_content, target_sectors, target_jobs, professional_interests")
+          .eq("id", user.id)
+          .maybeSingle();
+        profileData = pd;
+      }
+      const userProfile = {
+        fullName: profileData?.full_name || null,
+        education: profileData?.education || null,
+        linkedinUrl: profileData?.linkedin_url || null,
+        cvContent: profileData?.cv_content || null,
+        targetSectors: profileData?.target_sectors || null,
+        targetJobs: profileData?.target_jobs || null,
+        professionalInterests: profileData?.professional_interests || null,
+      };
+
       const allResults: GeneratedEmail[] = [];
 
       if (enableAIEmails) {
@@ -554,7 +577,14 @@ export const UnifiedEmailSender = () => {
           setCurrentStep(`Lot ${Math.floor(i / batchSize) + 1}/${Math.ceil(companiesToGenerate.length / batchSize)}`);
 
           const { data, error } = await supabase.functions.invoke("generate-personalized-emails", {
-            body: { companies: batch, template: template || null, cvContent: cvContent || null, subjectType: selectedSubjectType, tone: selectedTone },
+            body: {
+              companies: batch,
+              template: template || null,
+              cvContent: profileData?.cv_content || cvContent || null,
+              subjectType: selectedSubjectType,
+              tone: selectedTone,
+              userProfile,
+            },
             headers: { Authorization: `Bearer ${session.access_token}` }
           });
 
@@ -586,7 +616,14 @@ export const UnifiedEmailSender = () => {
             setCurrentStep(`Emails manuels ${i + 1}-${Math.min(i + batchSize, manualCompanyObjects.length)}`);
 
             const { data, error } = await supabase.functions.invoke("generate-personalized-emails", {
-              body: { companies: batch, template: template || null, cvContent: cvContent || null, subjectType: selectedSubjectType, tone: selectedTone },
+              body: {
+                companies: batch,
+                template: template || null,
+                cvContent: profileData?.cv_content || cvContent || null,
+                subjectType: selectedSubjectType,
+                tone: selectedTone,
+                userProfile,
+              },
               headers: { Authorization: `Bearer ${session.access_token}` }
             });
 
@@ -627,7 +664,11 @@ export const UnifiedEmailSender = () => {
 
           try {
             const { data, error } = await supabase.functions.invoke("generate-cover-letter", {
-              body: { company, cvContent: cvContent || null },
+              body: {
+                company,
+                cvContent: profileData?.cv_content || cvContent || null,
+                userProfile,
+              },
               headers: { Authorization: `Bearer ${session.access_token}` }
             });
 

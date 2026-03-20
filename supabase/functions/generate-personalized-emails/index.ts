@@ -231,12 +231,33 @@ serve(async (req) => {
       try {
         console.log(`Processing: ${company.nom}`);
 
-        // Step 1: Scrape company website if available
+        // Step 1: Use cached scraping if recent (< 7 days), else scrape in real-time
         let companyInfo = '';
-        if (company.website_url) {
+        const existingInsights = company.company_insights;
+        if (existingInsights?.full_content && existingInsights?.scraped_at) {
+          const scrapedDate = new Date(existingInsights.scraped_at);
+          const daysSince = (Date.now() - scrapedDate.getTime()) / (1000 * 60 * 60 * 24);
+          if (daysSince < 7) {
+            companyInfo = existingInsights.full_content;
+            console.log(`Scraping cache hit: ${company.nom} (scrapé il y a ${Math.round(daysSince)} jours)`);
+          }
+        }
+
+        if (!companyInfo && company.website_url) {
           const mainContent = await scrapeWebsite(company.website_url);
           const additionalContent = await getAdditionalContent(company.website_url);
           companyInfo = (mainContent + additionalContent).slice(0, 10000);
+
+          // Save for future use
+          if (companyInfo) {
+            await supabaseClient.from('companies').update({
+              company_insights: {
+                scraped_at: new Date().toISOString(),
+                content_preview: companyInfo.slice(0, 1000),
+                full_content: companyInfo
+              }
+            }).eq('id', company.id);
+          }
         }
 
         // Step 2: Generate personalized email using AI
@@ -261,6 +282,13 @@ ${subjectTypeInstruction}
 
 ${toneInstruction}
 ${examplesBlock}${sectorContext}
+RÈGLES ANTI-HALLUCINATION (CRITIQUES) :
+- Ne JAMAIS inventer de compétences. Utilise UNIQUEMENT les compétences mentionnées dans le CV du candidat. Si le CV mentionne du marketing, ne parle PAS de développement web.
+- Ne JAMAIS interpréter ou deviner le sens du nom de l'entreprise. Le nom "CHOOSE" ne veut pas dire que l'entreprise aide à "choisir".
+- Si les informations scrapées sont absentes ou insuffisantes, reste FACTUEL : mentionne uniquement le nom, la ville et le secteur APE. Ne comble PAS le manque d'information par des suppositions ou des formulations vagues type "votre approche innovante".
+- Le nom du candidat est fourni dans les données. Utilise-le TEL QUEL. Ne JAMAIS écrire "[Votre Nom]", "[Nom]", "[Nom du candidat]" ou tout autre placeholder.
+- Si une donnée est marquée "Non spécifié", ne la mentionne pas du tout plutôt que d'écrire "Non spécifié" dans l'email.
+
 FORMAT DE SORTIE :
 Sujet: [objet selon le type choisi]
 
@@ -274,7 +302,7 @@ Sujet: [objet selon le type choisi]
 - Site web: ${company.website_url || 'Non disponible'}
 
 INFORMATIONS SCRAPÉES DU SITE:
-${companyInfo || 'Aucune information disponible - base-toi sur le nom et le secteur'}
+${companyInfo || 'Aucune information scrapée disponible. NE PAS inventer d informations sur cette entreprise. Utilise uniquement le nom, la ville et le secteur APE fournis ci-dessus.'}
 
 ${template ? `STYLE DE RÉFÉRENCE (à adapter, pas copier):
 ${template}` : ''}
@@ -343,18 +371,7 @@ Génère un email de candidature spontanée PERSONNALISÉ pour cette entreprise 
           body = generatedContent;
         }
 
-        // Store company insights for future use
-        if (companyInfo) {
-          await supabaseClient
-            .from('companies')
-            .update({ 
-              company_insights: { 
-                scraped_at: new Date().toISOString(),
-                content_preview: companyInfo.slice(0, 1000)
-              }
-            })
-            .eq('id', company.id);
-        }
+        // (company_insights already saved during scraping cache logic above)
 
         results.push({
           company_id: company.id,

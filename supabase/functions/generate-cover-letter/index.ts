@@ -87,11 +87,21 @@ serve(async (req) => {
 
     console.log(`Generating cover letter for: ${company.nom}`);
 
-    // Scrape company website if available
+    // Scrape company website — use cache if recent (< 7 days)
     let companyInfo = '';
-    if (company.website_url) {
+    const existingInsights = company.company_insights;
+    if (existingInsights?.full_content && existingInsights?.scraped_at) {
+      const scrapedDate = new Date(existingInsights.scraped_at);
+      const daysSince = (Date.now() - scrapedDate.getTime()) / (1000 * 60 * 60 * 24);
+      if (daysSince < 7) {
+        companyInfo = existingInsights.full_content;
+        console.log(`Scraping cache hit: ${company.nom} (scrapé il y a ${Math.round(daysSince)} jours)`);
+      }
+    }
+
+    if (!companyInfo && company.website_url) {
       companyInfo = await scrapeWebsite(company.website_url);
-      
+
       // Try additional pages
       const additionalPages = ['/about', '/a-propos', '/entreprise', '/company', '/rse', '/valeurs'];
       for (const page of additionalPages.slice(0, 2)) {
@@ -104,6 +114,21 @@ serve(async (req) => {
         } catch {
           // Ignore errors
         }
+      }
+
+      // Save for future use
+      if (companyInfo) {
+        const supabaseForUpdate = createClient(
+          Deno.env.get('SUPABASE_URL') ?? '',
+          Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+        );
+        await supabaseForUpdate.from('companies').update({
+          company_insights: {
+            scraped_at: new Date().toISOString(),
+            content_preview: companyInfo.slice(0, 1000),
+            full_content: companyInfo
+          }
+        }).eq('id', company.id);
       }
     }
 
@@ -180,6 +205,13 @@ serve(async (req) => {
 
     const systemPrompt = `Tu es un expert en rédaction de lettres de motivation pour candidatures spontanées en français.
 
+RÈGLES ANTI-HALLUCINATION (CRITIQUES) :
+- Utilise EXCLUSIVEMENT les compétences et l'expérience mentionnées dans le CV du candidat. Si le CV parle de marketing et communication, la lettre DOIT parler de marketing et communication, PAS de développement web ou d'autre chose.
+- Ne JAMAIS interpréter le nom de l'entreprise. Si tu n'as pas d'informations concrètes sur l'entreprise, écris un paragraphe court et honnête sur le secteur d'activité (libellé APE) plutôt qu'un paragraphe de suppositions.
+- Si les informations scrapées sont absentes : base le paragraphe VOUS sur le secteur d'activité (libellé APE) et la localisation. PAS sur des interprétations du nom.
+- Le nom complet du candidat est fourni. Utilise-le EXACTEMENT. Ne JAMAIS laisser de placeholder [Nom], [Prénom], [Nom du candidat]. Si le nom n'est pas fourni, utilise simplement "Bien cordialement" sans nom plutôt qu'un placeholder.
+- Si une donnée est "Non spécifié" ou absente, ne la mentionne simplement pas.
+
 STRUCTURE OBLIGATOIRE — 3 PARAGRAPHES (pas plus, pas moins) :
 
 PARAGRAPHE 1 — Présentation :
@@ -191,10 +223,11 @@ PARAGRAPHE 1 — Présentation :
 PARAGRAPHE 2 — Entreprise :
 - Ce qui attire chez cette entreprise SPÉCIFIQUEMENT
 - Un projet, une valeur, un positionnement PRÉCIS (issu du scraping si disponible)
+- Si pas de scraping : basé honnêtement sur le secteur APE et la ville
 - Alignement personnel avec l'entreprise
 
 PARAGRAPHE 3 — Apport :
-- Ce que je peux apporter CONCRÈTEMENT
+- Ce que je peux apporter CONCRÈTEMENT (compétences issues du CV uniquement)
 - Appui / renfort / regard neuf
 - Ouverture à l'échange
 ${templateBlock}${sectorContext}
@@ -203,11 +236,11 @@ RÈGLES STRICTES :
 - Ton professionnel, fluide, PAS familier
 - Pas de langage commercial ou de prospection
 - Ne JAMAIS mentionner le type de contrat (CDI, CDD, stage, alternance...)
-- Personnalisation RÉELLE de l'entreprise (au moins 1 élément concret du scraping)
+- Personnalisation RÉELLE de l'entreprise (au moins 1 élément concret du scraping, ou secteur APE si pas de scraping)
 - Ne laisser AUCUN placeholder [XXX]
 - PAS de format lettre classique (pas de lieu/date/objet en en-tête)
 - Commencer directement par "Bonjour [Prénom si trouvé, sinon 'l'équipe'],"
-- Terminer par "Bien cordialement," suivi du nom
+- Terminer par "Bien cordialement," suivi du nom complet du candidat
 
 FORMAT :
 Bonjour [destinataire],
@@ -219,7 +252,7 @@ Bonjour [destinataire],
 [Paragraphe 3 - Apport]
 
 Bien cordialement,
-[Nom du candidat]`;
+[Nom complet du candidat]`;
 
     const userPrompt = `ENTREPRISE CIBLE:
 - Nom: ${company.nom}
@@ -228,7 +261,7 @@ Bien cordialement,
 - Site web: ${company.website_url || 'Non disponible'}
 
 INFORMATIONS SCRAPÉES DU SITE WEB:
-${companyInfo || 'Aucune information disponible - base-toi sur le nom et le secteur'}
+${companyInfo || 'Aucune information scrapée disponible. NE PAS inventer d informations sur cette entreprise. Utilise uniquement le nom, la ville et le secteur APE fournis ci-dessus.'}
 
 ${cvContent ? `CV / PROFIL DU CANDIDAT:
 ${cvContent}` : ''}
