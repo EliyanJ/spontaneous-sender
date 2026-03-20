@@ -393,7 +393,7 @@ export const Settings = () => {
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between mb-2">
                     <p className="text-sm font-medium text-foreground">Complétude du profil</p>
-                    <span className={`text-sm font-bold ${completeness >= 80 ? 'text-green-500' : completeness >= 50 ? 'text-yellow-500' : 'text-destructive'}`}>
+                    <span className={`text-sm font-bold ${completeness >= 80 ? 'text-primary' : completeness >= 50 ? 'text-yellow-500' : 'text-destructive'}`}>
                       {completeness}%
                     </span>
                   </div>
@@ -404,7 +404,7 @@ export const Settings = () => {
                     </p>
                   )}
                   {completeness >= 80 && (
-                    <p className="text-xs text-green-600 dark:text-green-400 mt-2">
+                    <p className="text-xs text-primary mt-2">
                       ✓ Excellent ! L'IA dispose de tout ce qu'il faut pour personnaliser vos candidatures.
                     </p>
                   )}
