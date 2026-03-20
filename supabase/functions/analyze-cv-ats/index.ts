@@ -554,8 +554,8 @@ serve(async (req) => {
       }
     }
 
-    // ===== ETAPE 7: Soft skills (10 pts) =====
-    // Combine DB soft skills with common ones
+    // ===== ETAPE 7: Soft skills (6 pts — réduit au profit des hard skills) =====
+    const SOFT_SKILLS_MAX = 6; // réduit de 10 → 6
     const commonSoftSkills = [
       'communication', 'autonomie', 'rigueur', 'organisation', 'adaptabilite', 'creativite',
       'esprit equipe', 'leadership', 'motivation', 'proactivite', 'gestion stress',
@@ -565,12 +565,12 @@ serve(async (req) => {
     const relevantSoftSkills = allSoftSkills.filter(sk => ortoflexFind(sk, normalizedJob));
     const softSkillsToCheck = relevantSoftSkills.length > 0 ? relevantSoftSkills : allSoftSkills.slice(0, 8);
     
-    const pointsPerSoftSkill = softSkillsToCheck.length > 0 ? 10 / softSkillsToCheck.length : 0;
+    const pointsPerSoftSkill = softSkillsToCheck.length > 0 ? SOFT_SKILLS_MAX / softSkillsToCheck.length : 0;
     const softSkillScores = softSkillsToCheck.map(sk => {
       const found = ortoflexFind(sk, normalizedCV);
       return { skill: sk, found, points: found ? Math.round(pointsPerSoftSkill * 10) / 10 : 0 };
     });
-    const softSkillTotal = Math.min(10, softSkillScores.reduce((sum, s) => sum + s.points, 0));
+    const softSkillTotal = Math.min(SOFT_SKILLS_MAX, softSkillScores.reduce((sum, s) => sum + s.points, 0));
 
     // ===== ETAPE 8: Measurable results (5 pts) =====
     const measurablePatterns = /(?:\d+\s*%|\d+\s*€|\d+\s*k€|\d+\s*M€|\+\s*\d+|x\s*\d+|\d+\s*(?:clients|utilisateurs|projets|personnes|collaborateurs|membres))/gi;

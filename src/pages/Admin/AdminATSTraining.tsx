@@ -46,6 +46,8 @@ interface CvAnalysis {
   admin_feedback: any;
   created_at: string;
   needs_profession_suggestion?: boolean;
+  job_description: string | null;
+  cv_text: string | null;
 }
 
 interface KeywordFeedback {
