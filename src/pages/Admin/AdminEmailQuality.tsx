@@ -23,7 +23,14 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { Textarea } from "@/components/ui/textarea";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Star,
   MessageSquareText,
@@ -33,6 +40,8 @@ import {
   Search,
   ChevronLeft,
   ChevronRight,
+  Globe,
+  FileText,
 } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -42,6 +51,7 @@ import { cn } from "@/lib/utils";
 interface EmailRow {
   id: string;
   subject: string;
+  body: string;
   subject_type: string | null;
   tone: string | null;
   sent_at: string | null;
@@ -50,9 +60,11 @@ interface EmailRow {
   response_category: string | null;
   user_name: string | null;
   company_name: string | null;
+  company_id: string | null;
   sector: string | null;
   ville: string | null;
   is_referenced: boolean;
+  company_insights: any;
 }
 
 interface Metrics {
@@ -219,6 +231,131 @@ const MetricCard = ({
   </Card>
 );
 
+// ─── Detail Sheet ─────────────────────────────────────────────────────────────
+const DetailSheet = ({
+  row,
+  open,
+  onClose,
+  onScore,
+  onAddExample,
+  addingExample,
+}: {
+  row: EmailRow | null;
+  open: boolean;
+  onClose: () => void;
+  onScore: (id: string, score: number) => void;
+  onAddExample: (row: EmailRow) => void;
+  addingExample: boolean;
+}) => {
+  if (!row) return null;
+
+  const insights = row.company_insights;
+  const scrapedContent = insights?.full_content || insights?.content_preview || null;
+  const scrapedAt = insights?.scraped_at
+    ? format(new Date(insights.scraped_at), "dd MMM yyyy 'à' HH:mm", { locale: fr })
+    : null;
+
+  return (
+    <Sheet open={open} onOpenChange={(o) => !o && onClose()}>
+      <SheetContent className="w-[560px] sm:w-[640px] sm:max-w-[640px] p-0 flex flex-col">
+        <SheetHeader className="px-6 pt-6 pb-4 border-b border-border">
+          <SheetTitle className="text-base font-semibold text-foreground leading-snug pr-6">
+            {row.subject}
+          </SheetTitle>
+          <div className="flex flex-wrap gap-2 mt-2">
+            {row.company_name && (
+              <Badge variant="secondary" className="text-xs">{row.company_name}</Badge>
+            )}
+            {row.sector && (
+              <Badge variant="outline" className="text-xs truncate max-w-[200px]">{row.sector}</Badge>
+            )}
+            {row.subject_type && (
+              <Badge variant="secondary" className="text-xs capitalize">{row.subject_type}</Badge>
+            )}
+            {row.tone && (
+              <Badge variant="outline" className="text-xs capitalize">{row.tone}</Badge>
+            )}
+            <ResponseBadge category={row.response_category} />
+          </div>
+        </SheetHeader>
+
+        <ScrollArea className="flex-1 px-6 py-4">
+          <div className="space-y-5">
+            {/* Email body */}
+            <div>
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2 flex items-center gap-1.5">
+                <Mail className="h-3.5 w-3.5" />
+                Corps de l'email
+              </p>
+              <div className="bg-muted/40 rounded-lg p-4 text-sm text-foreground whitespace-pre-wrap leading-relaxed border border-border/50">
+                {row.body || <span className="text-muted-foreground italic">Corps non disponible</span>}
+              </div>
+            </div>
+
+            {/* Scraped company data */}
+            <div>
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2 flex items-center gap-1.5">
+                <Globe className="h-3.5 w-3.5" />
+                Données scrapées de l'entreprise
+                {scrapedAt && (
+                  <span className="normal-case font-normal ml-1 text-muted-foreground/60">
+                    — scraping le {scrapedAt}
+                  </span>
+                )}
+              </p>
+              {scrapedContent ? (
+                <div className="bg-muted/20 border border-border/40 rounded-lg p-4 text-xs text-muted-foreground leading-relaxed max-h-64 overflow-y-auto font-mono">
+                  {scrapedContent.length > 2000
+                    ? scrapedContent.slice(0, 2000) + "\n\n[…tronqué, " + scrapedContent.length + " caractères au total]"
+                    : scrapedContent}
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 p-3 bg-muted/20 rounded-lg border border-border/30 text-xs text-muted-foreground">
+                  <FileText className="h-3.5 w-3.5 shrink-0" />
+                  Aucun scraping disponible pour cette entreprise
+                </div>
+              )}
+            </div>
+
+            {/* Score */}
+            <div>
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+                Score admin
+              </p>
+              <StarRating
+                value={row.admin_score}
+                onChange={(score) => onScore(row.id, score)}
+              />
+            </div>
+
+            {/* Add to examples */}
+            {(row.admin_score ?? 0) >= 4 && (
+              <div>
+                {row.is_referenced ? (
+                  <div className="flex items-center gap-2 text-sm text-primary font-medium">
+                    <BookmarkCheck className="h-4 w-4" />
+                    Déjà référencé dans la base d'apprentissage
+                  </div>
+                ) : (
+                  <Button
+                    size="sm"
+                    onClick={() => onAddExample(row)}
+                    disabled={addingExample}
+                    className="gap-2"
+                  >
+                    <BookmarkPlus className="h-4 w-4" />
+                    Ajouter aux exemples de référence
+                  </Button>
+                )}
+              </div>
+            )}
+          </div>
+        </ScrollArea>
+      </SheetContent>
+    </Sheet>
+  );
+};
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export const AdminEmailQuality = () => {
   const qc = useQueryClient();
@@ -231,15 +368,18 @@ export const AdminEmailQuality = () => {
   const [filterResponse, setFilterResponse] = useState("all");
   const [page, setPage] = useState(0);
 
+  // Detail sheet
+  const [selectedRow, setSelectedRow] = useState<EmailRow | null>(null);
+  const [sheetOpen, setSheetOpen] = useState(false);
+
   // ── Fetch emails ──────────────────────────────────────────────────────────
   const { data: rawEmails = [], isLoading } = useQuery({
     queryKey: ["admin-email-quality-raw"],
     queryFn: async () => {
-      // Fetch email_campaigns (sent)
       const { data: campaigns, error: ec } = await supabase
         .from("email_campaigns")
         .select(
-          "id, subject, subject_type, tone, sent_at, admin_score, admin_notes, response_category, user_id, company_id"
+          "id, subject, body, subject_type, tone, sent_at, admin_score, admin_notes, response_category, user_id, company_id"
         )
         .eq("status", "sent")
         .order("sent_at", { ascending: false })
@@ -247,7 +387,6 @@ export const AdminEmailQuality = () => {
 
       if (ec) throw ec;
 
-      // Fetch referenced campaign ids
       const { data: examples } = await supabase
         .from("email_subject_examples")
         .select("campaign_id");
@@ -258,7 +397,6 @@ export const AdminEmailQuality = () => {
           .filter(Boolean) as string[]
       );
 
-      // Collect user_ids and company_ids to batch-fetch
       const userIds = [...new Set((campaigns ?? []).map((c) => c.user_id).filter(Boolean))];
       const companyIds = [...new Set((campaigns ?? []).map((c) => c.company_id).filter(Boolean))];
 
@@ -272,7 +410,7 @@ export const AdminEmailQuality = () => {
         companyIds.length > 0
           ? supabase
               .from("companies")
-              .select("id, nom, libelle_ape, ville")
+              .select("id, nom, libelle_ape, ville, company_insights")
               .in("id", companyIds as string[])
           : { data: [] },
       ]);
@@ -289,6 +427,7 @@ export const AdminEmailQuality = () => {
         return {
           id: ec.id,
           subject: ec.subject,
+          body: ec.body,
           subject_type: ec.subject_type,
           tone: ec.tone,
           sent_at: ec.sent_at,
@@ -297,8 +436,10 @@ export const AdminEmailQuality = () => {
           response_category: ec.response_category,
           user_name: profileMap.get(ec.user_id) ?? null,
           company_name: co?.nom ?? null,
+          company_id: ec.company_id ?? null,
           sector: co?.libelle_ape ?? null,
           ville: co?.ville ?? null,
+          company_insights: co?.company_insights ?? null,
           is_referenced: referencedIds.has(ec.id),
         } as EmailRow;
       });
@@ -351,6 +492,10 @@ export const AdminEmailQuality = () => {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["admin-email-quality-raw"] });
       qc.invalidateQueries({ queryKey: ["admin-email-quality-metrics"] });
+      // Update selected row score in sheet
+      if (selectedRow) {
+        setSelectedRow((r) => r ? { ...r, admin_score: r.admin_score } : r);
+      }
     },
     onError: (e: any) =>
       toast({ title: "Erreur", description: e.message, variant: "destructive" }),
@@ -435,6 +580,16 @@ export const AdminEmailQuality = () => {
     []
   );
 
+  const handleRowClick = (row: EmailRow) => {
+    setSelectedRow(row);
+    setSheetOpen(true);
+  };
+
+  const handleScoreFromSheet = (id: string, score: number) => {
+    scoreMutation.mutate({ id, score });
+    setSelectedRow((r) => r ? { ...r, admin_score: score } : r);
+  };
+
   // ── Render ────────────────────────────────────────────────────────────────
   return (
     <div className="space-y-6">
@@ -446,7 +601,7 @@ export const AdminEmailQuality = () => {
             Qualité des objets d'emails
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Notez et référencez les meilleurs objets générés par l'IA
+            Notez et référencez les meilleurs objets générés par l'IA — cliquez sur une ligne pour voir le détail
           </p>
         </div>
       </div>
@@ -588,8 +743,9 @@ export const AdminEmailQuality = () => {
                 paginated.map((row, idx) => (
                   <tr
                     key={row.id}
+                    onClick={() => handleRowClick(row)}
                     className={cn(
-                      "border-b border-border/50 transition-colors hover:bg-muted/30",
+                      "border-b border-border/50 transition-colors cursor-pointer hover:bg-primary/5",
                       idx % 2 === 0 ? "bg-background" : "bg-muted/10"
                     )}
                   >
@@ -607,7 +763,12 @@ export const AdminEmailQuality = () => {
 
                     {/* Entreprise */}
                     <td className="px-4 py-3 text-xs whitespace-nowrap max-w-[130px] truncate font-medium">
-                      {row.company_name ?? <span className="text-muted-foreground/50">—</span>}
+                      <span className="flex items-center gap-1.5">
+                        {row.company_name ?? <span className="text-muted-foreground/50">—</span>}
+                        {row.company_insights?.full_content && (
+                          <Globe className="h-3 w-3 text-primary/60 shrink-0" title="Scraping disponible" />
+                        )}
+                      </span>
                     </td>
 
                     {/* Secteur */}
@@ -646,7 +807,7 @@ export const AdminEmailQuality = () => {
                     </td>
 
                     {/* Type */}
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
                       {row.subject_type ? (
                         <Badge variant="secondary" className="text-[10px] px-1.5 py-0 capitalize">
                           {row.subject_type}
@@ -657,7 +818,7 @@ export const AdminEmailQuality = () => {
                     </td>
 
                     {/* Ton */}
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
                       {row.tone ? (
                         <Badge variant="outline" className="text-[10px] px-1.5 py-0 capitalize">
                           {row.tone}
@@ -668,12 +829,12 @@ export const AdminEmailQuality = () => {
                     </td>
 
                     {/* Réponse */}
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
                       <ResponseBadge category={row.response_category} />
                     </td>
 
                     {/* Score */}
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
                       <StarRating
                         value={row.admin_score}
                         onChange={(score) =>
@@ -683,7 +844,7 @@ export const AdminEmailQuality = () => {
                     </td>
 
                     {/* Notes */}
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
                       <NotesPopover
                         value={row.admin_notes}
                         onSave={(notes) =>
@@ -693,7 +854,7 @@ export const AdminEmailQuality = () => {
                     </td>
 
                     {/* Ajouter aux exemples */}
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
                       {(row.admin_score ?? 0) >= 4 ? (
                         row.is_referenced ? (
                            <span className="inline-flex items-center gap-1 text-[10px] text-primary font-medium">
@@ -751,6 +912,16 @@ export const AdminEmailQuality = () => {
           </div>
         </div>
       )}
+
+      {/* Detail Sheet */}
+      <DetailSheet
+        row={selectedRow}
+        open={sheetOpen}
+        onClose={() => setSheetOpen(false)}
+        onScore={handleScoreFromSheet}
+        onAddExample={(row) => addExampleMutation.mutate(row)}
+        addingExample={addExampleMutation.isPending}
+      />
     </div>
   );
 };
