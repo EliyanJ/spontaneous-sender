@@ -1,0 +1,3 @@
+ALTER TABLE public.profiles 
+  ADD COLUMN IF NOT EXISTS experience_level TEXT DEFAULT NULL,
+  ADD COLUMN IF NOT EXISTS profile_summary TEXT DEFAULT NULL;

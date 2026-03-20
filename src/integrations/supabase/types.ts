@@ -1104,6 +1104,7 @@ export type Database = {
           cv_file_url: string | null
           education: string | null
           education_level: string | null
+          experience_level: string | null
           first_name: string | null
           full_name: string | null
           gender: string | null
@@ -1114,6 +1115,7 @@ export type Database = {
           onboarding_completed: boolean | null
           phone: string | null
           professional_interests: Json | null
+          profile_summary: string | null
           target_jobs: string | null
           target_sectors: Json | null
           terms_accepted_at: string | null
@@ -1126,6 +1128,7 @@ export type Database = {
           cv_file_url?: string | null
           education?: string | null
           education_level?: string | null
+          experience_level?: string | null
           first_name?: string | null
           full_name?: string | null
           gender?: string | null
@@ -1136,6 +1139,7 @@ export type Database = {
           onboarding_completed?: boolean | null
           phone?: string | null
           professional_interests?: Json | null
+          profile_summary?: string | null
           target_jobs?: string | null
           target_sectors?: Json | null
           terms_accepted_at?: string | null
@@ -1148,6 +1152,7 @@ export type Database = {
           cv_file_url?: string | null
           education?: string | null
           education_level?: string | null
+          experience_level?: string | null
           first_name?: string | null
           full_name?: string | null
           gender?: string | null
@@ -1158,6 +1163,7 @@ export type Database = {
           onboarding_completed?: boolean | null
           phone?: string | null
           professional_interests?: Json | null
+          profile_summary?: string | null
           target_jobs?: string | null
           target_sectors?: Json | null
           terms_accepted_at?: string | null
