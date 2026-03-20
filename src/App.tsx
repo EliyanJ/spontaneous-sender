@@ -142,6 +142,7 @@ const App = () => (
               <Route path="ai-generation" element={<AdminAIGeneration />} />
               <Route path="email-quality" element={<AdminEmailQuality />} />
               <Route path="sector-insights" element={<AdminSectorInsights />} />
+              <Route path="companies-data" element={<AdminCompaniesData />} />
               <Route path="cv-templates" element={<AdminCVTemplates />} />
               <Route path="cover-letter-templates" element={<AdminCoverLetterTemplates />} />
             </Route>

@@ -37,6 +37,7 @@ const adminNavItems = [
   { title: "Prompts IA", icon: Bot, path: "/admin/ai-generation" },
   { title: "Qualité Emails", icon: Mail, path: "/admin/email-quality" },
   { title: "Secteurs IA", icon: Lightbulb, path: "/admin/sector-insights" },
+  { title: "Entreprises", icon: Building2, path: "/admin/companies-data" },
   { title: "Templates CV", icon: LayoutTemplate, path: "/admin/cv-templates" },
   { title: "Templates LM", icon: ScrollText, path: "/admin/cover-letter-templates" },
 ];
