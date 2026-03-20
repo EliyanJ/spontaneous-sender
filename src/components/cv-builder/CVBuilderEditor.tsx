@@ -634,10 +634,10 @@ export const CVBuilderEditor = ({
   const renderStep = () => {
     switch (currentStep) {
       case "contact":    return <StepContact cvData={cvData} onChange={onChange} designOptions={designOptions} onDesignChange={onDesignChange} />;
-      case "profile":    return <StepProfile cvData={cvData} onChange={onChange} />;
-      case "experience": return <StepExperience cvData={cvData} onChange={onChange} />;
-      case "education":  return <StepEducation cvData={cvData} onChange={onChange} />;
-      case "skills":     return <StepSkills cvData={cvData} onChange={onChange} />;
+      case "profile":    return <StepProfile cvData={cvData} onChange={onChange} maxSummaryChars={constraints["summary"]?.maxChars ?? 400} />;
+      case "experience": return <StepExperience cvData={cvData} onChange={onChange} maxBullets={constraints["experiences"]?.maxBulletsPerItem} maxBulletChars={constraints["experiences"]?.bulletMaxChars} maxItems={constraints["experiences"]?.maxItems} />;
+      case "education":  return <StepEducation cvData={cvData} onChange={onChange} maxItems={constraints["education"]?.maxItems} />;
+      case "skills":     return <StepSkills cvData={cvData} onChange={onChange} maxSkills={constraints["skills"]?.maxItems ?? 16} />;
       case "finalize":   return <StepFinalize cvData={cvData} templateId={templateId} designOptions={designOptions} templateHtml={templateHtml} templateCvData={templateCvData} previewRef={cvPreviewRef} />;
     }
   };
