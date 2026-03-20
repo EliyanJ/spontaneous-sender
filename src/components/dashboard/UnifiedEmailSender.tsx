@@ -75,7 +75,8 @@ interface Company {
   ville: string | null;
   libelle_ape: string | null;
   siren: string;
-  company_insights?: Record<string, unknown> | null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  company_insights?: any;
 }
 
 interface GeneratedEmail {
