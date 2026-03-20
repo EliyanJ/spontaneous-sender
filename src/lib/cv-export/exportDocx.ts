@@ -9,6 +9,11 @@ import {
   Packer,
   Paragraph,
   TextRun,
+  Table,
+  TableRow,
+  TableCell,
+  WidthType,
+  ShadingType,
   TabStopType,
   LeaderType,
   AlignmentType,
@@ -39,10 +44,7 @@ function pt(points: number) {
   return points * 2; // docx uses half-points
 }
 
-function sectionTitle(
-  text: string,
-  style: DocxStyleConfig
-): Paragraph {
+function sectionTitle(text: string, style: DocxStyleConfig): Paragraph {
   return new Paragraph({
     children: [
       new TextRun({
@@ -86,6 +88,62 @@ function emptyLine(): Paragraph {
   return new Paragraph({ children: [new TextRun({ text: "" })] });
 }
 
+// A4 content width in DXA: 11906 - 2×1134 (margins) = 9638
+const CONTENT_WIDTH_DXA = 9638;
+const COLS = 4;
+const CELL_WIDTH = Math.floor(CONTENT_WIDTH_DXA / COLS);
+
+// Transparent cell border (invisible)
+const noBorder = { style: BorderStyle.NONE, size: 0, color: "FFFFFF" };
+const noBorders = { top: noBorder, bottom: noBorder, left: noBorder, right: noBorder };
+
+/**
+ * Renders skills array as a 4-column table in docx.
+ * Each cell contains one skill name. Remaining cells are empty.
+ */
+function skillsTable(skills: TemplateCVData["skills"], style: DocxStyleConfig): Table {
+  const names = (skills || []).map((s) => s.skill_name || s.detail_1 || "").filter(Boolean);
+
+  // Pad to multiple of COLS
+  while (names.length % COLS !== 0) names.push("");
+
+  const rows: TableRow[] = [];
+  for (let r = 0; r < names.length; r += COLS) {
+    const cells: TableCell[] = [];
+    for (let c = 0; c < COLS; c++) {
+      const text = names[r + c] || "";
+      cells.push(
+        new TableCell({
+          borders: noBorders,
+          width: { size: CELL_WIDTH, type: WidthType.DXA },
+          margins: { top: 40, bottom: 40, left: 60, right: 60 },
+          shading: { fill: "F8F9FB", type: ShadingType.CLEAR },
+          children: [
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text,
+                  font: style.fontFamily,
+                  size: pt(9.5),
+                  color: text ? style.textColor : "FFFFFF",
+                }),
+              ],
+              spacing: { before: 0, after: 0 },
+            }),
+          ],
+        })
+      );
+    }
+    rows.push(new TableRow({ children: cells }));
+  }
+
+  return new Table({
+    width: { size: CONTENT_WIDTH_DXA, type: WidthType.DXA },
+    columnWidths: Array(COLS).fill(CELL_WIDTH),
+    rows,
+  });
+}
+
 // ── Main export ───────────────────────────────────────────────────────────────
 
 export async function exportCVToDocx({
@@ -95,11 +153,12 @@ export async function exportCVToDocx({
 }: ExportDocxOptions): Promise<void> {
   const s: DocxStyleConfig = { ...DEFAULT_STYLE, ...style };
 
-  const sections: Paragraph[] = [];
+  // docx sections accept Paragraph | Table
+  const children: (Paragraph | Table)[] = [];
 
   // ── 1. Header : Nom + Titre ──
   if (cvData.full_name) {
-    sections.push(
+    children.push(
       new Paragraph({
         children: [
           new TextRun({
@@ -117,7 +176,7 @@ export async function exportCVToDocx({
   }
 
   if (cvData.main_title) {
-    sections.push(
+    children.push(
       new Paragraph({
         children: [
           new TextRun({
@@ -134,7 +193,7 @@ export async function exportCVToDocx({
   }
 
   if (cvData.sub_titles) {
-    sections.push(
+    children.push(
       new Paragraph({
         children: [
           new TextRun({
@@ -159,7 +218,7 @@ export async function exportCVToDocx({
   ].filter(Boolean) as string[];
 
   if (contactParts.length > 0) {
-    sections.push(
+    children.push(
       new Paragraph({
         children: [
           new TextRun({
@@ -176,8 +235,8 @@ export async function exportCVToDocx({
 
   // ── 2. Résumé ──
   if (cvData.summary) {
-    sections.push(sectionTitle("Profil", s));
-    sections.push(
+    children.push(sectionTitle("Profil", s));
+    children.push(
       new Paragraph({
         children: [
           new TextRun({
@@ -190,16 +249,15 @@ export async function exportCVToDocx({
         spacing: { after: 80 },
       })
     );
-    sections.push(emptyLine());
+    children.push(emptyLine());
   }
 
   // ── 3. Expériences ──
   if (cvData.experiences && cvData.experiences.length > 0) {
-    sections.push(sectionTitle("Expériences Professionnelles", s));
+    children.push(sectionTitle("Expériences Professionnelles", s));
 
     cvData.experiences.forEach((exp) => {
-      // Titre à gauche, date à droite via tabulation
-      sections.push(
+      children.push(
         new Paragraph({
           children: [
             new TextRun({
@@ -228,19 +286,19 @@ export async function exportCVToDocx({
       );
 
       (exp.bullets || []).filter(Boolean).forEach((bullet) => {
-        sections.push(bulletParagraph(bullet, s));
+        children.push(bulletParagraph(bullet, s));
       });
     });
 
-    sections.push(emptyLine());
+    children.push(emptyLine());
   }
 
   // ── 4. Entrepreneuriat ──
   if (cvData.entrepreneurship && cvData.entrepreneurship.length > 0) {
-    sections.push(sectionTitle("Entrepreneuriat", s));
+    children.push(sectionTitle("Entrepreneuriat", s));
 
     cvData.entrepreneurship.forEach((item) => {
-      sections.push(
+      children.push(
         new Paragraph({
           children: [
             new TextRun({
@@ -256,56 +314,26 @@ export async function exportCVToDocx({
       );
 
       (item.bullets || []).filter(Boolean).forEach((bullet) => {
-        sections.push(bulletParagraph(bullet, s));
+        children.push(bulletParagraph(bullet, s));
       });
     });
 
-    sections.push(emptyLine());
+    children.push(emptyLine());
   }
 
-  // ── 5. Compétences ──
+  // ── 5. Compétences — grille 4 colonnes ──
   if (cvData.skills && cvData.skills.length > 0) {
-    sections.push(sectionTitle("Compétences", s));
-
-    cvData.skills.forEach((skill) => {
-      const parts = [skill.detail_1, skill.detail_2].filter(Boolean);
-      if (skill.category || parts.length > 0) {
-        sections.push(
-          new Paragraph({
-            children: [
-              ...(skill.category
-                ? [
-                    new TextRun({
-                      text: skill.category + ": ",
-                      bold: true,
-                      font: s.fontFamily,
-                      size: pt(9.5),
-                      color: s.textColor,
-                    }),
-                  ]
-                : []),
-              new TextRun({
-                text: parts.join(", "),
-                font: s.fontFamily,
-                size: pt(9.5),
-                color: s.textColor,
-              }),
-            ],
-            spacing: { before: 30, after: 30 },
-          })
-        );
-      }
-    });
-
-    sections.push(emptyLine());
+    children.push(sectionTitle("Compétences", s));
+    children.push(skillsTable(cvData.skills, s));
+    children.push(emptyLine());
   }
 
   // ── 6. Formation ──
   if (cvData.education && cvData.education.length > 0) {
-    sections.push(sectionTitle("Formation", s));
+    children.push(sectionTitle("Formation", s));
 
     cvData.education.forEach((edu) => {
-      sections.push(
+      children.push(
         new Paragraph({
           children: [
             new TextRun({
@@ -334,15 +362,15 @@ export async function exportCVToDocx({
       );
     });
 
-    sections.push(emptyLine());
+    children.push(emptyLine());
   }
 
   // ── 7. Langues + Centres d'intérêt ──
   if (cvData.languages_content || cvData.interests_content) {
-    sections.push(sectionTitle("Langues & Centres d'intérêt", s));
+    children.push(sectionTitle("Langues & Centres d'intérêt", s));
 
     if (cvData.languages_content) {
-      sections.push(
+      children.push(
         new Paragraph({
           children: [
             new TextRun({
@@ -365,7 +393,7 @@ export async function exportCVToDocx({
     }
 
     if (cvData.interests_content) {
-      sections.push(
+      children.push(
         new Paragraph({
           children: [
             new TextRun({
@@ -433,7 +461,7 @@ export async function exportCVToDocx({
             },
           },
         },
-        children: sections,
+        children,
       },
     ],
   });
