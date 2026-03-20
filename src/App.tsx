@@ -58,6 +58,7 @@ const AdminEmailQuality         = lazy(() => import("./pages/Admin/AdminEmailQua
 const AdminCoverLetterTemplates = lazy(() => import("./pages/Admin/AdminCoverLetterTemplates").then(m => ({ default: m.AdminCoverLetterTemplates })));
 const AdminAIGeneration         = lazy(() => import("./pages/Admin/AdminAIGeneration").then(m => ({ default: m.AdminAIGeneration })));
 const AdminSectorInsights       = lazy(() => import("./pages/Admin/AdminSectorInsights").then(m => ({ default: m.AdminSectorInsights })));
+const AdminCompaniesData        = lazy(() => import("./pages/Admin/AdminCompaniesData").then(m => ({ default: m.AdminCompaniesData })));
 
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { AdminRoute } from "./components/AdminRoute";

@@ -17,4 +17,5 @@ export { AdminCVTemplates } from './AdminCVTemplates';
 export { AdminCVTemplateBuilder } from './AdminCVTemplateBuilder';
 export { AdminEmailQuality } from './AdminEmailQuality';
 export { AdminSectorInsights } from './AdminSectorInsights';
+export { AdminCompaniesData } from './AdminCompaniesData';
 
