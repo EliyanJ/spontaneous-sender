@@ -615,7 +615,14 @@ export const UnifiedEmailSender = () => {
             setCurrentStep(`Emails manuels ${i + 1}-${Math.min(i + batchSize, manualCompanyObjects.length)}`);
 
             const { data, error } = await supabase.functions.invoke("generate-personalized-emails", {
-              body: { companies: batch, template: template || null, cvContent: cvContent || null, subjectType: selectedSubjectType, tone: selectedTone },
+              body: {
+                companies: batch,
+                template: template || null,
+                cvContent: profileData?.cv_content || cvContent || null,
+                subjectType: selectedSubjectType,
+                tone: selectedTone,
+                userProfile,
+              },
               headers: { Authorization: `Bearer ${session.access_token}` }
             });
 
