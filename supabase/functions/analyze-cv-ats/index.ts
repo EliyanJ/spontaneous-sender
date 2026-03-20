@@ -685,7 +685,7 @@ serve(async (req) => {
       softSkills: {
         scores: softSkillScores,
         total: Math.round(softSkillTotal * 10) / 10,
-        maxTotal: 10,
+        maxTotal: 6,
       },
       measurableResults: {
         count: measurableCount,
