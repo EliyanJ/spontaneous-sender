@@ -494,8 +494,8 @@ serve(async (req) => {
     const bonusPrimary = hybridPrimaryRanked.slice(10);
 
     const primaryScores = top10Primary.map(k => {
-      const points = generousScore(k.cvCount, k.jobCount, 3); // 3 pts each, 10 x 3 = 30
-      return { keyword: k.keyword, jobCount: k.jobCount, cvCount: k.cvCount, points, maxPoints: 3 };
+      const points = generousScore(k.cvCount, k.jobCount, 3.4); // 3.4 pts each, 10 x 3.4 = 34
+      return { keyword: k.keyword, jobCount: k.jobCount, cvCount: k.cvCount, points, maxPoints: 3.4 };
     });
 
     const primaryTotal = primaryScores.reduce((sum, k) => sum + k.points, 0);
