@@ -231,8 +231,12 @@ const StepContact = ({ cvData, onChange, designOptions, onDesignChange }: {
 };
 
 // ─── Step: Profile ────────────────────────────────────────────────────────────
-const StepProfile = ({ cvData, onChange }: { cvData: CVData; onChange: (d: CVData) => void }) => {
+const StepProfile = ({ cvData, onChange, maxSummaryChars = 400 }: {
+  cvData: CVData; onChange: (d: CVData) => void; maxSummaryChars?: number;
+}) => {
   const charCount = cvData.summary.length;
+  const limit = maxSummaryChars;
+  const nearLimit = charCount > limit * 0.875;
   return (
     <div className="bg-white rounded-2xl border border-gray-200 p-6 md:p-8 shadow-sm">
       <div className="flex items-start gap-4">
@@ -247,15 +251,20 @@ const StepProfile = ({ cvData, onChange }: { cvData: CVData; onChange: (d: CVDat
           <div className="relative">
             <StyledTextarea
               rows={6}
-              maxLength={400}
+              maxLength={limit}
               placeholder="Ex: Diplômé d'un Master en Finance de HEC Paris, je dispose de 3 ans d'expérience en analyse financière et gestion d'actifs. Rigoureux et analytique, je recherche un poste de Analyste Senior pour accompagner la croissance d'une structure ambitieuse..."
               value={cvData.summary}
               onChange={e => onChange({ ...cvData, summary: e.target.value })}
             />
-            <div className={`absolute bottom-4 right-4 text-xs font-medium bg-white/80 px-2 py-1 rounded backdrop-blur-sm ${charCount > 350 ? "text-orange-500" : "text-slate-400"}`}>
-              {charCount}/400
+            <div className={`absolute bottom-4 right-4 text-xs font-medium bg-white/80 px-2 py-1 rounded backdrop-blur-sm ${nearLimit ? "text-orange-500" : "text-slate-400"}`}>
+              {charCount}/{limit}
             </div>
           </div>
+          {maxSummaryChars < 400 && (
+            <p className="text-xs text-amber-600 mt-1 flex items-center gap-1">
+              <span className="font-bold">Limite template :</span> {limit} caractères max
+            </p>
+          )}
           <div className="mt-4 p-4 bg-blue-50/60 rounded-xl border border-blue-100">
             <p className="text-xs font-bold text-slate-600 mb-2 flex items-center gap-1.5">
               <Sparkles className="h-3.5 w-3.5 text-blue-500" /> Conseils
