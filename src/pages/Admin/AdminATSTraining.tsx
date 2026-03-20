@@ -581,6 +581,97 @@ export const AdminATSTraining = () => {
     }
   };
 
+  // ===== FICHE DE POSTE: analyze and extract keywords =====
+  const analyzeFicheDePoste = async () => {
+    if (!ficheText.trim() || !ficheTargetProfId) {
+      toast.error("Collez une fiche de poste et sélectionnez un métier cible");
+      return;
+    }
+    setFicheAnalyzing(true);
+    setFicheSuggestedKeywords([]);
+    try {
+      const targetProf = professions.find(p => p.id === ficheTargetProfId);
+      if (!targetProf) throw new Error("Métier non trouvé");
+
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ats-ai-review`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${session?.access_token}` },
+        body: JSON.stringify({
+          mode: "extract_keywords",
+          text: ficheText.substring(0, 8000),
+          profession_name: targetProf.name,
+          existing_primary: targetProf.primary_keywords,
+          existing_secondary: targetProf.secondary_keywords,
+          existing_soft_skills: targetProf.soft_skills,
+        }),
+      });
+      if (!res.ok) throw new Error("Erreur IA");
+      const result = await res.json();
+      if (result.keywords && result.keywords.length > 0) {
+        setFicheSuggestedKeywords(result.keywords.map((k: any) => ({ keyword: k.keyword, category: k.category, accepted: null })));
+        toast.success(`${result.keywords.length} nouveaux mots-clés détectés`);
+      } else {
+        toast.info("Aucun nouveau mot-clé détecté — la base est déjà bien couverte pour ce métier");
+      }
+    } catch (err: any) {
+      toast.error("Erreur analyse: " + err.message);
+    } finally {
+      setFicheAnalyzing(false);
+    }
+  };
+
+  const acceptFicheKeyword = (index: number) => {
+    const kw = ficheSuggestedKeywords[index];
+    const updated = [...ficheSuggestedKeywords];
+    updated[index] = { ...kw, accepted: true };
+    setFicheSuggestedKeywords(updated);
+  };
+
+  const rejectFicheKeyword = (index: number) => {
+    const updated = [...ficheSuggestedKeywords];
+    updated[index] = { ...updated[index], accepted: false };
+    setFicheSuggestedKeywords(updated);
+  };
+
+  const acceptAllFicheKeywords = () => {
+    setFicheSuggestedKeywords(prev => prev.map(k => k.accepted === null ? { ...k, accepted: true } : k));
+  };
+
+  const saveFicheKeywords = async () => {
+    const accepted = ficheSuggestedKeywords.filter(k => k.accepted === true);
+    if (accepted.length === 0) { toast.error("Aucun mot-clé accepté"); return; }
+    const targetProf = professions.find(p => p.id === ficheTargetProfId);
+    if (!targetProf) return;
+    setFicheSaving(true);
+    try {
+      const newPri = [...targetProf.primary_keywords];
+      const newSec = [...targetProf.secondary_keywords];
+      const newSoft = [...targetProf.soft_skills];
+      const feedbackInserts: any[] = [];
+      for (const kw of accepted) {
+        const w = kw.keyword.trim().toLowerCase();
+        if (kw.category === "primary" && !newPri.includes(w)) { newPri.push(w); feedbackInserts.push({ profession_id: ficheTargetProfId, keyword: w, original_category: "none", corrected_category: "primary", is_valid: true, admin_notes: "Extrait fiche de poste admin", source: "admin_fiche" }); }
+        else if (kw.category === "secondary" && !newSec.includes(w)) { newSec.push(w); feedbackInserts.push({ profession_id: ficheTargetProfId, keyword: w, original_category: "none", corrected_category: "secondary", is_valid: true, admin_notes: "Extrait fiche de poste admin", source: "admin_fiche" }); }
+        else if (kw.category === "soft_skill" && !newSoft.includes(w)) { newSoft.push(w); feedbackInserts.push({ profession_id: ficheTargetProfId, keyword: w, original_category: "none", corrected_category: "soft_skill", is_valid: true, admin_notes: "Extrait fiche de poste admin", source: "admin_fiche" }); }
+      }
+      if (feedbackInserts.length > 0) await supabase.from("ats_keyword_feedback").insert(feedbackInserts);
+      await supabase.from("ats_professions").update({
+        primary_keywords: newPri, secondary_keywords: newSec, soft_skills: newSoft,
+        last_trained_at: new Date().toISOString(),
+        training_count: (targetProf.training_count || 0) + accepted.length,
+      }).eq("id", ficheTargetProfId);
+      toast.success(`✅ ${accepted.length} mots-clés ajoutés à "${targetProf.name}"`);
+      setFicheText("");
+      setFicheSuggestedKeywords([]);
+      loadProfessions();
+    } catch (err: any) {
+      toast.error(err.message);
+    } finally {
+      setFicheSaving(false);
+    }
+  };
+
   const runBulkAiReview = async () => {
     const { data: unreviewed } = await supabase
       .from("cv_analyses").select("*").eq("admin_reviewed", false).not("profession_id", "is", null)
