@@ -671,7 +671,7 @@ export const Settings = () => {
                 <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
                   <div className="flex items-center gap-3">
                     {subscription.plan_type === 'plus' ? (
-                      <Crown className="h-6 w-6 text-yellow-500" />
+                      <Crown className="h-6 w-6 text-primary" />
                     ) : subscription.plan_type === 'simple' ? (
                       <Zap className="h-6 w-6 text-primary" />
                     ) : (
