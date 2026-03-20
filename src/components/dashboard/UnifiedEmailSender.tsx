@@ -129,6 +129,39 @@ interface SavedTemplate {
   content: string;
 }
 
+// Generate a PDF from cover letter text and return base64 data
+const generateCoverLetterPdf = async (coverLetterText: string, companyName: string): Promise<string | null> => {
+  try {
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const margin = 20;
+    const maxWidth = pageWidth - margin * 2;
+    
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(11);
+    
+    const lines = doc.splitTextToSize(coverLetterText, maxWidth);
+    let y = margin + 10;
+    
+    for (const line of lines) {
+      if (y > pageHeight - margin) {
+        doc.addPage();
+        y = margin + 10;
+      }
+      doc.text(line, margin, y);
+      y += 6;
+    }
+    
+    // Return as base64 without the data URL prefix
+    const pdfBase64 = doc.output('datauristring').split(',')[1];
+    return pdfBase64;
+  } catch (err) {
+    console.error('Error generating cover letter PDF:', err);
+    return null;
+  }
+};
+
 export const UnifiedEmailSender = () => {
   // Plan features
   const { features, isPremium, isLoading: planLoading } = usePlanFeatures();
