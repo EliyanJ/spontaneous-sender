@@ -975,6 +975,7 @@ export const AdminATSTraining = () => {
       <Tabs value={tab} onValueChange={setTab}>
         <TabsList>
           <TabsTrigger value="thematiques">Thématiques & Métiers</TabsTrigger>
+          <TabsTrigger value="fiches">📋 Fiches de poste</TabsTrigger>
           <TabsTrigger value="analyses">Analyses à revoir</TabsTrigger>
           {selectedAnalysis && <TabsTrigger value="review">Revue</TabsTrigger>}
           {editingProfession && <TabsTrigger value="edit-theme">
