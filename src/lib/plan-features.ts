@@ -54,9 +54,9 @@ export const PLAN_FEATURES: Record<PlanType, PlanFeatures> = {
     locationLevel: 'city',
     maxCompaniesPerSearch: 200,
     canAccessJobOffers: true,
-    canGenerateAIEmails: true,
-    canGenerateCoverLetters: true,
-    canGenerateAISubjects: true,
+    canGenerateAIEmails: false,      // Temporairement désactivé — refonte en cours
+    canGenerateCoverLetters: false,  // Temporairement désactivé — refonte en cours
+    canGenerateAISubjects: false,    // Temporairement désactivé — refonte en cours
     sendsLimit: 400,
   }
 };
