@@ -371,18 +371,7 @@ Génère un email de candidature spontanée PERSONNALISÉ pour cette entreprise 
           body = generatedContent;
         }
 
-        // Store company insights for future use
-        if (companyInfo) {
-          await supabaseClient
-            .from('companies')
-            .update({ 
-              company_insights: { 
-                scraped_at: new Date().toISOString(),
-                content_preview: companyInfo.slice(0, 1000)
-              }
-            })
-            .eq('id', company.id);
-        }
+        // (company_insights already saved during scraping cache logic above)
 
         results.push({
           company_id: company.id,
