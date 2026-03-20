@@ -3,25 +3,41 @@ import { usePlanFeatures } from "@/hooks/usePlanFeatures";
 import { PlanFeatures } from "@/lib/plan-features";
 import { UpgradeBanner } from "@/components/UpgradeBanner";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Clock, Sparkles } from "lucide-react";
 
 type FeatureKey = keyof PlanFeatures;
 
+// Features globally disabled (coming soon) regardless of plan
+const COMING_SOON_FEATURES: FeatureKey[] = [
+  'canGenerateAIEmails',
+  'canGenerateCoverLetters',
+  'canGenerateAISubjects',
+];
+
 interface FeatureGateProps {
-  /** The feature key to check (e.g., 'canGenerateAIEmails') */
   feature: FeatureKey;
-  /** Content to render when the feature is allowed */
   children: ReactNode;
-  /** Content to render when the feature is not allowed (defaults to UpgradeBanner) */
   fallback?: ReactNode;
-  /** Whether to show the fallback or just hide content */
   showFallback?: boolean;
-  /** Custom title for the upgrade banner */
   upgradeTitle?: string;
-  /** Custom description for the upgrade banner */
   upgradeDescription?: string;
-  /** Banner variant */
   bannerVariant?: "default" | "compact" | "inline";
 }
+
+const ComingSoonBanner = () => (
+  <div className="flex items-center gap-3 rounded-lg border border-dashed border-muted-foreground/30 bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
+    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted">
+      <Clock className="h-4 w-4" />
+    </div>
+    <div>
+      <p className="font-medium text-foreground/70 flex items-center gap-1.5">
+        <Sparkles className="h-3.5 w-3.5" />
+        Bientôt disponible
+      </p>
+      <p className="text-xs mt-0.5">Cette fonctionnalité IA est en cours de refonte et sera disponible prochainement.</p>
+    </div>
+  </div>
+);
 
 export const FeatureGate = ({
   feature,
@@ -38,9 +54,14 @@ export const FeatureGate = ({
     return <Skeleton className="h-20 w-full" />;
   }
 
+  // Check if globally disabled (coming soon)
+  if (COMING_SOON_FEATURES.includes(feature)) {
+    if (!showFallback) return null;
+    return fallback ? <>{fallback}</> : <ComingSoonBanner />;
+  }
+
   const featureValue = features[feature];
   
-  // For boolean features
   if (typeof featureValue === 'boolean') {
     if (featureValue) {
       return <>{children}</>;
@@ -63,8 +84,6 @@ export const FeatureGate = ({
     );
   }
 
-  // For non-boolean features (like maxCompaniesPerSearch), always show children
-  // The component using this gate should handle the limit internally
   return <>{children}</>;
 };
 
