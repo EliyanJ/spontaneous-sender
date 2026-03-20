@@ -1,10 +1,11 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -29,10 +30,15 @@ import {
   CheckCircle2,
   XCircle,
   Clock,
+  Bot,
+  Save,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { cn } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
 
 const PAGE_SIZE = 50;
 
@@ -64,18 +70,18 @@ const ScrapingBadge = ({ insights }: { insights: any }) => {
 
   if (!hasContent) {
     return (
-      <span className="inline-flex items-center gap-1 text-xs text-warning">
-        <Clock className="h-3.5 w-3.5 text-yellow-500" />
-        <span className="text-yellow-600 dark:text-yellow-400">Vide (il y a {daysSince}j)</span>
+      <span className="inline-flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400">
+        <Clock className="h-3.5 w-3.5" />
+        <span>Vide (il y a {daysSince}j)</span>
       </span>
     );
   }
 
   const charCount = (insights.full_content || insights.content_preview || "").length;
   return (
-    <span className="inline-flex items-center gap-1 text-xs">
-      <CheckCircle2 className="h-3.5 w-3.5 text-green-500" />
-      <span className="text-green-600 dark:text-green-400">{charCount.toLocaleString()} chars — il y a {daysSince}j</span>
+    <span className="inline-flex items-center gap-1 text-xs text-emerald-600 dark:text-emerald-400">
+      <CheckCircle2 className="h-3.5 w-3.5" />
+      <span>{charCount.toLocaleString()} chars — il y a {daysSince}j</span>
     </span>
   );
 };
@@ -185,6 +191,141 @@ const CompanySheet = ({
   );
 };
 
+// ─── Scraping Prompt Editor ────────────────────────────────────────────────────
+const ScrapingPromptEditor = () => {
+  const { toast } = useToast();
+  const [open, setOpen] = useState(false);
+  const [systemPrompt, setSystemPrompt] = useState("");
+  const [toneGuidelines, setToneGuidelines] = useState("");
+  const [adminNotes, setAdminNotes] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [configId, setConfigId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    supabase
+      .from("ai_generation_config")
+      .select("id, system_prompt, tone_guidelines, admin_notes")
+      .eq("config_type", "scraping_system_prompt")
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data) {
+          setConfigId(data.id);
+          setSystemPrompt(data.system_prompt || "");
+          setToneGuidelines(data.tone_guidelines || "");
+          setAdminNotes(data.admin_notes || "");
+        }
+      });
+  }, [open]);
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      const payload = {
+        system_prompt: systemPrompt,
+        tone_guidelines: toneGuidelines,
+        admin_notes: adminNotes,
+        updated_at: new Date().toISOString(),
+      };
+      if (configId) {
+        const { error } = await supabase
+          .from("ai_generation_config")
+          .update(payload)
+          .eq("id", configId);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from("ai_generation_config")
+          .insert({ ...payload, config_type: "scraping_system_prompt" });
+        if (error) throw error;
+      }
+      toast({ title: "Prompt sauvegardé ✓" });
+    } catch (err) {
+      console.error(err);
+      toast({ title: "Erreur", description: "Impossible de sauvegarder", variant: "destructive" });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Card className="border-border/50">
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className="w-full px-5 py-4 flex items-center justify-between text-left hover:bg-muted/30 transition-colors rounded-xl"
+      >
+        <div className="flex items-center gap-3">
+          <div className="p-2 rounded-lg bg-primary/10">
+            <Bot className="h-4 w-4 text-primary" />
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-foreground">System prompt — Scraping IA</p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Instructions données à l'IA pour analyser le contenu des sites entreprises
+            </p>
+          </div>
+        </div>
+        {open ? (
+          <ChevronUp className="h-4 w-4 text-muted-foreground shrink-0" />
+        ) : (
+          <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />
+        )}
+      </button>
+
+      {open && (
+        <CardContent className="pt-0 pb-5 px-5 space-y-4 border-t border-border/40">
+          <div className="pt-4 space-y-1">
+            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+              System Prompt
+            </label>
+            <p className="text-xs text-muted-foreground/70 mb-2">
+              Ce prompt est envoyé à l'IA lors de l'analyse du contenu scrappé. Il définit ce que l'IA doit extraire et comment.
+            </p>
+            <Textarea
+              value={systemPrompt}
+              onChange={(e) => setSystemPrompt(e.target.value)}
+              className="font-mono text-xs leading-relaxed resize-y"
+              style={{ minHeight: "280px" }}
+              placeholder="Entrez le system prompt..."
+            />
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+              Consignes de ton
+            </label>
+            <Textarea
+              value={toneGuidelines}
+              onChange={(e) => setToneGuidelines(e.target.value)}
+              className="text-sm resize-y"
+              rows={2}
+              placeholder="Ex: Ton neutre et factuel. Aucune interprétation."
+            />
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+              Notes admin
+            </label>
+            <Textarea
+              value={adminNotes}
+              onChange={(e) => setAdminNotes(e.target.value)}
+              className="text-sm resize-y"
+              rows={2}
+              placeholder="Notes internes sur ce prompt..."
+            />
+          </div>
+
+          <Button onClick={handleSave} disabled={saving} className="gap-2">
+            <Save className="h-4 w-4" />
+            {saving ? "Sauvegarde..." : "Sauvegarder le prompt"}
+          </Button>
+        </CardContent>
+      )}
+    </Card>
+  );
+};
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export const AdminCompaniesData = () => {
   const [search, setSearch] = useState("");
@@ -276,6 +417,9 @@ export const AdminCompaniesData = () => {
           par l'IA pour personnaliser les lettres et emails
         </p>
       </div>
+
+      {/* Scraping Prompt Editor */}
+      <ScrapingPromptEditor />
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
