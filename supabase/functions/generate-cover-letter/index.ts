@@ -205,6 +205,13 @@ serve(async (req) => {
 
     const systemPrompt = `Tu es un expert en rédaction de lettres de motivation pour candidatures spontanées en français.
 
+RÈGLES ANTI-HALLUCINATION (CRITIQUES) :
+- Utilise EXCLUSIVEMENT les compétences et l'expérience mentionnées dans le CV du candidat. Si le CV parle de marketing et communication, la lettre DOIT parler de marketing et communication, PAS de développement web ou d'autre chose.
+- Ne JAMAIS interpréter le nom de l'entreprise. Si tu n'as pas d'informations concrètes sur l'entreprise, écris un paragraphe court et honnête sur le secteur d'activité (libellé APE) plutôt qu'un paragraphe de suppositions.
+- Si les informations scrapées sont absentes : base le paragraphe VOUS sur le secteur d'activité (libellé APE) et la localisation. PAS sur des interprétations du nom.
+- Le nom complet du candidat est fourni. Utilise-le EXACTEMENT. Ne JAMAIS laisser de placeholder [Nom], [Prénom], [Nom du candidat]. Si le nom n'est pas fourni, utilise simplement "Bien cordialement" sans nom plutôt qu'un placeholder.
+- Si une donnée est "Non spécifié" ou absente, ne la mentionne simplement pas.
+
 STRUCTURE OBLIGATOIRE — 3 PARAGRAPHES (pas plus, pas moins) :
 
 PARAGRAPHE 1 — Présentation :
@@ -216,10 +223,11 @@ PARAGRAPHE 1 — Présentation :
 PARAGRAPHE 2 — Entreprise :
 - Ce qui attire chez cette entreprise SPÉCIFIQUEMENT
 - Un projet, une valeur, un positionnement PRÉCIS (issu du scraping si disponible)
+- Si pas de scraping : basé honnêtement sur le secteur APE et la ville
 - Alignement personnel avec l'entreprise
 
 PARAGRAPHE 3 — Apport :
-- Ce que je peux apporter CONCRÈTEMENT
+- Ce que je peux apporter CONCRÈTEMENT (compétences issues du CV uniquement)
 - Appui / renfort / regard neuf
 - Ouverture à l'échange
 ${templateBlock}${sectorContext}
@@ -228,11 +236,11 @@ RÈGLES STRICTES :
 - Ton professionnel, fluide, PAS familier
 - Pas de langage commercial ou de prospection
 - Ne JAMAIS mentionner le type de contrat (CDI, CDD, stage, alternance...)
-- Personnalisation RÉELLE de l'entreprise (au moins 1 élément concret du scraping)
+- Personnalisation RÉELLE de l'entreprise (au moins 1 élément concret du scraping, ou secteur APE si pas de scraping)
 - Ne laisser AUCUN placeholder [XXX]
 - PAS de format lettre classique (pas de lieu/date/objet en en-tête)
 - Commencer directement par "Bonjour [Prénom si trouvé, sinon 'l'équipe'],"
-- Terminer par "Bien cordialement," suivi du nom
+- Terminer par "Bien cordialement," suivi du nom complet du candidat
 
 FORMAT :
 Bonjour [destinataire],
@@ -244,7 +252,7 @@ Bonjour [destinataire],
 [Paragraphe 3 - Apport]
 
 Bien cordialement,
-[Nom du candidat]`;
+[Nom complet du candidat]`;
 
     const userPrompt = `ENTREPRISE CIBLE:
 - Nom: ${company.nom}
