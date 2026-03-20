@@ -265,26 +265,30 @@ serve(async (req) => {
 
         // Low-content warning injected in prompt if scraping returned little data
         const lowContentWarning = (!companyInfo || companyInfo.length < 200)
-          ? `\nATTENTION : très peu d'informations ont été trouvées sur le site de cette entreprise. Ne comble PAS ce manque par des suppositions. Base la ligne 2 du corps uniquement sur le secteur d'activité (libellé APE fourni) et la localisation. Mieux vaut 1 phrase factuelle que 3 phrases de remplissage.\n`
+          ? `\nATTENTION : très peu d'informations ont été trouvées sur le site de cette entreprise. Ne comble PAS ce manque par des suppositions. Base la phrase 2 uniquement sur le secteur d'activité (libellé APE fourni) et la localisation. Mieux vaut 1 phrase factuelle que 3 phrases de remplissage.\n`
           : '';
+
+        // Truncate CV to avoid flooding the model
+        const truncatedCv = cvContent ? cvContent.slice(0, 3000) : '';
 
         // Step 2: Generate personalized email using AI
         const systemPrompt = `Tu es un expert en rédaction d'emails de candidature spontanée. Tu appliques une stratégie précise pour maximiser le taux d'ouverture et de réponse.
 
 RÈGLES STRICTES :
 1. Écris UNIQUEMENT l'email, sans introduction ni explication
-2. Le corps du mail fait MAXIMUM 4 LIGNES (4 phrases courtes)
+2. Le corps du mail fait entre 4 et 6 PHRASES (pas de lignes vides entre les phrases). Chaque phrase doit être substantielle et apporter de la valeur — jamais de phrase creuse ou de remplissage.
 3. Structure obligatoire du corps :
-   - Ligne 1 : Qui je suis (statut volontairement flou, spécialisation)
-   - Ligne 2 : Pourquoi cette entreprise (élément spécifique si possible)
-   - Ligne 3 : Ce que je peux apporter (appui / renfort / contribution)
-   - Ligne 4 : Ouverture + mention PJ ("Vous trouverez en pièces jointes mon CV et ma lettre de motivation.")
+   - Phrase 1 : Qui je suis — spécialisation, domaine d'expertise (statut volontairement flou, NE PAS dire "étudiant" ou "junior")
+   - Phrase 2-3 : Pourquoi cette entreprise — un élément CONCRET et SPÉCIFIQUE (projet, produit, valeur, positionnement). Si aucune info n'est disponible sur l'entreprise, déduis quelque chose d'intelligent à partir du secteur d'activité et de la ville — NE JAMAIS écrire "je n'ai pas d'informations" ou "malgré les informations limitées" ou toute phrase similaire avouant un manque d'info.
+   - Phrase 4-5 : Ce que je peux apporter concrètement (appui / renfort / contribution) en lien avec mes compétences
+   - Phrase finale : Ouverture + mention PJ ("Vous trouverez en pièces jointes mon CV et ma lettre de motivation.")
 4. Ne JAMAIS mentionner le type de contrat (CDI, CDD, stage, alternance...)
 5. Toujours mentionner CV + lettre de motivation en pièces jointes
 6. AUCUN vocabulaire de prospection commerciale (pas de "collaboration", "enjeux", "échange" isolé)
 7. Ton professionnel, humain, non-commercial
 8. Ne laisser AUCUN placeholder [XXX] - personnaliser tout
 9. L'objet doit TOUJOURS contenir "Candidature spontanée"
+10. Ne JAMAIS mentionner ou sous-entendre que tu manques d'informations sur l'entreprise. Écris toujours comme si tu connaissais l'entreprise.
 
 ${subjectTypeInstruction}
 
@@ -293,35 +297,34 @@ ${examplesBlock}${sectorContext}
 RÈGLES ANTI-HALLUCINATION (CRITIQUES) :
 - Ne JAMAIS inventer de compétences. Utilise UNIQUEMENT les compétences mentionnées dans le CV du candidat. Si le CV mentionne du marketing, ne parle PAS de développement web.
 - Ne JAMAIS interpréter ou deviner le sens du nom de l'entreprise. Le nom "CHOOSE" ne veut pas dire que l'entreprise aide à "choisir".
-- Si les informations scrapées sont absentes ou insuffisantes, reste FACTUEL : mentionne uniquement le nom, la ville et le secteur APE. Ne comble PAS le manque d'information par des suppositions ou des formulations vagues type "votre approche innovante".
 - Le nom du candidat est fourni dans les données. Utilise-le TEL QUEL. Ne JAMAIS écrire "[Votre Nom]", "[Nom]", "[Nom du candidat]" ou tout autre placeholder.
-- Si une donnée est marquée "Non spécifié", ne la mentionne pas du tout plutôt que d'écrire "Non spécifié" dans l'email.
+- Ne JAMAIS mentionner ou avouer un manque d'information sur l'entreprise dans le corps de l'email.
 ${lowContentWarning}
 APPRENTISSAGE PAR L'EXEMPLE — Étudie ces exemples pour comprendre le niveau de personnalisation attendu :
 
 BON EXEMPLE D'EMAIL (entreprise e-commerce, candidat marketing digital) :
 Sujet: Candidature spontanée – Marketing digital – Eliyan Jacquet
 
-Spécialisé en marketing digital et SEO, je suis à la recherche d'un poste pour mettre mes compétences au service d'un e-commerçant qui croît vite.
-J'ai découvert votre logique de collections saisonnières renouvelées chaque semaine — c'est exactement le type d'environnement où l'optimisation du trafic organique et les campagnes ciblées font une vraie différence.
-Mon expérience en pilotage de projets digitaux pourrait contribuer à renforcer votre visibilité et accompagner vos temps forts commerciaux.
-Vous trouverez en pièces jointes mon CV et ma lettre de motivation.
+Spécialisé en marketing digital et SEO, je mets mes compétences au service d'entreprises qui cherchent à développer leur présence en ligne.
+J'ai découvert votre logique de collections saisonnières renouvelées chaque semaine et votre approche axée sur la croissance organique — c'est exactement le type d'environnement où l'optimisation du trafic et les campagnes ciblées font une vraie différence.
+Mon expérience en pilotage de projets digitaux et en référencement naturel pourrait contribuer à renforcer votre visibilité et accompagner vos temps forts commerciaux.
+Je serais ravi d'en échanger avec vous. Vous trouverez en pièces jointes mon CV et ma lettre de motivation.
 
 POURQUOI C'EST BON :
-- Ligne 2 cite un fait réel (collections saisonnières), pas "votre approche innovante"
-- Ligne 3 fait un lien concret compétence/besoin (SEO → trafic pour e-commerçant)
-- Aucune compétence inventée, aucun placeholder, 4 lignes exactement
+- Phrase 2-3 citent des éléments concrets, pas "votre approche innovante"
+- Phrases 4-5 font un lien concret compétence/besoin (SEO → trafic pour e-commerçant)
+- Aucune compétence inventée, aucun placeholder, 4 phrases substantielles
 
 CE QU'IL NE FAUT JAMAIS ÉCRIRE :
 - "votre approche innovante" / "votre positionnement unique" — formules vides
 - "je serais ravi de contribuer à vos enjeux" — langue de prospection
 - "[Nom]", "[Entreprise]", "[Secteur]" — placeholders interdits
-- Plus de 4 lignes dans le corps
+- "n'ayant pas d'informations sur votre entreprise" — interdit
 
 FORMAT DE SORTIE :
 Sujet: [objet selon le type choisi]
 
-[corps de l'email - 4 lignes max]`;
+[corps de l'email - 4 à 6 phrases]`;
 
         const candidatName = userProfile?.fullName || '';
         const candidatSpecialty = userProfile?.targetJobs || userProfile?.specialty || '';
@@ -331,12 +334,12 @@ Sujet: [objet selon le type choisi]
 
         const userPrompt = `ENTREPRISE CIBLE:
 - Nom: ${company.nom}
-- Ville: ${company.ville || 'Non spécifiée'}
-- Secteur: ${company.libelle_ape || 'Non spécifié'}
-- Site web: ${company.website_url || 'Non disponible'}
+- Ville: ${company.ville || ''}
+- Secteur: ${company.libelle_ape || ''}
+${company.website_url ? `- Site web: ${company.website_url}` : ''}
 
 INFORMATIONS SCRAPÉES DU SITE:
-${companyInfo || 'Aucune information scrapée disponible. NE PAS inventer d informations sur cette entreprise. Utilise uniquement le nom, la ville et le secteur APE fournis ci-dessus.'}
+${companyInfo ? companyInfo : `Aucune info scrapée disponible. Utilise le nom "${company.nom}", le secteur "${company.libelle_ape || ''}" et la ville "${company.ville || ''}" pour déduire le contexte de l'entreprise. Ne mentionne JAMAIS que tu n'as pas d'informations.`}
 
 ${template ? `STYLE DE RÉFÉRENCE (à adapter, pas copier):
 ${template}` : ''}
@@ -344,17 +347,13 @@ ${template}` : ''}
 ${userProfile?.profileSummary ? `RÉSUMÉ DU PROFIL (rédigé par le candidat lui-même — priorité absolue pour le comprendre) :
 ${userProfile.profileSummary}
 
-` : ''}${cvContent ? `CONTENU CV DU CANDIDAT:
-${cvContent}` : ''}
+` : ''}${truncatedCv ? `CONTENU CV DU CANDIDAT:
+${truncatedCv}` : ''}
 
 ${userProfile ? `INFORMATIONS CANDIDAT:
 - Nom complet: ${userProfile.fullName || ''}
 - Prénom: ${userProfile.firstName || ''}
-- Nom: ${userProfile.lastName || ''}
-- Niveau d'expérience: ${userProfile.experienceLevel || 'Non spécifié'}
-- Formation: ${userProfile.education || 'Non spécifiée'}
-- Spécialité / métier visé: ${userProfile.targetJobs || candidatSpecialty || 'Non spécifié'}
-- LinkedIn: ${userProfile.linkedinUrl || 'Non spécifié'}
+- Nom: ${userProfile.lastName || ''}${userProfile.experienceLevel ? `\n- Niveau d'expérience: ${userProfile.experienceLevel}` : ''}${userProfile.education ? `\n- Formation: ${userProfile.education}` : ''}${userProfile.targetJobs || candidatSpecialty ? `\n- Spécialité / métier visé: ${userProfile.targetJobs || candidatSpecialty}` : ''}${(userProfile as any)?.targetSectors?.length ? `\n- Secteurs cibles: ${((userProfile as any).targetSectors || []).join(', ')}` : ''}${userProfile.linkedinUrl ? `\n- LinkedIn: ${userProfile.linkedinUrl}` : ''}
 ` : ''}
 
 NOM DU CANDIDAT POUR L'OBJET: ${candidatName || ''}
