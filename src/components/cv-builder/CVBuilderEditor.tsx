@@ -469,7 +469,7 @@ const SkillInput = ({ value, onChange: onInputChange, onAdd, placeholder }: {
 );
 
 // ─── Step: Skills ─────────────────────────────────────────────────────────────
-const StepSkills = ({ cvData, onChange }: { cvData: CVData; onChange: (d: CVData) => void }) => {
+const StepSkills = ({ cvData, onChange, maxSkills = 16 }: { cvData: CVData; onChange: (d: CVData) => void; maxSkills?: number }) => {
   const [inputTech, setInputTech] = useState("");
 
   const addTech = (skill: string) => {
