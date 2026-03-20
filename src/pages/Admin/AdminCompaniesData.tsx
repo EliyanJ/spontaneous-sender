@@ -64,18 +64,18 @@ const ScrapingBadge = ({ insights }: { insights: any }) => {
 
   if (!hasContent) {
     return (
-      <span className="inline-flex items-center gap-1 text-xs text-amber-500">
-        <Clock className="h-3.5 w-3.5" />
-        Vide (il y a {daysSince}j)
+      <span className="inline-flex items-center gap-1 text-xs text-warning">
+        <Clock className="h-3.5 w-3.5 text-yellow-500" />
+        <span className="text-yellow-600 dark:text-yellow-400">Vide (il y a {daysSince}j)</span>
       </span>
     );
   }
 
   const charCount = (insights.full_content || insights.content_preview || "").length;
   return (
-    <span className="inline-flex items-center gap-1 text-xs text-green-500">
-      <CheckCircle2 className="h-3.5 w-3.5" />
-      {charCount.toLocaleString()} chars — il y a {daysSince}j
+    <span className="inline-flex items-center gap-1 text-xs">
+      <CheckCircle2 className="h-3.5 w-3.5 text-green-500" />
+      <span className="text-green-600 dark:text-green-400">{charCount.toLocaleString()} chars — il y a {daysSince}j</span>
     </span>
   );
 };
