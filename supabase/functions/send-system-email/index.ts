@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { Resend } from "https://esm.sh/resend@2.0.0";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
@@ -13,6 +14,15 @@ const ADMIN_EMAIL = "eliyanjacquet99@gmail.com";
 const FROM_EMAIL = "Cronos <noreply@getcronos.fr>";
 // Support email for ticket replies - hosted on IONOS
 const SUPPORT_EMAIL = "support@getcronos.fr";
+
+// HTML escape helper to prevent XSS/injection in email templates
+const esc = (s: unknown): string =>
+  String(s ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#x27;");
 
 interface EmailRequest {
   type: 
