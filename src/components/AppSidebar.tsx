@@ -3,7 +3,6 @@ import {
   LayoutDashboard,
   Search,
   Mail,
-  Send,
   Activity,
   RefreshCw,
   GitCompare,
