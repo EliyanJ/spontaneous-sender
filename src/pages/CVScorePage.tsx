@@ -93,23 +93,7 @@ export const CVScorePage = () => {
     <div className="min-h-screen bg-background">
       <Header />
 
-      {/* Bouton retour dashboard si connecté */}
-      {user && (
-        <div className="pt-[72px] px-4 pb-0">
-          <div className="max-w-4xl mx-auto">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate("/dashboard")}
-              className="text-muted-foreground hover:text-foreground gap-2"
-            >
-              <LayoutDashboard className="h-4 w-4" />
-              Retour au dashboard
-            </Button>
-          </div>
-        </div>
-      )}
-      <section className="relative overflow-hidden pt-8 pb-10 px-4" style={{ paddingTop: user ? '2rem' : '72px' }}>
+      <section className="relative overflow-hidden pt-[72px] pb-10 px-4">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent pointer-events-none" />
         <div className="max-w-4xl mx-auto text-center relative">
           <Badge variant="outline" className="mb-4 text-xs border-primary/30 text-primary bg-primary/5">
