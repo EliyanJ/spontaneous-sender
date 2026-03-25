@@ -1,13 +1,12 @@
 import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useSEO } from "@/hooks/useSEO";
-import { useAuth } from "@/hooks/useAuth";
 import { CVComparator } from "@/components/dashboard/CVComparator";
 import { CVScoreAuthPopup } from "@/components/CVScoreAuthPopup";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Zap, Target, TrendingUp, Shield, CheckCircle2, Star, FileText, Briefcase, LayoutDashboard } from "lucide-react";
+import { ArrowRight, Zap, Target, TrendingUp, Shield, CheckCircle2, Star, FileText, Briefcase } from "lucide-react";
 import { Header } from "@/components/Header";
 import { Logo } from "@/components/Logo";
 import { PublicFooter } from "@/components/PublicFooter";
@@ -56,8 +55,6 @@ const BENEFITS = [
 
 export const CVScorePage = () => {
   useSEO("/score-cv");
-  const { user } = useAuth();
-  const navigate = useNavigate();
   const [showAuthPopup, setShowAuthPopup] = useState(false);
   const [analysisCount, setAnalysisCount] = useState(0);
 
@@ -93,23 +90,7 @@ export const CVScorePage = () => {
     <div className="min-h-screen bg-background">
       <Header />
 
-      {/* Bouton retour dashboard si connecté */}
-      {user && (
-        <div className="pt-[72px] px-4 pb-0">
-          <div className="max-w-4xl mx-auto">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate("/dashboard")}
-              className="text-muted-foreground hover:text-foreground gap-2"
-            >
-              <LayoutDashboard className="h-4 w-4" />
-              Retour au dashboard
-            </Button>
-          </div>
-        </div>
-      )}
-      <section className="relative overflow-hidden pt-8 pb-10 px-4" style={{ paddingTop: user ? '2rem' : '72px' }}>
+      <section className="relative overflow-hidden pt-[72px] pb-10 px-4">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent pointer-events-none" />
         <div className="max-w-4xl mx-auto text-center relative">
           <Badge variant="outline" className="mb-4 text-xs border-primary/30 text-primary bg-primary/5">
