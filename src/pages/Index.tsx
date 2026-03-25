@@ -46,6 +46,10 @@ const Index = () => {
       navigate("/cv-builder");
       return;
     }
+    if (newTab === "cv-comparator") {
+      navigate("/score-cv");
+      return;
+    }
     setActiveTab(newTab);
     setSearchParams({ tab: newTab });
   };
