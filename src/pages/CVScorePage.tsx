@@ -109,7 +109,7 @@ export const CVScorePage = () => {
           </div>
         </div>
       )}
-      <section className="relative overflow-hidden pt-[72px] pb-10 px-4">
+      <section className="relative overflow-hidden pt-8 pb-10 px-4" style={{ paddingTop: user ? '2rem' : '72px' }}>
         <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent pointer-events-none" />
         <div className="max-w-4xl mx-auto text-center relative">
           <Badge variant="outline" className="mb-4 text-xs border-primary/30 text-primary bg-primary/5">
