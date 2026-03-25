@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { Resend } from "https://esm.sh/resend@2.0.0";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
@@ -13,6 +14,15 @@ const ADMIN_EMAIL = "eliyanjacquet99@gmail.com";
 const FROM_EMAIL = "Cronos <noreply@getcronos.fr>";
 // Support email for ticket replies - hosted on IONOS
 const SUPPORT_EMAIL = "support@getcronos.fr";
+
+// HTML escape helper to prevent XSS/injection in email templates
+const esc = (s: unknown): string =>
+  String(s ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#x27;");
 
 interface EmailRequest {
   type: 
@@ -112,19 +122,19 @@ const getTicketNotificationHtml = (data: EmailRequest) => `
     <div class="content">
       <div class="info-box">
         <p class="label">Utilisateur:</p>
-        <p>${data.userEmail || 'Non spécifié'}</p>
+        <p>${esc(data.userEmail) || 'Non spécifié'}</p>
       </div>
       <div class="info-box">
         <p class="label">Sujet:</p>
-        <p>${data.subject}</p>
+        <p>${esc(data.subject)}</p>
       </div>
       <div class="info-box">
         <p class="label">Description:</p>
-        <p>${data.description}</p>
+        <p>${esc(data.description)}</p>
       </div>
       <div class="info-box">
         <p class="label">Page:</p>
-        <p><code>${data.currentPage}</code></p>
+        <p><code>${esc(data.currentPage)}</code></p>
       </div>
       <p style="margin-top: 20px;">
         <a href="https://getcronos.fr/admin/tickets" style="background: #667eea; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px;">
@@ -161,10 +171,10 @@ const getTicketConfirmationHtml = (data: EmailRequest) => `
       <p>Bonjour,</p>
       <p>Nous avons bien reçu votre demande d'assistance.</p>
       
-      ${data.ticketId ? `<p>Numéro de ticket : <span class="ticket-id">#${data.ticketId.slice(0, 8).toUpperCase()}</span></p>` : ''}
+      ${data.ticketId ? `<p>Numéro de ticket : <span class="ticket-id">#${esc(data.ticketId).slice(0, 8).toUpperCase()}</span></p>` : ''}
       
       <div class="info-box">
-        <p><strong>Sujet :</strong> ${data.subject}</p>
+        <p><strong>Sujet :</strong> ${esc(data.subject)}</p>
       </div>
       
       <p>Notre équipe vous répondra dans les <strong>24 à 48 heures</strong> ouvrables.</p>
@@ -499,6 +509,30 @@ const getNewUserAdminHtml = (data: EmailRequest) => `
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
+  }
+
+  // Require a valid Bearer token for all requests
+  const authHeader = req.headers.get("Authorization");
+  if (!authHeader?.startsWith("Bearer ")) {
+    return new Response(JSON.stringify({ error: "Unauthorized" }), {
+      status: 401,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
+  const supabaseClient = createClient(
+    Deno.env.get("SUPABASE_URL") ?? "",
+    Deno.env.get("SUPABASE_ANON_KEY") ?? "",
+    { global: { headers: { Authorization: authHeader } } }
+  );
+
+  const token = authHeader.replace("Bearer ", "");
+  const { data: { user }, error: authError } = await supabaseClient.auth.getUser(token);
+  if (authError || !user) {
+    return new Response(JSON.stringify({ error: "Unauthorized" }), {
+      status: 401,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 
   try {
