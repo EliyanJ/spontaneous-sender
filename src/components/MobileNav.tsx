@@ -1,7 +1,7 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { 
-  LayoutDashboard, Search, Mail, Send, Activity, RefreshCw, 
+  LayoutDashboard, Search, Mail, Activity,
   GitCompare, FileText, Settings, Shield, Menu
 } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -21,7 +21,6 @@ const menuItems = [
   { title: "Recherche",      icon: Search,          value: "search" },
   { title: "Envoi d'email",  icon: Mail,            value: "emails" },
   { title: "Suivi",          icon: Activity,        value: "suivi" },
-  { title: "Relance",        icon: RefreshCw,       value: "relance" },
   { title: "Comparateur CV", icon: GitCompare,      value: "cv-comparator" },
   { title: "Créateur CV",    icon: FileText,        value: "cv-builder", route: "/cv-builder" },
   { title: "Paramètres",     icon: Settings,        value: "settings" },

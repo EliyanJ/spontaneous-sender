@@ -4,7 +4,6 @@ import {
   Search,
   Mail,
   Activity,
-  RefreshCw,
   GitCompare,
   FileText,
   Settings,
@@ -35,7 +34,6 @@ const menuItems = [
   { title: "Recherche",      icon: Search,          value: "search" },
   { title: "Envoi d'email",  icon: Mail,            value: "emails" },
   { title: "Suivi",          icon: Activity,        value: "suivi" },
-  { title: "Relance",        icon: RefreshCw,       value: "relance" },
   { title: "Comparateur CV", icon: GitCompare,      value: "cv-comparator" },
   { title: "Créateur CV",    icon: FileText,        value: "cv-builder" },
 ];
