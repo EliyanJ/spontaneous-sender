@@ -19,8 +19,7 @@ import { Button } from "@/components/ui/button";
 const menuItems = [
   { title: "Dashboard",      icon: LayoutDashboard, value: "overview" },
   { title: "Recherche",      icon: Search,          value: "search" },
-  { title: "Emails",         icon: Mail,            value: "emails" },
-  { title: "Campagnes",      icon: Send,            value: "campaigns" },
+  { title: "Envoi d'email",  icon: Mail,            value: "emails" },
   { title: "Suivi",          icon: Activity,        value: "suivi" },
   { title: "Relance",        icon: RefreshCw,       value: "relance" },
   { title: "Comparateur CV", icon: GitCompare,      value: "cv-comparator" },
