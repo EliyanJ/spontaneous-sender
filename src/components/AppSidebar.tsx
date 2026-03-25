@@ -4,7 +4,6 @@ import {
   Search,
   Mail,
   Activity,
-  RefreshCw,
   GitCompare,
   FileText,
   Settings,
