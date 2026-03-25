@@ -122,19 +122,19 @@ const getTicketNotificationHtml = (data: EmailRequest) => `
     <div class="content">
       <div class="info-box">
         <p class="label">Utilisateur:</p>
-        <p>${data.userEmail || 'Non spécifié'}</p>
+        <p>${esc(data.userEmail) || 'Non spécifié'}</p>
       </div>
       <div class="info-box">
         <p class="label">Sujet:</p>
-        <p>${data.subject}</p>
+        <p>${esc(data.subject)}</p>
       </div>
       <div class="info-box">
         <p class="label">Description:</p>
-        <p>${data.description}</p>
+        <p>${esc(data.description)}</p>
       </div>
       <div class="info-box">
         <p class="label">Page:</p>
-        <p><code>${data.currentPage}</code></p>
+        <p><code>${esc(data.currentPage)}</code></p>
       </div>
       <p style="margin-top: 20px;">
         <a href="https://getcronos.fr/admin/tickets" style="background: #667eea; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px;">
@@ -171,10 +171,10 @@ const getTicketConfirmationHtml = (data: EmailRequest) => `
       <p>Bonjour,</p>
       <p>Nous avons bien reçu votre demande d'assistance.</p>
       
-      ${data.ticketId ? `<p>Numéro de ticket : <span class="ticket-id">#${data.ticketId.slice(0, 8).toUpperCase()}</span></p>` : ''}
+      ${data.ticketId ? `<p>Numéro de ticket : <span class="ticket-id">#${esc(data.ticketId).slice(0, 8).toUpperCase()}</span></p>` : ''}
       
       <div class="info-box">
-        <p><strong>Sujet :</strong> ${data.subject}</p>
+        <p><strong>Sujet :</strong> ${esc(data.subject)}</p>
       </div>
       
       <p>Notre équipe vous répondra dans les <strong>24 à 48 heures</strong> ouvrables.</p>
