@@ -95,11 +95,11 @@ interface CampaignsHubProps {
   defaultTab?: 'campaigns' | 'suivi' | 'relance';
 }
 
-export const CampaignsHub = ({ defaultTab = 'campaigns' }: CampaignsHubProps) => {
+export const CampaignsHub = ({ defaultTab = 'suivi' }: CampaignsHubProps) => {
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [scheduledEmails, setScheduledEmails] = useState<ScheduledEmail[]>([]);
   const [loading, setLoading] = useState(true);
-  const [mainTab, setMainTab] = useState<'campaigns' | 'suivi'>(defaultTab === 'suivi' ? 'suivi' : 'campaigns');
+  const [mainTab, setMainTab] = useState<'campaigns' | 'suivi'>(defaultTab === 'campaigns' ? 'campaigns' : 'suivi');
   const [followUpDelay, setFollowUpDelay] = useState(10);
   const [cancelling, setCancelling] = useState<string | null>(null);
   const [expandedBatch, setExpandedBatch] = useState<string | null>(null);
