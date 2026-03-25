@@ -1,12 +1,13 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useSEO } from "@/hooks/useSEO";
+import { useAuth } from "@/hooks/useAuth";
 import { CVComparator } from "@/components/dashboard/CVComparator";
 import { CVScoreAuthPopup } from "@/components/CVScoreAuthPopup";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Zap, Target, TrendingUp, Shield, CheckCircle2, Star, FileText, Briefcase } from "lucide-react";
+import { ArrowRight, Zap, Target, TrendingUp, Shield, CheckCircle2, Star, FileText, Briefcase, LayoutDashboard } from "lucide-react";
 import { Header } from "@/components/Header";
 import { Logo } from "@/components/Logo";
 import { PublicFooter } from "@/components/PublicFooter";
