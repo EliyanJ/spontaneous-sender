@@ -56,6 +56,8 @@ const BENEFITS = [
 
 export const CVScorePage = () => {
   useSEO("/score-cv");
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const [showAuthPopup, setShowAuthPopup] = useState(false);
   const [analysisCount, setAnalysisCount] = useState(0);
 
