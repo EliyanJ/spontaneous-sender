@@ -47,15 +47,8 @@ interface ActivityItem {
   created_at: string | null;
 }
 
-const performanceData = [
-  { day: "Lun", applications: 8, responses: 2 },
-  { day: "Mar", applications: 14, responses: 5 },
-  { day: "Mer", applications: 11, responses: 7 },
-  { day: "Jeu", applications: 19, responses: 9 },
-  { day: "Ven", applications: 16, responses: 11 },
-  { day: "Sam", applications: 23, responses: 14 },
-  { day: "Dim", applications: 28, responses: 18 },
-];
+// Chart placeholder — will be replaced by real data in a future feature
+const performanceData: any[] = [];
 
 const statusConfig: Record<string, { label: string; color: string; dot: string }> = {
   contacted: { label: "Contacté", color: "bg-blue-50 text-blue-600 border-blue-100", dot: "bg-blue-600" },
