@@ -709,4 +709,3 @@ function ProjCard({ label, value, sub, variant }: { label: string; value: string
   );
 }
 
-function fmtInt(n: number) { return n.toLocaleString("fr-FR"); }
