@@ -686,6 +686,7 @@ async function findCompanyEmailsNew(company: CompanyRow): Promise<{
   emails: string[];
   confidence: string;
   source: string;
+  hunterAttempted: boolean;
   careerPageUrl?: string;
   alternativeContact?: string;
   error?: string;
@@ -703,6 +704,7 @@ async function findCompanyEmailsNew(company: CompanyRow): Promise<{
       emails: [],
       confidence: "none",
       source: "serpapi",
+      hunterAttempted: false,
       error: "No official website found"
     };
   }
@@ -712,6 +714,7 @@ async function findCompanyEmailsNew(company: CompanyRow): Promise<{
   let finalEmails: string[] = [];
   let source = "none";
   let confidence = "none";
+  let hunterAttempted = false;
   let careerPageUrl: string | undefined;
   let alternativeContact: string | undefined;
 
@@ -732,6 +735,8 @@ async function findCompanyEmailsNew(company: CompanyRow): Promise<{
     // ÉTAPE 3: Fallback Hunter.io (PAYANT mais plus fiable)
     console.log(`\n[Step 3] 💰 Scraping found 0 emails, trying Hunter.io (paid fallback)...`);
     
+    // Mark hunter as attempted ONLY right before the actual API call
+    hunterAttempted = true;
     const hunterResult = await findEmailsWithHunter(website, 50); // Premium plan: 50 results
     
     if (hunterResult.emails.length > 0) {
@@ -765,6 +770,7 @@ async function findCompanyEmailsNew(company: CompanyRow): Promise<{
     emails: finalEmails,
     confidence,
     source,
+    hunterAttempted,
     careerPageUrl,
     alternativeContact,
   };
