@@ -119,37 +119,47 @@ export const DashboardOverview = ({ onNavigateToTab }: DashboardOverviewProps) =
     const fetchData = async () => {
       try {
         const [
-          profileRes, subscriptionRes, companiesRes, emailsRes, campaignsRes, activityRes, cvsRes
+          profileRes, subscriptionRes, companiesRecentRes, companiesCountRes,
+          emailsSentRes, emailsFoundRes, campaignsRes, activityRes, cvsRes, cvScoreRes
         ] = await Promise.all([
           supabase.from("profiles").select("first_name").eq("id", user.id).single(),
           supabase.from("subscriptions").select("tokens_remaining, sends_remaining, sends_limit").eq("user_id", user.id).single(),
           supabase.from("companies").select("id, nom, status, emails, created_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(5),
+          supabase.from("companies").select("id", { count: "exact", head: true }).eq("user_id", user.id),
           supabase.from("email_campaigns").select("id", { count: "exact", head: true }).eq("user_id", user.id),
+          supabase.from("companies").select("id", { count: "exact", head: true }).eq("user_id", user.id).not("selected_email", "is", null),
           supabase.from("campaigns").select("id, sent_emails").eq("user_id", user.id),
           supabase.from("user_activity_logs").select("id, action_type, action_data, created_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(5),
           supabase.from("user_generated_cvs").select("id", { count: "exact", head: true }).eq("user_id", user.id),
+          supabase.from("cv_analyses").select("total_score").eq("user_id", user.id).order("created_at", { ascending: false }).limit(1),
         ]);
 
         if (profileRes.data?.first_name) setFirstName(profileRes.data.first_name);
 
         const tokensRemaining = subscriptionRes.data?.tokens_remaining ?? 0;
         const sendsRemaining = subscriptionRes.data?.sends_remaining ?? 0;
+        const sendsLimit = subscriptionRes.data?.sends_limit ?? 0;
 
-        const totalEmailsSent = emailsRes.count ?? 0;
+        const totalEmailsSent = emailsSentRes.count ?? 0;
+        const totalEmailsFound = emailsFoundRes.count ?? 0;
         const totalCVs = cvsRes.count ?? 0;
+        const totalCompanies = companiesCountRes.count ?? 0;
+        const lastCvScore = cvScoreRes.data && cvScoreRes.data.length > 0 ? Number(cvScoreRes.data[0].total_score) : null;
 
         setStats({
-          emailsFound: totalEmailsSent,
+          emailsSent: totalEmailsSent,
+          emailsFound: totalEmailsFound,
           cvsGenerated: totalCVs,
           coverLetters: 0,
-          creditsUsed: 0,
           creditsRemaining: tokensRemaining,
-          totalCompanies: companiesRes.data?.length ?? 0,
+          sendsRemaining,
+          sendsLimit,
+          totalCompanies,
           campaignsSent: campaignsRes.data?.reduce((sum, c) => sum + (c.sent_emails ?? 0), 0) ?? 0,
-          cvScore: null,
+          cvScore: lastCvScore,
         });
 
-        setRecentCompanies(companiesRes.data ?? []);
+        setRecentCompanies(companiesRecentRes.data ?? []);
         setActivity(activityRes.data ?? []);
       } catch (err) {
         console.error("Dashboard fetch error:", err);
