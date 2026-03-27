@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 import { SearchCompanies } from "@/components/dashboard/SearchCompanies";
-import { UnifiedEmailSender } from "@/components/dashboard/UnifiedEmailSender";
+import { Emails } from "@/components/dashboard/Emails";
 import { CampaignsHub } from "@/components/dashboard/CampaignsHub";
 import { Settings } from "@/components/dashboard/Settings";
 import { DashboardOverview } from "@/components/dashboard/DashboardOverview";
@@ -61,7 +61,7 @@ const Index = () => {
       case "search":
         return <SearchCompanies onNavigateToTab={handleTabChange} />;
       case "emails":
-        return <UnifiedEmailSender />;
+        return <Emails onNavigateToTab={handleTabChange} />;
       case "suivi":
         return <CampaignsHub defaultTab="suivi" />;
       case "relance":

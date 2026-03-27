@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { AISearchMode } from "./search/AISearchMode";
 import { ManualSearchMode } from "./search/ManualSearchMode";
 import { SearchResultsStep } from "./search/SearchResultsStep";
+import { BatchResultsSummary } from "./search/BatchResultsSummary";
 import { JobProgressCard } from "./JobProgressCard";
 import { AutomaticSearch } from "./AutomaticSearch";
 import { UpgradeBanner } from "@/components/UpgradeBanner";
@@ -51,7 +52,7 @@ export const SearchCompanies = ({ onNavigateToTab }: SearchCompaniesProps = {}) 
   const [minResults, setMinResults] = useState("20");
   const [minEmployees, setMinEmployees] = useState("5-100");
   const [isProcessing, setIsProcessing] = useState(false);
-
+  const [batchSummary, setBatchSummary] = useState<{ batchId: string; count: number } | null>(null);
   const { features, isLoading: planLoading, isPremium } = usePlanFeatures();
 
   const handleJobComplete = useCallback((job: any) => {
@@ -264,14 +265,11 @@ export const SearchCompanies = ({ onNavigateToTab }: SearchCompaniesProps = {}) 
         detail: { batchId: searchBatchId, count: toInsert.length } 
       }));
       
-      toast.success(`${toInsert.length} entreprise(s) sauvegardée(s)`);
+      toast.success(`${toInsert.length} entreprise(s) sauvegardée(s) — recherche d'emails en cours…`);
       setCompanies([]);
       
-      if (onNavigateToTab) {
-        onNavigateToTab('entreprises');
-      } else {
-        setSearchParams({ tab: 'entreprises' });
-      }
+      // Show batch summary with email search instead of navigating away
+      setBatchSummary({ batchId: searchBatchId, count: toInsert.length });
     } catch (error: any) {
       toast.error('Erreur lors de la sauvegarde');
     } finally {
@@ -289,6 +287,27 @@ export const SearchCompanies = ({ onNavigateToTab }: SearchCompaniesProps = {}) 
 
   if (!features.canUseAISearch && !features.canUseManualSearch) {
     return <AutomaticSearch onNavigateToTab={onNavigateToTab} />;
+  }
+
+  // Show batch summary after saving
+  if (batchSummary) {
+    return (
+      <div className="h-full">
+        <BatchResultsSummary
+          batchId={batchSummary.batchId}
+          totalCompanies={batchSummary.count}
+          onGoToEmails={() => {
+            setBatchSummary(null);
+            if (onNavigateToTab) onNavigateToTab('emails');
+          }}
+          onNewSearch={() => {
+            setBatchSummary(null);
+            setCompanies([]);
+            setSelectedCodes([]);
+          }}
+        />
+      </div>
+    );
   }
 
   return (
