@@ -906,7 +906,12 @@ serve(async (req) => {
       const updateData: any = {
         website_url: result.website,
         emails: result.emails.length > 0 ? result.emails : null,
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
+        // Source tracking
+        email_source: result.emails.length > 0 
+          ? (result.source === "hunter.io" ? "hunter" : "scraping")
+          : "none",
+        hunter_attempted: result.hunterAttempted,
       };
 
       if (result.emails.length > 0) {
