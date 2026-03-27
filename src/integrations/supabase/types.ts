@@ -341,8 +341,10 @@ export type Database = {
           code_postal: string | null
           company_insights: Json | null
           created_at: string | null
+          email_source: string | null
           emails: Json | null
           has_contact_form: boolean | null
+          hunter_attempted: boolean | null
           id: string
           libelle_ape: string | null
           nature_juridique: string | null
@@ -368,8 +370,10 @@ export type Database = {
           code_postal?: string | null
           company_insights?: Json | null
           created_at?: string | null
+          email_source?: string | null
           emails?: Json | null
           has_contact_form?: boolean | null
+          hunter_attempted?: boolean | null
           id?: string
           libelle_ape?: string | null
           nature_juridique?: string | null
@@ -395,8 +399,10 @@ export type Database = {
           code_postal?: string | null
           company_insights?: Json | null
           created_at?: string | null
+          email_source?: string | null
           emails?: Json | null
           has_contact_form?: boolean | null
+          hunter_attempted?: boolean | null
           id?: string
           libelle_ape?: string | null
           nature_juridique?: string | null
