@@ -265,14 +265,11 @@ export const SearchCompanies = ({ onNavigateToTab }: SearchCompaniesProps = {}) 
         detail: { batchId: searchBatchId, count: toInsert.length } 
       }));
       
-      toast.success(`${toInsert.length} entreprise(s) sauvegardée(s)`);
+      toast.success(`${toInsert.length} entreprise(s) sauvegardée(s) — recherche d'emails en cours…`);
       setCompanies([]);
       
-      if (onNavigateToTab) {
-        onNavigateToTab('entreprises');
-      } else {
-        setSearchParams({ tab: 'entreprises' });
-      }
+      // Show batch summary with email search instead of navigating away
+      setBatchSummary({ batchId: searchBatchId, count: toInsert.length });
     } catch (error: any) {
       toast.error('Erreur lors de la sauvegarde');
     } finally {
