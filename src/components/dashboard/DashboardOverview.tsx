@@ -5,9 +5,9 @@ import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend
 } from "recharts";
 import {
-  Mail, FileText, PenLine, Zap, TrendingUp, TrendingDown, Minus,
+  Mail, FileText, PenLine, Zap, TrendingUp,
   ArrowRight, Building2, Search, Send, Briefcase, Target, ChevronRight,
-  Sparkles, Globe
+  Sparkles
 } from "lucide-react";
 import { format, subDays } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -20,11 +20,13 @@ interface DashboardOverviewProps {
 }
 
 interface Stats {
+  emailsSent: number;
   emailsFound: number;
   cvsGenerated: number;
   coverLetters: number;
-  creditsUsed: number;
   creditsRemaining: number;
+  sendsRemaining: number;
+  sendsLimit: number;
   totalCompanies: number;
   campaignsSent: number;
   cvScore: number | null;
@@ -45,15 +47,8 @@ interface ActivityItem {
   created_at: string | null;
 }
 
-const performanceData = [
-  { day: "Lun", applications: 8, responses: 2 },
-  { day: "Mar", applications: 14, responses: 5 },
-  { day: "Mer", applications: 11, responses: 7 },
-  { day: "Jeu", applications: 19, responses: 9 },
-  { day: "Ven", applications: 16, responses: 11 },
-  { day: "Sam", applications: 23, responses: 14 },
-  { day: "Dim", applications: 28, responses: 18 },
-];
+// Chart placeholder — will be replaced by real data in a future feature
+const performanceData: any[] = [];
 
 const statusConfig: Record<string, { label: string; color: string; dot: string }> = {
   contacted: { label: "Contacté", color: "bg-blue-50 text-blue-600 border-blue-100", dot: "bg-blue-600" },
@@ -109,8 +104,9 @@ function CircularProgress({ score }: { score: number }) {
 export const DashboardOverview = ({ onNavigateToTab }: DashboardOverviewProps) => {
   const { user } = useAuth();
   const [stats, setStats] = useState<Stats>({
-    emailsFound: 0, cvsGenerated: 0, coverLetters: 0, creditsUsed: 0,
-    creditsRemaining: 0, totalCompanies: 0, campaignsSent: 0, cvScore: null,
+    emailsSent: 0, emailsFound: 0, cvsGenerated: 0, coverLetters: 0,
+    creditsRemaining: 0, sendsRemaining: 0, sendsLimit: 0,
+    totalCompanies: 0, campaignsSent: 0, cvScore: null,
   });
   const [recentCompanies, setRecentCompanies] = useState<RecentCompany[]>([]);
   const [activity, setActivity] = useState<ActivityItem[]>([]);
@@ -123,37 +119,47 @@ export const DashboardOverview = ({ onNavigateToTab }: DashboardOverviewProps) =
     const fetchData = async () => {
       try {
         const [
-          profileRes, subscriptionRes, companiesRes, emailsRes, campaignsRes, activityRes, cvsRes
+          profileRes, subscriptionRes, companiesRecentRes, companiesCountRes,
+          emailsSentRes, emailsFoundRes, campaignsRes, activityRes, cvsRes, cvScoreRes
         ] = await Promise.all([
           supabase.from("profiles").select("first_name").eq("id", user.id).single(),
           supabase.from("subscriptions").select("tokens_remaining, sends_remaining, sends_limit").eq("user_id", user.id).single(),
           supabase.from("companies").select("id, nom, status, emails, created_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(5),
+          supabase.from("companies").select("id", { count: "exact", head: true }).eq("user_id", user.id),
           supabase.from("email_campaigns").select("id", { count: "exact", head: true }).eq("user_id", user.id),
+          supabase.from("companies").select("id", { count: "exact", head: true }).eq("user_id", user.id).not("selected_email", "is", null),
           supabase.from("campaigns").select("id, sent_emails").eq("user_id", user.id),
           supabase.from("user_activity_logs").select("id, action_type, action_data, created_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(5),
           supabase.from("user_generated_cvs").select("id", { count: "exact", head: true }).eq("user_id", user.id),
+          supabase.from("cv_analyses").select("total_score").eq("user_id", user.id).order("created_at", { ascending: false }).limit(1),
         ]);
 
         if (profileRes.data?.first_name) setFirstName(profileRes.data.first_name);
 
         const tokensRemaining = subscriptionRes.data?.tokens_remaining ?? 0;
         const sendsRemaining = subscriptionRes.data?.sends_remaining ?? 0;
+        const sendsLimit = subscriptionRes.data?.sends_limit ?? 0;
 
-        const totalEmailsSent = emailsRes.count ?? 0;
+        const totalEmailsSent = emailsSentRes.count ?? 0;
+        const totalEmailsFound = emailsFoundRes.count ?? 0;
         const totalCVs = cvsRes.count ?? 0;
+        const totalCompanies = companiesCountRes.count ?? 0;
+        const lastCvScore = cvScoreRes.data && cvScoreRes.data.length > 0 ? Number(cvScoreRes.data[0].total_score) : null;
 
         setStats({
-          emailsFound: totalEmailsSent,
+          emailsSent: totalEmailsSent,
+          emailsFound: totalEmailsFound,
           cvsGenerated: totalCVs,
           coverLetters: 0,
-          creditsUsed: 0,
           creditsRemaining: tokensRemaining,
-          totalCompanies: companiesRes.data?.length ?? 0,
+          sendsRemaining,
+          sendsLimit,
+          totalCompanies,
           campaignsSent: campaignsRes.data?.reduce((sum, c) => sum + (c.sent_emails ?? 0), 0) ?? 0,
-          cvScore: null,
+          cvScore: lastCvScore,
         });
 
-        setRecentCompanies(companiesRes.data ?? []);
+        setRecentCompanies(companiesRecentRes.data ?? []);
         setActivity(activityRes.data ?? []);
       } catch (err) {
         console.error("Dashboard fetch error:", err);
@@ -172,8 +178,6 @@ export const DashboardOverview = ({ onNavigateToTab }: DashboardOverviewProps) =
       icon: <Mail className="h-5 w-5" />,
       iconBg: "bg-blue-50 text-blue-600",
       bar: "bg-blue-500",
-      barWidth: "75%",
-      trend: { value: "8.2%", up: true },
       onClick: () => onNavigateToTab("emails"),
     },
     {
@@ -182,28 +186,23 @@ export const DashboardOverview = ({ onNavigateToTab }: DashboardOverviewProps) =
       icon: <FileText className="h-5 w-5" />,
       iconBg: "bg-primary/10 text-primary",
       bar: "bg-primary",
-      barWidth: "60%",
-      trend: { value: "12.5%", up: true },
       onClick: () => onNavigateToTab("cv-score"),
     },
     {
-      label: "Emails de candidature",
-      value: stats.emailsFound,
+      label: "Candidatures envoyées",
+      value: stats.emailsSent,
       icon: <PenLine className="h-5 w-5" />,
       iconBg: "bg-orange-50 text-orange-500",
       bar: "bg-orange-500",
-      barWidth: "45%",
-      trend: { value: "0.0%", neutral: true },
       onClick: () => onNavigateToTab("campaigns"),
     },
     {
       label: "Crédits restants",
-      value: stats.creditsRemaining,
+      value: stats.sendsRemaining + stats.creditsRemaining,
+      subtitle: `${stats.sendsRemaining} envois + ${stats.creditsRemaining} tokens`,
       icon: <Zap className="h-5 w-5" />,
-      iconBg: "bg-red-50 text-red-500",
-      bar: "bg-red-500",
-      barWidth: "85%",
-      trend: { value: "2.1%", up: false },
+      iconBg: "bg-green-50 text-green-600",
+      bar: "bg-green-500",
       onClick: () => onNavigateToTab("settings"),
     },
   ];
@@ -292,28 +291,17 @@ export const DashboardOverview = ({ onNavigateToTab }: DashboardOverviewProps) =
             className="bg-card border border-border rounded-xl p-5 hover:shadow-md hover:border-primary/20 transition-all cursor-pointer group"
           >
             <div className="flex justify-between items-start mb-4">
-              <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center", card.iconBg)}>
+             <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center", card.iconBg)}>
                 {card.icon}
               </div>
-              <span className={cn(
-                "text-xs font-medium px-2 py-1 rounded-full flex items-center gap-1",
-                card.trend.up ? "bg-green-50 text-green-600 dark:bg-green-950 dark:text-green-400" :
-                card.trend.neutral ? "bg-muted text-muted-foreground" :
-                "bg-red-50 text-red-600 dark:bg-red-950 dark:text-red-400"
-              )}>
-                {card.trend.up ? <TrendingUp className="h-2.5 w-2.5" /> :
-                 card.trend.neutral ? <Minus className="h-2.5 w-2.5" /> :
-                 <TrendingDown className="h-2.5 w-2.5" />}
-                {card.trend.value}
-              </span>
             </div>
             <p className="text-muted-foreground text-sm font-medium">{card.label}</p>
             <p className="text-2xl font-bold text-foreground mt-1 group-hover:text-primary transition-colors">
               {card.value.toLocaleString("fr-FR")}
             </p>
-            <div className="w-full bg-muted h-1.5 rounded-full mt-3 overflow-hidden">
-              <div className={cn("h-1.5 rounded-full transition-all duration-700", card.bar)} style={{ width: card.barWidth }} />
-            </div>
+            {'subtitle' in card && card.subtitle && (
+              <p className="text-xs text-muted-foreground mt-1">{card.subtitle}</p>
+            )}
           </div>
         ))}
       </div>
@@ -327,42 +315,15 @@ export const DashboardOverview = ({ onNavigateToTab }: DashboardOverviewProps) =
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-3">
               <div>
                 <h3 className="text-lg font-bold text-foreground">Performance de recherche</h3>
-                <p className="text-sm text-muted-foreground">Applications vs. réponses sur 7 jours</p>
-              </div>
-              <div className="flex bg-muted p-1 rounded-lg border border-border">
-                <button className="px-3 py-1 text-xs font-medium rounded-md bg-card text-foreground shadow-sm">Semaine</button>
-                <button className="px-3 py-1 text-xs font-medium rounded-md text-muted-foreground hover:text-foreground">Mois</button>
-                <button className="px-3 py-1 text-xs font-medium rounded-md text-muted-foreground hover:text-foreground">Année</button>
+                <p className="text-sm text-muted-foreground">Fonctionnalité à venir</p>
               </div>
             </div>
-            <ResponsiveContainer width="100%" height={280}>
-              <AreaChart data={performanceData} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="colorApps" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="hsl(263 75% 58%)" stopOpacity={0.15} />
-                    <stop offset="95%" stopColor="hsl(263 75% 58%)" stopOpacity={0} />
-                  </linearGradient>
-                  <linearGradient id="colorResp" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#22C55E" stopOpacity={0.15} />
-                    <stop offset="95%" stopColor="#22C55E" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                <XAxis dataKey="day" tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} />
-                <Tooltip
-                  contentStyle={{
-                    background: "hsl(var(--card))",
-                    border: "1px solid hsl(var(--border))",
-                    borderRadius: "8px",
-                    fontSize: "12px",
-                  }}
-                />
-                <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: "12px" }} />
-                <Area type="monotone" dataKey="applications" name="Candidatures" stroke="hsl(263 75% 58%)" strokeWidth={3} fill="url(#colorApps)" />
-                <Area type="monotone" dataKey="responses" name="Réponses" stroke="#22C55E" strokeWidth={3} fill="url(#colorResp)" />
-              </AreaChart>
-            </ResponsiveContainer>
+            <div className="flex items-center justify-center h-[280px] text-muted-foreground">
+              <div className="text-center">
+                <TrendingUp className="h-12 w-12 mx-auto mb-3 opacity-20" />
+                <p className="text-sm">Les statistiques de performance seront disponibles prochainement</p>
+              </div>
+            </div>
           </div>
 
           {/* Recent Companies Table */}
@@ -443,16 +404,25 @@ export const DashboardOverview = ({ onNavigateToTab }: DashboardOverviewProps) =
           <div className="bg-card border border-border rounded-xl p-6 relative overflow-hidden">
             <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-bl-full -mr-8 -mt-8 pointer-events-none" />
             <h3 className="text-base font-bold text-foreground mb-4 relative z-10">Score d'optimisation CV</h3>
-            <CircularProgress score={stats.cvScore ?? 72} />
-            <p className="text-sm text-center text-muted-foreground mt-4 px-2">
-              Votre CV est dans le <span className="font-bold text-green-600 dark:text-green-400">top 28%</span> des candidats.
-            </p>
+            {stats.cvScore !== null ? (
+              <>
+                <CircularProgress score={stats.cvScore} />
+                <p className="text-sm text-center text-muted-foreground mt-4 px-2">
+                  Basé sur votre dernière analyse ATS
+                </p>
+              </>
+            ) : (
+              <div className="text-center py-6">
+                <Target className="h-10 w-10 mx-auto mb-3 text-muted-foreground/30" />
+                <p className="text-sm text-muted-foreground">Aucune analyse CV effectuée</p>
+              </div>
+            )}
             <Button
               variant="outline"
               className="w-full mt-4 text-sm"
               onClick={() => onNavigateToTab("cv-score")}
             >
-              Voir l'analyse complète
+              {stats.cvScore !== null ? "Voir l'analyse complète" : "Analyser mon CV"}
             </Button>
           </div>
 
