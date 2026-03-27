@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,6 +12,7 @@ import { Logo } from "@/components/Logo";
 
 const Login = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [isRedirecting, setIsRedirecting] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [email, setEmail] = useState("");
@@ -19,16 +20,39 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
 
+  const nextPath = searchParams.get('next') || '/dashboard';
+
   useEffect(() => {
+    // Store redirect path for post-login
+    if (nextPath !== '/dashboard') {
+      sessionStorage.setItem("post_login_redirect", nextPath);
+    }
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        if (event === 'SIGNED_IN' && session) {
+          const returnPath = sessionStorage.getItem("post_login_redirect") || "/dashboard";
+          sessionStorage.removeItem("post_login_redirect");
+          navigate(returnPath, { replace: true });
+        }
+      }
+    );
+
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) navigate("/dashboard", { replace: true });
+      if (session) {
+        const returnPath = sessionStorage.getItem("post_login_redirect") || "/dashboard";
+        sessionStorage.removeItem("post_login_redirect");
+        navigate(returnPath, { replace: true });
+      }
     });
-  }, [navigate]);
+
+    return () => { subscription.unsubscribe(); };
+  }, [navigate, nextPath]);
 
   const handleGoogleLogin = async () => {
     setIsRedirecting(true);
     try {
-      const { error } = await signInWithGoogle("/auth");
+      const { error } = await signInWithGoogle("/login");
       if (error) {
         toast.error(error.message);
         setIsRedirecting(false);

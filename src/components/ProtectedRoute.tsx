@@ -63,8 +63,8 @@ export const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     const rawRedirect = location.pathname + location.search;
     // LOW-03: only encode & use the redirect if it's a safe internal path
     const safeNext = isSafeRedirect(rawRedirect) ? encodeURIComponent(rawRedirect) : "";
-    const authUrl = safeNext ? `/auth?next=${safeNext}` : "/auth";
-    return <Navigate to={authUrl} replace />;
+    const loginUrl = safeNext ? `/login?next=${safeNext}` : "/login";
+    return <Navigate to={loginUrl} replace />;
   }
 
   // Redirect to onboarding if not completed (but not if already on /onboarding)
