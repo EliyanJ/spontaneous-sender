@@ -5,9 +5,9 @@ import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend
 } from "recharts";
 import {
-  Mail, FileText, PenLine, Zap, TrendingUp, TrendingDown, Minus,
+  Mail, FileText, PenLine, Zap, TrendingUp,
   ArrowRight, Building2, Search, Send, Briefcase, Target, ChevronRight,
-  Sparkles, Globe
+  Sparkles
 } from "lucide-react";
 import { format, subDays } from "date-fns";
 import { fr } from "date-fns/locale";
