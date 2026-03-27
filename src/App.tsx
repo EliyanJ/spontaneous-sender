@@ -59,7 +59,7 @@ const AdminCoverLetterTemplates = lazy(() => import("./pages/Admin/AdminCoverLet
 const AdminAIGeneration         = lazy(() => import("./pages/Admin/AdminAIGeneration").then(m => ({ default: m.AdminAIGeneration })));
 const AdminSectorInsights       = lazy(() => import("./pages/Admin/AdminSectorInsights").then(m => ({ default: m.AdminSectorInsights })));
 const AdminCompaniesData        = lazy(() => import("./pages/Admin/AdminCompaniesData").then(m => ({ default: m.AdminCompaniesData })));
-
+const AdminProfitability        = lazy(() => import("./pages/Admin/AdminProfitability").then(m => ({ default: m.AdminProfitability })));
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { AdminRoute } from "./components/AdminRoute";
 import { ChatbotWidget } from "./components/ChatbotWidget";
@@ -145,6 +145,7 @@ const App = () => (
               <Route path="companies-data" element={<AdminCompaniesData />} />
               <Route path="cv-templates" element={<AdminCVTemplates />} />
               <Route path="cover-letter-templates" element={<AdminCoverLetterTemplates />} />
+              <Route path="profitability" element={<AdminProfitability />} />
             </Route>
 
             {/* CMS / CV-builder editors — fullscreen, outside AdminLayout */}
