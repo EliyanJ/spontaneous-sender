@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { AISearchMode } from "./search/AISearchMode";
 import { ManualSearchMode } from "./search/ManualSearchMode";
 import { SearchResultsStep } from "./search/SearchResultsStep";
+import { BatchResultsSummary } from "./search/BatchResultsSummary";
 import { JobProgressCard } from "./JobProgressCard";
 import { AutomaticSearch } from "./AutomaticSearch";
 import { UpgradeBanner } from "@/components/UpgradeBanner";
