@@ -52,7 +52,7 @@ export const SearchCompanies = ({ onNavigateToTab }: SearchCompaniesProps = {}) 
   const [minResults, setMinResults] = useState("20");
   const [minEmployees, setMinEmployees] = useState("5-100");
   const [isProcessing, setIsProcessing] = useState(false);
-
+  const [batchSummary, setBatchSummary] = useState<{ batchId: string; count: number } | null>(null);
   const { features, isLoading: planLoading, isPremium } = usePlanFeatures();
 
   const handleJobComplete = useCallback((job: any) => {
