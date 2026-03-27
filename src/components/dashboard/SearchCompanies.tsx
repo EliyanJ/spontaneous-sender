@@ -289,6 +289,27 @@ export const SearchCompanies = ({ onNavigateToTab }: SearchCompaniesProps = {}) 
     return <AutomaticSearch onNavigateToTab={onNavigateToTab} />;
   }
 
+  // Show batch summary after saving
+  if (batchSummary) {
+    return (
+      <div className="h-full">
+        <BatchResultsSummary
+          batchId={batchSummary.batchId}
+          totalCompanies={batchSummary.count}
+          onGoToEmails={() => {
+            setBatchSummary(null);
+            if (onNavigateToTab) onNavigateToTab('emails');
+          }}
+          onNewSearch={() => {
+            setBatchSummary(null);
+            setCompanies([]);
+            setSelectedCodes([]);
+          }}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="h-full space-y-6">
       {/* Mode Toggle - Pill centered */}
