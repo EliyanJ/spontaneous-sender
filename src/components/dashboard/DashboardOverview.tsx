@@ -291,28 +291,17 @@ export const DashboardOverview = ({ onNavigateToTab }: DashboardOverviewProps) =
             className="bg-card border border-border rounded-xl p-5 hover:shadow-md hover:border-primary/20 transition-all cursor-pointer group"
           >
             <div className="flex justify-between items-start mb-4">
-              <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center", card.iconBg)}>
+             <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center", card.iconBg)}>
                 {card.icon}
               </div>
-              <span className={cn(
-                "text-xs font-medium px-2 py-1 rounded-full flex items-center gap-1",
-                card.trend.up ? "bg-green-50 text-green-600 dark:bg-green-950 dark:text-green-400" :
-                card.trend.neutral ? "bg-muted text-muted-foreground" :
-                "bg-red-50 text-red-600 dark:bg-red-950 dark:text-red-400"
-              )}>
-                {card.trend.up ? <TrendingUp className="h-2.5 w-2.5" /> :
-                 card.trend.neutral ? <Minus className="h-2.5 w-2.5" /> :
-                 <TrendingDown className="h-2.5 w-2.5" />}
-                {card.trend.value}
-              </span>
             </div>
             <p className="text-muted-foreground text-sm font-medium">{card.label}</p>
             <p className="text-2xl font-bold text-foreground mt-1 group-hover:text-primary transition-colors">
               {card.value.toLocaleString("fr-FR")}
             </p>
-            <div className="w-full bg-muted h-1.5 rounded-full mt-3 overflow-hidden">
-              <div className={cn("h-1.5 rounded-full transition-all duration-700", card.bar)} style={{ width: card.barWidth }} />
-            </div>
+            {'subtitle' in card && card.subtitle && (
+              <p className="text-xs text-muted-foreground mt-1">{card.subtitle}</p>
+            )}
           </div>
         ))}
       </div>
