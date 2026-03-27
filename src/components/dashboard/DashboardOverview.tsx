@@ -315,42 +315,15 @@ export const DashboardOverview = ({ onNavigateToTab }: DashboardOverviewProps) =
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-3">
               <div>
                 <h3 className="text-lg font-bold text-foreground">Performance de recherche</h3>
-                <p className="text-sm text-muted-foreground">Applications vs. réponses sur 7 jours</p>
-              </div>
-              <div className="flex bg-muted p-1 rounded-lg border border-border">
-                <button className="px-3 py-1 text-xs font-medium rounded-md bg-card text-foreground shadow-sm">Semaine</button>
-                <button className="px-3 py-1 text-xs font-medium rounded-md text-muted-foreground hover:text-foreground">Mois</button>
-                <button className="px-3 py-1 text-xs font-medium rounded-md text-muted-foreground hover:text-foreground">Année</button>
+                <p className="text-sm text-muted-foreground">Fonctionnalité à venir</p>
               </div>
             </div>
-            <ResponsiveContainer width="100%" height={280}>
-              <AreaChart data={performanceData} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="colorApps" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="hsl(263 75% 58%)" stopOpacity={0.15} />
-                    <stop offset="95%" stopColor="hsl(263 75% 58%)" stopOpacity={0} />
-                  </linearGradient>
-                  <linearGradient id="colorResp" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#22C55E" stopOpacity={0.15} />
-                    <stop offset="95%" stopColor="#22C55E" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                <XAxis dataKey="day" tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} />
-                <Tooltip
-                  contentStyle={{
-                    background: "hsl(var(--card))",
-                    border: "1px solid hsl(var(--border))",
-                    borderRadius: "8px",
-                    fontSize: "12px",
-                  }}
-                />
-                <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: "12px" }} />
-                <Area type="monotone" dataKey="applications" name="Candidatures" stroke="hsl(263 75% 58%)" strokeWidth={3} fill="url(#colorApps)" />
-                <Area type="monotone" dataKey="responses" name="Réponses" stroke="#22C55E" strokeWidth={3} fill="url(#colorResp)" />
-              </AreaChart>
-            </ResponsiveContainer>
+            <div className="flex items-center justify-center h-[280px] text-muted-foreground">
+              <div className="text-center">
+                <TrendingUp className="h-12 w-12 mx-auto mb-3 opacity-20" />
+                <p className="text-sm">Les statistiques de performance seront disponibles prochainement</p>
+              </div>
+            </div>
           </div>
 
           {/* Recent Companies Table */}
