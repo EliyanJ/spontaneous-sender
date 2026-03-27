@@ -404,16 +404,25 @@ export const DashboardOverview = ({ onNavigateToTab }: DashboardOverviewProps) =
           <div className="bg-card border border-border rounded-xl p-6 relative overflow-hidden">
             <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-bl-full -mr-8 -mt-8 pointer-events-none" />
             <h3 className="text-base font-bold text-foreground mb-4 relative z-10">Score d'optimisation CV</h3>
-            <CircularProgress score={stats.cvScore ?? 72} />
-            <p className="text-sm text-center text-muted-foreground mt-4 px-2">
-              Votre CV est dans le <span className="font-bold text-green-600 dark:text-green-400">top 28%</span> des candidats.
-            </p>
+            {stats.cvScore !== null ? (
+              <>
+                <CircularProgress score={stats.cvScore} />
+                <p className="text-sm text-center text-muted-foreground mt-4 px-2">
+                  Basé sur votre dernière analyse ATS
+                </p>
+              </>
+            ) : (
+              <div className="text-center py-6">
+                <Target className="h-10 w-10 mx-auto mb-3 text-muted-foreground/30" />
+                <p className="text-sm text-muted-foreground">Aucune analyse CV effectuée</p>
+              </div>
+            )}
             <Button
               variant="outline"
               className="w-full mt-4 text-sm"
               onClick={() => onNavigateToTab("cv-score")}
             >
-              Voir l'analyse complète
+              {stats.cvScore !== null ? "Voir l'analyse complète" : "Analyser mon CV"}
             </Button>
           </div>
 
