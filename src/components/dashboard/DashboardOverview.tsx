@@ -104,8 +104,9 @@ function CircularProgress({ score }: { score: number }) {
 export const DashboardOverview = ({ onNavigateToTab }: DashboardOverviewProps) => {
   const { user } = useAuth();
   const [stats, setStats] = useState<Stats>({
-    emailsFound: 0, cvsGenerated: 0, coverLetters: 0, creditsUsed: 0,
-    creditsRemaining: 0, totalCompanies: 0, campaignsSent: 0, cvScore: null,
+    emailsSent: 0, emailsFound: 0, cvsGenerated: 0, coverLetters: 0,
+    creditsRemaining: 0, sendsRemaining: 0, sendsLimit: 0,
+    totalCompanies: 0, campaignsSent: 0, cvScore: null,
   });
   const [recentCompanies, setRecentCompanies] = useState<RecentCompany[]>([]);
   const [activity, setActivity] = useState<ActivityItem[]>([]);
