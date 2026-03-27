@@ -20,11 +20,13 @@ interface DashboardOverviewProps {
 }
 
 interface Stats {
+  emailsSent: number;
   emailsFound: number;
   cvsGenerated: number;
   coverLetters: number;
-  creditsUsed: number;
   creditsRemaining: number;
+  sendsRemaining: number;
+  sendsLimit: number;
   totalCompanies: number;
   campaignsSent: number;
   cvScore: number | null;
