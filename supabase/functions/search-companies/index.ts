@@ -277,9 +277,18 @@ serve(async (req) => {
           // Code postal exact à 5 chiffres
           allPostalCodes.push(loc);
         } else if (/^\d{2}$/.test(loc)) {
-          // Code département à 2 chiffres - générer tous les codes postaux du département
-          for (let i = 0; i < 1000; i += 100) {
-            allPostalCodes.push(`${loc}${i.toString().padStart(3, '0')}`);
+          // Code département à 2 chiffres
+          // Vérifier si c'est un département avec des villes à arrondissements
+          const deptArrondissements: Record<string, string> = { '75': 'paris', '69': 'lyon', '13': 'marseille' };
+          if (deptArrondissements[loc]) {
+            const villeKey = deptArrondissements[loc];
+            const arrCodes = VILLES_ARRONDISSEMENTS[villeKey];
+            allPostalCodes.push(...arrCodes);
+            console.log(`Département ${loc} → arrondissements ${villeKey}: ${arrCodes.length} codes`);
+          } else {
+            for (let i = 0; i < 1000; i += 100) {
+              allPostalCodes.push(`${loc}${i.toString().padStart(3, '0')}`);
+            }
           }
         } else if (REGIONS[normalized]) {
           // Région : utiliser tous les départements de la région
