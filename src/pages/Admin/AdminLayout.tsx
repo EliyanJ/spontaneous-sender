@@ -17,7 +17,8 @@ import {
   ScrollText,
   Mail,
   Lightbulb,
-  Building2
+  Building2,
+  TrendingUp
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Logo } from "@/components/Logo";
@@ -41,6 +42,7 @@ const adminNavItems = [
   { title: "Entreprises", icon: Building2, path: "/admin/companies-data" },
   { title: "Templates CV", icon: LayoutTemplate, path: "/admin/cv-templates" },
   { title: "Templates LM", icon: ScrollText, path: "/admin/cover-letter-templates" },
+  { title: "Rentabilité", icon: TrendingUp, path: "/admin/profitability" },
 ];
 
 export const AdminLayout = () => {
