@@ -446,6 +446,44 @@ serve(async (req) => {
       }
     }
 
+    // ===== ETAPE 4-BIS: Apply admin keyword feedback (ML feedback loop) =====
+    // Each admin review in ats_keyword_feedback either promotes a keyword into the right
+    // category (is_valid = true → add to corrected_category) or excludes it (is_valid = false
+    // → remove from original_category). This is what makes the manual reviews actually
+    // improve the score for the next users.
+    let feedbackApplied = 0;
+    if (profession?.id) {
+      const { data: feedback } = await supabase
+        .from('ats_keyword_feedback')
+        .select('keyword, original_category, corrected_category, is_valid')
+        .eq('profession_id', profession.id);
+
+      if (feedback && feedback.length > 0) {
+        const promoteTo = (cat: string, kw: string) => {
+          const norm = normalize(kw);
+          const isIn = (arr: string[]) => arr.some(k => normalize(k) === norm);
+          if (cat === 'primary' && !isIn(dbPrimaryKeywords)) { dbPrimaryKeywords.push(kw); feedbackApplied++; }
+          else if (cat === 'secondary' && !isIn(dbSecondaryKeywords)) { dbSecondaryKeywords.push(kw); feedbackApplied++; }
+          else if (cat === 'soft' && !isIn(dbSoftSkills)) { dbSoftSkills.push(kw); feedbackApplied++; }
+        };
+        const removeFrom = (cat: string, kw: string) => {
+          const norm = normalize(kw);
+          const filt = (arr: string[]) => arr.filter(k => normalize(k) !== norm);
+          if (cat === 'primary') { const b = dbPrimaryKeywords.length; dbPrimaryKeywords = filt(dbPrimaryKeywords); if (dbPrimaryKeywords.length !== b) feedbackApplied++; }
+          else if (cat === 'secondary') { const b = dbSecondaryKeywords.length; dbSecondaryKeywords = filt(dbSecondaryKeywords); if (dbSecondaryKeywords.length !== b) feedbackApplied++; }
+          else if (cat === 'soft') { const b = dbSoftSkills.length; dbSoftSkills = filt(dbSoftSkills); if (dbSoftSkills.length !== b) feedbackApplied++; }
+        };
+        for (const row of feedback) {
+          if (row.is_valid) {
+            promoteTo(row.corrected_category, row.keyword);
+          } else {
+            removeFrom(row.original_category, row.keyword);
+          }
+        }
+        console.log(`Applied ${feedbackApplied} admin feedback adjustments for profession ${profession.name}`);
+      }
+    }
+
     // Load excluded_words for the identified profession (merge with parent theme excluded words)
     const excludedWords: Set<string> = new Set();
     if (profession && profession.excluded_words) {
@@ -670,6 +708,7 @@ serve(async (req) => {
         isPartialMatch,
         confidence: professionConfidence,
         needsSuggestion: needsProfessionSuggestion,
+        feedbackApplied,
       },
       primaryKeywords: {
         scores: primaryScores,
@@ -737,7 +776,8 @@ serve(async (req) => {
       }
     };
 
-    // ===== SAVE ANALYSIS TO cv_analyses for admin review =====
+    // ===== SAVE ANALYSIS TO cv_analyses for admin review (logged-in users only) =====
+    let savedAnalysisId: string | null = null;
     if (userId && !skip_save) {
       try {
         const { data: savedAnalysis } = await supabase.from('cv_analyses').insert({
@@ -752,21 +792,25 @@ serve(async (req) => {
           admin_reviewed: false,
           needs_profession_suggestion: needsProfessionSuggestion,
         }).select('id').single();
-
-        // ===== AUTO-CLUSTER: feed unknown professions into clustering system =====
-        if (needsProfessionSuggestion && savedAnalysis?.id) {
-          try {
-            await updateClusterAndMaybeSuggest(supabase, {
-              jobTitle,
-              jobDescription,
-              analysisId: savedAnalysis.id,
-            });
-          } catch (clusterErr) {
-            console.error('Cluster update failed (non-blocking):', clusterErr);
-          }
-        }
+        savedAnalysisId = savedAnalysis?.id ?? null;
       } catch (saveErr) {
         console.error('Failed to save cv_analysis (non-blocking):', saveErr);
+      }
+    }
+
+    // ===== AUTO-CLUSTER: feed unknown professions into clustering system =====
+    // Runs for BOTH authenticated and anonymous analyses so the learning loop keeps
+    // accumulating data from the public /score-cv page. For anonymous calls we use a
+    // synthetic UUID as analysis_id (no cv_analyses row).
+    if (needsProfessionSuggestion) {
+      try {
+        await updateClusterAndMaybeSuggest(supabase, {
+          jobTitle,
+          jobDescription,
+          analysisId: savedAnalysisId ?? crypto.randomUUID(),
+        });
+      } catch (clusterErr) {
+        console.error('Cluster update failed (non-blocking):', clusterErr);
       }
     }
 
