@@ -708,6 +708,7 @@ serve(async (req) => {
         isPartialMatch,
         confidence: professionConfidence,
         needsSuggestion: needsProfessionSuggestion,
+        feedbackApplied,
       },
       primaryKeywords: {
         scores: primaryScores,
@@ -775,7 +776,8 @@ serve(async (req) => {
       }
     };
 
-    // ===== SAVE ANALYSIS TO cv_analyses for admin review =====
+    // ===== SAVE ANALYSIS TO cv_analyses for admin review (logged-in users only) =====
+    let savedAnalysisId: string | null = null;
     if (userId && !skip_save) {
       try {
         const { data: savedAnalysis } = await supabase.from('cv_analyses').insert({
@@ -790,21 +792,25 @@ serve(async (req) => {
           admin_reviewed: false,
           needs_profession_suggestion: needsProfessionSuggestion,
         }).select('id').single();
-
-        // ===== AUTO-CLUSTER: feed unknown professions into clustering system =====
-        if (needsProfessionSuggestion && savedAnalysis?.id) {
-          try {
-            await updateClusterAndMaybeSuggest(supabase, {
-              jobTitle,
-              jobDescription,
-              analysisId: savedAnalysis.id,
-            });
-          } catch (clusterErr) {
-            console.error('Cluster update failed (non-blocking):', clusterErr);
-          }
-        }
+        savedAnalysisId = savedAnalysis?.id ?? null;
       } catch (saveErr) {
         console.error('Failed to save cv_analysis (non-blocking):', saveErr);
+      }
+    }
+
+    // ===== AUTO-CLUSTER: feed unknown professions into clustering system =====
+    // Runs for BOTH authenticated and anonymous analyses so the learning loop keeps
+    // accumulating data from the public /score-cv page. For anonymous calls we use a
+    // synthetic UUID as analysis_id (no cv_analyses row).
+    if (needsProfessionSuggestion) {
+      try {
+        await updateClusterAndMaybeSuggest(supabase, {
+          jobTitle,
+          jobDescription,
+          analysisId: savedAnalysisId ?? crypto.randomUUID(),
+        });
+      } catch (clusterErr) {
+        console.error('Cluster update failed (non-blocking):', clusterErr);
       }
     }
 
