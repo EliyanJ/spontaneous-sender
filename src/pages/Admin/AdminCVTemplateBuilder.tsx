@@ -68,7 +68,7 @@ const DEFAULT_TEMPLATE_HTML = `<!DOCTYPE html>
 <body>
 <div class="cv-page">
   <header>
-    <img class="photo" data-field-img="photo" src="" alt="Photo" />
+    <img class="photo" data-field-img="photo" src="" alt="Photo de profil du candidat" />
     <div class="header-content">
       <h1 data-field="full_name">Prénom NOM</h1>
       <p class="job-title" data-field="main_title">Titre du poste</p>
@@ -428,7 +428,7 @@ export const AdminCVTemplateBuilder = () => {
                   <Label className="text-xs text-muted-foreground">Miniature</Label>
                   <div className="flex items-center gap-2 mt-1">
                     {thumbnailUrl ? (
-                      <img src={thumbnailUrl} alt="Miniature" className="h-10 w-8 object-cover rounded border border-border" />
+                      <img src={thumbnailUrl} alt="Aperçu du modèle de CV" className="h-10 w-8 object-cover rounded border border-border" />
                     ) : (
                       <div className="h-10 w-8 rounded border border-dashed border-border flex items-center justify-center bg-muted">
                         <Image className="h-3 w-3 text-muted-foreground" />

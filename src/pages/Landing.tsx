@@ -123,7 +123,7 @@ const Landing = () => {
                       {/* Header dashboard */}
                       <div className="flex justify-between items-center mb-5">
                         <div>
-                          <h3 className="text-xl font-bold text-foreground">Bonjour 👋</h3>
+                          <h2 className="text-xl font-bold text-foreground">Bonjour 👋</h2>
                           <p className="text-muted-foreground text-xs">Votre recherche est en bonne voie.</p>
                         </div>
                         <button className="bg-primary text-white px-3 py-1.5 rounded-lg text-xs font-medium shadow-lg shadow-primary/20 flex items-center gap-1.5">

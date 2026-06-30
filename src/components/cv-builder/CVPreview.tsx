@@ -72,7 +72,7 @@ const ClassicTemplate = ({ cvData, d }: { cvData: CVData; d: CVDesignOptions }) 
       <div style={{ width: "72mm", background: d.primaryColor, color: "#fff", padding: "28px 20px", display: "flex", flexDirection: "column", gap: "20px", flexShrink: 0 }}>
         {d.photoUrl && (
           <div style={{ textAlign: "center" }}>
-            <img src={d.photoUrl} alt="Photo" style={{ width: "80px", height: "80px", borderRadius: "50%", objectFit: "cover", border: `3px solid ${d.accentColor}` }} />
+            <img src={d.photoUrl} alt="Photo de profil du candidat" style={{ width: "80px", height: "80px", borderRadius: "50%", objectFit: "cover", border: `3px solid ${d.accentColor}` }} />
           </div>
         )}
         <div>
@@ -140,7 +140,7 @@ const DarkTemplate = ({ cvData, d }: { cvData: CVData; d: CVDesignOptions }) => 
       <div style={{ width: "70mm", background: "rgba(0,0,0,0.4)", color: d.textColor, padding: "28px 20px", borderRight: `2px solid ${d.accentColor}`, flexShrink: 0 }}>
         {d.photoUrl && (
           <div style={{ textAlign: "center", marginBottom: 16 }}>
-            <img src={d.photoUrl} alt="Photo" style={{ width: "80px", height: "80px", borderRadius: "50%", objectFit: "cover", border: `3px solid ${d.accentColor}` }} />
+            <img src={d.photoUrl} alt="Photo de profil du candidat" style={{ width: "80px", height: "80px", borderRadius: "50%", objectFit: "cover", border: `3px solid ${d.accentColor}` }} />
           </div>
         )}
         <p style={{ fontSize: "18pt", fontWeight: 700, lineHeight: 1.2, marginBottom: 4 }}>
@@ -210,7 +210,7 @@ const LightTemplate = ({ cvData, d }: { cvData: CVData; d: CVDesignOptions }) =>
       <div style={{ background: d.primaryColor, color: "#fff", padding: "28px 36px 20px" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
           {d.photoUrl && (
-            <img src={d.photoUrl} alt="Photo" style={{ width: "70px", height: "70px", borderRadius: "50%", objectFit: "cover", border: "3px solid rgba(255,255,255,0.5)" }} />
+            <img src={d.photoUrl} alt="Photo de profil du candidat" style={{ width: "70px", height: "70px", borderRadius: "50%", objectFit: "cover", border: "3px solid rgba(255,255,255,0.5)" }} />
           )}
           <div>
             <p style={{ fontSize: "22pt", fontWeight: 700 }}>
@@ -298,7 +298,7 @@ const GeoTemplate = ({ cvData, d }: { cvData: CVData; d: CVDesignOptions }) => {
             </div>
           </div>
           {d.photoUrl && (
-            <img src={d.photoUrl} alt="Photo" style={{ width: "75px", height: "75px", objectFit: "cover", border: `3px solid ${d.accentColor}`, flexShrink: 0 }} />
+            <img src={d.photoUrl} alt="Photo de profil du candidat" style={{ width: "75px", height: "75px", objectFit: "cover", border: `3px solid ${d.accentColor}`, flexShrink: 0 }} />
           )}
         </div>
       </div>
@@ -353,7 +353,7 @@ const ModernTemplate = ({ cvData, d }: { cvData: CVData; d: CVDesignOptions }) =
       <div style={{ width: "68mm", background: d.primaryColor, padding: "32px 20px", display: "flex", flexDirection: "column", gap: "18px", flexShrink: 0 }}>
         {d.photoUrl && (
           <div style={{ textAlign: "center" }}>
-            <img src={d.photoUrl} alt="Photo" style={{ width: "80px", height: "80px", borderRadius: "50%", objectFit: "cover", border: `3px solid ${d.accentColor}` }} />
+            <img src={d.photoUrl} alt="Photo de profil du candidat" style={{ width: "80px", height: "80px", borderRadius: "50%", objectFit: "cover", border: `3px solid ${d.accentColor}` }} />
           </div>
         )}
         <div>
@@ -419,7 +419,7 @@ const MinimalTemplate = ({ cvData, d }: { cvData: CVData; d: CVDesignOptions }) 
       <div style={{ borderBottom: `3px solid ${d.primaryColor}`, paddingBottom: 14, marginBottom: 20 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
           {d.photoUrl && (
-            <img src={d.photoUrl} alt="Photo" style={{ width: "65px", height: "65px", borderRadius: "50%", objectFit: "cover", border: `2px solid ${d.accentColor}` }} />
+            <img src={d.photoUrl} alt="Photo de profil du candidat" style={{ width: "65px", height: "65px", borderRadius: "50%", objectFit: "cover", border: `2px solid ${d.accentColor}` }} />
           )}
           <div>
             <p style={{ fontSize: "22pt", fontWeight: 700, letterSpacing: "-0.5px" }}>

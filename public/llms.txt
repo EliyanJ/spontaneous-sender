@@ -1,0 +1,23 @@
+# Cronos
+
+> Cronos est une plateforme française de recherche d'emploi qui combine un analyseur ATS de CV, un créateur de CV optimisé, un agrégateur d'offres et un système de candidatures spontanées personnalisées par IA.
+
+Cronos aide candidats, étudiants et jeunes diplômés à accélérer leur recherche d'emploi : score ATS gratuit de leur CV face à une offre, génération de CV et lettres de motivation, identification d'entreprises cibles, recherche d'emails de contact et envoi de candidatures personnalisées.
+
+## Pages
+
+- [Accueil](/): Présentation du produit et fonctionnement.
+- [Score CV ATS](/score-cv): Analyse gratuite d'un CV face à une offre d'emploi avec un score de compatibilité ATS détaillé.
+- [Créateur de CV](/createur-de-cv): Création de CV en ligne à partir de modèles optimisés ATS.
+- [Offres d'emploi](/offres-emploi): Agrégateur d'offres d'emploi France Travail avec candidature assistée par IA.
+- [Tarifs](/prix): Formules Gratuit, Standard (14€) et Premium (39€).
+- [Blog](/blog): Articles sur la recherche d'emploi, le CV et les candidatures.
+- [Centre d'aide](/help): FAQ et support.
+
+## Optional
+
+- [Connexion](/login)
+- [Inscription](/register)
+- [Politique de confidentialité](/privacy-policy)
+- [Conditions générales d'utilisation](/terms-of-service)
+- [Mentions légales](/mentions-legales)
