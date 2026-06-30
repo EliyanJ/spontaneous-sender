@@ -255,7 +255,7 @@ export const CVBuilderForm = ({
               onClick={() => photoInputRef.current?.click()}
             >
               {designOptions.photoUrl ? (
-                <img src={designOptions.photoUrl} alt="Photo" className="w-full h-full object-cover" />
+                <img src={designOptions.photoUrl} alt="Photo de profil du candidat" className="w-full h-full object-cover" />
               ) : (
                 <div className="w-full h-full flex items-center justify-center bg-muted">
                   <Camera className="h-4 w-4 text-muted-foreground" />

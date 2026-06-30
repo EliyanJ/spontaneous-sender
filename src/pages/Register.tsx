@@ -441,7 +441,7 @@ const Register = () => {
                 <><Loader2 className="h-4 w-4 animate-spin" /> Connexion en cours...</>
               ) : (
                 <>
-                  <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" className="h-5 w-5" />
+                  <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Se connecter avec Google" className="h-5 w-5" />
                   Google
                 </>
               )}

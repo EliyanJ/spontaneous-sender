@@ -217,7 +217,7 @@ const AdminTicketDetail = () => {
               <CardContent>
                 <img 
                   src={ticket.screenshot_url} 
-                  alt="Screenshot" 
+                  alt="Capture d&#39;écran du problème signalé" 
                   className="rounded-lg border border-border max-w-full"
                 />
               </CardContent>
