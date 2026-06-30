@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.74.0";
+// Note: no Supabase client needed — this function is stateless and read-only on the request.
 import JSZip from "https://esm.sh/jszip@3.10.1";
 
 const corsHeaders = {
