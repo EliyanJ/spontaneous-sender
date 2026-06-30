@@ -17,4 +17,4 @@ Disallow: /admin
 Disallow: /onboarding
 Disallow: /connect-gmail
 
-Sitemap: https://spontaneous-sender.lovable.app/sitemap.xml
+Sitemap: https://getcronos.fr/sitemap.xml
